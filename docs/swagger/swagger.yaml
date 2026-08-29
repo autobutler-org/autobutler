@@ -8,6 +8,71 @@ definitions:
       id:
         type: string
     type: object
+  photoutil.AlbumRef:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  photoutil.DuplicateGroup:
+    properties:
+      kind:
+        description: |-
+          Kind is "exact" (identical content hash) or "near" (perceptual hash
+          Hamming distance within the configured threshold).
+        type: string
+      photos:
+        description: Photos is the list of photos in this duplicate group.
+        items:
+          $ref: '#/definitions/photoutil.DuplicatePhoto'
+        type: array
+    type: object
+  photoutil.DuplicatePhoto:
+    properties:
+      deviceSerial:
+        type: string
+      relPath:
+        type: string
+    type: object
+  photoutil.ExifSummary:
+    properties:
+      aperture:
+        type: number
+      dateTaken:
+        type: string
+      focalLength:
+        type: number
+      iso:
+        type: integer
+      latitude:
+        type: number
+      lens:
+        type: string
+      longitude:
+        type: number
+      make:
+        type: string
+      model:
+        type: string
+      shutterSpeed:
+        type: string
+    type: object
+  photoutil.PhotoSummary:
+    properties:
+      fileName:
+        type: string
+      hasLiveVideo:
+        type: boolean
+      mtime:
+        type: integer
+      relPath:
+        type: string
+      serial:
+        type: string
+      size:
+        type: integer
+    type: object
   serverutil.ContentType:
     enum:
     - text/html
@@ -324,56 +389,6 @@ definitions:
       temperatureCelsius:
         type: number
     type: object
-  v0_photos.AlbumRefJSON:
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-    type: object
-  v0_photos.DuplicateGroupJSON:
-    properties:
-      kind:
-        description: |-
-          Kind is "exact" (identical content hash) or "near" (perceptual hash
-          Hamming distance within the configured threshold).
-        type: string
-      photos:
-        description: Photos is the list of photos in this duplicate group.
-        items:
-          $ref: '#/definitions/v0_photos.DuplicatePhotoJSON'
-        type: array
-    type: object
-  v0_photos.DuplicatePhotoJSON:
-    properties:
-      deviceSerial:
-        type: string
-      relPath:
-        type: string
-    type: object
-  v0_photos.ExifJSON:
-    properties:
-      aperture:
-        type: number
-      dateTaken:
-        type: string
-      focalLength:
-        type: number
-      iso:
-        type: integer
-      latitude:
-        type: number
-      lens:
-        type: string
-      longitude:
-        type: number
-      make:
-        type: string
-      model:
-        type: string
-      shutterSpeed:
-        type: string
-    type: object
   v0_photos.PaginatedPhotosResponse:
     properties:
       limit:
@@ -382,34 +397,19 @@ definitions:
         type: integer
       photos:
         items:
-          $ref: '#/definitions/v0_photos.PhotoJSON'
+          $ref: '#/definitions/photoutil.PhotoSummary'
         type: array
       total:
-        type: integer
-    type: object
-  v0_photos.PhotoJSON:
-    properties:
-      fileName:
-        type: string
-      hasLiveVideo:
-        type: boolean
-      mtime:
-        type: integer
-      relPath:
-        type: string
-      serial:
-        type: string
-      size:
         type: integer
     type: object
   v0_photos.PhotoMetadataJSON:
     properties:
       albums:
         items:
-          $ref: '#/definitions/v0_photos.AlbumRefJSON'
+          $ref: '#/definitions/photoutil.AlbumRef'
         type: array
       exif:
-        $ref: '#/definitions/v0_photos.ExifJSON'
+        $ref: '#/definitions/photoutil.ExifSummary'
       fileName:
         type: string
       fileSize:
@@ -1925,7 +1925,7 @@ paths:
             properties:
               groups:
                 items:
-                  $ref: '#/definitions/v0_photos.DuplicateGroupJSON'
+                  $ref: '#/definitions/photoutil.DuplicateGroup'
                 type: array
             type: object
         "500":

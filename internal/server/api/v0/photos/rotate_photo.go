@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
@@ -33,28 +33,14 @@ func rotatePhoto(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 	}
 
-	quarters := req.RotationQuarters % 4
-	if quarters < 0 {
-		quarters += 4
-	}
-
-	ctx := context.Background()
-	if quarters == 0 {
-		// No rotation — remove the record to keep the table clean.
-		if err := deps.Database().Queries.DeletePhotoRotation(ctx, db.DeletePhotoRotationParams{
-			DeviceSerial: req.Serial,
-			RelPath:      req.RelPath,
-		}); err != nil {
-			return serverutil.InternalServerError(err)
-		}
-	} else {
-		if err := deps.Database().Queries.UpsertPhotoRotation(ctx, db.UpsertPhotoRotationParams{
-			DeviceSerial:     req.Serial,
-			RelPath:          req.RelPath,
-			RotationQuarters: quarters,
-		}); err != nil {
-			return serverutil.InternalServerError(err)
-		}
+	if err := photoutil.SaveRotation(photoutil.SaveRotationParams{
+		Ctx:              context.Background(),
+		Queries:          deps.Database().Queries,
+		Serial:           req.Serial,
+		RelPath:          req.RelPath,
+		RotationQuarters: req.RotationQuarters,
+	}); err != nil {
+		return serverutil.InternalServerError(err)
 	}
 
 	return serverutil.Ok()
