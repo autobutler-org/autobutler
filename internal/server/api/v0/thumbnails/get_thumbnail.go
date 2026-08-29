@@ -1,101 +1,23 @@
 package v0_thumbnails
 
 import (
-	"context"
-	"crypto/sha256"
-	"database/sql"
 	"errors"
 	"fmt"
-	"image/jpeg"
-	"image/png"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
-	"github.com/autobutler-org/quark/pkg/util/videoutil"
+	"github.com/autobutler-org/quark/pkg/util/thumbnailutil"
 
 	"github.com/gin-gonic/gin"
 )
-
-// thumbnailSize represents the supported thumbnail size tiers.
-type thumbnailSize string
-
-const (
-	thumbnailSizeSm thumbnailSize = "sm" // 96×96  – grid icons / file browser
-	thumbnailSizeMd thumbnailSize = "md" // 240×240 – card previews
-	thumbnailSizeLg thumbnailSize = "lg" // 400×400 – detail view (legacy default)
-)
-
-// thumbnailDimensions returns the pixel dimensions for a given size tier.
-func thumbnailDimensions(size thumbnailSize) (width, height uint) {
-	switch size {
-	case thumbnailSizeSm:
-		return 96, 96
-	case thumbnailSizeMd:
-		return 240, 240
-	default: // thumbnailSizeLg and any unknown value
-		return 400, 400
-	}
-}
-
-// parseThumbnailSize parses the ?size= query parameter, defaulting to lg.
-func parseThumbnailSize(raw string) thumbnailSize {
-	switch thumbnailSize(raw) {
-	case thumbnailSizeSm:
-		return thumbnailSizeSm
-	case thumbnailSizeMd:
-		return thumbnailSizeMd
-	default:
-		return thumbnailSizeLg
-	}
-}
-
-// thumbnailCacheDir returns the path to the thumbnail cache directory,
-// creating it if it doesn't exist.
-func thumbnailCacheDir() (string, error) {
-	cacheDir := filepath.Join(storageutil.GetDataDir(), "cache", "thumbnails")
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create thumbnail cache directory: %w", err)
-	}
-	return cacheDir, nil
-}
-
-// thumbnailCacheVersion is bumped whenever the thumbnail generation algorithm
-// changes, so that stale cached thumbnails are automatically regenerated.
-const thumbnailCacheVersion = "v2"
-
-// cacheKey computes a SHA-256 hex digest of the given serial, file path,
-// rotation, and size so that each combination produces a distinct cache entry.
-func cacheKey(serial, filePath string, rotationQuarters int64, size thumbnailSize) string {
-	h := sha256.Sum256([]byte(fmt.Sprintf("%s:%s/%s:r%d:s%s", thumbnailCacheVersion, serial, filePath, rotationQuarters, size)))
-	return fmt.Sprintf("%x", h)
-}
-
-// etagFromModTime returns a quoted ETag string derived from a file's modification time.
-func etagFromModTime(t time.Time) string {
-	return fmt.Sprintf(`"%x"`, t.UnixNano())
-}
-
-// contentTypeForExt returns the MIME type for a thumbnail based on its file extension.
-func contentTypeForExt(ext string) string {
-	switch ext {
-	case ".png":
-		return "image/png"
-	case ".jpg", ".jpeg":
-		return "image/jpeg"
-	default:
-		return "image/jpeg"
-	}
-}
 
 // getThumbnail godoc
 // @Summary Get thumbnail for an image
@@ -159,35 +81,20 @@ var getThumbnailRoute = serverutil.ApiRoute(
 			return serverutil.InternalServerError(err)
 		}
 
-		// --- Server-side rotation ---
-		var rotationQuarters int64
-		if rq, err := deps.Database().Queries.GetPhotoRotation(
-			context.Background(),
-			db.GetPhotoRotationParams{DeviceSerial: serial, RelPath: relPath},
-		); err == nil {
-			rotationQuarters = rq
-		} else if !errors.Is(err, sql.ErrNoRows) {
-			return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
-		}
-
-		// --- Size parameter ---
-		size := parseThumbnailSize(c.Query("size"))
-		width, height := thumbnailDimensions(size)
-
-		// --- Disk cache lookup ---
-		// Rotation and size are included in the key so each combination gets
-		// its own cache entry.
-		cacheDir, err := thumbnailCacheDir()
+		prepared, err := thumbnailutil.Prepare(thumbnailutil.PrepareParams{
+			Queries:    deps.Database().Queries,
+			Serial:     serial,
+			RelPath:    relPath,
+			FilePath:   filePath,
+			Size:       thumbnailutil.ParseSize(c.Query("size")),
+			SrcModTime: srcInfo.ModTime(),
+		})
 		if err != nil {
 			return serverutil.InternalServerError(err)
 		}
-		key := cacheKey(serial, filePath, rotationQuarters, size)
-		cachedPath := filepath.Join(cacheDir, key)
 
-		cachedInfo, cacheErr := os.Stat(cachedPath)
-		cacheHit := cacheErr == nil && cachedInfo.ModTime().After(srcInfo.ModTime())
-
-		if !cacheHit {
+		cachedModTime := prepared.CachedModTime
+		if !prepared.Hit {
 			// Acquire IO semaphore before disk-bound thumbnail generation.
 			if sem := deps.IOSemaphore(); sem != nil {
 				if !sem.AcquireDefault(c.Request.Context()) {
@@ -203,132 +110,32 @@ var getThumbnailRoute = serverutil.ApiRoute(
 				defer sem.Release()
 			}
 
-			// For video files: extract a representative frame via ffmpeg, then
-			// feed that JPEG through the normal photoutil thumbnail pipeline.
-			thumbSrcPath := fullPath
-			var videoFrameTmp string
-			if isVideo {
-				if !videoutil.Available() {
-					return serverutil.NotFound(fmt.Errorf("video thumbnails require ffmpeg (not installed)"))
-				}
-				// Probe to pick a good timestamp (2s or 10% of duration).
-				probeCtx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
-				defer cancel()
-				seekTs := 2 * time.Second
-				if info, probeErr := videoutil.Probe(probeCtx, fullPath); probeErr == nil {
-					if tenth := info.Duration / 10; info.Duration < 20*time.Second && tenth < seekTs {
-						seekTs = tenth
-					}
-				}
-				tmpFile, tmpErr := os.CreateTemp("", "vthumb-*.jpg")
-				if tmpErr != nil {
-					return serverutil.InternalServerError(fmt.Errorf("video thumb temp file: %w", tmpErr))
-				}
-				tmpFile.Close()
-				videoFrameTmp = tmpFile.Name()
-				defer os.Remove(videoFrameTmp)
-				extractCtx, extractCancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
-				defer extractCancel()
-				if extractErr := videoutil.ExtractFrame(extractCtx, fullPath, seekTs, videoFrameTmp); extractErr != nil {
-					return serverutil.InternalServerError(fmt.Errorf("extract video frame: %w", extractErr))
-				}
-				thumbSrcPath = videoFrameTmp
-			}
-
-			// Generate the thumbnail at the requested size.
-			result, err := photoutil.GenerateThumbnail(photoutil.GenerateThumbnailParams{
-				FilePath: thumbSrcPath,
-				Width:    width,
-				Height:   height,
+			generated, genErr := thumbnailutil.Generate(thumbnailutil.GenerateParams{
+				Ctx:              c.Request.Context(),
+				Queries:          deps.Database().Queries,
+				Serial:           serial,
+				RelPath:          relPath,
+				SourcePath:       fullPath,
+				Ext:              ext,
+				IsVideo:          isVideo,
+				Width:            prepared.Width,
+				Height:           prepared.Height,
+				RotationQuarters: prepared.RotationQuarters,
+				CachedPath:       prepared.CachedPath,
 			})
-			if err != nil {
-				return serverutil.InternalServerError(err)
+			if errors.Is(genErr, thumbnailutil.ErrFFmpegUnavailable) {
+				return serverutil.NotFound(genErr)
 			}
-
-			// Apply server-side rotation so the cached thumbnail matches the
-			// orientation the user has set.
-			if rotationQuarters != 0 {
-				result.Thumbnail = photoutil.ApplyRotation(result.Thumbnail, rotationQuarters)
+			if genErr != nil {
+				return serverutil.InternalServerError(genErr)
 			}
-
-			// Compute and store perceptual dHash async — the image is already
-			// decoded here so hashing is nearly free. Non-blocking; a failure to
-			// store the hash does not affect thumbnail delivery.
-			if !isVideo {
-				thumb := result.Thumbnail
-				go func() {
-					hashHex := photoutil.DHashHex(thumb)
-					_ = deps.Database().Queries.UpsertPhotoHash(
-						context.Background(),
-						db.UpsertPhotoHashParams{
-							DeviceSerial: serial,
-							RelPath:      relPath,
-							Dhash:        sql.NullString{String: hashHex, Valid: true},
-						},
-					)
-				}()
-			}
-
-			// Write to cache file
-			tmpPath := cachedPath + ".tmp"
-			f, err := os.Create(tmpPath)
-			if err != nil {
-				return serverutil.InternalServerError(fmt.Errorf("failed to create cache file: %w", err))
-			}
-
-			if !isVideo && ext == ".png" {
-				err = png.Encode(f, result.Thumbnail)
-			} else {
-				err = jpeg.Encode(f, result.Thumbnail, &jpeg.Options{Quality: 85})
-			}
-			f.Close()
-			if err != nil {
-				os.Remove(tmpPath)
-				return serverutil.InternalServerError(fmt.Errorf("failed to encode thumbnail to cache: %w", err))
-			}
-
-			if err := os.Rename(tmpPath, cachedPath); err != nil {
-				os.Remove(tmpPath)
-				return serverutil.InternalServerError(fmt.Errorf("failed to commit cache file: %w", err))
-			}
-
-			// Re-stat the cache file for ETag
-			cachedInfo, err = os.Stat(cachedPath)
-			if err != nil {
-				return serverutil.InternalServerError(err)
-			}
+			cachedModTime = generated.CachedModTime
 		}
 
-		// --- ETag / conditional response ---
-		etag := etagFromModTime(cachedInfo.ModTime())
-		c.Header("ETag", etag)
-		// no-cache: the browser must revalidate every request via If-None-Match.
-		// The ETag covers rotation state (cache key includes rotationQuarters),
-		// so the browser gets fresh bytes immediately after a rotation without
-		// waiting for a max-age window to expire.
-		c.Header("Cache-Control", "no-cache")
-		thumbContentType := contentTypeForExt(ext)
+		thumbContentType := thumbnailutil.ContentTypeForExt(ext)
 		if isVideo {
 			thumbContentType = "image/jpeg"
 		}
-		c.Header("Content-Type", thumbContentType)
-
-		if match := c.GetHeader("If-None-Match"); match == etag {
-			c.Status(http.StatusNotModified)
-			return nil
-		}
-
-		// Serve the cached file
-		data, err := os.ReadFile(cachedPath)
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to read cached thumbnail: %w", err))
-		}
-		c.Data(http.StatusOK, thumbContentType, data)
-		return nil
+		return serveCachedThumbnail(c, prepared.CachedPath, cachedModTime, thumbContentType)
 	},
 )
-
-// vfsThumbnailFallthrough is a sentinel returned by getThumbnailVFS to signal
-// that the VFS path could not serve the thumbnail and the caller should fall
-// through to the StorageService path.
-var vfsThumbnailFallthrough = &serverutil.Response{}

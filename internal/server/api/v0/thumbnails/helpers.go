@@ -1,24 +1,22 @@
 package v0_thumbnails
 
 import (
-	"context"
-	"database/sql"
 	"errors"
-	"fmt"
-	"image/jpeg"
-	"image/png"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
+	"time"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
-	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/thumbnailutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 	"github.com/gin-gonic/gin"
 )
+
+// vfsThumbnailFallthrough is a sentinel returned by getThumbnailVFS to signal
+// that the VFS path could not serve the thumbnail and the caller should fall
+// through to the StorageService path.
+var vfsThumbnailFallthrough = &serverutil.Response{}
 
 // getThumbnailVFS attempts to serve a thumbnail via the VFS. Returns
 // vfsThumbnailFallthrough if the VFS is unable to handle the request (file not
@@ -37,33 +35,20 @@ func getThumbnailVFS(
 		return vfsThumbnailFallthrough
 	}
 
-	// --- Server-side rotation ---
-	var rotationQuarters int64
-	if rq, err := deps.Database().Queries.GetPhotoRotation(
-		context.Background(),
-		db.GetPhotoRotationParams{DeviceSerial: serial, RelPath: relPath},
-	); err == nil {
-		rotationQuarters = rq
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		return serverutil.InternalServerError(fmt.Errorf("get photo rotation: %w", err))
-	}
-
-	// --- Size parameter ---
-	size := parseThumbnailSize(c.Query("size"))
-	width, height := thumbnailDimensions(size)
-
-	// --- Disk cache lookup ---
-	cacheDir, err := thumbnailCacheDir()
+	prepared, err := thumbnailutil.Prepare(thumbnailutil.PrepareParams{
+		Queries:    deps.Database().Queries,
+		Serial:     serial,
+		RelPath:    relPath,
+		FilePath:   filePath,
+		Size:       thumbnailutil.ParseSize(c.Query("size")),
+		SrcModTime: fi.ModTime,
+	})
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
-	key := cacheKey(serial, filePath, rotationQuarters, size)
-	cachedPath := filepath.Join(cacheDir, key)
 
-	cachedInfo, cacheErr := os.Stat(cachedPath)
-	cacheHit := cacheErr == nil && cachedInfo.ModTime().After(fi.ModTime)
-
-	if !cacheHit {
+	cachedModTime := prepared.CachedModTime
+	if !prepared.Hit {
 		if sem := deps.IOSemaphore(); sem != nil {
 			if !sem.AcquireDefault(c.Request.Context()) {
 				slog.Warn("thumbnail: IO semaphore timed out (VFS path)",
@@ -84,58 +69,48 @@ func getThumbnailVFS(
 		}
 		defer r.Close()
 
-		result, genErr := photoutil.GenerateThumbnailFromReader(r, ext, width, height)
-		if genErr != nil {
+		generated, genErr := thumbnailutil.GenerateFromReader(thumbnailutil.GenerateFromReaderParams{
+			Reader:           r,
+			Ext:              ext,
+			Width:            prepared.Width,
+			Height:           prepared.Height,
+			RotationQuarters: prepared.RotationQuarters,
+			CachedPath:       prepared.CachedPath,
+		})
+		if errors.Is(genErr, thumbnailutil.ErrUnsupportedSource) {
 			// Unsupported format or decode error — fall through to StorageService.
 			return vfsThumbnailFallthrough
 		}
-
-		if rotationQuarters != 0 {
-			result.Thumbnail = photoutil.ApplyRotation(result.Thumbnail, rotationQuarters)
+		if genErr != nil {
+			return serverutil.InternalServerError(genErr)
 		}
-
-		tmpPath := cachedPath + ".tmp"
-		f, createErr := os.Create(tmpPath)
-		if createErr != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to create cache file: %w", createErr))
-		}
-		var encErr error
-		if ext == ".png" {
-			encErr = png.Encode(f, result.Thumbnail)
-		} else {
-			encErr = jpeg.Encode(f, result.Thumbnail, &jpeg.Options{Quality: 85})
-		}
-		f.Close()
-		if encErr != nil {
-			os.Remove(tmpPath)
-			return serverutil.InternalServerError(fmt.Errorf("failed to encode thumbnail: %w", encErr))
-		}
-		if renErr := os.Rename(tmpPath, cachedPath); renErr != nil {
-			os.Remove(tmpPath)
-			return serverutil.InternalServerError(fmt.Errorf("failed to commit cache file: %w", renErr))
-		}
-		cachedInfo, err = os.Stat(cachedPath)
-		if err != nil {
-			return serverutil.InternalServerError(err)
-		}
+		cachedModTime = generated.CachedModTime
 	}
 
-	// --- ETag / conditional response ---
-	etag := etagFromModTime(cachedInfo.ModTime())
+	return serveCachedThumbnail(c, prepared.CachedPath, cachedModTime, thumbnailutil.ContentTypeForExt(ext))
+}
+
+// serveCachedThumbnail writes the caching headers for a cache entry and either
+// answers a matching If-None-Match with 304 or sends the cached bytes.
+func serveCachedThumbnail(c *gin.Context, cachedPath string, cachedModTime time.Time, contentType string) *serverutil.Response {
+	etag := thumbnailutil.ETagFromModTime(cachedModTime)
 	c.Header("ETag", etag)
+	// no-cache: the browser must revalidate every request via If-None-Match.
+	// The ETag covers rotation state (cache key includes rotationQuarters),
+	// so the browser gets fresh bytes immediately after a rotation without
+	// waiting for a max-age window to expire.
 	c.Header("Cache-Control", "no-cache")
-	thumbContentType := contentTypeForExt(ext)
-	c.Header("Content-Type", thumbContentType)
+	c.Header("Content-Type", contentType)
 
 	if match := c.GetHeader("If-None-Match"); match == etag {
 		c.Status(http.StatusNotModified)
 		return nil
 	}
 
-	data, readErr := os.ReadFile(cachedPath)
-	if readErr != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to read cached thumbnail: %w", readErr))
+	data, err := thumbnailutil.ReadCached(cachedPath)
+	if err != nil {
+		return serverutil.InternalServerError(err)
 	}
-	c.Data(http.StatusOK, thumbContentType, data)
+	c.Data(http.StatusOK, contentType, data)
 	return nil
 }
