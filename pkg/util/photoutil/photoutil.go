@@ -1,6 +1,11 @@
+// Package photoutil reads, transforms, and thumbnails photo and video files:
+// discovering photos on disk, extracting EXIF metadata, correcting orientation,
+// converting camera RAW, generating thumbnails, and comparing images by
+// perceptual hash.
 package photoutil
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	_ "image/gif"
@@ -9,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
@@ -18,6 +24,45 @@ import (
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
 )
+
+// PhotoInfo stores a photo with its relative path
+type PhotoInfo struct {
+	FileInfo     fs.FileInfo
+	RelPath      string
+	HasLiveVideo bool
+}
+
+// ExifData holds extracted EXIF fields in a format-agnostic way.
+// Works for JPEG, HEIC/HEIF, PNG, WebP, TIFF, and RAW formats.
+type ExifData struct {
+	Orientation  int
+	DateTaken    *time.Time
+	Make         string
+	Model        string
+	LensModel    string
+	Aperture     float64
+	ShutterSpeed [2]int64 // numerator, denominator
+	ISO          int
+	FocalLength  float64
+	Latitude     float64
+	Longitude    float64
+	HasGPS       bool
+	Width        int
+	Height       int
+}
+
+// GenerateThumbnailParams contains parameters for generating a thumbnail
+type GenerateThumbnailParams struct {
+	FilePath string
+	Width    uint
+	Height   uint
+}
+
+// GenerateThumbnailResult contains the result of generating a thumbnail
+type GenerateThumbnailResult struct {
+	Thumbnail image.Image
+	Format    string
+}
 
 // FilterPhotoFiles filters a list of files to only include photo files
 func FilterPhotoFiles(files []fs.FileInfo) []fs.FileInfo {
@@ -152,29 +197,6 @@ func CorrectImageOrientation(img image.Image, r io.ReadSeeker) (image.Image, err
 	return img, nil
 }
 
-// applyExifOrientation transforms an image based on the EXIF orientation value.
-// http://sylvana.net/jpegcrop/exif_orientation.html
-func applyExifOrientation(img image.Image, orientation int) image.Image {
-	switch orientation {
-	case 2:
-		return flipHorizontal(img)
-	case 3:
-		return rotate180(img)
-	case 4:
-		return flipVertical(img)
-	case 5:
-		return rotate270(flipHorizontal(img))
-	case 6:
-		return rotate90(img)
-	case 7:
-		return rotate90(flipHorizontal(img))
-	case 8:
-		return rotate270(img)
-	default:
-		return img
-	}
-}
-
 // ApplyRotation rotates img by quarters × 90° clockwise.
 // Negative values are normalized: -1 → 3, -2 → 2, etc.
 func ApplyRotation(img image.Image, quarters int64) image.Image {
@@ -190,57 +212,88 @@ func ApplyRotation(img image.Image, quarters int64) image.Image {
 	}
 }
 
-func rotate90(img image.Image) image.Image {
-	bounds := img.Bounds()
-	newImg := image.NewRGBA(image.Rect(0, 0, bounds.Dy(), bounds.Dx()))
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			newImg.Set(bounds.Max.Y-y-1, x, img.At(x, y))
+// GenerateThumbnailFromReader creates a thumbnail from an io.Reader.
+// ext is the lowercase file extension (e.g. ".jpg") used for format detection.
+// RAW and video files are not supported — callers must use GenerateThumbnail for those.
+func GenerateThumbnailFromReader(r io.Reader, ext string, width, height uint) (*GenerateThumbnailResult, error) {
+	fileType := storageutil.DetermineFileTypeFromPath("file" + ext)
+	if fileType != storageutil.FileTypeImage {
+		return nil, fmt.Errorf("GenerateThumbnailFromReader: unsupported file type for extension %q", ext)
+	}
+
+	// Buffer the reader so we can seek back for EXIF after image decode.
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateThumbnailFromReader: read: %w", err)
+	}
+	rs := bytes.NewReader(data)
+
+	img, format, err := image.Decode(rs)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateThumbnailFromReader: decode: %w", err)
+	}
+
+	// Seek back and apply EXIF orientation.
+	if _, seekErr := rs.Seek(0, 0); seekErr == nil {
+		imgFormat := ImageFormatFromPath("file" + ext)
+		if imgFormat != 0 {
+			orientation := GetOrientation(rs, imgFormat)
+			img = applyExifOrientation(img, orientation)
 		}
 	}
-	return newImg
+
+	cropped, _, err := cropToFit(img, width, height)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateThumbnailFromReader: crop: %w", err)
+	}
+	return &GenerateThumbnailResult{Thumbnail: cropped, Format: format}, nil
 }
 
-func rotate180(img image.Image) image.Image {
-	bounds := img.Bounds()
-	newImg := image.NewRGBA(bounds)
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			newImg.Set(bounds.Max.X-x-1, bounds.Max.Y-y-1, img.At(x, y))
-		}
-	}
-	return newImg
-}
+// GenerateThumbnail creates a thumbnail image from a source file.
+// Supports both image and video files (video requires ffmpeg).
+func GenerateThumbnail(params GenerateThumbnailParams) (*GenerateThumbnailResult, error) {
+	ext := strings.ToLower(filepath.Ext(params.FilePath))
+	fileType := storageutil.DetermineFileTypeFromPath("file" + ext)
 
-func rotate270(img image.Image) image.Image {
-	bounds := img.Bounds()
-	newImg := image.NewRGBA(image.Rect(0, 0, bounds.Dy(), bounds.Dx()))
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			newImg.Set(y, bounds.Max.X-x-1, img.At(x, y))
-		}
+	if fileType != storageutil.FileTypeImage && fileType != storageutil.FileTypeVideo {
+		return nil, fmt.Errorf("unsupported file type for thumbnail: %s", ext)
 	}
-	return newImg
-}
 
-func flipHorizontal(img image.Image) image.Image {
-	bounds := img.Bounds()
-	newImg := image.NewRGBA(bounds)
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			newImg.Set(bounds.Max.X-x-1, y, img.At(x, y))
+	if fileType == storageutil.FileTypeVideo {
+		if !IsFFmpegAvailable() {
+			return nil, fmt.Errorf("ffmpeg is required for video thumbnails but was not found on PATH")
 		}
+		thumbnail, err := VideoToThumbnail(params.FilePath, params.Width, params.Height)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate video thumbnail: %w", err)
+		}
+		return &GenerateThumbnailResult{
+			Thumbnail: thumbnail,
+			Format:    "jpeg",
+		}, nil
 	}
-	return newImg
-}
 
-func flipVertical(img image.Image) image.Image {
-	bounds := img.Bounds()
-	newImg := image.NewRGBA(bounds)
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			newImg.Set(x, bounds.Max.Y-y-1, img.At(x, y))
+	// RAW camera files can't be decoded by Go's image package — convert
+	// via an external tool first, then thumbnail the resulting JPEG.
+	if IsRawFile(params.FilePath) {
+		img, err := RawToJPEG(params.FilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert RAW file: %w", err)
 		}
+		cropped, _, cropErr := cropToFit(img, params.Width, params.Height)
+		if cropErr != nil {
+			return nil, fmt.Errorf("crop RAW thumbnail: %w", cropErr)
+		}
+		return &GenerateThumbnailResult{Thumbnail: cropped, Format: "jpeg"}, nil
 	}
-	return newImg
+
+	thumbnail, format, err := ImageToThumbnail(params.FilePath, params.Width, params.Height)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate thumbnail: %w", err)
+	}
+
+	return &GenerateThumbnailResult{
+		Thumbnail: thumbnail,
+		Format:    format,
+	}, nil
 }

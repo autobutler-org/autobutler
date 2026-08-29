@@ -14,26 +14,6 @@ import (
 
 const manifestFilename = "backup_manifest.json"
 
-type Manifest struct {
-	CreatedAt  time.Time               `json:"createdAt"`
-	TotalFiles int                     `json:"totalFiles"`
-	TotalBytes int64                   `json:"totalBytes"`
-	Files      map[string]ManifestFile `json:"files"`
-}
-
-type ManifestFile struct {
-	SHA256 string `json:"sha256"`
-	Size   int64  `json:"size"`
-}
-
-type VerifyResult struct {
-	OK        int      `json:"ok"`
-	Missing   []string `json:"missing,omitempty"`
-	Corrupted []string `json:"corrupted,omitempty"`
-	Added     []string `json:"added,omitempty"`
-	Errors    []string `json:"errors,omitempty"`
-}
-
 func GenerateManifest(rootDir string) (*Manifest, error) {
 	m := &Manifest{
 		CreatedAt: time.Now(),

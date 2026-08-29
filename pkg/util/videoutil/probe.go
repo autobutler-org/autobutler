@@ -10,18 +10,6 @@ import (
 	"time"
 )
 
-// VideoInfo holds the metadata returned by ffprobe for a single video file.
-type VideoInfo struct {
-	Duration   time.Duration
-	Width      int
-	Height     int
-	VideoCodec string
-	AudioCodec string
-	Bitrate    int64
-	Framerate  float64
-	Rotation   int // degrees (0, 90, 180, 270)
-}
-
 // ffprobeOutput is the top-level JSON structure returned by ffprobe -print_format json.
 type ffprobeOutput struct {
 	Streams []ffprobeStream `json:"streams"`

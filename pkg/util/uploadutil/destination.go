@@ -1,9 +1,6 @@
-// Package uploadutil owns the server side of file uploads: where a finished
-// upload lands, and the resumable chunked sessions that feed it (#1629).
 package uploadutil
 
 import (
-	"context"
 	"io"
 	"mime/multipart"
 	"path"
@@ -18,16 +15,6 @@ import (
 // by deputil.DefaultDependencies; absent in older deployments and in tests that
 // exercise the StorageService directly.
 const filesNamespace = "files"
-
-// Destination is the pair of writers an upload can land in, plus the bus that
-// announces the arrival. Both the multipart endpoint and a chunked session
-// choose between the two the same way, which is the whole point of holding the
-// choice in one place.
-type Destination struct {
-	Registry vfs.Registry
-	Storage  *storageutil.StorageService
-	EventBus *eventbus.Bus
-}
 
 // FilesVFS returns the VFS backing the local namespace, or nil when the write
 // has to go through the StorageService instead: a named device serial routes
@@ -47,22 +34,6 @@ func (d Destination) FilesVFS(serial string) vfs.VFS {
 // session is worth opening only if the bytes it collects can eventually land.
 func (d Destination) Writable(serial string) bool {
 	return d.FilesVFS(serial) != nil || d.Storage != nil
-}
-
-// WriteFileParams is one finished file on its way into the namespace.
-type WriteFileParams struct {
-	Ctx context.Context
-	// Reader is positioned at the first byte of the file and read to EOF.
-	Reader    io.Reader
-	RootDir   string
-	FileName  string
-	Serial    string
-	Overwrite bool
-}
-
-// WriteFileResult reports where the file ended up, API-relative.
-type WriteFileResult struct {
-	Path string
 }
 
 // WriteFile streams one file into the destination and publishes the upload

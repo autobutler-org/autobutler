@@ -9,7 +9,6 @@ import (
 	"mime"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -17,26 +16,6 @@ import (
 type memEntry struct {
 	data []byte
 	info FileInfo
-}
-
-// MemVFS is an in-memory VFS implementation for testing.
-type MemVFS struct {
-	mu          sync.RWMutex
-	files       map[string]memEntry // path -> entry (files only)
-	dirs        map[string]bool     // path -> true (directories)
-	namespaceID string
-}
-
-// NewMemVFS creates a new MemVFS with the given namespace ID.
-func NewMemVFS(namespaceID string) *MemVFS {
-	m := &MemVFS{
-		files:       make(map[string]memEntry),
-		dirs:        make(map[string]bool),
-		namespaceID: namespaceID,
-	}
-	// Root directory always exists
-	m.dirs[""] = true
-	return m
 }
 
 func cleanPath(path string) string {

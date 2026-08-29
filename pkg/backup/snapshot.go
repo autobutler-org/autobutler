@@ -10,26 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
-	"github.com/autobutler-org/quark/pkg/util/iosemutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
-
-type VaultExportParams struct {
-	Queries          *db.Queries
-	LiveKey          []byte
-	RecoveryPassword string
-}
-
-type SnapshotBackupParams struct {
-	TargetDeviceSerial string
-	Job                *BackupJob
-	Store              BackupJobStore
-	EventBus           *eventbus.Bus
-	Vault              *VaultExportParams
-	IOSemaphore        *iosemutil.Semaphore // throttles file copies to yield to interactive requests
-}
 
 func SnapshotBackup(
 	ctx context.Context,

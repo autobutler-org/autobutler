@@ -7,16 +7,6 @@ import (
 	"fmt"
 )
 
-// SQLiteMetadataStore implements MetadataStore using raw SQL against the vfs_metadata table.
-type SQLiteMetadataStore struct {
-	db *sql.DB
-}
-
-// NewSQLiteMetadataStore returns a MetadataStore backed by the given *sql.DB.
-func NewSQLiteMetadataStore(db *sql.DB) *SQLiteMetadataStore {
-	return &SQLiteMetadataStore{db: db}
-}
-
 // Get returns all metadata for (namespace, path) as a map of key → JSON value.
 // Returns an empty map (not an error) if no metadata is set.
 func (s *SQLiteMetadataStore) Get(ctx context.Context, namespace, path string) (map[string]json.RawMessage, error) {

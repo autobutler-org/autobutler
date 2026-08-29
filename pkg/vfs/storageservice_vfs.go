@@ -13,19 +13,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
-// StorageServiceVFS adapts storageutil.StorageService to the VFS interface.
-// It is registered as the "files" namespace and backs the /api/v0/files
-// handlers during the Phase 1 migration, with no behavior change.
-type StorageServiceVFS struct {
-	svc         *storageutil.StorageService
-	namespaceID string
-}
-
-// NewStorageServiceVFS creates a StorageServiceVFS for the given namespace.
-func NewStorageServiceVFS(svc *storageutil.StorageService, namespaceID string) *StorageServiceVFS {
-	return &StorageServiceVFS{svc: svc, namespaceID: namespaceID}
-}
-
 // serialSet builds a set from a slice for O(1) lookup.
 func serialSet(serials []string) map[string]bool {
 	set := make(map[string]bool, len(serials))

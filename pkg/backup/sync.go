@@ -7,52 +7,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sync"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/iosemutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
-
-type SyncWorker struct {
-	mu       sync.Mutex
-	bus      *eventbus.Bus
-	storage  *storageutil.StorageService
-	queries  *db.Queries
-	unsub    func()
-	cancel   context.CancelFunc
-	running  bool
-	pending  []eventbus.Event
-	maxQueue int
-	ioSem    *iosemutil.Semaphore // throttles file copies to yield to interactive requests
-
-	// Overridable for testing.
-	resolveTarget      func(ctx context.Context) (string, error)
-	resolveInternalDir func() (string, error)
-	getManagedDevices  func() ([]storageutil.ManagedDevice, error)
-}
-
-type SyncWorkerParams struct {
-	Bus         *eventbus.Bus
-	Storage     *storageutil.StorageService
-	Queries     *db.Queries
-	IOSemaphore *iosemutil.Semaphore // optional; throttles background file copies
-}
-
-func NewSyncWorker(params SyncWorkerParams) *SyncWorker {
-	w := &SyncWorker{
-		bus:      params.Bus,
-		storage:  params.Storage,
-		queries:  params.Queries,
-		maxQueue: 10000,
-		ioSem:    params.IOSemaphore,
-	}
-	w.resolveTarget = w.defaultResolveTarget
-	w.resolveInternalDir = w.defaultResolveInternalDir
-	w.getManagedDevices = w.defaultGetManagedDevices
-	return w
-}
 
 func (w *SyncWorker) Start() {
 	w.mu.Lock()

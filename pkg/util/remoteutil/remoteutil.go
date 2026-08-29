@@ -1,3 +1,5 @@
+// Package remoteutil runs an embedded Tailscale node and reverse-proxies
+// tailnet traffic to the local quark server.
 package remoteutil
 
 import (
@@ -10,9 +12,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 	"sync"
 	"time"
 
@@ -29,35 +28,6 @@ var (
 	proxyLn net.Listener
 	running bool
 )
-
-func controlURL() string {
-	u := os.Getenv("QUARK_HEADSCALE_URL")
-	if u == "" {
-		u = defaultControlURL
-	}
-	if strings.HasPrefix(u, "http://") {
-		log.Printf("[remote] WARNING: Headscale control URL is using HTTP (%s). Auth keys will be sent in plaintext. Use HTTPS in production.", u)
-	}
-	return u
-}
-
-// stateDir returns the path where tsnet should persist its state. On Linux it
-// prefers the system service directory if the parent exists; otherwise it falls
-// back to the user's home config directory. Directory creation is left to the
-// caller (Start).
-func stateDir() string {
-	if runtime.GOOS == "linux" {
-		svcDir := "/var/lib/quark/tsnet"
-		if _, err := os.Stat(filepath.Dir(svcDir)); err == nil {
-			return svcDir
-		}
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = os.TempDir()
-	}
-	return filepath.Join(home, ".config", "quark", "tsnet")
-}
 
 func Start(authKey string) error {
 	mu.Lock()
@@ -205,5 +175,37 @@ func StartProxy(localPort int, localTLS bool) error {
 			log.Printf("[tsnet] proxy stopped: %v", err)
 		}
 	}()
+	return nil
+}
+
+// EnsureStarted starts the tsnet node, re-provisioning if local state has been
+// wiped. provisionFn is called only when no persisted state exists; it should
+// return a fresh Headscale pre-auth key. The proxy is started against
+// localPort after tsnet starts successfully; localTLS must match how the
+// server is serving that port.
+func EnsureStarted(localPort int, localTLS bool, provisionFn func() (string, error)) error {
+	if IsRunning() {
+		return nil
+	}
+
+	authKey := ""
+	if !HasPersistedState() {
+		log.Printf("[remote] no persisted tsnet state, re-provisioning...")
+		key, err := provisionFn()
+		if err != nil {
+			return fmt.Errorf("re-provision: %w", err)
+		}
+		authKey = key
+	}
+
+	if err := Start(authKey); err != nil {
+		return fmt.Errorf("start tsnet: %w", err)
+	}
+
+	if err := StartProxy(localPort, localTLS); err != nil {
+		Stop()
+		return fmt.Errorf("start proxy: %w", err)
+	}
+
 	return nil
 }

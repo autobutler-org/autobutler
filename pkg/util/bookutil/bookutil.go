@@ -1,3 +1,4 @@
+// Package bookutil finds book files (PDF and EPUB) on disk.
 package bookutil
 
 import (
@@ -7,6 +8,12 @@ import (
 
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
+
+// RecursiveBookInfo stores a book with its relative path
+type RecursiveBookInfo struct {
+	FileInfo fs.FileInfo
+	RelPath  string
+}
 
 // FindAllBooksRecursively finds all book files (PDF and EPUB) in a directory and its subdirectories
 func FindAllBooksRecursively(rootDir string) ([]RecursiveBookInfo, error) {

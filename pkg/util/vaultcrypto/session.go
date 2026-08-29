@@ -1,24 +1,8 @@
 package vaultcrypto
 
 import (
-	"sync"
 	"time"
 )
-
-// VaultSession holds the derived encryption key in memory while the vault is unlocked.
-// The key is zeroed on lock or timeout.
-type VaultSession struct {
-	mu         sync.RWMutex
-	key        []byte
-	unlockedAt time.Time
-	timeout    time.Duration
-	lockReason string
-}
-
-// NewVaultSession creates a new locked vault session.
-func NewVaultSession() *VaultSession {
-	return &VaultSession{}
-}
 
 // Unlock stores the derived key and starts the auto-lock timer.
 func (s *VaultSession) Unlock(key []byte, timeout time.Duration) {

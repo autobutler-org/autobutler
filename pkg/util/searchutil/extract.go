@@ -1,16 +1,3 @@
-// Package searchutil provides text extraction and full-text search over
-// indexed file contents using SQLite FTS5.
-//
-// Supported for text extraction (in order of fidelity):
-//   - Quark documents (.qdoc) and spreadsheets (.qsheet): the prose is
-//     pulled out of the JSON envelope so the index holds readable text rather
-//     than markup (see extractDelta and extractSheet)
-//   - Plaintext files (.txt, .md, .csv, .log, .yaml, .yml, .toml, .json, .xml,
-//     .html, .htm, .ini, .cfg, .conf, .sh, .py, .go, .js, .ts, .css, .sql)
-//   - All other files: content is not indexed (empty string returned)
-//
-// EPUB and PDF extraction is not yet implemented — tracked in #1339. Adding
-// them only requires extending ExtractText without any schema changes.
 package searchutil
 
 import (
@@ -22,11 +9,6 @@ import (
 	"strings"
 	"unicode/utf8"
 )
-
-// MaxExtractBytes is the maximum number of bytes read from a file for indexing.
-// Files larger than this are truncated at a UTF-8 boundary to avoid storing
-// enormous documents in the search index.
-const MaxExtractBytes = 512 * 1024 // 512 KB
 
 // extractableExtensions is the set of file extensions whose contents are safe
 // to read as UTF-8 text for indexing. Binary formats (images, video, audio,
@@ -60,13 +42,6 @@ var extractableExtensions = map[string]bool{
 	".sql":  true,
 	".rst":  true,
 	".tex":  true,
-}
-
-// IsIndexable reports whether the file at path is eligible for content
-// extraction based on its extension. It does not read the file.
-func IsIndexable(path string) bool {
-	ext := strings.ToLower(filepath.Ext(path))
-	return extractableExtensions[ext]
 }
 
 // ExtractText reads the file at path and returns its contents as a UTF-8

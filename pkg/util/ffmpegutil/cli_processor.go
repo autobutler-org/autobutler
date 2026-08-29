@@ -11,31 +11,6 @@ import (
 	"time"
 )
 
-type CLIProcessor struct {
-	ffmpegPath  string
-	ffprobePath string
-}
-
-func NewCLIProcessor() *CLIProcessor {
-	return &CLIProcessor{
-		ffmpegPath:  "ffmpeg",
-		ffprobePath: "ffprobe",
-	}
-}
-
-func NewCLIProcessorAt(ffmpegPath, ffprobePath string) *CLIProcessor {
-	return &CLIProcessor{
-		ffmpegPath:  ffmpegPath,
-		ffprobePath: ffprobePath,
-	}
-}
-
-type ProcessorError struct {
-	Args   []string
-	Stderr string
-	Err    error
-}
-
 func (e *ProcessorError) Error() string {
 	return fmt.Sprintf("ffmpeg %s failed: %v\nstderr: %s", strings.Join(e.Args, " "), e.Err, e.Stderr)
 }

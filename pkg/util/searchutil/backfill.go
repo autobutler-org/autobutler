@@ -10,17 +10,6 @@ import (
 	"strings"
 )
 
-// BackfillResult reports what a BackfillTree pass did.
-type BackfillResult struct {
-	// Scanned is the number of files visited, indexable or not.
-	Scanned int
-	// Indexed is the number of files whose contents were written to the index.
-	Indexed int
-	// Failed is the number of files that could not be indexed. Individual
-	// errors do not abort the walk.
-	Failed int
-}
-
 // BackfillTree walks filesDir and indexes the contents of every indexable
 // file beneath it, attributing them to serial.
 //
