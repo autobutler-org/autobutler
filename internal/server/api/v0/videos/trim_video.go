@@ -62,15 +62,8 @@ func trimVideo(c *gin.Context) *serverutil.Response {
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
-	if req.Serial != "" {
-		if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
-			for _, d := range devices {
-				if d.UsbInfo != nil && d.UsbInfo.GetSerial() == req.Serial {
-					filesDir = d.FilesDir
-					break
-				}
-			}
-		}
+	if deviceDir, ok := deps.StorageService().FindDeviceFilesDirBySerial(req.Serial); ok {
+		filesDir = deviceDir
 	}
 
 	cleanFilesDir := filepath.Clean(filesDir)

@@ -312,6 +312,43 @@ func TestStorageService_FindManagedDeviceBySerial(t *testing.T) {
 	}
 }
 
+func TestStorageService_FindDeviceFilesDirBySerial(t *testing.T) {
+	tempDir := t.TempDir()
+	filesDir := ConstructFilesDir(tempDir)
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		t.Fatalf("failed to create files dir: %v", err)
+	}
+
+	const serial = "ABC123"
+	mock := &mockDetector{
+		devices: []Device{
+			{Name: "internal", MountPoint: tempDir, IsInternal: true},
+			{Name: "usb-disk", MountPoint: tempDir, UsbInfo: &mockUsbDevice{serial: serial, mountPoint: tempDir}},
+		},
+	}
+	svc := NewStorageService(mock)
+
+	want, err := GetFilesDirForDevice(tempDir)
+	if err != nil {
+		t.Fatalf("GetFilesDirForDevice() error = %v", err)
+	}
+	dir, ok := svc.FindDeviceFilesDirBySerial(serial)
+	if !ok {
+		t.Fatal("expected to find device files dir")
+	}
+	if dir != want {
+		t.Errorf("expected %q, got %q", want, dir)
+	}
+
+	// An empty serial must not match the internal device: callers keep their default.
+	if _, ok := svc.FindDeviceFilesDirBySerial(""); ok {
+		t.Error("expected no match for an empty serial")
+	}
+	if _, ok := svc.FindDeviceFilesDirBySerial("NOPE"); ok {
+		t.Error("expected no match for an unknown serial")
+	}
+}
+
 func TestStorageService_FindManagedDeviceBySerial_EmptySerial(t *testing.T) {
 	tempDir := t.TempDir()
 	filesDir := ConstructFilesDir(tempDir)
