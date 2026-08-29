@@ -17,8 +17,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var snapshotStore = backup.NewInMemoryBackupJobStore()
-
 // startSnapshotBackup godoc
 // @Summary Start a snapshot backup to a device
 // @Description Aggregates all files from all managed devices onto the target snapshot-backup device
@@ -55,7 +53,7 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 	}
 
 	// Check no backup is already running for this target.
-	jobs, _ := snapshotStore.List(ctx)
+	jobs, _ := deps.BackupJobStore().List(ctx)
 	for _, j := range jobs {
 		if j.TargetDeviceSerial == req.TargetDeviceSerial &&
 			(j.Status == backup.BackupStatusPending ||
@@ -125,7 +123,7 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 		Status:             backup.BackupStatusPending,
 		TargetDeviceSerial: req.TargetDeviceSerial,
 	}
-	if err := snapshotStore.Create(ctx, job); err != nil {
+	if err := deps.BackupJobStore().Create(ctx, job); err != nil {
 		return serverutil.InternalServerError(fmt.Errorf("failed to create job: %w", err))
 	}
 
@@ -136,7 +134,7 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 		if err := backup.SnapshotBackup(context.Background(), backup.SnapshotBackupParams{
 			TargetDeviceSerial: req.TargetDeviceSerial,
 			Job:                job,
-			Store:              snapshotStore,
+			Store:              deps.BackupJobStore(),
 			EventBus:           deps.EventBus(),
 			Vault:              vaultParams,
 			IOSemaphore:        deps.IOSemaphore(),

@@ -2,8 +2,6 @@ package v0_events
 
 import (
 	"net/http"
-	"strconv"
-	"sync/atomic"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
@@ -11,11 +9,8 @@ import (
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
-
-// nextID is a monotonically increasing counter used to assign unique subscriber
-// IDs to each WebSocket connection, avoiding collisions from concurrent connects.
-var nextID atomic.Uint64
 
 // streamEvents godoc
 // @Summary Stream real-time file/device events
@@ -46,8 +41,9 @@ func streamEvents(c *gin.Context) {
 	// Best-effort: the handler is unwinding, so a failed close has nowhere to go.
 	defer func() { _ = conn.CloseNow() }()
 
-	id := strconv.FormatUint(nextID.Add(1), 10)
-	ch, unsub := deps.EventBus().Subscribe(id)
+	// The subscriber ID only has to be unique within the bus, so mint it per
+	// connection rather than from a package-global counter (#1674).
+	ch, unsub := deps.EventBus().Subscribe(uuid.NewString())
 	defer unsub()
 
 	ctx := conn.CloseRead(c.Request.Context())

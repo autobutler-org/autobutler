@@ -7,8 +7,10 @@ import (
 	"fmt"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/backup"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/iosemutil"
+	"github.com/autobutler-org/quark/pkg/util/ratelimitutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
@@ -17,6 +19,8 @@ import (
 )
 
 type Dependencies interface {
+	AuthRateLimiter() *ratelimitutil.Limiter
+	BackupJobStore() backup.BackupJobStore
 	Database() *db.DatabaseSqlc
 	EventBus() *eventbus.Bus
 	FileIndex() *storageutil.FileIndex
@@ -25,6 +29,7 @@ type Dependencies interface {
 	StorageService() *storageutil.StorageService
 	UploadSessions() *uploadutil.SessionStore
 	VaultDB() *db.DatabaseSqlc
+	VaultRateLimiter() *ratelimitutil.Limiter
 	VaultSession() *vaultcrypto.VaultSession
 	Worker() workerutil.Worker
 	WithDatabase(database *db.DatabaseSqlc) Dependencies
@@ -50,8 +55,23 @@ func NewDependencies() Dependencies {
 	// included — has a non-nil store. It allocates a map and nothing else:
 	// no goroutine, no directory. StartSweeper, called once from server
 	// startup, is what gives it a heartbeat (#1629).
+	//
+	// The backup job store and the two rate limiters are built here for the
+	// same reason: they used to be package-level globals in the handler and
+	// middleware packages, so every graph — tests included — needs a non-nil
+	// one, and the server's single graph keeps them alive process-wide (#1674).
 	return &dependencies{
+		backupJobStore: backup.NewInMemoryBackupJobStore(),
 		uploadSessions: uploadutil.NewSessionStore(uploadutil.NewSessionStoreParams{}),
+		// authRateLimiter protects auth endpoints (login, setup, recover) from
+		// brute-force attacks. Shared across all requests — 5 req/s per IP, burst 10.
+		authRateLimiter: ratelimitutil.New(),
+		// vaultRateLimiter protects /vault/unlock from master-password brute-force.
+		// Tighter than the general auth limiter: 1 req/2s per IP, burst 5.
+		// After exhausting the burst, the steady-state cap is 0.5 req/s (one every 2s).
+		// Combined with Argon2id (~300 ms/attempt), sustained guessing is limited to
+		// ≈ 30 attempts/minute per IP — well below what any offline attack would need.
+		vaultRateLimiter: ratelimitutil.NewWithRate(0.5, 5),
 	}
 }
 
