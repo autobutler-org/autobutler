@@ -132,6 +132,26 @@ func (s *StorageService) FindManagedDeviceBySerial(serial string) (*ManagedDevic
 	return nil, nil
 }
 
+// FindDeviceFilesDirBySerial returns the files directory of the managed device
+// with the given USB serial. It reports false when the serial is empty, no
+// device matches, or the devices cannot be listed, so callers keep whatever
+// default files directory they already resolved.
+func (s *StorageService) FindDeviceFilesDirBySerial(serial string) (string, bool) {
+	if serial == "" {
+		return "", false
+	}
+	devices, err := s.GetManagedDevices()
+	if err != nil {
+		return "", false // coverage: ignore - requires device detection failure
+	}
+	for _, d := range devices {
+		if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
+			return d.FilesDir, true
+		}
+	}
+	return "", false
+}
+
 // GetDeviceStatuses returns all detected devices with their enable status.
 // Results are cached for up to 10 seconds to avoid repeated disk probes when
 // the endpoint is hit in rapid succession (#1022).

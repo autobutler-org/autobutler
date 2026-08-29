@@ -127,15 +127,8 @@ func getMetadata(c *gin.Context) *serverutil.Response {
 		if err != nil {
 			return serverutil.InternalServerError(err)
 		}
-		if serial != "" {
-			if devices, err := deps.StorageService().GetManagedDevices(); err == nil {
-				for _, d := range devices {
-					if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-						filesDir = d.FilesDir
-						break
-					}
-				}
-			}
+		if deviceDir, ok := deps.StorageService().FindDeviceFilesDirBySerial(serial); ok {
+			filesDir = deviceDir
 		}
 		cleanFilesDir := filepath.Clean(filesDir)
 		fullPath := filepath.Join(cleanFilesDir, relPath)
@@ -207,15 +200,8 @@ rotations:
 	liveVideoPath := ""
 	if filesDir, err := storageutil.GetFilesDir(); err == nil {
 		searchDir := filesDir
-		if serial != "" {
-			if devices, dErr := deps.StorageService().GetManagedDevices(); dErr == nil {
-				for _, d := range devices {
-					if d.UsbInfo != nil && d.UsbInfo.GetSerial() == serial {
-						searchDir = d.FilesDir
-						break
-					}
-				}
-			}
+		if deviceDir, ok := deps.StorageService().FindDeviceFilesDirBySerial(serial); ok {
+			searchDir = deviceDir
 		}
 		fullPath := filepath.Join(filepath.Clean(searchDir), relPath)
 		liveVideoPath = findLivePhotoVideo(fullPath, relPath)
