@@ -1,4 +1,4 @@
-package v0_storage
+package deviceutil
 
 import (
 	"context"
@@ -259,11 +259,11 @@ func TestEmptySerial_InternalDevice(t *testing.T) {
 }
 
 func TestValidRoles(t *testing.T) {
-	if !validRoles["default-storage"] || !validRoles["snapshot-backup"] || !validRoles["unassigned"] {
-		t.Error("validRoles map missing expected entries")
+	if !ValidRoles["default-storage"] || !ValidRoles["snapshot-backup"] || !ValidRoles["unassigned"] {
+		t.Error("ValidRoles map missing expected entries")
 	}
-	if validRoles["admin"] || validRoles[""] {
-		t.Error("validRoles should reject invalid strings")
+	if ValidRoles["admin"] || ValidRoles[""] {
+		t.Error("ValidRoles should reject invalid strings")
 	}
 }
 

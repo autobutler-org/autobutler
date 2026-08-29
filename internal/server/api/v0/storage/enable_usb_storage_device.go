@@ -2,14 +2,11 @@ package v0_storage
 
 import (
 	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/deviceutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
-	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,59 +33,18 @@ func enableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
-	targetDevice, err := deps.StorageService().FindUsbDeviceBySerial(serial)
+	result, err := deviceutil.Enable(deviceutil.EnableParams{
+		Storage: deps.StorageService(),
+		Serial:  serial,
+	})
 	if err != nil {
-		return serverutil.NotFound(fmt.Errorf("USB device not found: %w", err))
-	}
-
-	if !targetDevice.IsStorageDevice() {
-		return serverutil.BadRequest(errors.New("specified USB device is not a storage device"))
-	}
-
-	if mountPath := targetDevice.GetMountPath(); mountPath != "" {
-		return serverutil.BadRequest(errors.New("USB storage device is already mounted"))
-	}
-
-	partitions, err := targetDevice.Partitions()
-	if err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to retrieve partitions: %w", err))
-	}
-	if len(partitions) == 0 {
-		return serverutil.InternalServerError(errors.New("no partitions found on USB storage device"))
-	}
-
-	partition := partitions[0]
-	mountPath, _ := partition.MountPath()
-	if mountPath != "" {
-		return serverutil.BadRequest(errors.New("partition is already mounted"))
-	}
-
-	mountTargetDir, err := storageutil.GetMountsDir()
-	if err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to get mounts directory: %w", err))
-	}
-	mountTargetPath := filepath.Join(mountTargetDir, targetDevice.GetSerial())
-	if err := os.MkdirAll(mountTargetPath, os.ModeDir|os.ModePerm); err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to create mount target directory: %w", err))
-	}
-	mountCommand := partition.MountCommand(mountTargetPath)
-	if err := mountCommand.Run(); err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to execute mount command: %w", err))
-	}
-
-	// Invalidate the device status cache so the next poll reflects the new
-	// mount state immediately rather than returning stale data for up to 10s.
-	deps.StorageService().InvalidateDeviceCache()
-
-	filesDir, err := storageutil.GetFilesDirForDevice(mountTargetPath)
-	if err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to initialize data directory on mounted device: %w", err))
+		return deviceError(err)
 	}
 
 	return serverutil.Ok().WithData(gin.H{
 		"message":    "USB storage device mounted successfully",
-		"mount_path": mountTargetPath,
-		"data_dir":   filesDir,
+		"mount_path": result.MountPath,
+		"data_dir":   result.FilesDir,
 	})
 }
 

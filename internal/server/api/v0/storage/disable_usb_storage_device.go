@@ -2,12 +2,11 @@ package v0_storage
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/deviceutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
-	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,27 +33,12 @@ func disableUsbStorageDevice(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
-	targetDevice, err := deps.StorageService().FindUsbDeviceBySerial(serial)
-	if err != nil {
-		return serverutil.NotFound(fmt.Errorf("USB device not found: %w", err))
+	if _, err := deviceutil.Disable(deviceutil.DisableParams{
+		Storage: deps.StorageService(),
+		Serial:  serial,
+	}); err != nil {
+		return deviceError(err)
 	}
-
-	if !targetDevice.IsStorageDevice() {
-		return serverutil.BadRequest(errors.New("specified USB device is not a storage device"))
-	}
-
-	mountPath := targetDevice.GetMountPath()
-	if mountPath == "" {
-		return serverutil.BadRequest(errors.New("USB storage device is not mounted"))
-	}
-
-	unmountCommand := storageutil.UnmountCommand(mountPath)
-	if err := unmountCommand.Run(); err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to execute unmount command: %w", err))
-	}
-
-	// Invalidate the device status cache so the UI reflects the unmount immediately.
-	deps.StorageService().InvalidateDeviceCache()
 
 	return serverutil.Ok().WithData(gin.H{
 		"message": "USB storage device unmounted successfully",

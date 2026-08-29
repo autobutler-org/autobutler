@@ -1,20 +1,14 @@
 package v0_storage
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/autobutler-org/quark/pkg/backup"
-	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
-	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 // startSnapshotBackup godoc
@@ -45,132 +39,38 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(fmt.Errorf("invalid request body: %w", err))
 	}
 
-	ctx := c.Request.Context()
-
-	role, err := deps.Database().Queries.GetDeviceRole(ctx, req.TargetDeviceSerial)
-	if err != nil || role != "snapshot-backup" {
-		return serverutil.BadRequest(fmt.Errorf("target device must have the snapshot-backup role"))
-	}
-
-	// Check no backup is already running for this target.
-	jobs, _ := deps.BackupJobStore().List(ctx)
-	for _, j := range jobs {
-		if j.TargetDeviceSerial == req.TargetDeviceSerial &&
-			(j.Status == backup.BackupStatusPending ||
-				j.Status == backup.BackupStatusScanning ||
-				j.Status == backup.BackupStatusCopying) {
-			return serverutil.NewResponse().WithStatusCode(409).WithError(
-				fmt.Errorf("backup already running for this device (job %s)", j.ID),
-			)
-		}
-	}
-
-	// Find the target managed device.
-	targetDev, err := deps.StorageService().FindManagedDeviceBySerial(req.TargetDeviceSerial)
-	if err != nil || targetDev == nil {
-		return serverutil.BadRequest(fmt.Errorf("target device not found or not managed"))
-	}
-
-	// Gather all source devices (everything that isn't the target).
-	sources, err := gatherSourceDevices(ctx, deps, req.TargetDeviceSerial)
-	if err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to gather sources: %w", err))
-	}
-
-	// If a recovery password is provided, validate credentials and prepare vault export.
-	var vaultParams *backup.VaultExportParams
-	if req.RecoveryPassword != "" {
-		if req.Username == "" || req.Password == "" {
-			return serverutil.BadRequest(fmt.Errorf("username and password required for vault backup"))
-		}
-		if len(req.RecoveryPassword) < 8 {
-			return serverutil.BadRequest(fmt.Errorf("recovery password must be at least 8 characters"))
-		}
-
-		if _, err := authutil.ValidateBasicAuth(ctx, deps.Database().Queries, req.Username, req.Password); err != nil {
-			return serverutil.Unauthorized(fmt.Errorf("invalid credentials"))
-		}
-
-		config, err := deps.Database().Queries.GetVaultConfig(ctx)
-		if errors.Is(err, sql.ErrNoRows) {
-			return serverutil.BadRequest(fmt.Errorf("vault is not initialized"))
-		}
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("get vault config: %w", err))
-		}
-
-		params := vaultcrypto.Argon2Params{
-			Memory:      uint32(config.Argon2Memory),
-			Iterations:  uint32(config.Argon2Iterations),
-			Parallelism: uint8(config.Argon2Parallelism),
-		}
-		liveKey := vaultcrypto.DeriveKey(req.Password, config.Salt, params)
-
-		if !vaultcrypto.CheckVerificationBlob(liveKey, config.VerificationBlob, config.VerificationNonce) {
-			vaultcrypto.ZeroKey(liveKey)
-			return serverutil.Unauthorized(fmt.Errorf("master password does not match vault"))
-		}
-
-		vaultParams = &backup.VaultExportParams{
-			Queries:          deps.Database().Queries,
-			LiveKey:          liveKey,
-			RecoveryPassword: req.RecoveryPassword,
-		}
-	}
-
-	job := &backup.BackupJob{
-		ID:                 uuid.New().String(),
-		Status:             backup.BackupStatusPending,
+	result, err := backup.StartSnapshotBackup(backup.StartSnapshotBackupParams{
+		Ctx:                c.Request.Context(),
+		Queries:            deps.Database().Queries,
+		Storage:            deps.StorageService(),
+		Store:              deps.BackupJobStore(),
+		EventBus:           deps.EventBus(),
+		IOSemaphore:        deps.IOSemaphore(),
 		TargetDeviceSerial: req.TargetDeviceSerial,
+		Username:           req.Username,
+		Password:           req.Password,
+		RecoveryPassword:   req.RecoveryPassword,
+	})
+	var inProgress *backup.BackupInProgressError
+	switch {
+	case errors.As(err, &inProgress):
+		return serverutil.Conflict(err)
+	case errors.Is(err, backup.ErrInvalidCredentials),
+		errors.Is(err, backup.ErrMasterPasswordMismatch):
+		return serverutil.Unauthorized(err)
+	case errors.Is(err, backup.ErrTargetRoleRequired),
+		errors.Is(err, backup.ErrTargetNotManaged),
+		errors.Is(err, backup.ErrVaultCredentialsRequired),
+		errors.Is(err, backup.ErrRecoveryPasswordTooShort),
+		errors.Is(err, backup.ErrVaultNotInitialized):
+		return serverutil.BadRequest(err)
+	case err != nil:
+		return serverutil.InternalServerError(err)
 	}
-	if err := deps.BackupJobStore().Create(ctx, job); err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to create job: %w", err))
-	}
-
-	go func() {
-		if vaultParams != nil {
-			defer vaultcrypto.ZeroKey(vaultParams.LiveKey)
-		}
-		if err := backup.SnapshotBackup(context.Background(), backup.SnapshotBackupParams{
-			TargetDeviceSerial: req.TargetDeviceSerial,
-			Job:                job,
-			Store:              deps.BackupJobStore(),
-			EventBus:           deps.EventBus(),
-			Vault:              vaultParams,
-			IOSemaphore:        deps.IOSemaphore(),
-		}, sources, targetDev); err != nil {
-			log.Printf("snapshot backup failed: %v", err)
-		}
-	}()
 
 	return serverutil.Accepted().WithData(gin.H{
-		"jobId": job.ID,
+		"jobId": result.JobID,
 	})
-}
-
-func gatherSourceDevices(ctx context.Context, deps deputil.Dependencies, targetSerial string) ([]backup.SourceDevice, error) {
-	managed, err := deps.StorageService().GetManagedDevices()
-	if err != nil {
-		return nil, err
-	}
-
-	var sources []backup.SourceDevice
-	for _, d := range managed {
-		serial := ""
-		name := d.Name
-		if d.UsbInfo != nil {
-			serial = d.UsbInfo.GetSerial()
-		}
-		if serial == targetSerial {
-			continue
-		}
-		sources = append(sources, backup.SourceDevice{
-			Name:     name,
-			Serial:   serial,
-			FilesDir: d.FilesDir,
-		})
-	}
-	return sources, nil
 }
 
 var startSnapshotBackupRoute = serverutil.ApiRoute(

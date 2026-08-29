@@ -1,22 +1,13 @@
 package v0_storage
 
 import (
-	"fmt"
-
-	"github.com/autobutler-org/quark/internal/db"
-	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/deviceutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
 )
-
-var validRoles = map[string]bool{
-	"default-storage": true,
-	"snapshot-backup": true,
-	"unassigned":      true,
-}
 
 // setDeviceRole godoc
 // @Summary Set the role of a storage device
@@ -46,66 +37,26 @@ func setDeviceRole(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
-	if !validRoles[req.Role] {
-		return serverutil.BadRequest(fmt.Errorf("role must be one of: default-storage, snapshot-backup, unassigned"))
-	}
+	sessionUser, sessionKnown := ctxutil.Get[string](c, "username")
 
-	ctx := c.Request.Context()
-
-	// Verify username matches the authenticated session.
-	if sessionUser, ok := ctxutil.Get[string](c, "username"); ok && sessionUser != req.Username {
-		return serverutil.Unauthorized(fmt.Errorf("username does not match session"))
-	}
-
-	// Re-validate master password.
-	if _, err := authutil.ValidateBasicAuth(ctx, deps.Database().Queries, req.Username, req.Password); err != nil {
-		return serverutil.Unauthorized(fmt.Errorf("invalid credentials"))
-	}
-
-	// For non-unassigned roles, verify the device is actually connected.
-	if req.Role != "unassigned" {
-		statuses, err := deps.StorageService().GetDeviceStatuses()
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to list devices: %w", err))
-		}
-		found := false
-		isInternal := false
-		for _, s := range statuses {
-			if req.Serial == "" && s.IsInternal {
-				found = true
-				isInternal = true
-				break
-			}
-			if s.UsbInfo != nil && s.UsbInfo.GetSerial() == req.Serial {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return serverutil.BadRequest(fmt.Errorf("device with serial %q not found", req.Serial))
-		}
-		if isInternal && req.Role == "snapshot-backup" {
-			return serverutil.BadRequest(fmt.Errorf("internal device cannot be assigned as snapshot-backup"))
-		}
-	}
-
-	// If assigning default-storage, clear any existing default-storage first.
-	if req.Role == "default-storage" {
-		if err := deps.Database().Queries.ClearDefaultStorageRole(ctx); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to clear existing default-storage: %w", err))
-		}
-	}
-
-	if err := deps.Database().Queries.UpsertDeviceRole(ctx, db.UpsertDeviceRoleParams{
-		DeviceSerial: req.Serial,
-		Role:         req.Role,
-	}); err != nil {
-		return serverutil.InternalServerError(fmt.Errorf("failed to set device role: %w", err))
+	result, err := deviceutil.SetRole(deviceutil.SetRoleParams{
+		Ctx:             c.Request.Context(),
+		Queries:         deps.Database().Queries,
+		Storage:         deps.StorageService(),
+		Serial:          req.Serial,
+		Role:            req.Role,
+		Username:        req.Username,
+		Password:        req.Password,
+		SessionUsername: sessionUser,
+		SessionKnown:    sessionKnown,
+	})
+	if err != nil {
+		return deviceError(err)
 	}
 
 	return serverutil.Ok().WithData(gin.H{
-		"serial": req.Serial,
-		"role":   req.Role,
+		"serial": result.Serial,
+		"role":   result.Role,
 	})
 }
 

@@ -3,6 +3,7 @@ package v0_storage
 import (
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/deviceutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
 	"github.com/gin-gonic/gin"
@@ -21,48 +22,19 @@ func listDeviceStatuses(c *gin.Context) *serverutil.Response {
 	if !ok {
 		return serverutil.InternalServerError(nil)
 	}
-	statuses, err := deps.StorageService().GetDeviceStatuses()
+
+	result, err := deviceutil.ListStatuses(deviceutil.ListStatusesParams{
+		Ctx:      c.Request.Context(),
+		Storage:  deps.StorageService(),
+		Database: deps.Database(),
+	})
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
 
-	// Overlay display names and roles from DB, keyed by device serial.
-	if database := deps.Database(); database != nil {
-		ctx := c.Request.Context()
-
-		nameMap := make(map[string]string)
-		if names, err := database.Queries.GetAllDeviceNames(ctx); err == nil {
-			for _, n := range names {
-				nameMap[n.DeviceSerial] = n.DisplayName
-			}
-		}
-
-		roleMap := make(map[string]string)
-		if roles, err := database.Queries.GetAllDeviceRoles(ctx); err == nil {
-			for _, r := range roles {
-				roleMap[r.DeviceSerial] = r.Role
-			}
-		}
-
-		for i := range statuses {
-			serial := ""
-			if statuses[i].UsbInfo != nil {
-				serial = statuses[i].UsbInfo.GetSerial()
-			}
-			if name, ok := nameMap[serial]; ok {
-				statuses[i].Name = name
-			}
-			if role, ok := roleMap[serial]; ok {
-				statuses[i].Role = role
-			} else {
-				statuses[i].Role = "unassigned"
-			}
-		}
-	}
-
 	return serverutil.Ok().WithData(gin.H{
-		"devices": statuses,
-		"count":   len(statuses),
+		"devices": result.Statuses,
+		"count":   len(result.Statuses),
 	})
 }
 
