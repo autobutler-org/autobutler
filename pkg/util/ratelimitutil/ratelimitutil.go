@@ -22,11 +22,6 @@ const (
 	ttl = 15 * time.Minute
 )
 
-type entry struct {
-	limiter  *rate.Limiter
-	lastSeen time.Time
-}
-
 // Limiter holds per-IP rate limiters.
 type Limiter struct {
 	mu      sync.Mutex

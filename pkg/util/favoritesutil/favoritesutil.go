@@ -5,16 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"strings"
 
 	"github.com/autobutler-org/quark/internal/db"
 )
-
-// isUniqueConstraintErr reports whether err is a SQLite unique-constraint
-// violation (modernc.org/sqlite surfaces these as error strings).
-func isUniqueConstraintErr(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed")
-}
 
 // EnsureFavoritesAlbum returns the system Favorites album, creating it if it
 // doesn't exist. Safe to call concurrently — if two goroutines race to create

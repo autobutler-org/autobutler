@@ -14,13 +14,6 @@ type Worker interface {
 	GetBackupToDeviceChannel() storageutil.BackupToDeviceChannel
 }
 
-type worker struct {
-	quitChannel           chan struct{}
-	errorChannel          chan error
-	backupToDeviceChannel storageutil.BackupToDeviceChannel
-	storageService        *storageutil.StorageService
-}
-
 func NewWorker(svc *storageutil.StorageService) Worker {
 	return &worker{
 		quitChannel:           make(chan struct{}),

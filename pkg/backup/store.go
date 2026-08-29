@@ -3,17 +3,7 @@ package backup
 import (
 	"context"
 	"fmt"
-	"sync"
 )
-
-type InMemoryBackupJobStore struct {
-	mu   sync.RWMutex
-	jobs map[string]*BackupJob
-}
-
-func NewInMemoryBackupJobStore() *InMemoryBackupJobStore {
-	return &InMemoryBackupJobStore{jobs: make(map[string]*BackupJob)}
-}
 
 func (s *InMemoryBackupJobStore) Create(_ context.Context, job *BackupJob) error {
 	s.mu.Lock()

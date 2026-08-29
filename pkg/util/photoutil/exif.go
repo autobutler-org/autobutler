@@ -6,29 +6,9 @@ import (
 	"math"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/bep/imagemeta"
 )
-
-// ExifData holds extracted EXIF fields in a format-agnostic way.
-// Works for JPEG, HEIC/HEIF, PNG, WebP, TIFF, and RAW formats.
-type ExifData struct {
-	Orientation  int
-	DateTaken    *time.Time
-	Make         string
-	Model        string
-	LensModel    string
-	Aperture     float64
-	ShutterSpeed [2]int64 // numerator, denominator
-	ISO          int
-	FocalLength  float64
-	Latitude     float64
-	Longitude    float64
-	HasGPS       bool
-	Width        int
-	Height       int
-}
 
 // ImageFormatFromPath returns the imagemeta.ImageFormat for a file path,
 // or 0 if the format is not supported.

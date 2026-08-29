@@ -1,3 +1,4 @@
+// Package versionutil reports and compares the build version of the binary.
 package versionutil
 
 import (
@@ -6,6 +7,13 @@ import (
 	"strconv"
 	"strings"
 )
+
+type Version struct {
+	GitCommit string
+	Semver    string
+	GoVersion string
+	BuildDate string
+}
 
 const NoCommit = "NOCOMMIT"
 const NoSemver = "NOSEMVER"
@@ -21,6 +29,15 @@ var Semver string = NoSemver
 // -buildvcs=false reports NOCOMMIT and has no way to say which build it is.
 // A value the linker put there survives all of that.
 var GitCommit string = NoCommit
+
+func NewVersion(gitCommit, goVersion, buildDate string) *Version {
+	return &Version{
+		GitCommit: gitCommit,
+		Semver:    Semver,
+		GoVersion: goVersion,
+		BuildDate: buildDate,
+	}
+}
 
 func GetVersion() *Version {
 	version := NewVersion(GitCommit, runtime.Version(), "")

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -18,71 +17,10 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
-const (
-	// DefaultSessionTTL is how long an idle session survives before the sweeper
-	// takes its bytes back. A multi-gigabyte upload over a bad link can take
-	// hours, and a browser tab that is closed and reopened the next morning
-	// should still be able to resume, so the window is generous — the cost of
-	// getting it wrong is a restarted upload, not lost data.
-	DefaultSessionTTL = 24 * time.Hour
-
-	// DefaultSweepInterval is how often StartSweeper looks for expired sessions.
-	DefaultSweepInterval = time.Hour
-
-	// stagingDirName is the directory, under the data dir's tmp area, where
-	// partial uploads accumulate. It is deliberately outside the files
-	// namespace: a partial upload must never be listable as a real file.
-	stagingDirName = "upload-sessions"
-)
-
-var (
-	// ErrSessionNotFound covers unknown, completed and expired sessions alike.
-	// The client's only recourse is a new session from byte zero, and telling
-	// the three apart would leak how long a stranger's upload has been running.
-	ErrSessionNotFound = errors.New("uploadutil: upload session not found")
-
-	// ErrInvalidRange marks a chunk the server cannot place: a malformed
-	// Content-Range, a total that contradicts the session, or a body whose
-	// length disagrees with the range it claims to carry.
-	ErrInvalidRange = errors.New("uploadutil: invalid content range")
-
-	// ErrInvalidRequest marks a session that cannot be opened as described.
-	ErrInvalidRequest = errors.New("uploadutil: invalid upload session request")
-
-	// ErrNoDestination means there is nowhere for the finished file to land, so
-	// there is no point collecting bytes for it.
-	ErrNoDestination = errors.New("uploadutil: no writable upload destination")
-)
-
-// OffsetMismatchError is the resync signal. The client asked to append at a
-// byte the server is not sitting on, which is what happens when a response was
-// lost in flight or a chunk failed halfway; the committed offset travels with
-// the error so the HTTP layer can hand it back in one round trip instead of
-// making the client ask.
-type OffsetMismatchError struct {
-	Start  int64
-	Offset int64
-}
-
-func (e *OffsetMismatchError) Error() string {
-	return fmt.Sprintf("chunk starts at %d but %d bytes are committed", e.Start, e.Offset)
-}
-
-// SessionStore holds the in-flight resumable uploads. Sessions live in memory
-// only: a restart drops them, the client sees a 404 on its next chunk and
-// starts the file over. Persisting them would mean reconciling the map with
-// the staged files on disk on every boot, for a case that costs one restarted
-// upload.
-type SessionStore struct {
-	// mu guards sessions. It is never held while a session's own lock is taken
-	// — Sweep and Close collect first and clean up after releasing it — so a
-	// long chunk write cannot block session lookups on unrelated uploads.
-	mu       sync.Mutex
-	sessions map[string]*session
-
-	stagingDir string
-	ttl        time.Duration
-}
+// stagingDirName is the directory, under the data dir's tmp area, where
+// partial uploads accumulate. It is deliberately outside the files
+// namespace: a partial upload must never be listable as a real file.
+const stagingDirName = "upload-sessions"
 
 // session is one file in flight. Everything above the mutex is fixed when the
 // session is created; everything below it moves as chunks arrive.
@@ -101,54 +39,6 @@ type session struct {
 	file   *os.File
 	offset int64
 	closed bool
-}
-
-// NewSessionStoreParams configures a store. Both fields have production
-// defaults so tests can pin a temp dir and a short TTL without the rest of the
-// codebase caring.
-type NewSessionStoreParams struct {
-	// StagingDir is where partial uploads are staged. Empty means the data
-	// dir's tmp area.
-	StagingDir string
-	// TTL overrides DefaultSessionTTL. Zero means the default.
-	TTL time.Duration
-}
-
-// NewSessionStore builds an empty store. It starts no goroutine and touches no
-// disk — every dependency graph in the process builds one of these, including
-// the ones in tests that never upload anything. Call StartSweeper once, from
-// server startup, to give it a heartbeat.
-func NewSessionStore(params NewSessionStoreParams) *SessionStore {
-	stagingDir := params.StagingDir
-	if stagingDir == "" {
-		stagingDir = filepath.Join(storageutil.GetDataDir(), "tmp", stagingDirName)
-	}
-	ttl := params.TTL
-	if ttl <= 0 {
-		ttl = DefaultSessionTTL
-	}
-	return &SessionStore{
-		sessions:   make(map[string]*session),
-		stagingDir: stagingDir,
-		ttl:        ttl,
-	}
-}
-
-// CreateSessionParams opens a session for one file.
-type CreateSessionParams struct {
-	Destination Destination
-	RootDir     string
-	FileName    string
-	TotalSize   int64
-	Serial      string
-	Overwrite   bool
-}
-
-// CreateSessionResult is what the client needs to start sending.
-type CreateSessionResult struct {
-	SessionID string
-	Offset    int64
-	ExpiresAt time.Time
 }
 
 // CreateSession validates the upload and stages an empty temp file for it.
@@ -215,25 +105,6 @@ func (s *SessionStore) CreateSession(params CreateSessionParams) (CreateSessionR
 	}, nil
 }
 
-// WriteChunkParams is one chunk PUT.
-type WriteChunkParams struct {
-	Ctx         context.Context
-	Destination Destination
-	SessionID   string
-	Range       ContentRange
-	// Body carries exactly Range.Length() bytes. Anything else is a 400.
-	Body io.Reader
-}
-
-// WriteChunkResult is the committed offset after the chunk, and — once the last
-// byte lands — where the finished file went.
-type WriteChunkResult struct {
-	SessionID string
-	Offset    int64
-	Complete  bool
-	Path      string
-}
-
 // WriteChunk appends one chunk and, when the file is whole, moves it into the
 // namespace. The server appends and never seeks: a chunk that does not start
 // exactly at the committed offset is refused with that offset attached, so the
@@ -282,22 +153,6 @@ func (s *SessionStore) WriteChunk(params WriteChunkParams) (WriteChunkResult, er
 	return s.commit(params.Ctx, sess, params.Destination)
 }
 
-// DescribeSessionParams asks what a session has committed.
-type DescribeSessionParams struct {
-	SessionID string
-}
-
-// DescribeSessionResult is everything a resuming client needs to pick up where
-// it left off.
-type DescribeSessionResult struct {
-	SessionID string
-	Offset    int64
-	TotalSize int64
-	FileName  string
-	RootDir   string
-	ExpiresAt time.Time
-}
-
 // DescribeSession is the resync path: after a dropped connection the client
 // asks what landed instead of guessing.
 func (s *SessionStore) DescribeSession(params DescribeSessionParams) (DescribeSessionResult, error) {
@@ -320,14 +175,6 @@ func (s *SessionStore) DescribeSession(params DescribeSessionParams) (DescribeSe
 	}, nil
 }
 
-// DeleteSessionParams abandons a session.
-type DeleteSessionParams struct {
-	SessionID string
-}
-
-// DeleteSessionResult is empty; the call either found the session or did not.
-type DeleteSessionResult struct{}
-
 // DeleteSession drops a session and its staged bytes. Clients fire this when
 // the user cancels, so the disk comes back immediately instead of at the TTL.
 func (s *SessionStore) DeleteSession(params DeleteSessionParams) (DeleteSessionResult, error) {
@@ -341,11 +188,6 @@ func (s *SessionStore) DeleteSession(params DeleteSessionParams) (DeleteSessionR
 	}
 	sess.discard()
 	return DeleteSessionResult{}, nil
-}
-
-// SweepResult reports what a sweep reclaimed.
-type SweepResult struct {
-	Expired int
 }
 
 // Sweep expires every session past its deadline and deletes the bytes it

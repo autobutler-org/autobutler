@@ -18,25 +18,6 @@ import (
 // the VFS conformance suite added with #1605.
 var errListBudgetSpent = errors.New("vfs: list result budget spent")
 
-// LocalVFS is a VFS backed by a directory on the host filesystem.
-type LocalVFS struct {
-	root        string
-	namespaceID string
-}
-
-// NewLocalVFS creates a LocalVFS rooted at the given directory.
-// The root directory is created if it does not exist.
-func NewLocalVFS(root string, namespaceID string) (*LocalVFS, error) {
-	abs, err := filepath.Abs(root)
-	if err != nil {
-		return nil, err
-	}
-	if err := os.MkdirAll(abs, 0o755); err != nil {
-		return nil, err
-	}
-	return &LocalVFS{root: abs, namespaceID: namespaceID}, nil
-}
-
 // abs converts a VFS-relative path to an absolute host path, guarding against
 // path traversal attacks. Returns ErrPermissionDenied if the result would
 // escape the root.

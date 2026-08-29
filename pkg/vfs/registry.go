@@ -2,21 +2,6 @@ package vfs
 
 import "sync"
 
-type Registry interface {
-	Register(ns Namespace, impl VFS) error
-	Get(namespaceID string) (VFS, bool)
-	List(callerNamespace string) []Namespace
-	Unregister(namespaceID string)
-}
-
-// NewRegistry returns the default in-process registry.
-func NewRegistry() Registry {
-	return &memRegistry{
-		namespaces: make(map[string]Namespace),
-		impls:      make(map[string]VFS),
-	}
-}
-
 type memRegistry struct {
 	mu         sync.RWMutex
 	namespaces map[string]Namespace

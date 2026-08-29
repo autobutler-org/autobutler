@@ -11,19 +11,6 @@ import (
 	"time"
 )
 
-// DBVFS implements VFS backed by the vfs_db_entries SQLite table.
-// Used for namespaces whose data is virtual (no physical disk backing),
-// such as the photos namespace (albums, playlists).
-type DBVFS struct {
-	db          *sql.DB
-	namespaceID string
-}
-
-// NewDBVFS returns a DBVFS for the given namespace backed by db.
-func NewDBVFS(db *sql.DB, namespaceID string) *DBVFS {
-	return &DBVFS{db: db, namespaceID: namespaceID}
-}
-
 // List returns direct children of dir (or all descendants if filter.Recursive is true).
 func (v *DBVFS) List(ctx context.Context, dir string, filter *ListFilter) ([]FileInfo, error) {
 	dir = dbCleanPath(dir)

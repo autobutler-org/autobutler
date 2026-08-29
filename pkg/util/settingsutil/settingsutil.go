@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 const settingsFileName = "settings.json"
@@ -32,14 +30,6 @@ var (
 	cached       *Settings
 	pathOverride string // set by ResetForTesting only
 )
-
-func settingsPath() string {
-	if pathOverride != "" {
-		return pathOverride
-	}
-	dataDir := storageutil.GetDataDir()
-	return filepath.Join(dataDir, settingsFileName)
-}
 
 // Load reads settings from disk (or returns defaults if not present).
 // The result is cached for the lifetime of the process.

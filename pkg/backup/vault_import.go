@@ -13,13 +13,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-type VaultImportResult struct {
-	EntriesImported int `json:"entriesImported"`
-	EntriesSkipped  int `json:"entriesSkipped"`
-	FoldersImported int `json:"foldersImported"`
-	FoldersSkipped  int `json:"foldersSkipped"`
-}
-
 func ImportVault(ctx context.Context, liveTx *db.Queries, liveKey []byte, recoveryPassword string, backupDir string) (*VaultImportResult, error) {
 	dbPath := filepath.Join(backupDir, backupVaultFilename)
 	if _, err := os.Stat(dbPath); err != nil {
