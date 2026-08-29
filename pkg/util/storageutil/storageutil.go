@@ -261,9 +261,8 @@ func SizeBytesToString(size_bytes int64) string {
 		return fmt.Sprintf("%.1f MB", float64(size_bytes)/(1024*1024))
 	} else if size_bytes < 1024*1024*1024*1024 {
 		return fmt.Sprintf("%.1f GB", float64(size_bytes)/(1024*1024*1024))
-	} else {
-		return fmt.Sprintf("%.1f TB", float64(size_bytes)/(1024*1024*1024*1024))
 	}
+	return fmt.Sprintf("%.1f TB", float64(size_bytes)/(1024*1024*1024*1024))
 }
 
 func GetFolderSize(dir string) (int64, error) {
@@ -489,7 +488,9 @@ func GetDeviceInfoForPath(path string) (deviceName string, devicePath string) {
 
 func GetAvailableSpaceInBytes(fileDir string) uint64 {
 	var stat unix.Statfs_t
-	unix.Statfs(fileDir, &stat)
+	if err := unix.Statfs(fileDir, &stat); err != nil {
+		return 0
+	}
 	return stat.Bavail * uint64(stat.Bsize)
 }
 

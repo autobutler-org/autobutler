@@ -9,7 +9,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
-	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/gin-gonic/gin"
 )
 
@@ -85,11 +84,6 @@ type customField struct {
 	Name   string `json:"name"`
 	Value  string `json:"value"`
 	Hidden bool   `json:"hidden"`
-}
-
-// vaultKey returns the encryption key from the vault session, or nil if locked.
-func vaultKey(session *vaultcrypto.VaultSession) ([]byte, bool) {
-	return session.Key()
 }
 
 type entryListItem struct {

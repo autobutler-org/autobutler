@@ -156,7 +156,7 @@ func TestListFilesImpl_NoDevices(t *testing.T) {
 	if err != nil {
 		t.Fatalf("listFilesImpl failed: %v", err)
 	}
-	if result != nil && len(result) != 0 {
+	if len(result) != 0 {
 		t.Errorf("Expected empty result for no devices, got %d", len(result))
 	}
 }

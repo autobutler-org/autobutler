@@ -119,8 +119,9 @@ func VerifyBackup(rootDir string, full bool) (*VerifyResult, error) {
 		}
 	}
 
-	// Find files on disk not in manifest.
-	filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, _ error) error {
+	// Find files on disk not in manifest. The callback swallows per-entry
+	// errors and always returns nil, so the walk itself cannot fail.
+	_ = filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, _ error) error {
 		if d == nil || d.IsDir() {
 			return nil
 		}

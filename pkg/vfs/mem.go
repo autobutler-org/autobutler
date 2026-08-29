@@ -25,10 +25,6 @@ func cleanPath(path string) string {
 	return p
 }
 
-func (m *MemVFS) mimeForPath(path string) string {
-	return mime.TypeByExtension(filepath.Ext(path))
-}
-
 func hashBytes(data []byte) string {
 	h := sha256.Sum256(data)
 	return hex.EncodeToString(h[:])

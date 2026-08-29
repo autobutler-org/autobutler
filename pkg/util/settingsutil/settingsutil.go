@@ -40,8 +40,8 @@ func Load() (*Settings, error) {
 	defer mu.Unlock()
 
 	if cached != nil {
-		copy := *cached
-		return &copy, nil
+		snapshot := *cached
+		return &snapshot, nil
 	}
 
 	path := settingsPath()
@@ -49,8 +49,8 @@ func Load() (*Settings, error) {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		cached = &Settings{}
-		copy := *cached
-		return &copy, nil
+		snapshot := *cached
+		return &snapshot, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read settings file: %w", err)
@@ -62,8 +62,8 @@ func Load() (*Settings, error) {
 	}
 
 	cached = s
-	copy := *cached
-	return &copy, nil
+	snapshot := *cached
+	return &snapshot, nil
 }
 
 // Save writes settings to disk and updates the in-process cache.

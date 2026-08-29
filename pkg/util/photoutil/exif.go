@@ -154,7 +154,8 @@ func GetOrientation(r io.ReadSeeker, format imagemeta.ImageFormat) int {
 	}
 
 	orientation := 1
-	imagemeta.Decode(imagemeta.Options{
+	// Best-effort: a decode failure just leaves the default orientation of 1.
+	_, _ = imagemeta.Decode(imagemeta.Options{
 		R:           r,
 		ImageFormat: format,
 		Sources:     imagemeta.EXIF,

@@ -25,7 +25,8 @@ func SnapshotBackup(
 
 	job.Status = BackupStatusScanning
 	job.UpdatedAt = now
-	params.Store.Update(ctx, job)
+	// Best-effort progress persistence; a failed write must not abort the backup.
+	_ = params.Store.Update(ctx, job)
 
 	if params.EventBus != nil {
 		params.EventBus.Publish(eventbus.Event{
@@ -52,12 +53,12 @@ func SnapshotBackup(
 		job.SourceDevices[i] = sdp
 	}
 	job.UpdatedAt = time.Now()
-	params.Store.Update(ctx, job)
+	_ = params.Store.Update(ctx, job)
 
 	// Phase 2: copy files from each source to the target.
 	job.Status = BackupStatusCopying
 	job.UpdatedAt = time.Now()
-	params.Store.Update(ctx, job)
+	_ = params.Store.Update(ctx, job)
 
 	tmpDir := filepath.Join(target.DataDir, "tmp")
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
@@ -122,7 +123,7 @@ func SnapshotBackup(
 				job.Progress = float64(job.FilesCopied+job.FilesSkipped) / float64(job.TotalFiles)
 			}
 			job.UpdatedAt = time.Now()
-			params.Store.Update(ctx, job)
+			_ = params.Store.Update(ctx, job)
 
 			// Throttle WebSocket events to ~2/sec.
 			if params.EventBus != nil && time.Since(lastPublish) > 500*time.Millisecond {
@@ -171,7 +172,7 @@ func SnapshotBackup(
 	job.Progress = 1.0
 	job.CompletedAt = &completedAt
 	job.UpdatedAt = completedAt
-	params.Store.Update(ctx, job)
+	_ = params.Store.Update(ctx, job)
 
 	if params.EventBus != nil {
 		params.EventBus.Publish(eventbus.Event{
@@ -196,7 +197,8 @@ func failJob(ctx context.Context, params SnapshotBackupParams, err error) error 
 	params.Job.ErrorMsg = err.Error()
 	params.Job.CompletedAt = &now
 	params.Job.UpdatedAt = now
-	params.Store.Update(ctx, params.Job)
+	// Best-effort: the returned error is already being reported to the caller.
+	_ = params.Store.Update(ctx, params.Job)
 
 	if params.EventBus != nil {
 		params.EventBus.Publish(eventbus.Event{

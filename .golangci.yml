@@ -1,0 +1,70 @@
+version: "2"
+
+# Report every violation. The defaults (50 per linter, 3 per message) hide the
+# rest, so a run can look nearly clean while hundreds of issues sit behind the cap.
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+# A ratchet, not a wall. This is golangci-lint's standard set -- errcheck, govet,
+# ineffassign, staticcheck, unused -- plus revive. Every rule turned on here is at
+# zero violations on this tree; a rule that would need a repo-wide sweep is left
+# off with the sweep named, so the next PR can turn it on and pay for it there
+# rather than burying the sweep in a config change.
+linters:
+  default: standard
+  enable:
+    - revive
+
+  settings:
+    revive:
+      # revive's own default is the legacy golint set. Listed explicitly so that
+      # what is off is visible, and so a revive upgrade cannot silently add a rule
+      # that breaks CI. Deliberately off for now:
+      #   exported, package-comments -- 253 missing doc comments, mostly in
+      #     pkg/util/serverutil and pkg/util/storageutil. Worth writing, but as
+      #     documentation PRs per package, not as a wall of one-line stubs.
+      #   var-naming -- serverutil.NewHttpError, ApiRoute and friends should be
+      #     NewHTTPError/APIRoute, but that rename touches 98 files.
+      #   unused-parameter -- 77 hits, nearly all an unused *testing.T.
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unreachable-code
+        - name: var-declaration
+
+  exclusions:
+    # Generated files carry a "Code generated ... DO NOT EDIT." header: sqlc output
+    # under internal/db and swag output under docs/swagger both do. A lint there is
+    # a bug in the generator's template, not something to fix in the file.
+    generated: lax
+    paths:
+      - build
+      - docs/swagger
+
+    rules:
+      # Best-effort teardown. A failed Close on a file we are done reading, a
+      # rolled-back transaction, or a temp file that could not be removed has no
+      # recovery beyond what the caller already returns.
+      - linters: [errcheck]
+        text: 'Error return value of `[^`]*\.(Close|Rollback)` is not checked'
+      - linters: [errcheck]
+        text: 'Error return value of `os\.Remove(All)?` is not checked'
+      # A test that ignores a setup error fails on the assertion a few lines later,
+      # with a better message than errcheck would have given.
+      - linters: [errcheck]
+        path: _test\.go

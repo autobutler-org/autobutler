@@ -47,7 +47,9 @@ func (d *Device) ApplySimpleCategorization() {
 	backupBytes := uint64(0)
 	otherBytes := uint64(0)
 
-	filepath.Walk(filesDir, func(path string, info os.FileInfo, err error) error {
+	// The callback skips per-entry errors and always returns nil, so the walk
+	// itself cannot fail; a partial tally is better than none.
+	_ = filepath.Walk(filesDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // skip errors
 		}

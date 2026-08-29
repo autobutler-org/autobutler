@@ -23,12 +23,16 @@ jobs:
         uses: ./.github/actions/setup-sqlc
       - name: Setup swag
         uses: ./.github/actions/setup-swag
+      - name: Setup golangci-lint
+        uses: ./.github/actions/setup-golangci-lint
       - name: Generate code
         run: |
           make generate/backend
       - name: Check formatting
         run: |
           make check/format/go
+      # Runs golangci-lint (govet, errcheck, ineffassign, staticcheck, unused, revive)
+      # and scripts/check-go-structure.bash, which check/lint/go depends on.
       - name: Lint go
         run: |
           make check/lint/go

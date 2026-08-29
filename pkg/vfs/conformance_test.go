@@ -224,16 +224,16 @@ func TestVFSConformance_NonRecursiveStaysAtOneLevel(t *testing.T) {
 func TestVFSConformance_MaxResultsBoundsRecursiveWalk(t *testing.T) {
 	for _, target := range conformanceTargets(t) {
 		t.Run(target.name, func(t *testing.T) {
-			const max = 2
+			const maxResults = 2
 			entries, err := target.fs.List(context.Background(), target.root, &vfs.ListFilter{
 				Recursive:  true,
-				MaxResults: max,
+				MaxResults: maxResults,
 			})
 			if err != nil {
 				t.Fatalf("List: %v", err)
 			}
-			if len(entries) > max {
-				t.Errorf("MaxResults=%d returned %d entries: %v", max, len(entries), entries)
+			if len(entries) > maxResults {
+				t.Errorf("MaxResults=%d returned %d entries: %v", maxResults, len(entries), entries)
 			}
 			if len(entries) == 0 {
 				t.Error("MaxResults should cap the result, not empty it")

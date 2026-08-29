@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strconv"
 
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
@@ -67,28 +66,6 @@ func createAlbum(c *gin.Context) *serverutil.Response {
 		UpdatedAt: sqlutil.FormatTime(album.UpdatedAt),
 		ItemCount: 0,
 	})
-}
-
-// createChildAlbum godoc
-// @Summary Create a child album under a parent
-// @Description Shorthand for creating an album with a specific parent ID.
-// @Tags albums
-// @Accept json
-// @Produce json
-// @Param id path int true "Parent album ID"
-// @Param body body createAlbumRequest true "Album name"
-// @Success 201 {object} AlbumJSON
-// @Failure 400 {object} serverutil.Response "Bad Request"
-// @Failure 404 {object} serverutil.Response "Not Found"
-// @Failure 500 {object} serverutil.Response "Internal Server Error"
-// @Router /albums/{id}/children [post]
-func createChildAlbum(c *gin.Context) *serverutil.Response {
-	parentID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		return serverutil.BadRequest(errors.New("invalid album id"))
-	}
-	c.Set("_override_parent_id", parentID)
-	return createAlbum(c)
 }
 
 var createAlbumRoute = serverutil.ApiRoute(

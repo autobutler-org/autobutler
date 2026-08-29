@@ -11,11 +11,6 @@ import (
 // Unit tests //
 ////////////////
 
-// mock types for channels
-type dummyDeleteFilesParams struct{}
-type dummyMoveFileParams struct{}
-type dummyCreateFolderParams struct{}
-
 func TestNewWorker_ChannelAccessors(t *testing.T) {
 	w := NewWorker(storageutil.NewStorageService(storageutil.NewDetector()))
 	if w.GetQuitChannel() == nil {
@@ -71,27 +66,6 @@ func (logErrorMock) Error() string { return "mock error" }
 ///////////////////////
 // Integration tests //
 ///////////////////////
-
-func startWorkerAndQuitOnDone(t *testing.T, fn func(w Worker)) {
-	w := NewWorker(storageutil.NewStorageService(storageutil.NewDetector()))
-	quit := w.GetQuitChannel()
-	done := make(chan struct{})
-	go func() {
-		err := w.Process()
-		if err != nil {
-			t.Errorf("Process returned error: %v", err)
-		}
-		close(done)
-	}()
-	fn(w)
-	quit <- struct{}{}
-	select {
-	case <-done:
-		// success
-	case <-time.After(200 * time.Millisecond):
-		t.Error("Worker did not exit after quit signal")
-	}
-}
 
 // TestWorker_GetBackupToDeviceChannel verifies the channel is non-nil and
 

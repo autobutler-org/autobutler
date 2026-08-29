@@ -71,6 +71,29 @@ its URL without grepping.
   single handler stays in that handler's file.
 - Neither `types.go` nor `helpers.go` may hold a route.
 
+### Go linting
+
+`make check/lint/go` is the whole Go check, and CI runs the same target — nothing is advisory.
+
+- **golangci-lint** against `.golangci.yml`: `govet`, `errcheck`, `ineffassign`, `staticcheck` and `unused`,
+  plus `revive`. Install it with `make setup/golangci-lint`. staticcheck runs only as a golangci-lint linter;
+  there is no second standalone copy to disagree with it.
+- **`scripts/check-go-structure.bash`** enforces the layout rules above, which no general-purpose linter can
+  see: every package under `pkg/` and every router package under `internal/server/api/` has its `<pkg>.go`
+  interface file and declares nothing private in it, no `v<N>_` filename prefix disagrees with the version
+  directory it sits in, and no handler package imports the low-level packages (`os/exec`, `syscall`,
+  `golang.org/x/sys/unix`, database drivers) that belong in `pkg/util/` or `internal/db/`.
+- **The interface file is public in `pkg/` too, not just under `internal/server/api/`.** A package under
+  `pkg/` puts its exported types and functions in `<pkg>.go` and keeps every private one out: private types
+  go to that package's `types.go`, private functions to its `helpers.go`. Unlike a handler package, `pkg/`
+  does not consolidate — a private helper already sitting beside the topical code it serves (`storageutil/
+  partition_linux.go`, `photoutil/rotate.go`) stays there. The rule is only that `<pkg>.go` stays public, so
+  reading it tells you the whole API and nothing you cannot call. Private consts and vars are not checked,
+  and a tuning value next to the exported thing it tunes is fine where it is.
+- `.golangci.yml` is a ratchet: every rule enabled there is at zero violations, and the rules still switched
+  off name the sweep they are waiting on. Turning one on means fixing the code in that same PR — do not add a
+  `//nolint` to get a build green, and do not disable a rule to avoid a fix.
+
 ## Flutter Development
 
 ### Purpose

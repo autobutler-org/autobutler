@@ -1,0 +1,13 @@
+name: Setup golangci-lint
+runs:
+  using: "composite"
+  steps:
+    - name: Install golangci-lint
+      shell: bash
+      run: |
+        make setup/golangci-lint
+
+    - name: Fix PATH
+      shell: bash
+      run: |
+        echo "${HOME}/go/bin" >> ${GITHUB_PATH}
