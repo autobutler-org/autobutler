@@ -1,9 +1,8 @@
 package v0_vault
 
 import (
-	"fmt"
-
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,24 +13,15 @@ var listVaultFoldersRoute = serverutil.ApiRoute(
 			return errResp
 		}
 
-		rows, err := deps.VaultDB().Queries.ListVaultFolders(c.Request.Context())
+		result, err := vaultutil.ListFolders(c.Request.Context(), vaultutil.ListFoldersParams{
+			Queries: deps.VaultDB().Queries,
+		})
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("list folders: %w", err))
-		}
-
-		folders := make([]folderJSON, 0, len(rows))
-		for _, r := range rows {
-			folders = append(folders, folderJSON{
-				ID:        r.ID,
-				Name:      r.Name,
-				ParentID:  fromNullInt64(r.ParentID),
-				SortOrder: r.SortOrder,
-				CreatedAt: r.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
-			})
+			return serverutil.InternalServerError(err)
 		}
 
 		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(gin.H{
-			"folders": folders,
+			"folders": result.Folders,
 		})
 	},
 )

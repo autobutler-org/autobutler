@@ -3,8 +3,8 @@ package v0_vault
 import (
 	"fmt"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,21 +20,14 @@ var createVaultFolderRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 		}
 
-		folder, err := deps.VaultDB().Queries.CreateVaultFolder(c.Request.Context(), db.CreateVaultFolderParams{
-			Name:      req.Name,
-			ParentID:  nullableInt64(req.ParentID),
-			SortOrder: req.SortOrder,
+		result, err := vaultutil.CreateFolder(c.Request.Context(), vaultutil.CreateFolderParams{
+			Queries: deps.VaultDB().Queries,
+			Fields:  req.fields(),
 		})
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("create folder: %w", err))
+			return serverutil.InternalServerError(err)
 		}
 
-		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(folderJSON{
-			ID:        folder.ID,
-			Name:      folder.Name,
-			ParentID:  fromNullInt64(folder.ParentID),
-			SortOrder: folder.SortOrder,
-			CreatedAt: folder.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
-		})
+		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(result.Folder)
 	},
 )

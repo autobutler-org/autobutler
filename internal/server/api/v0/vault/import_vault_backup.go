@@ -1,11 +1,12 @@
 package v0_vault
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/autobutler-org/quark/pkg/backup"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,25 +28,19 @@ var importVaultBackupRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("device not found or not managed"))
 		}
 
-		ctx := c.Request.Context()
-
-		tx, err := deps.VaultDB().Db.BeginTx(ctx, nil)
+		result, err := vaultutil.ImportBackup(c.Request.Context(), vaultutil.ImportBackupParams{
+			VaultDB:          deps.VaultDB(),
+			LiveKey:          liveKey,
+			RecoveryPassword: req.RecoveryPassword,
+			BackupDir:        dev.FilesDir,
+		})
+		if errors.Is(err, vaultutil.ErrBackupImportFailed) {
+			return serverutil.BadRequest(err)
+		}
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("begin tx: %w", err))
-		}
-		defer tx.Rollback()
-
-		qtx := deps.VaultDB().Queries.WithTx(tx)
-
-		result, err := backup.ImportVault(ctx, qtx, liveKey, req.RecoveryPassword, dev.FilesDir)
-		if err != nil {
-			return serverutil.BadRequest(fmt.Errorf("import failed: %w", err))
+			return serverutil.InternalServerError(err)
 		}
 
-		if err := tx.Commit(); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("commit: %w", err))
-		}
-
-		return serverutil.Ok().WithData(result)
+		return serverutil.Ok().WithData(result.Import)
 	},
 )

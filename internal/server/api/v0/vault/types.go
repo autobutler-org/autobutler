@@ -2,6 +2,7 @@ package v0_vault
 
 import (
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 )
 
 type router struct{}
@@ -81,18 +82,41 @@ type unlockRequest struct {
 }
 
 type createEntryRequest struct {
-	Name         string        `json:"name" binding:"required"`
-	URL          string        `json:"url"`
-	Username     string        `json:"username"`
-	Password     string        `json:"password"`
-	Notes        string        `json:"notes"`
-	TOTPSecret   string        `json:"totpSecret"`
-	CustomFields []customField `json:"customFields"`
-	FolderID     *int64        `json:"folderId"`
+	Name         string                  `json:"name" binding:"required"`
+	URL          string                  `json:"url"`
+	Username     string                  `json:"username"`
+	Password     string                  `json:"password"`
+	Notes        string                  `json:"notes"`
+	TOTPSecret   string                  `json:"totpSecret"`
+	CustomFields []vaultutil.CustomField `json:"customFields"`
+	FolderID     *int64                  `json:"folderId"`
+}
+
+// fields maps the request onto the service's entry input.
+func (r createEntryRequest) fields() vaultutil.EntryFields {
+	return vaultutil.EntryFields{
+		Name:         r.Name,
+		URL:          r.URL,
+		Username:     r.Username,
+		Password:     r.Password,
+		Notes:        r.Notes,
+		TOTPSecret:   r.TOTPSecret,
+		CustomFields: r.CustomFields,
+		FolderID:     r.FolderID,
+	}
 }
 
 type createFolderRequest struct {
 	Name      string `json:"name" binding:"required"`
 	ParentID  *int64 `json:"parentId"`
 	SortOrder int64  `json:"sortOrder"`
+}
+
+// fields maps the request onto the service's folder input.
+func (r createFolderRequest) fields() vaultutil.FolderFields {
+	return vaultutil.FolderFields{
+		Name:      r.Name,
+		ParentID:  r.ParentID,
+		SortOrder: r.SortOrder,
+	}
 }

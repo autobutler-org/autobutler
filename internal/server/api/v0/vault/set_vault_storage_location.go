@@ -1,15 +1,13 @@
 package v0_vault
 
 import (
+	"errors"
 	"fmt"
-	"path/filepath"
 
-	"github.com/autobutler-org/quark/internal/db"
-	"github.com/autobutler-org/quark/pkg/backup"
 	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,52 +45,25 @@ var setVaultStorageLocationRoute = serverutil.ApiRoute(
 			return serverutil.Unauthorized(fmt.Errorf("invalid credentials"))
 		}
 
-		currentSerial, err := deps.Database().Queries.GetVaultLocation(ctx)
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("get current vault location: %w", err))
-		}
-
-		if currentSerial == req.TargetDeviceSerial {
-			return serverutil.BadRequest(fmt.Errorf("vault is already on this device"))
-		}
-
-		var targetDB *db.DatabaseSqlc
-		if req.TargetDeviceSerial == "" {
-			targetDB = deps.Database()
-		} else {
-			var errResp *serverutil.Response
-			targetDB, errResp = openVaultDBForSerial(deps, req.TargetDeviceSerial)
-			if errResp != nil {
-				return errResp
-			}
-		}
-
-		sourceDB := deps.VaultDB()
-		if err := backup.MigrateVault(ctx, sourceDB, targetDB); err != nil {
-			if req.TargetDeviceSerial != "" {
-				targetDB.Db.Close()
-			}
-			return serverutil.InternalServerError(fmt.Errorf("migrate vault: %w", err))
-		}
-
-		if err := backup.TruncateVaultTables(ctx, sourceDB); err != nil {
-			if req.TargetDeviceSerial != "" {
-				targetDB.Db.Close()
-			}
-			return serverutil.InternalServerError(fmt.Errorf("truncate source: %w", err))
-		}
-
-		if err := deps.Database().Queries.SetVaultLocation(ctx, req.TargetDeviceSerial); err != nil {
-			if req.TargetDeviceSerial != "" {
-				targetDB.Db.Close()
-			}
-			return serverutil.InternalServerError(fmt.Errorf("update vault location: %w", err))
+		result, err := vaultutil.SetLocation(ctx, vaultutil.SetLocationParams{
+			MainDB:       deps.Database(),
+			VaultDB:      deps.VaultDB(),
+			Storage:      deps.StorageService(),
+			TargetSerial: req.TargetDeviceSerial,
+		})
+		switch {
+		case errors.Is(err, vaultutil.ErrVaultAlreadyOnDevice):
+			return serverutil.BadRequest(err)
+		case errors.Is(err, vaultutil.ErrDeviceNotFound):
+			return serverutil.BadRequest(fmt.Errorf("device %q not found or not connected", req.TargetDeviceSerial))
+		case err != nil:
+			return serverutil.InternalServerError(err)
 		}
 
 		if req.TargetDeviceSerial == "" {
 			deps.ClearVaultDB()
 		} else {
-			deps.SetVaultDB(targetDB)
+			deps.SetVaultDB(result.TargetDB)
 		}
 
 		return serverutil.Ok().WithData(gin.H{
@@ -101,25 +72,3 @@ var setVaultStorageLocationRoute = serverutil.ApiRoute(
 		})
 	},
 )
-
-func openVaultDBForSerial(deps deputil.Dependencies, serial string) (*db.DatabaseSqlc, *serverutil.Response) {
-	if serial == "" {
-		return nil, nil
-	}
-
-	device, err := deps.StorageService().FindManagedDeviceBySerial(serial)
-	if err != nil {
-		return nil, serverutil.InternalServerError(fmt.Errorf("find device: %w", err))
-	}
-	if device == nil {
-		return nil, serverutil.BadRequest(fmt.Errorf("device %q not found or not connected", serial))
-	}
-
-	dbPath := filepath.Join(device.DataDir, "vault.db")
-	vaultDB, err := db.ConnectToVaultDatabase(dbPath)
-	if err != nil {
-		return nil, serverutil.InternalServerError(fmt.Errorf("open vault db on device: %w", err))
-	}
-
-	return vaultDB, nil
-}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,12 +23,16 @@ var deleteVaultFolderRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid id"))
 		}
 
-		if err := deps.VaultDB().Queries.DeleteVaultFolder(c.Request.Context(), id); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("delete folder: %w", err))
+		result, err := vaultutil.DeleteFolder(c.Request.Context(), vaultutil.DeleteFolderParams{
+			Queries: deps.VaultDB().Queries,
+			ID:      id,
+		})
+		if err != nil {
+			return serverutil.InternalServerError(err)
 		}
 
 		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(gin.H{
-			"deleted": true,
+			"deleted": result.Deleted,
 		})
 	},
 )

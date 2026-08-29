@@ -1,9 +1,8 @@
 package v0_vault
 
 import (
-	"fmt"
-
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,31 +21,19 @@ var getVaultStorageLocationRoute = serverutil.ApiRoute(
 			return errResp
 		}
 
-		ctx := c.Request.Context()
-		serial, err := deps.Database().Queries.GetVaultLocation(ctx)
+		result, err := vaultutil.GetLocation(c.Request.Context(), vaultutil.GetLocationParams{
+			MainQueries: deps.Database().Queries,
+			Storage:     deps.StorageService(),
+		})
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("get vault location: %w", err))
+			return serverutil.InternalServerError(err)
 		}
 
-		resp := storageLocationResponse{
-			DeviceSerial: serial,
-			IsExternal:   serial != "",
-		}
-
-		if serial == "" {
-			resp.DeviceConnected = true
-			resp.DeviceName = "Internal Storage"
-		} else {
-			device, err := deps.StorageService().FindManagedDeviceBySerial(serial)
-			if err == nil && device != nil {
-				resp.DeviceConnected = true
-				resp.DeviceName = device.Name
-				if name, err := deps.Database().Queries.GetDeviceName(ctx, serial); err == nil && name != "" {
-					resp.DeviceName = name
-				}
-			}
-		}
-
-		return serverutil.Ok().WithData(resp)
+		return serverutil.Ok().WithData(storageLocationResponse{
+			DeviceSerial:    result.DeviceSerial,
+			IsExternal:      result.IsExternal,
+			DeviceConnected: result.DeviceConnected,
+			DeviceName:      result.DeviceName,
+		})
 	},
 )

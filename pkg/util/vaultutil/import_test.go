@@ -1,4 +1,4 @@
-package v0_vault
+package vaultutil
 
 import (
 	"testing"
@@ -6,25 +6,25 @@ import (
 
 func TestDetectFormat_JSON(t *testing.T) {
 	data := []byte(`{"entries": []}`)
-	if got := detectFormat(data); got != "json" {
+	if got := DetectFormat(data); got != "json" {
 		t.Errorf("expected json, got %s", got)
 	}
 	data = []byte(`[{"name": "test"}]`)
-	if got := detectFormat(data); got != "json" {
+	if got := DetectFormat(data); got != "json" {
 		t.Errorf("expected json for array, got %s", got)
 	}
 }
 
 func TestDetectFormat_Bitwarden(t *testing.T) {
 	data := []byte("folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\n")
-	if got := detectFormat(data); got != "bitwarden" {
+	if got := DetectFormat(data); got != "bitwarden" {
 		t.Errorf("expected bitwarden, got %s", got)
 	}
 }
 
 func TestDetectFormat_GenericCSV(t *testing.T) {
 	data := []byte("url,username,password\nhttps://example.com,alice,secret\n")
-	if got := detectFormat(data); got != "csv" {
+	if got := DetectFormat(data); got != "csv" {
 		t.Errorf("expected csv, got %s", got)
 	}
 }
@@ -34,7 +34,7 @@ func TestParseBitwardenCSV(t *testing.T) {
 Social,,login,GitHub,some notes,,0,https://github.com/login,alice,gh-pass,JBSWY3DPEHPK3PXP
 Banking,,login,Chase,,,,https://chase.com,bob,chase-pw,
 `
-	entries, errs := parseBitwardenCSV([]byte(csv))
+	entries, errs := ParseBitwardenCSV([]byte(csv))
 	if len(errs) > 0 {
 		t.Errorf("unexpected errors: %v", errs)
 	}
@@ -71,7 +71,7 @@ func TestParseGenericCSV(t *testing.T) {
 https://example.com,alice,secret
 https://test.com,bob,pass123
 `
-	entries, errs := parseGenericCSV([]byte(csv))
+	entries, errs := ParseGenericCSV([]byte(csv))
 	if len(errs) > 0 {
 		t.Errorf("unexpected errors: %v", errs)
 	}
@@ -90,7 +90,7 @@ func TestParseGenericCSV_ChromeFormat(t *testing.T) {
 	csv := `name,url,username,password,note
 GitHub,https://github.com,alice,gh-pass,my notes
 `
-	entries, errs := parseGenericCSV([]byte(csv))
+	entries, errs := ParseGenericCSV([]byte(csv))
 	if len(errs) > 0 {
 		t.Errorf("unexpected errors: %v", errs)
 	}
@@ -109,7 +109,7 @@ func TestParseGenericCSV_MissingPassword(t *testing.T) {
 	csv := `url,username,password
 https://example.com,alice,
 `
-	entries, errs := parseGenericCSV([]byte(csv))
+	entries, errs := ParseGenericCSV([]byte(csv))
 	if len(entries) != 0 {
 		t.Errorf("expected 0 entries, got %d", len(entries))
 	}
@@ -126,7 +126,7 @@ func TestParseQuarkJSON(t *testing.T) {
 		],
 		"folders": ["Dev"]
 	}`
-	entries, errs := parseQuarkJSON([]byte(j))
+	entries, errs := ParseQuarkJSON([]byte(j))
 	if len(errs) > 0 {
 		t.Errorf("unexpected errors: %v", errs)
 	}
@@ -140,7 +140,7 @@ func TestParseQuarkJSON(t *testing.T) {
 
 func TestParseQuarkJSON_Array(t *testing.T) {
 	j := `[{"name": "Test", "url": "https://test.com", "username": "u", "password": "p"}]`
-	entries, errs := parseQuarkJSON([]byte(j))
+	entries, errs := ParseQuarkJSON([]byte(j))
 	if len(errs) > 0 {
 		t.Errorf("unexpected errors: %v", errs)
 	}
@@ -165,8 +165,8 @@ func TestHostFromURL(t *testing.T) {
 		{"not a url", ""},
 	}
 	for _, tt := range tests {
-		if got := hostFromURL(tt.input); got != tt.want {
-			t.Errorf("hostFromURL(%q) = %q, want %q", tt.input, got, tt.want)
+		if got := HostFromURL(tt.input); got != tt.want {
+			t.Errorf("HostFromURL(%q) = %q, want %q", tt.input, got, tt.want)
 		}
 	}
 }
