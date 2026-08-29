@@ -28,7 +28,7 @@ require (
 	golang.org/x/time v0.15.0
 	howett.net/plist v1.0.1
 	modernc.org/sqlite v1.57.0
-	tailscale.com v1.102.2
+	tailscale.com v1.102.3
 )
 
 require (
