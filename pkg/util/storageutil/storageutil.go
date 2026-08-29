@@ -424,20 +424,14 @@ func GetNonConflictingPath(targetPath string) string {
 	}
 }
 
-// SetupFilesDir prepares the system storage root, migrating a pre-rename
-// "cirrus" directory into place first. Called once on startup.
+// SetupFilesDir prepares the system storage root. Called once on startup.
 func SetupFilesDir() error {
 	return setupFilesDirIn(GetDataDir())
 }
 
-// setupFilesDirIn is SetupFilesDir with an injectable data directory so the
-// migration can be tested against a temp dir instead of the real one.
+// setupFilesDirIn is SetupFilesDir with an injectable data directory so it can
+// be tested against a temp dir instead of the real one.
 func setupFilesDirIn(dataDir string) error {
-	// TODO(pre-v1.0.0, #1601): drop this call along with legacy_cirrus_dir.go.
-	if err := migrateLegacyCirrusDir(dataDir); err != nil {
-		return err
-	}
-
 	filesDir := ConstructFilesDir(dataDir)
 	if err := os.MkdirAll(filesDir, 0755); err != nil {
 		return fmt.Errorf("failed to create storage directory: %w", err)

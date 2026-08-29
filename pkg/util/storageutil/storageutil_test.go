@@ -1359,7 +1359,7 @@ func TestDeviceFileInfo_WrapperMethods(t *testing.T) {
 func writeFileAt(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		t.Fatalf("failed to create directory for %s: %v", path, err)
+		t.Fatalf("failed to create parent directories for %s: %v", path, err)
 	}
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatalf("failed to write %s: %v", path, err)
@@ -1371,188 +1371,39 @@ func requireFileContent(t *testing.T, path, want string) {
 	t.Helper()
 	got, err := os.ReadFile(path)
 	if err != nil {
-		t.Fatalf("expected file at %s: %v", path, err)
+		t.Fatalf("expected %s to exist: %v", path, err)
 	}
 	if string(got) != want {
 		t.Errorf("%s content mismatch: got %q, want %q", path, string(got), want)
 	}
 }
 
-// requireGone asserts nothing exists at the path.
-func requireGone(t *testing.T, path string) {
-	t.Helper()
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		t.Errorf("expected %s to be gone, but it still exists", path)
-	}
-}
-
-// legacyDirIn returns the pre-rename storage root for a data directory.
-func legacyDirIn(dataDir string) string {
-	return filepath.Join(dataDir, legacyCirrusDirName)
-}
-
-// TestSetupFilesDir covers the cirrus -> files on-disk migration (#1601).
-// Unlike its predecessor, every case calls setupFilesDirIn rather than
-// reimplementing the migration inline, so a regression in the production
-// function actually fails the test.
+// TestSetupFilesDir checks the startup setup creates the storage root and
+// leaves an existing one alone.
 func TestSetupFilesDir(t *testing.T) {
-	tests := []struct {
-		name          string
-		setupBefore   func(t *testing.T, dataDir string)
-		wantError     bool
-		validateAfter func(t *testing.T, dataDir string)
-	}{
-		{
-			name:        "creates files directory when neither exists",
-			setupBefore: func(t *testing.T, dataDir string) {},
-			validateAfter: func(t *testing.T, dataDir string) {
-				info, err := os.Stat(ConstructFilesDir(dataDir))
-				if err != nil {
-					t.Fatalf("files directory should exist: %v", err)
-				}
-				if !info.IsDir() {
-					t.Errorf("files storage path should be a directory")
-				}
-			},
-		},
-		{
-			name: "leaves an existing files directory untouched",
-			setupBefore: func(t *testing.T, dataDir string) {
-				writeFileAt(t, filepath.Join(ConstructFilesDir(dataDir), "keep.txt"), "keep me")
-			},
-			validateAfter: func(t *testing.T, dataDir string) {
-				requireFileContent(t, filepath.Join(ConstructFilesDir(dataDir), "keep.txt"), "keep me")
-			},
-		},
-		{
-			name: "renames a legacy cirrus directory to files",
-			setupBefore: func(t *testing.T, dataDir string) {
-				writeFileAt(t, filepath.Join(legacyDirIn(dataDir), "test.txt"), "test content")
-			},
-			validateAfter: func(t *testing.T, dataDir string) {
-				requireFileContent(t, filepath.Join(ConstructFilesDir(dataDir), "test.txt"), "test content")
-				requireGone(t, legacyDirIn(dataDir))
-			},
-		},
-		{
-			name: "renames nested content, not just top-level entries",
-			setupBefore: func(t *testing.T, dataDir string) {
-				legacy := legacyDirIn(dataDir)
-				writeFileAt(t, filepath.Join(legacy, "top.txt"), "top content")
-				writeFileAt(t, filepath.Join(legacy, "subdir", "nested.txt"), "nested content")
-				writeFileAt(t, filepath.Join(legacy, "subdir", "deeper", "deep.txt"), "deep content")
-			},
-			validateAfter: func(t *testing.T, dataDir string) {
-				filesDir := ConstructFilesDir(dataDir)
-				requireFileContent(t, filepath.Join(filesDir, "top.txt"), "top content")
-				requireFileContent(t, filepath.Join(filesDir, "subdir", "nested.txt"), "nested content")
-				requireFileContent(t, filepath.Join(filesDir, "subdir", "deeper", "deep.txt"), "deep content")
-				requireGone(t, legacyDirIn(dataDir))
-			},
-		},
-		{
-			name: "renames an empty legacy cirrus directory",
-			setupBefore: func(t *testing.T, dataDir string) {
-				if err := os.MkdirAll(legacyDirIn(dataDir), 0755); err != nil {
-					t.Fatalf("failed to create legacy directory: %v", err)
-				}
-			},
-			validateAfter: func(t *testing.T, dataDir string) {
-				info, err := os.Stat(ConstructFilesDir(dataDir))
-				if err != nil {
-					t.Fatalf("files directory should exist: %v", err)
-				}
-				if !info.IsDir() {
-					t.Errorf("files storage path should be a directory")
-				}
-				requireGone(t, legacyDirIn(dataDir))
-			},
-		},
-		{
-			name: "merges both directories without losing either side",
-			setupBefore: func(t *testing.T, dataDir string) {
-				writeFileAt(t, filepath.Join(ConstructFilesDir(dataDir), "existing.txt"), "existing content")
-				writeFileAt(t, filepath.Join(legacyDirIn(dataDir), "legacy.txt"), "legacy content")
-				writeFileAt(t, filepath.Join(legacyDirIn(dataDir), "sub", "nested.txt"), "nested legacy")
-			},
-			validateAfter: func(t *testing.T, dataDir string) {
-				filesDir := ConstructFilesDir(dataDir)
-				requireFileContent(t, filepath.Join(filesDir, "existing.txt"), "existing content")
-				requireFileContent(t, filepath.Join(filesDir, "legacy.txt"), "legacy content")
-				requireFileContent(t, filepath.Join(filesDir, "sub", "nested.txt"), "nested legacy")
-				requireGone(t, legacyDirIn(dataDir))
-			},
-		},
-		{
-			name: "suffixes conflicting names during a merge",
-			setupBefore: func(t *testing.T, dataDir string) {
-				writeFileAt(t, filepath.Join(ConstructFilesDir(dataDir), "conflict.txt"), "original content")
-				writeFileAt(t, filepath.Join(legacyDirIn(dataDir), "conflict.txt"), "migrated content")
-			},
-			validateAfter: func(t *testing.T, dataDir string) {
-				filesDir := ConstructFilesDir(dataDir)
-				requireFileContent(t, filepath.Join(filesDir, "conflict.txt"), "original content")
-				requireFileContent(t, filepath.Join(filesDir, "conflict_(1).txt"), "migrated content")
-				requireGone(t, legacyDirIn(dataDir))
-			},
-		},
-		{
-			name: "ignores a plain file named cirrus",
-			setupBefore: func(t *testing.T, dataDir string) {
-				writeFileAt(t, legacyDirIn(dataDir), "not a directory")
-			},
-			validateAfter: func(t *testing.T, dataDir string) {
-				requireFileContent(t, legacyDirIn(dataDir), "not a directory")
-				info, err := os.Stat(ConstructFilesDir(dataDir))
-				if err != nil {
-					t.Fatalf("files directory should still be created: %v", err)
-				}
-				if !info.IsDir() {
-					t.Errorf("files storage path should be a directory")
-				}
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dataDir := t.TempDir()
-			tt.setupBefore(t, dataDir)
-
-			err := setupFilesDirIn(dataDir)
-			if tt.wantError && err == nil {
-				t.Fatalf("expected an error, got nil")
-			}
-			if !tt.wantError && err != nil {
-				t.Fatalf("setupFilesDirIn returned an unexpected error: %v", err)
-			}
-
-			tt.validateAfter(t, dataDir)
-
-			// The migration runs on every startup, so a second pass must be a
-			// no-op rather than shuffling or duplicating anything.
-			if err := setupFilesDirIn(dataDir); err != nil {
-				t.Fatalf("second setupFilesDirIn call returned an error: %v", err)
-			}
-			tt.validateAfter(t, dataDir)
-		})
-	}
-}
-
-// TestSetupFilesDirRefusesSelfMigration guards the one way this migration could
-// destroy data: if ConstructFilesDir were ever repointed back at "cirrus", the
-// legacy and target paths would collide and a rename would consume the
-// directory. The check lives in migrateLegacyCirrusDir; this asserts it fires.
-func TestSetupFilesDirRefusesSelfMigration(t *testing.T) {
 	dataDir := t.TempDir()
-	if ConstructFilesDir(dataDir) == legacyDirIn(dataDir) {
-		t.Fatalf("ConstructFilesDir must not resolve to the legacy cirrus path")
+	writeFileAt(t, filepath.Join(ConstructFilesDir(dataDir), "keep.txt"), "keep me")
+
+	if err := setupFilesDirIn(dataDir); err != nil {
+		t.Fatalf("setupFilesDirIn returned an unexpected error: %v", err)
+	}
+	requireFileContent(t, filepath.Join(ConstructFilesDir(dataDir), "keep.txt"), "keep me")
+
+	fresh := t.TempDir()
+	if err := setupFilesDirIn(fresh); err != nil {
+		t.Fatalf("setupFilesDirIn returned an unexpected error: %v", err)
+	}
+	info, err := os.Stat(ConstructFilesDir(fresh))
+	if err != nil {
+		t.Fatalf("files directory should exist: %v", err)
+	}
+	if !info.IsDir() {
+		t.Errorf("files storage path should be a directory")
 	}
 }
 
-// TestGetFilesDirForDeviceUsesFilesName pins the new on-disk name for external
-// devices. A device formatted by a pre-rename build is deliberately NOT
-// migrated (see GetFilesDirForDevice), so this only asserts the path.
+// TestGetFilesDirForDeviceUsesFilesName pins the on-disk name for external
+// devices.
 func TestGetFilesDirForDeviceUsesFilesName(t *testing.T) {
 	mountPoint := t.TempDir()
 	deviceDataDir := GetDataDirForDevice(mountPoint)
