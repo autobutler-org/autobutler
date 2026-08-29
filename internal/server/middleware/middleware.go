@@ -16,7 +16,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-
 )
 
 // authRateLimitedPaths are the API paths that require rate limiting.
