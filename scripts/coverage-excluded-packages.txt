@@ -2,10 +2,5 @@ quark/cmd
 quark/internal/db
 quark/internal/install
 quark/internal/server
-quark/internal/update
-quark/pkg/botel
 quark/pkg/calendar
-quark/pkg/ui/components
-quark/pkg/ui/types
-quark/pkg/ui/views
 quark/pkg/util/updateutil
