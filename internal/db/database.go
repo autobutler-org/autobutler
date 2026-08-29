@@ -3,8 +3,10 @@ package db
 import (
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 
+	// Registers the "sqlite" database/sql driver used by every connection here.
 	_ "modernc.org/sqlite"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -65,6 +67,9 @@ func initSchema(database *DatabaseSqlc) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	m.Up()
+	// ErrNoChange just means the schema is already at the latest migration.
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
 	return nil
 }

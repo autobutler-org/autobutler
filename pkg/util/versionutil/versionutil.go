@@ -18,7 +18,7 @@ type Version struct {
 const NoCommit = "NOCOMMIT"
 const NoSemver = "NOSEMVER"
 
-var Semver string = NoSemver
+var Semver = NoSemver
 
 // GitCommit is stamped by the Makefile with -ldflags, and is the reason a
 // build can name itself at all.
@@ -28,7 +28,7 @@ var Semver string = NoSemver
 // built from a source tarball, inside a container without .git, or with
 // -buildvcs=false reports NOCOMMIT and has no way to say which build it is.
 // A value the linker put there survives all of that.
-var GitCommit string = NoCommit
+var GitCommit = NoCommit
 
 func NewVersion(gitCommit, goVersion, buildDate string) *Version {
 	return &Version{

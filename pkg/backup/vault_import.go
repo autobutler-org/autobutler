@@ -10,6 +10,7 @@ import (
 
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
+	// Registers the "sqlite" driver with database/sql.
 	_ "modernc.org/sqlite"
 )
 

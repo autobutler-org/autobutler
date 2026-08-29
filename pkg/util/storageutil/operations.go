@@ -538,51 +538,52 @@ func UploadFilesStreamedImpl(params UploadFilesStreamedParams, device *ManagedDe
 				}
 
 				// Attempt hard link first (atomic and avoids extra copy)
-				if err := os.Link(tmpPath, destPath); err == nil {
+				linkErr := os.Link(tmpPath, destPath)
+				if linkErr == nil {
 					// Success: remove temp and we're done
 					os.Remove(tmpPath)
 					break
-				} else if os.IsExist(err) {
+				}
+				if os.IsExist(linkErr) {
 					// Destination exists; pick next candidate name and retry
 					i++
 					candidate = fmt.Sprintf("%s_(%d)%s", name, i, ext)
 					continue
-				} else {
-					// Hard link failed for another reason (e.g., EXDEV). Try exclusive create + copy.
-					// Open temp for reading
-					tmpR, rerr := os.Open(tmpPath)
-					if rerr != nil {
-						os.Remove(tmpPath)
-						part.Close()
-						return fmt.Errorf("failed to open temp file for fallback copy: %w", rerr)
-					}
-					dst, derr := os.OpenFile(destPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
-					if derr == nil {
-						// Copy content from temp to destination
-						if _, cerr := io.Copy(dst, tmpR); cerr != nil {
-							dst.Close()
-							tmpR.Close()
-							os.Remove(tmpPath)
-							part.Close()
-							return fmt.Errorf("failed to copy temp to destination: %w", cerr)
-						}
+				}
+				// Hard link failed for another reason (e.g., EXDEV). Try exclusive create + copy.
+				// Open temp for reading
+				tmpR, rerr := os.Open(tmpPath)
+				if rerr != nil {
+					os.Remove(tmpPath)
+					part.Close()
+					return fmt.Errorf("failed to open temp file for fallback copy: %w", rerr)
+				}
+				dst, derr := os.OpenFile(destPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+				if derr == nil {
+					// Copy content from temp to destination
+					if _, cerr := io.Copy(dst, tmpR); cerr != nil {
 						dst.Close()
 						tmpR.Close()
 						os.Remove(tmpPath)
-						break
+						part.Close()
+						return fmt.Errorf("failed to copy temp to destination: %w", cerr)
 					}
+					dst.Close()
 					tmpR.Close()
-					if os.IsExist(derr) {
-						// Destination exists; try next candidate name
-						i++
-						candidate = fmt.Sprintf("%s_(%d)%s", name, i, ext)
-						continue
-					}
-					// Unknown error creating destination
 					os.Remove(tmpPath)
-					part.Close()
-					return fmt.Errorf("failed to move uploaded file into place: linkErr=%v createErr=%v", err, derr)
+					break
 				}
+				tmpR.Close()
+				if os.IsExist(derr) {
+					// Destination exists; try next candidate name
+					i++
+					candidate = fmt.Sprintf("%s_(%d)%s", name, i, ext)
+					continue
+				}
+				// Unknown error creating destination
+				os.Remove(tmpPath)
+				part.Close()
+				return fmt.Errorf("failed to move uploaded file into place: linkErr=%v createErr=%v", linkErr, derr)
 			}
 			part.Close()
 		} else {

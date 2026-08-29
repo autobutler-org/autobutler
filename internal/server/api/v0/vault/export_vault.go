@@ -95,13 +95,16 @@ var exportVaultRoute = serverutil.ApiRoute(
 
 		switch format {
 		case "csv":
-			var buf strings.Builder
-			w := csv.NewWriter(&buf)
-			w.Write([]string{"name", "url", "username", "password", "notes", "totp_secret", "folder"})
+			records := make([][]string, 0, len(exported)+1)
+			records = append(records, []string{"name", "url", "username", "password", "notes", "totp_secret", "folder"})
 			for _, e := range exported {
-				w.Write([]string{e.Name, e.URL, e.Username, e.Password, e.Notes, e.TOTPSecret, e.FolderName})
+				records = append(records, []string{e.Name, e.URL, e.Username, e.Password, e.Notes, e.TOTPSecret, e.FolderName})
 			}
-			w.Flush()
+
+			var buf strings.Builder
+			if err := csv.NewWriter(&buf).WriteAll(records); err != nil {
+				return serverutil.InternalServerError(fmt.Errorf("write csv: %w", err))
+			}
 
 			c.Header("Content-Disposition", "attachment; filename=quark_vault.csv")
 			c.Data(200, "text/csv; charset=utf-8", []byte(buf.String()))

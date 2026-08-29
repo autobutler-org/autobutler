@@ -85,7 +85,7 @@ clean/flutter: ## Clean flutter project
 	flutter clean
 
 .PHONY: setup
-setup: setup/gotools setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
+setup: setup/gotools setup/golangci-lint setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
 
 .PHONY: setup/wrk
 setup/wrk: ## Install wrk load-testing CLI
@@ -181,8 +181,9 @@ setup/gotools: ## Install go tools
 	$(GO) install github.com/josharian/impl@v1.4.0
 	$(GO) install github.com/haya14busa/goplay/cmd/goplay@v1.0.0
 	$(GO) install github.com/go-delve/delve/cmd/dlv@latest
-	$(GO) install honnef.co/go/tools/cmd/staticcheck@latest
 	$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
+	# staticcheck is not installed on its own -- golangci-lint runs it as one of its
+	# linters, and two copies at different versions disagree about what is a warning.
 
 .PHONY: setup/ios
 setup/ios: setup/cocoapods ## Setup iOS development environment
@@ -198,6 +199,10 @@ endif
 .PHONY: setup/sqlc
 setup/sqlc: ## Install sqlc tool
 	$(GO) install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
+
+.PHONY: setup/golangci-lint
+setup/golangci-lint: ## Install golangci-lint
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.6.2
 
 .PHONY: setup/swag
 setup/swag: ## Install swag tool
@@ -725,8 +730,16 @@ check/lint/flutter: generate/frontend/icons generate/frontend/sbom ## Lint Flutt
 	flutter analyze
 
 .PHONY: check/lint/go
-check/lint/go: internal/server/public/stub.txt ## Check Go code
-	$(GO) vet ./...
+check/lint/go: internal/server/public/stub.txt check/structure/go ## Check Go code
+	if ! command -v golangci-lint >/dev/null 2>&1; then
+		echo "golangci-lint is not installed. Run 'make setup/golangci-lint' first."
+		exit 1
+	fi
+	golangci-lint run ./...
+
+.PHONY: check/structure/go
+check/structure/go: ## Check Go package layout conventions (AGENTS.md)
+	./scripts/check-go-structure.bash
 
 .PHONY: check/vuln
 check/vuln: check/vuln/backend ## Check for known CVEs

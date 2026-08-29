@@ -181,7 +181,8 @@ func (w *SyncWorker) movePath(ctx context.Context, oldPath, newPath string) {
 	oldDst := filepath.Join(targetDir, oldPath)
 	newDst := filepath.Join(targetDir, newPath)
 
-	os.MkdirAll(filepath.Dir(newDst), 0755)
+	// A failure here surfaces as the rename error just below.
+	_ = os.MkdirAll(filepath.Dir(newDst), 0755)
 	if err := os.Rename(oldDst, newDst); err != nil {
 		log.Printf("sync: move %s → %s: %v", oldPath, newPath, err)
 	}

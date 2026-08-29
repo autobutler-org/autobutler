@@ -6,6 +6,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.8.0
 	github.com/KononK/resize v0.0.0-20200801203131-21c514740ed6
 	github.com/bep/imagemeta v1.0.0
+	github.com/coder/websocket v1.8.14
 	github.com/gen2brain/heic v0.7.1
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-contrib/static v1.1.6
@@ -27,7 +28,6 @@ require (
 	golang.org/x/time v0.15.0
 	howett.net/plist v1.0.1
 	modernc.org/sqlite v1.57.0
-	nhooyr.io/websocket v1.8.17
 	tailscale.com v1.102.2
 )
 
@@ -48,7 +48,6 @@ require (
 	github.com/bytedance/sonic/loader v0.5.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
-	github.com/coder/websocket v1.8.14 // indirect
 	github.com/creachadair/msync v0.8.1 // indirect
 	github.com/dblohm7/wingoes v0.0.0-20240119213807-a09d6be7affa // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect

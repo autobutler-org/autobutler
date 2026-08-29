@@ -62,12 +62,12 @@ func (u *usbDevice) GetMountPath() string {
 }
 
 func (u *usbDevice) UpdateStatus() error {
-	if mountPath, err := u.checkIfMounted(); err != nil {
+	mountPath, err := u.checkIfMounted()
+	if err != nil {
 		u.MountPath = ""
 		return err
-	} else {
-		u.MountPath = mountPath
 	}
+	u.MountPath = mountPath
 	return nil
 }
 

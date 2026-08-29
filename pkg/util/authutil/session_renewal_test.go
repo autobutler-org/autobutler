@@ -194,8 +194,8 @@ func TestValidateSession_ClampsRenewalToMaxLifetime(t *testing.T) {
 	}
 
 	after := readSession(t, sqlDB, token)
-	cap := createdAt.Add(authutil.SessionMaxLifetime)
-	assertNear(t, after.expiresAt, cap, "expires_at")
+	maxExpiry := createdAt.Add(authutil.SessionMaxLifetime)
+	assertNear(t, after.expiresAt, maxExpiry, "expires_at")
 	if unclamped := pinned.Add(authutil.SessionDuration); !after.expiresAt.Before(unclamped) {
 		t.Errorf("expires_at %v was not clamped below the unclamped %v", after.expiresAt, unclamped)
 	}

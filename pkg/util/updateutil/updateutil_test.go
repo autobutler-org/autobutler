@@ -184,34 +184,6 @@ func TestConstants(t *testing.T) {
 	}
 }
 
-// serveRealReleaseTarGz starts a mock HTTP server that serves the real v0.13.0
-// Linux arm64 release tarball (cached locally). This lets us test the full
-// download → decompress → extract path without hitting GitHub.
-func serveRealReleaseTarGz(t *testing.T) (*httptest.Server, string) {
-	t.Helper()
-	tarPath := "/tmp/quark-test-release/quark_Linux_arm64.tar.gz"
-	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
-		t.Skip("Real release tarball not available at " + tarPath + " — run: curl -sL https://github.com/autobutler-org/quark/releases/download/v0.13.0/quark_Linux_arm64.tar.gz -o " + tarPath)
-	}
-	data, err := os.ReadFile(tarPath)
-	if err != nil {
-		t.Fatalf("failed to read release tarball: %v", err)
-	}
-	version := "v0.13.0"
-	archiveName := ConstructArchiveName()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expected := fmt.Sprintf("/%s/%s", version, archiveName)
-		if r.URL.Path != expected {
-			t.Logf("unexpected path: %s (expected %s)", r.URL.Path, expected)
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	}))
-	return server, version
-}
-
 func TestUpdate_RealRelease_ReplaceSelf(t *testing.T) {
 	if runtime.GOOS != "linux" || runtime.GOARCH != "arm64" {
 		t.Skipf("Real release test only runs on linux/arm64, got %s/%s", runtime.GOOS, runtime.GOARCH)

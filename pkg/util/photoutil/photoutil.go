@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	// Registers the GIF decoder with image.Decode.
 	_ "image/gif"
 	"io"
 	"io/fs"
@@ -19,9 +20,13 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	"github.com/KononK/resize"
+	// Registers the HEIC decoder with image.Decode.
 	_ "github.com/gen2brain/heic"
+	// Registers the BMP decoder with image.Decode.
 	_ "golang.org/x/image/bmp"
+	// Registers the TIFF decoder with image.Decode.
 	_ "golang.org/x/image/tiff"
+	// Registers the WebP decoder with image.Decode.
 	_ "golang.org/x/image/webp"
 )
 

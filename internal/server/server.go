@@ -38,8 +38,16 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, error) {
 	if err := storageutil.SetupFilesDir(); err != nil {
 		return nil, fmt.Errorf("failed to setup files directory: %w", err)
 	}
-	go deps.Worker().Process()
-	go deps.Worker().LogErrors()
+	go func() {
+		if err := deps.Worker().Process(); err != nil {
+			log.Printf("[server] worker stopped: %v", err)
+		}
+	}()
+	go func() {
+		if err := deps.Worker().LogErrors(); err != nil {
+			log.Printf("[server] worker error logger stopped: %v", err)
+		}
+	}()
 	if _, err := favoritesutil.EnsureFavoritesAlbum(
 		context.Background(),
 		deps.Database().Queries,

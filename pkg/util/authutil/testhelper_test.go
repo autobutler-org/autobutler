@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
-	"github.com/autobutler-org/quark/pkg/util/authutil"
 	_ "modernc.org/sqlite"
 )
 
@@ -48,22 +47,4 @@ func newTOTPTestDB(t *testing.T) *db.Queries {
 	}
 
 	return db.New(conn)
-}
-
-// createTOTPTestUser inserts a test user (non-admin) and returns their ID.
-func createTOTPTestUser(t *testing.T, queries *db.Queries) int64 {
-	t.Helper()
-	hash, err := authutil.HashPassword("testpassword")
-	if err != nil {
-		t.Fatalf("hash password: %v", err)
-	}
-	user, err := queries.CreateUser(context.Background(), db.CreateUserParams{
-		Username:           "testuser",
-		PasswordHash:       hash,
-		RecoveryPhraseHash: hash,
-	})
-	if err != nil {
-		t.Fatalf("create user: %v", err)
-	}
-	return user.ID
 }

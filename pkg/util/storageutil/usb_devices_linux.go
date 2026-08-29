@@ -3,10 +3,8 @@
 package storageutil
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // ListUsbDevices lists all USB devices under /sys/bus/usb/devices/
@@ -33,45 +31,14 @@ func ListUsbDevices(onlyStorage bool) ([]UsbDevice, error) {
 			Serial:       readFileTrim(filepath.Join(devicePath, "serial")),
 		}
 		if dev.IsStorageDevice() {
-			dev.UpdateStatus()
+			// Best-effort: UpdateStatus clears MountPath when the mount check
+			// fails, so an unreadable device is reported unmounted rather than
+			// aborting the enumeration of every other device.
+			_ = dev.UpdateStatus()
 		} else if onlyStorage {
 			continue
 		}
 		devices = append(devices, dev)
 	}
 	return devices, nil
-}
-
-// isDeviceMounted checks if a block device (e.g., /dev/sda) is mounted somewhere by parsing /proc/mounts.
-// Returns the mount point and the device node (e.g., /dev/sda1) if mounted, or empty string if not.
-func isDeviceMounted(blockDevice string) (mountPoint string, mounted bool) {
-	data, err := os.ReadFile("/proc/mounts")
-	if err != nil {
-		return "", false
-	}
-	lines := strings.Split(string(data), "\n")
-	// Check the base device (rare, usually not mounted directly)
-	for _, line := range lines {
-		fields := strings.Fields(line)
-		if len(fields) < 2 {
-			continue
-		}
-		if fields[0] == blockDevice {
-			return fields[1], true
-		}
-	}
-	// Check partitions (e.g., /dev/sda1, /dev/sda2)
-	for partNum := 1; partNum <= 16; partNum++ {
-		part := fmt.Sprintf("%s%d", blockDevice, partNum)
-		for _, line := range lines {
-			fields := strings.Fields(line)
-			if len(fields) < 2 {
-				continue
-			}
-			if fields[0] == part {
-				return fields[1], true
-			}
-		}
-	}
-	return "", false
 }

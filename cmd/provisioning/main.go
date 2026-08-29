@@ -18,7 +18,7 @@ var (
 	headscaleURL    string
 	headscaleAPIKey string
 	sharedSecret    string
-	keyExpiryHours  time.Duration
+	keyExpiry       time.Duration
 )
 
 type provisionRequest struct {
@@ -133,7 +133,7 @@ type headscaleKeyResponse struct {
 }
 
 func createPreAuthKey() (string, error) {
-	expiration := time.Now().UTC().Add(keyExpiryHours).Format(time.RFC3339)
+	expiration := time.Now().UTC().Add(keyExpiry).Format(time.RFC3339)
 	body, err := json.Marshal(headscaleKeyRequest{
 		User:       "autobutler",
 		Reusable:   false,
@@ -178,6 +178,16 @@ func createPreAuthKey() (string, error) {
 	return keyResp.PreAuthKey.Key, nil
 }
 
+// writeJSON sends v as the JSON response body. The status line is already on the
+// wire by the time encoding can fail, so a failure can only be logged.
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("failed to write response: %v", err)
+	}
+}
+
 func handleProvision(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -187,24 +197,18 @@ func handleProvision(w http.ResponseWriter, r *http.Request) {
 	// Authenticate caller via shared secret (constant-time to prevent timing attacks).
 	provided := r.Header.Get("X-Provisioning-Secret")
 	if subtle.ConstantTimeCompare([]byte(provided), []byte(sharedSecret)) != 1 {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(errorResponse{Error: "unauthorized"})
+		writeJSON(w, http.StatusUnauthorized, errorResponse{Error: "unauthorized"})
 		return
 	}
 
 	var req provisionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{Error: "invalid request body"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid request body"})
 		return
 	}
 
 	if req.DeviceID == "" {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{Error: "device_id is required"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "device_id is required"})
 		return
 	}
 
@@ -215,23 +219,18 @@ func handleProvision(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !checkRateLimit(sourceIP, req.DeviceID) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusTooManyRequests)
-		json.NewEncoder(w).Encode(errorResponse{Error: "rate limit exceeded, max 5 requests per hour"})
+		writeJSON(w, http.StatusTooManyRequests, errorResponse{Error: "rate limit exceeded, max 5 requests per hour"})
 		return
 	}
 
 	key, err := createPreAuthKey()
 	if err != nil {
 		log.Printf("failed to create pre-auth key: %v", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: "failed to provision key"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "failed to provision key"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(provisionResponse{AuthKey: key})
+	writeJSON(w, http.StatusOK, provisionResponse{AuthKey: key})
 }
 
 func main() {
@@ -250,10 +249,10 @@ func main() {
 		log.Fatal("PROVISIONING_SECRET environment variable is required")
 	}
 
-	keyExpiryHours = time.Hour
+	keyExpiry = time.Hour
 	if exp := os.Getenv("PROVISIONING_KEY_EXPIRY_HOURS"); exp != "" {
 		if d, err := time.ParseDuration(exp); err == nil {
-			keyExpiryHours = d
+			keyExpiry = d
 		}
 	}
 

@@ -17,8 +17,10 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
+	// Registers the HEIC decoder with image.Decode.
 	_ "github.com/gen2brain/heic"
 	"github.com/gin-gonic/gin"
+	// Register the BMP, TIFF and WebP decoders with image.Decode.
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
@@ -50,7 +52,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	// RAW file needing OS-path conversion. RAW → JPEG requires dcraw/LibRaw which
 	// only works with a real filesystem path, so those always fall through to
 	// StorageService even when VFS is present.
-	if serial == "" && !(wantsJPEG && photoutil.IsRawFile(filePath)) {
+	if serial == "" && (!wantsJPEG || !photoutil.IsRawFile(filePath)) {
 		if reg := deps.VFSRegistry(); reg != nil {
 			if fsys, ok := reg.Get("files"); ok {
 				return downloadFileVFS(c, deps, fsys, filePath, wantsJPEG)
@@ -139,13 +141,14 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	f.Close() // close before c.File re-opens it
 	disposition := "inline"
 	contentType := "application/octet-stream"
-	if result.FileType == storageutil.FileTypePDF {
+	switch result.FileType {
+	case storageutil.FileTypePDF:
 		contentType = "application/pdf"
-	} else if result.FileType == storageutil.FileTypeImage {
+	case storageutil.FileTypeImage:
 		contentType = storageutil.ImageMIMETypeFromExtension(filepath.Ext(result.FullPath))
-	} else if result.FileType == storageutil.FileTypeVideo {
+	case storageutil.FileTypeVideo:
 		contentType = storageutil.VideoMIMETypeFromExtension(filepath.Ext(result.FullPath))
-	} else if result.FileType == storageutil.FileTypeAudio {
+	case storageutil.FileTypeAudio:
 		contentType = storageutil.AudioMIMETypeFromExtension(filepath.Ext(result.FullPath))
 	}
 	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=%s", disposition, filepath.Base(result.FullPath)))

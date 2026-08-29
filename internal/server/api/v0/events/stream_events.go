@@ -8,9 +8,9 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/gin-gonic/gin"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 )
 
 // nextID is a monotonically increasing counter used to assign unique subscriber
@@ -32,7 +32,7 @@ func streamEvents(c *gin.Context) {
 		return
 	}
 
-	// InsecureSkipVerify disables nhooyr's built-in origin check.
+	// InsecureSkipVerify disables the websocket library's built-in origin check.
 	// The Flutter web app is served from a different origin than the API server,
 	// so the default check (Origin == Host) always fails with 403.
 	// Auth is already enforced via the requireAuth middleware (?token= / Bearer).
@@ -43,7 +43,8 @@ func streamEvents(c *gin.Context) {
 		c.Status(http.StatusBadRequest)
 		return
 	}
-	defer conn.CloseNow()
+	// Best-effort: the handler is unwinding, so a failed close has nowhere to go.
+	defer func() { _ = conn.CloseNow() }()
 
 	id := strconv.FormatUint(nextID.Add(1), 10)
 	ch, unsub := deps.EventBus().Subscribe(id)
