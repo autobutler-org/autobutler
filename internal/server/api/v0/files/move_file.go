@@ -10,13 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type moveFileRequest struct {
-	OldFilePath     string `json:"oldFilePath"`
-	NewFilePath     string `json:"newFilePath"`
-	OldDeviceSerial string `json:"oldDeviceSerial"`
-	NewDeviceSerial string `json:"newDeviceSerial"`
-}
-
 // moveFile godoc
 // @Summary Move or rename a file
 // @Description Enqueue a file move operation between paths/devices

@@ -10,23 +10,10 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
-	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 
 	"github.com/gin-gonic/gin"
 )
-
-// uploadDestination is where an upload lands, for both this endpoint and the
-// chunked sessions in upload_session.go. Both have to make the same choice
-// between the VFS namespace and the StorageService, so the choice lives in one
-// place (#1629).
-func uploadDestination(deps deputil.Dependencies) uploadutil.Destination {
-	return uploadutil.Destination{
-		Registry: deps.VFSRegistry(),
-		Storage:  deps.StorageService(),
-		EventBus: deps.EventBus(),
-	}
-}
 
 // uploadFiles godoc
 // @Summary Upload files to the top-level directory

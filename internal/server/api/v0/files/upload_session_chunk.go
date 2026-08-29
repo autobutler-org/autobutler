@@ -1,0 +1,63 @@
+package v0_files
+
+import (
+	"errors"
+	"net/http"
+
+	"github.com/autobutler-org/quark/pkg/util/ctxutil"
+	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/uploadutil"
+
+	"github.com/gin-gonic/gin"
+)
+
+// uploadSessionChunk godoc
+// @Summary Send one chunk of a resumable upload
+// @Description Append the chunk named by Content-Range; the last one commits the file
+// @Tags files
+// @Accept octet-stream
+// @Produce json
+// @Param sessionId path string true "Upload session id"
+// @Param Content-Range header string true "Byte range of this chunk, e.g. bytes 0-8388607/20971520"
+// @Success 200 {object} uploadChunkResponse "OK"
+// @Failure 400 {object} serverutil.Response "Bad Request"
+// @Failure 404 {object} serverutil.Response "Not Found"
+// @Failure 409 {object} serverutil.Response "Conflict"
+// @Router /files/upload-session/{sessionId} [put]
+func uploadSessionChunk(c *gin.Context) *serverutil.Response {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return serverutil.InternalServerError(nil)
+	}
+	store := deps.UploadSessions()
+	if store == nil {
+		return serverutil.InternalServerError(errors.New("upload sessions are not configured"))
+	}
+
+	chunk, err := uploadutil.ParseContentRange(c.GetHeader("Content-Range"))
+	if err != nil {
+		return uploadSessionError(c, err)
+	}
+
+	result, err := store.WriteChunk(uploadutil.WriteChunkParams{
+		Ctx:         c.Request.Context(),
+		Destination: uploadDestination(deps),
+		SessionID:   c.Param(sessionIDParam),
+		Range:       chunk,
+		Body:        c.Request.Body,
+	})
+	if err != nil {
+		return uploadSessionError(c, err)
+	}
+	return serverutil.Ok().WithData(uploadChunkResponse{
+		SessionID: result.SessionID,
+		Offset:    result.Offset,
+		Complete:  result.Complete,
+		Path:      result.Path,
+	})
+}
+
+var uploadSessionChunkRoute = serverutil.ApiRoute(
+	http.MethodPut, "/files/upload-session/:"+sessionIDParam, uploadSessionChunk,
+)

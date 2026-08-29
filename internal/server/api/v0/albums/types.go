@@ -1,5 +1,9 @@
 package v0_albums
 
+import (
+	"github.com/autobutler-org/quark/pkg/util/serverutil"
+)
+
 // AlbumJSON is the JSON representation of a photo album.
 type AlbumJSON struct {
 	ID        int64       `json:"id"`
@@ -19,4 +23,38 @@ type AlbumItemJSON struct {
 	DeviceSerial string `json:"deviceSerial"`
 	RelPath      string `json:"relPath"`
 	AddedAt      string `json:"addedAt"`
+}
+
+type addPhotoRequest struct {
+	DeviceSerial string `json:"deviceSerial"`
+	RelPath      string `json:"relPath"`
+}
+
+type router struct{}
+
+func (r *router) Routes() []*serverutil.Route {
+	return []*serverutil.Route{
+		listAlbumsRoute,
+		getAlbumRoute,
+		createAlbumRoute,
+		renameAlbumRoute,
+		moveAlbumRoute,
+		deleteAlbumRoute,
+		listAlbumItemsRoute,
+		addPhotoToAlbumRoute,
+		removePhotoFromAlbumRoute,
+	}
+}
+
+type createAlbumRequest struct {
+	Name     string `json:"name" binding:"required"`
+	ParentID *int64 `json:"parentId"`
+}
+
+type moveAlbumRequest struct {
+	ParentID *int64 `json:"parentId"`
+}
+
+type renameAlbumRequest struct {
+	Name string `json:"name" binding:"required"`
 }

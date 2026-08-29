@@ -11,12 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type rotatePhotoRequest struct {
-	RelPath          string `json:"relPath"          binding:"required"`
-	Serial           string `json:"serial"`
-	RotationQuarters int64  `json:"rotationQuarters"` // 0–3; 0 deletes the record
-}
-
 // rotatePhoto godoc
 // @Summary Save the rotation for a photo
 // @Description Persists the viewer rotation (0/1/2/3 × 90° CW) for a photo server-side.

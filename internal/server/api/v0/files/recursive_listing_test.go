@@ -8,7 +8,7 @@ import (
 	"slices"
 	"testing"
 
-	v1_files "github.com/autobutler-org/quark/internal/server/api/v0/files"
+	"github.com/autobutler-org/quark/internal/server/api/v0/files"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
@@ -83,7 +83,7 @@ func newEngineForDeps(deps deputil.Dependencies) *gin.Engine {
 		c.Next()
 	})
 	group := engine.Group("/api/v0")
-	serverutil.RegisterRouterWithGroup(group, v1_files.NewRouter())
+	serverutil.RegisterRouterWithGroup(group, v0_files.NewRouter())
 	return engine
 }
 

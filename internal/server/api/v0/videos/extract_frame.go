@@ -17,19 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// extractFrameRequest is the POST body for /videos/extract-frame.
-type extractFrameRequest struct {
-	RelPath     string `json:"relPath"`
-	Serial      string `json:"serial"`
-	TimestampMs int64  `json:"timestampMs"`
-}
-
-// extractFrameResponse is returned on success.
-type extractFrameResponse struct {
-	RelPath string `json:"relPath"`
-}
-
-// extractVideoFrame godoc
+// extractFrame godoc
 // @Summary Extract a still frame from a video
 // @Description Extracts a JPEG frame at the given timestamp and saves it alongside the source video.
 // @Tags videos
@@ -42,7 +30,7 @@ type extractFrameResponse struct {
 // @Failure 501 {object} serverutil.Response "Not Implemented — ffmpeg not available"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Router /videos/extract-frame [post]
-func extractVideoFrame(c *gin.Context) *serverutil.Response {
+func extractFrame(c *gin.Context) *serverutil.Response {
 	if !videoutil.Available() {
 		return serverutil.NewResponse().
 			WithStatusCode(http.StatusNotImplemented).
@@ -110,18 +98,6 @@ func extractVideoFrame(c *gin.Context) *serverutil.Response {
 		WithData(extractFrameResponse{RelPath: outRel})
 }
 
-// formatFrameTimestamp converts a Duration to a human-readable frame label,
-// e.g. 2500ms → "0m02s", 3725000ms → "1h02m05s".
-func formatFrameTimestamp(d time.Duration) string {
-	h := int(d.Hours())
-	m := int(d.Minutes()) % 60
-	s := int(d.Seconds()) % 60
-	if h > 0 {
-		return fmt.Sprintf("%dh%02dm%02ds", h, m, s)
-	}
-	return fmt.Sprintf("%dm%02ds", m, s)
-}
-
-var extractVideoFrameRoute = serverutil.ApiRoute(
-	"POST", "/videos/extract-frame", extractVideoFrame,
+var extractFrameRoute = serverutil.ApiRoute(
+	"POST", "/videos/extract-frame", extractFrame,
 )
