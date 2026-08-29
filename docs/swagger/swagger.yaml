@@ -25,13 +25,6 @@ definitions:
       statusCode:
         type: integer
     type: object
-  storageutil.BackupToDeviceParams:
-    properties:
-      sourceDeviceSerial:
-        type: string
-      targetDeviceSerial:
-        type: string
-    type: object
   updateutil.UpdateSource:
     properties:
       account:
@@ -2217,34 +2210,6 @@ paths:
       summary: Update settings
       tags:
       - settings
-  /storage/devices/backup:
-    post:
-      description: Begin a backup to a device
-      parameters:
-      - description: Backup parameters
-        in: body
-        name: backupParams
-        required: true
-        schema:
-          $ref: '#/definitions/storageutil.BackupToDeviceParams'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Do a one-time backup to a device
-      tags:
-      - storage
   /storage/devices/rename:
     patch:
       consumes:
@@ -2421,37 +2386,6 @@ paths:
       summary: List storage device statuses
       tags:
       - storage
-  /storage/devices/status/{serial}:
-    get:
-      description: Returns status for a single storage device identified by serial
-      parameters:
-      - description: Device serial
-        in: path
-        name: serial
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Get storage device status by serial
-      tags:
-      - storage
   /storage/devices/usb/{serial}:
     delete:
       description: Unmounts a USB storage device identified by serial
@@ -2553,39 +2487,6 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: List available versions
-      tags:
-      - version
-  /version/latest:
-    get:
-      description: Retrieves the latest available version of the application
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Latest version information
-          schema:
-            $ref: '#/definitions/updateutil.UpdateVersion'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Get latest version
-      tags:
-      - version
-    post:
-      description: Finds and installs the latest version
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v0_version.UpdateRequest'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Update to the latest version
       tags:
       - version
   /version/update:

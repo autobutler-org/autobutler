@@ -66,7 +66,8 @@ curl -s "$QUARK_URL/api/v0/files" -H "Authorization: Bearer $TOKEN"
 ```bash
 curl -s $QUARK_URL/api/v0/version -H "Authorization: Bearer $TOKEN"
 curl -s $QUARK_URL/api/v0/version/available -H "Authorization: Bearer $TOKEN"
-curl -s -X POST $QUARK_URL/api/v0/version/latest -H "Authorization: Bearer $TOKEN"
+curl -s -X POST $QUARK_URL/api/v0/version/update -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"version":"v1.2.3"}'
 ```
 
 ### Storage devices

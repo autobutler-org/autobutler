@@ -15,7 +15,5 @@ func (r *router) Routes() []*serverutil.Route {
 		getRemoteAccessRoute,
 		enableRemoteAccessRoute,
 		disableRemoteAccessRoute,
-		getUpdateEgressRoute,
-		applyUpdateEgressRoute,
 	}
 }

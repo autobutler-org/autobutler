@@ -14,9 +14,7 @@ func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		doUpdateRoute,
 		getInstalledVersionRoute,
-		getLatestVersionRoute,
 		getSbomRoute,
 		listVersionsRoute,
-		updateToLatestRoute,
 	}
 }
