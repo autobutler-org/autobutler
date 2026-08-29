@@ -17,7 +17,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // authRateLimitedPaths are the API paths that require rate limiting.
@@ -258,7 +257,6 @@ func Use(router *gin.Engine, deps deputil.Dependencies) {
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowCredentials = false // see comment above
 	config.MaxAge = 12 * time.Hour
-	router.Use(otelgin.Middleware("quark-server"))
 	router.Use(cors.New(config))
 	router.Use(inject(deps))
 	router.Use(trackDevice(deps))
