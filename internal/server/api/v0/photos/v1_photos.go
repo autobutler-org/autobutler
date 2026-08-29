@@ -2,7 +2,7 @@ package v0_photos
 
 import "github.com/autobutler-org/quark/pkg/util/serverutil"
 
-// Router for /api/v1/photos endpoints
+// Router for /api/v0/photos endpoints
 // Registers the /photos route
 
 type router struct{}
