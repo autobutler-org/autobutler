@@ -1,4 +1,4 @@
-package v0_vault
+package vaultutil
 
 import (
 	"database/sql"
@@ -52,27 +52,27 @@ func TestNullableInt64_RoundTrip(t *testing.T) {
 // --- extractURLHost ---
 
 func TestExtractURLHost_Empty(t *testing.T) {
-	if got := extractURLHost(""); got != "" {
+	if got := HostFromURL(""); got != "" {
 		t.Errorf("expected '', got %q", got)
 	}
 }
 
 func TestExtractURLHost_HTTP(t *testing.T) {
-	got := extractURLHost("http://example.com/path?q=1")
+	got := HostFromURL("http://example.com/path?q=1")
 	if got != "example.com" {
 		t.Errorf("expected 'example.com', got %q", got)
 	}
 }
 
 func TestExtractURLHost_HTTPS(t *testing.T) {
-	got := extractURLHost("https://accounts.google.com/login")
+	got := HostFromURL("https://accounts.google.com/login")
 	if got != "accounts.google.com" {
 		t.Errorf("expected 'accounts.google.com', got %q", got)
 	}
 }
 
 func TestExtractURLHost_PortStripped(t *testing.T) {
-	got := extractURLHost("https://example.com:8443/path")
+	got := HostFromURL("https://example.com:8443/path")
 	if got != "example.com" {
 		t.Errorf("expected 'example.com' (no port), got %q", got)
 	}
@@ -80,15 +80,15 @@ func TestExtractURLHost_PortStripped(t *testing.T) {
 
 func TestExtractURLHost_InvalidURL_NoGoroutinePanic(t *testing.T) {
 	// url.Parse is lenient; just ensure no panic on bizarre input.
-	got := extractURLHost("://no-scheme")
+	got := HostFromURL("://no-scheme")
 	_ = got
 }
 
-// --- detectFormat edge cases not covered by import_export_test.go ---
+// --- detectFormat edge cases not covered by import_test.go ---
 
 func TestDetectFormat_WhitespaceTrimmed(t *testing.T) {
 	data := []byte("   \n   {\"entries\":[]}")
-	if got := detectFormat(data); got != "json" {
+	if got := DetectFormat(data); got != "json" {
 		t.Errorf("expected 'json' after trimming whitespace, got %q", got)
 	}
 }
@@ -96,7 +96,7 @@ func TestDetectFormat_WhitespaceTrimmed(t *testing.T) {
 // --- parseBitwardenCSV edge cases ---
 
 func TestParseBitwardenCSV_NoDataRows(t *testing.T) {
-	_, errs := parseBitwardenCSV([]byte("header1,header2\n"))
+	_, errs := ParseBitwardenCSV([]byte("header1,header2\n"))
 	if len(errs) == 0 {
 		t.Error("expected error for no data rows")
 	}
@@ -105,7 +105,7 @@ func TestParseBitwardenCSV_NoDataRows(t *testing.T) {
 func TestParseBitwardenCSV_BothNameAndURLEmpty_Skipped(t *testing.T) {
 	csv := "folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\n" +
 		",0,login,,,,,,u,p,"
-	entries, errs := parseBitwardenCSV([]byte(csv))
+	entries, errs := ParseBitwardenCSV([]byte(csv))
 	if len(entries) != 0 {
 		t.Errorf("expected row with no name and no URL to be skipped, got %d entries", len(entries))
 	}
@@ -117,7 +117,7 @@ func TestParseBitwardenCSV_BothNameAndURLEmpty_Skipped(t *testing.T) {
 func TestParseBitwardenCSV_EmptyNameUsesHost(t *testing.T) {
 	csv := "folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\n" +
 		",0,login,,,,,https://example.com,u,p,"
-	entries, _ := parseBitwardenCSV([]byte(csv))
+	entries, _ := ParseBitwardenCSV([]byte(csv))
 	if len(entries) != 1 {
 		t.Fatalf("expected 1 entry, got %d", len(entries))
 	}
@@ -129,7 +129,7 @@ func TestParseBitwardenCSV_EmptyNameUsesHost(t *testing.T) {
 // --- parseGenericCSV edge cases ---
 
 func TestParseGenericCSV_NoDataRows(t *testing.T) {
-	_, errs := parseGenericCSV([]byte("header1,header2\n"))
+	_, errs := ParseGenericCSV([]byte("header1,header2\n"))
 	if len(errs) == 0 {
 		t.Error("expected error for no data rows")
 	}
@@ -137,7 +137,7 @@ func TestParseGenericCSV_NoDataRows(t *testing.T) {
 
 func TestParseGenericCSV_EmptyNameNoURLFallsToPlaceholder(t *testing.T) {
 	csv := "name,url,username,password\n,, alice,pass\n"
-	entries, _ := parseGenericCSV([]byte(csv))
+	entries, _ := ParseGenericCSV([]byte(csv))
 	if len(entries) != 1 {
 		t.Fatalf("expected 1 entry, got %d", len(entries))
 	}

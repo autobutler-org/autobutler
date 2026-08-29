@@ -1,13 +1,12 @@
 package v0_vault
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,30 +22,25 @@ var updateVaultFolderRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid id"))
 		}
 
-		ctx := c.Request.Context()
-
-		if _, err := deps.VaultDB().Queries.GetVaultFolder(ctx, id); errors.Is(err, sql.ErrNoRows) {
-			return serverutil.NotFound(fmt.Errorf("folder not found"))
-		} else if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("get folder: %w", err))
-		}
-
 		var req createFolderRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 		}
 
-		if err := deps.VaultDB().Queries.UpdateVaultFolder(ctx, db.UpdateVaultFolderParams{
-			Name:      req.Name,
-			ParentID:  nullableInt64(req.ParentID),
-			SortOrder: req.SortOrder,
-			ID:        id,
-		}); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("update folder: %w", err))
+		result, err := vaultutil.UpdateFolder(c.Request.Context(), vaultutil.UpdateFolderParams{
+			Queries: deps.VaultDB().Queries,
+			ID:      id,
+			Fields:  req.fields(),
+		})
+		if errors.Is(err, vaultutil.ErrFolderNotFound) {
+			return serverutil.NotFound(err)
+		}
+		if err != nil {
+			return serverutil.InternalServerError(err)
 		}
 
 		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(gin.H{
-			"id": id,
+			"id": result.ID,
 		})
 	},
 )

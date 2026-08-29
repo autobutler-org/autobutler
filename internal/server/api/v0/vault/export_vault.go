@@ -2,31 +2,14 @@ package v0_vault
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
-
-type exportEntry struct {
-	Name         string        `json:"name"`
-	URL          string        `json:"url"`
-	URLHost      string        `json:"urlHost"`
-	Username     string        `json:"username"`
-	Password     string        `json:"password"`
-	Notes        string        `json:"notes,omitempty"`
-	TOTPSecret   string        `json:"totpSecret,omitempty"`
-	CustomFields []customField `json:"customFields,omitempty"`
-	FolderName   string        `json:"folderName,omitempty"`
-}
-
-type exportJSON struct {
-	Entries []exportEntry `json:"entries"`
-	Folders []string      `json:"folders"`
-}
 
 var exportVaultRoute = serverutil.ApiRoute(
 	"GET", "/vault/export", func(c *gin.Context) *serverutil.Response {
@@ -36,58 +19,14 @@ var exportVaultRoute = serverutil.ApiRoute(
 		}
 		defer vaultcrypto.ZeroKey(key)
 
-		ctx := c.Request.Context()
 		format := c.DefaultQuery("format", "json")
 
-		folders, err := deps.VaultDB().Queries.ListVaultFolders(ctx)
+		result, err := vaultutil.Export(c.Request.Context(), vaultutil.ExportParams{
+			Queries: deps.VaultDB().Queries,
+			Key:     key,
+		})
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("list folders: %w", err))
-		}
-		folderMap := make(map[int64]string)
-		folderNames := make([]string, 0, len(folders))
-		for _, f := range folders {
-			folderMap[f.ID] = f.Name
-			folderNames = append(folderNames, f.Name)
-		}
-
-		entries, err := deps.VaultDB().Queries.ListAllVaultEntriesForReEncrypt(ctx)
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("list entries: %w", err))
-		}
-
-		var exported []exportEntry
-		for _, e := range entries {
-			full, err := deps.VaultDB().Queries.GetVaultEntry(ctx, e.ID)
-			if err != nil {
-				return serverutil.InternalServerError(fmt.Errorf("get entry %d: %w", e.ID, err))
-			}
-
-			plaintext, err := vaultcrypto.Decrypt(key, full.Ciphertext, full.Nonce)
-			if err != nil {
-				return serverutil.InternalServerError(fmt.Errorf("decrypt entry %d: %w", e.ID, err))
-			}
-
-			var payload entryPayload
-			if err := json.Unmarshal(plaintext, &payload); err != nil {
-				return serverutil.InternalServerError(fmt.Errorf("unmarshal entry %d: %w", e.ID, err))
-			}
-
-			folderName := ""
-			if full.FolderID.Valid {
-				folderName = folderMap[full.FolderID.Int64]
-			}
-
-			exported = append(exported, exportEntry{
-				Name:         full.Name,
-				URL:          payload.URL,
-				URLHost:      full.UrlHost,
-				Username:     payload.Username,
-				Password:     payload.Password,
-				Notes:        payload.Notes,
-				TOTPSecret:   payload.TOTPSecret,
-				CustomFields: payload.CustomFields,
-				FolderName:   folderName,
-			})
+			return serverutil.InternalServerError(err)
 		}
 
 		c.Header("Cache-Control", "no-store")
@@ -95,9 +34,9 @@ var exportVaultRoute = serverutil.ApiRoute(
 
 		switch format {
 		case "csv":
-			records := make([][]string, 0, len(exported)+1)
+			records := make([][]string, 0, len(result.Entries)+1)
 			records = append(records, []string{"name", "url", "username", "password", "notes", "totp_secret", "folder"})
-			for _, e := range exported {
+			for _, e := range result.Entries {
 				records = append(records, []string{e.Name, e.URL, e.Username, e.Password, e.Notes, e.TOTPSecret, e.FolderName})
 			}
 
@@ -112,9 +51,9 @@ var exportVaultRoute = serverutil.ApiRoute(
 
 		default:
 			c.Header("Content-Disposition", "attachment; filename=quark_vault.json")
-			return serverutil.Ok().WithData(exportJSON{
-				Entries: exported,
-				Folders: folderNames,
+			return serverutil.Ok().WithData(vaultutil.ExportJSON{
+				Entries: result.Entries,
+				Folders: result.FolderNames,
 			})
 		}
 	},

@@ -1,14 +1,13 @@
 package v0_vault
 
 import (
-	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,37 +24,18 @@ var getVaultEntryRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid id"))
 		}
 
-		entry, err := deps.VaultDB().Queries.GetVaultEntry(c.Request.Context(), id)
-		if errors.Is(err, sql.ErrNoRows) {
-			return serverutil.NotFound(fmt.Errorf("entry not found"))
-		}
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("get entry: %w", err))
-		}
-
-		plaintext, err := vaultcrypto.Decrypt(key, entry.Ciphertext, entry.Nonce)
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("decrypt entry: %w", err))
-		}
-
-		var payload entryPayload
-		if err := json.Unmarshal(plaintext, &payload); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("unmarshal entry: %w", err))
-		}
-
-		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(entryDetail{
-			ID:           entry.ID,
-			Name:         entry.Name,
-			URL:          payload.URL,
-			URLHost:      entry.UrlHost,
-			Username:     payload.Username,
-			Password:     payload.Password,
-			Notes:        payload.Notes,
-			TOTPSecret:   payload.TOTPSecret,
-			CustomFields: payload.CustomFields,
-			FolderID:     fromNullInt64(entry.FolderID),
-			CreatedAt:    entry.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
-			UpdatedAt:    entry.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+		result, err := vaultutil.GetEntry(c.Request.Context(), vaultutil.GetEntryParams{
+			Queries: deps.VaultDB().Queries,
+			Key:     key,
+			ID:      id,
 		})
+		if errors.Is(err, vaultutil.ErrEntryNotFound) {
+			return serverutil.NotFound(err)
+		}
+		if err != nil {
+			return serverutil.InternalServerError(err)
+		}
+
+		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(result.Entry)
 	},
 )

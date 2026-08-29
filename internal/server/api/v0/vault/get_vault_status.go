@@ -1,10 +1,8 @@
 package v0_vault
 
 import (
-	"database/sql"
-	"errors"
-
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,37 +13,23 @@ var getVaultStatusRoute = serverutil.ApiRoute(
 			return errResp
 		}
 
-		ctx := c.Request.Context()
-		config, err := deps.VaultDB().Queries.GetVaultConfig(ctx)
-
-		initialized := true
-		autoLock := int64(900)
-		if errors.Is(err, sql.ErrNoRows) {
-			initialized = false
-		} else if err != nil {
+		result, err := vaultutil.Status(c.Request.Context(), vaultutil.StatusParams{
+			VaultQueries: deps.VaultDB().Queries,
+			MainQueries:  deps.Database().Queries,
+			Session:      deps.VaultSession(),
+			Storage:      deps.StorageService(),
+		})
+		if err != nil {
 			return serverutil.InternalServerError(err)
-		} else {
-			autoLock = config.AutoLockSeconds
-		}
-
-		locked := deps.VaultSession().IsLocked()
-		lockReason := deps.VaultSession().LockReason()
-
-		storageDevice := "internal"
-		deviceConnected := true
-		if serial, locErr := deps.Database().Queries.GetVaultLocation(ctx); locErr == nil && serial != "" {
-			storageDevice = serial
-			device, devErr := deps.StorageService().FindManagedDeviceBySerial(serial)
-			deviceConnected = devErr == nil && device != nil
 		}
 
 		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(vaultStatusResponse{
-			Initialized:     initialized,
-			Locked:          locked,
-			AutoLockSeconds: autoLock,
-			StorageDevice:   storageDevice,
-			DeviceConnected: deviceConnected,
-			LockReason:      lockReason,
+			Initialized:     result.Initialized,
+			Locked:          result.Locked,
+			AutoLockSeconds: result.AutoLockSeconds,
+			StorageDevice:   result.StorageDevice,
+			DeviceConnected: result.DeviceConnected,
+			LockReason:      result.LockReason,
 		})
 	},
 )

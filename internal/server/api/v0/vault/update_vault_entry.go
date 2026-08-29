@@ -1,15 +1,13 @@
 package v0_vault
 
 import (
-	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,51 +24,26 @@ var updateVaultEntryRoute = serverutil.ApiRoute(
 			return serverutil.BadRequest(fmt.Errorf("invalid id"))
 		}
 
-		ctx := c.Request.Context()
-
-		if _, err := deps.VaultDB().Queries.GetVaultEntry(ctx, id); errors.Is(err, sql.ErrNoRows) {
-			return serverutil.NotFound(fmt.Errorf("entry not found"))
-		} else if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("get entry: %w", err))
-		}
-
 		var req createEntryRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			return serverutil.BadRequest(fmt.Errorf("invalid request: %w", err))
 		}
 
-		payload := entryPayload{
-			URL:          req.URL,
-			Username:     req.Username,
-			Password:     req.Password,
-			Notes:        req.Notes,
-			TOTPSecret:   req.TOTPSecret,
-			CustomFields: req.CustomFields,
+		result, err := vaultutil.UpdateEntry(c.Request.Context(), vaultutil.UpdateEntryParams{
+			Queries: deps.VaultDB().Queries,
+			Key:     key,
+			ID:      id,
+			Fields:  req.fields(),
+		})
+		if errors.Is(err, vaultutil.ErrEntryNotFound) {
+			return serverutil.NotFound(err)
 		}
-
-		plaintext, err := json.Marshal(payload)
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("marshal entry: %w", err))
-		}
-
-		ciphertext, nonce, err := vaultcrypto.Encrypt(key, plaintext)
-		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("encrypt entry: %w", err))
-		}
-
-		if err := deps.VaultDB().Queries.UpdateVaultEntry(ctx, db.UpdateVaultEntryParams{
-			Name:       req.Name,
-			UrlHost:    extractURLHost(req.URL),
-			FolderID:   nullableInt64(req.FolderID),
-			Ciphertext: ciphertext,
-			Nonce:      nonce,
-			ID:         id,
-		}); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("update entry: %w", err))
+			return serverutil.InternalServerError(err)
 		}
 
 		return serverutil.Ok().WithContentType(serverutil.ContentTypeJSON).WithData(gin.H{
-			"id": id,
+			"id": result.ID,
 		})
 	},
 )
