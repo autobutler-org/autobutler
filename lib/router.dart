@@ -55,7 +55,7 @@ class AppRoutes {
   ///
   /// go_router always reports the current location percent-encoded, so routes
   /// built here must be encoded too. Raw interpolation produced `/files/my
-  /// doc.abdoc` while the live location read `/files/my%20doc.abdoc`, and every
+  /// doc.qdoc` while the live location read `/files/my%20doc.qdoc`, and every
   /// site that string-compares a built route against the live location then
   /// mismatched for any name containing a space (#1604).
   static String encodeFilePath(String path) {
@@ -107,7 +107,7 @@ class AppRoutes {
   }
 
   /// Build a URL for a specific document file.
-  /// e.g. docFile('reports/q1.abdoc') → '/docs/reports/q1.abdoc'
+  /// e.g. docFile('reports/q1.qdoc') → '/docs/reports/q1.qdoc'
   /// Device serial is passed as a query param when non-empty.
   static String docFile(String path, {String? serial}) {
     final clean = encodeFilePath(path);
@@ -118,7 +118,7 @@ class AppRoutes {
   }
 
   /// Build a URL for a specific spreadsheet file.
-  /// e.g. sheetFile('data/budget.absheet') → '/sheets/data/budget.absheet'
+  /// e.g. sheetFile('data/budget.qsheet') → '/sheets/data/budget.qsheet'
   static String sheetFile(String path, {String? serial}) {
     final clean = encodeFilePath(path);
     final base = '$sheets/$clean';

@@ -1,6 +1,6 @@
 # Docs Journeys
 
-Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
+Covers the Docs page (`/docs`) and the document editor for `.qdoc` files.
 
 ---
 
@@ -14,14 +14,14 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 
 **Expected result:**
 
-- A list of `.abdoc` files stored on the quark is displayed.
+- A list of `.qdoc` files stored on the quark is displayed.
 - Empty state is shown if no documents exist.
 
 ---
 
 ### JN-DOC-002: Open an existing document
 
-**Preconditions:** At least one `.abdoc` file exists in Files.
+**Preconditions:** At least one `.qdoc` file exists in Files.
 
 **Steps:**
 
@@ -48,7 +48,7 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 
 **Expected result:**
 
-- New `.abdoc` file is created on the quark.
+- New `.qdoc` file is created on the quark.
 - Editor opens for the new file.
 
 ---
@@ -71,11 +71,11 @@ Covers the Docs page (`/docs`) and the document editor for `.abdoc` files.
 
 ### JN-DOC-005: Deep-link directly to a document
 
-**Preconditions:** A `.abdoc` file exists at `reports/q1.abdoc`.
+**Preconditions:** A `.qdoc` file exists at `reports/q1.qdoc`.
 
 **Steps:**
 
-1. Navigate directly to `/docs/reports/q1.abdoc`.
+1. Navigate directly to `/docs/reports/q1.qdoc`.
 
 **Expected result:**
 

@@ -448,7 +448,7 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		{"video.flv", FileTypeVideo},
 		{"book.epub", FileTypeEpub},
 		{"document.docx", FileTypeDocx},
-		{"notes.abdoc", FileTypeAbdoc},
+		{"notes.qdoc", FileTypeQdoc},
 		{"archive.zip", FileTypeArchive},
 		{"file.txt", FileTypeText},
 		{"photo.cr2", FileTypeImage},

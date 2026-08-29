@@ -39,8 +39,6 @@
   "words": [
     "aaabcd",
     "AARRGGBB",
-    "abdoc",
-    "absheet",
     "afdesign",
     "airgap",
     "allprojects",
@@ -311,6 +309,8 @@
     "provisionutil",
     "pubout",
     "pubspec",
+    "qdoc",
+    "qsheet",
     "quark",
     "Quark",
     "quarkrelease",

@@ -28,39 +28,39 @@ func statPath(t *testing.T, engine *gin.Engine, filePath string) (map[string]any
 
 // --- stat endpoint: regular files ---
 
-func TestStatFile_AbdocFile(t *testing.T) {
+func TestStatFile_QdocFile(t *testing.T) {
 	engine, filesDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(filesDir, "note.abdoc"), []byte("{}"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "note.qdoc"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	body, code := statPath(t, engine, "note.abdoc")
+	body, code := statPath(t, engine, "note.qdoc")
 	if code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", code)
 	}
 	if isDir, _ := body["isDir"].(bool); isDir {
-		t.Error("expected isDir=false for an abdoc file")
+		t.Error("expected isDir=false for an qdoc file")
 	}
-	if ft, _ := body["fileType"].(string); ft != "abdoc" {
-		t.Errorf("expected fileType %q, got %q", "abdoc", ft)
+	if ft, _ := body["fileType"].(string); ft != "qdoc" {
+		t.Errorf("expected fileType %q, got %q", "qdoc", ft)
 	}
 }
 
-func TestStatFile_AbsheetFile(t *testing.T) {
+func TestStatFile_QsheetFile(t *testing.T) {
 	engine, filesDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(filesDir, "budget.absheet"), []byte("{}"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filesDir, "budget.qsheet"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	body, code := statPath(t, engine, "budget.absheet")
+	body, code := statPath(t, engine, "budget.qsheet")
 	if code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", code)
 	}
 	if isDir, _ := body["isDir"].(bool); isDir {
-		t.Error("expected isDir=false for an absheet file")
+		t.Error("expected isDir=false for an qsheet file")
 	}
-	if ft, _ := body["fileType"].(string); ft != "absheet" {
-		t.Errorf("expected fileType %q, got %q", "absheet", ft)
+	if ft, _ := body["fileType"].(string); ft != "qsheet" {
+		t.Errorf("expected fileType %q, got %q", "qsheet", ft)
 	}
 }
 
@@ -124,36 +124,36 @@ func TestStatFile_PlainDirectory(t *testing.T) {
 // These are the core regression cases. A folder named like a known file
 // extension must be identified as a directory, not as that file type.
 
-func TestStatFile_FolderNamedLikeAbdoc(t *testing.T) {
+func TestStatFile_FolderNamedLikeQdoc(t *testing.T) {
 	engine, filesDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "things.abdoc"), 0755); err != nil {
+	if err := os.Mkdir(filepath.Join(filesDir, "things.qdoc"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
-	body, code := statPath(t, engine, "things.abdoc")
+	body, code := statPath(t, engine, "things.qdoc")
 	if code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", code)
 	}
 	if isDir, _ := body["isDir"].(bool); !isDir {
-		t.Error("expected isDir=true: a folder named things.abdoc must not be treated as a document")
+		t.Error("expected isDir=true: a folder named things.qdoc must not be treated as a document")
 	}
 	if ft, _ := body["fileType"].(string); ft != "folder" {
 		t.Errorf("expected fileType %q, got %q", "folder", ft)
 	}
 }
 
-func TestStatFile_FolderNamedLikeAbsheet(t *testing.T) {
+func TestStatFile_FolderNamedLikeQsheet(t *testing.T) {
 	engine, filesDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "data.absheet"), 0755); err != nil {
+	if err := os.Mkdir(filepath.Join(filesDir, "data.qsheet"), 0755); err != nil {
 		t.Fatal(err)
 	}
 
-	body, code := statPath(t, engine, "data.absheet")
+	body, code := statPath(t, engine, "data.qsheet")
 	if code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", code)
 	}
 	if isDir, _ := body["isDir"].(bool); !isDir {
-		t.Error("expected isDir=true: a folder named data.absheet must not be treated as a spreadsheet")
+		t.Error("expected isDir=true: a folder named data.qsheet must not be treated as a spreadsheet")
 	}
 	if ft, _ := body["fileType"].(string); ft != "folder" {
 		t.Errorf("expected fileType %q, got %q", "folder", ft)
@@ -204,19 +204,19 @@ func TestStatFile_NestedFile(t *testing.T) {
 	if err := os.Mkdir(sub, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(sub, "report.abdoc"), []byte("{}"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(sub, "report.qdoc"), []byte("{}"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	body, code := statPath(t, engine, "docs/report.abdoc")
+	body, code := statPath(t, engine, "docs/report.qdoc")
 	if code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", code)
 	}
 	if isDir, _ := body["isDir"].(bool); isDir {
-		t.Error("expected isDir=false for a nested abdoc file")
+		t.Error("expected isDir=false for a nested qdoc file")
 	}
-	if ft, _ := body["fileType"].(string); ft != "abdoc" {
-		t.Errorf("expected fileType %q, got %q", "abdoc", ft)
+	if ft, _ := body["fileType"].(string); ft != "qdoc" {
+		t.Errorf("expected fileType %q, got %q", "qdoc", ft)
 	}
 }
 
@@ -247,7 +247,7 @@ func TestStatFile_NestedFolderNamedLikeFile(t *testing.T) {
 func TestStatFile_NotFound(t *testing.T) {
 	engine, _ := newTestEngine(t)
 
-	_, code := statPath(t, engine, "nonexistent.abdoc")
+	_, code := statPath(t, engine, "nonexistent.qdoc")
 	if code != http.StatusNotFound {
 		t.Errorf("expected 404 for missing path, got %d", code)
 	}

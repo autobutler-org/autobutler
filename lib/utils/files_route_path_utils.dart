@@ -25,12 +25,12 @@ bool isLikelyFilePath(String path) {
 
 bool hasSupportedFilesEditorForPath(String path) {
   final normalized = path.trim().toLowerCase();
-  return normalized.endsWith('.abdoc') || normalized.endsWith('.absheet');
+  return normalized.endsWith('.qdoc') || normalized.endsWith('.qsheet');
 }
 
 bool hasSupportedFilesEditorForType(String fileType) {
   final normalized = fileType.trim().toLowerCase();
-  return normalized == 'abdoc' || normalized == 'absheet';
+  return normalized == 'qdoc' || normalized == 'qsheet';
 }
 
 /// Backend file types with no in-app viewer yet.

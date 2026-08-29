@@ -317,7 +317,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   String _nameFromPath(String path) {
     final name = path.split('/').last;
-    return name.endsWith('.abdoc') ? name.substring(0, name.length - 6) : name;
+    return name.endsWith('.qdoc') ? name.substring(0, name.length - 6) : name;
   }
 
   /// The live location, canonicalized. go_router always reports it
@@ -537,7 +537,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     try {
       final ops = _controller.document.toDelta().toJson();
       final bytes = utf8.encode(jsonEncode({'ops': ops}));
-      final fileName = '$_displayName.abdoc';
+      final fileName = '$_displayName.qdoc';
       final parentDir = parentPath(widget.filePath);
       final serial = serialOrNull(widget.deviceSerial);
       final file = http.MultipartFile.fromBytes(

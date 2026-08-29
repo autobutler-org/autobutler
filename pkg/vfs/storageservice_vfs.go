@@ -324,7 +324,7 @@ func (v *StorageServiceVFS) Watch(_ context.Context, _ string) (<-chan WatchEven
 
 // deviceFileInfoToVFS converts a storageutil.DeviceFileInfo to a vfs.FileInfo.
 // relPath is the entry's path relative to the listing root — the entry name for
-// a single-level listing, "sub/deep.abdoc" for a recursive one. Callers such as
+// a single-level listing, "sub/deep.qdoc" for a recursive one. Callers such as
 // the folder-download zip builder trim the requested path off Path to get an
 // archive-relative name, so it has to carry the full subtree path.
 func deviceFileInfoToVFS(f *storageutil.DeviceFileInfo, nsID, dirPath, relPath string) FileInfo {

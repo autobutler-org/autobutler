@@ -1,6 +1,6 @@
 # Sheets Journeys
 
-Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` files.
+Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.qsheet` files.
 
 ---
 
@@ -14,14 +14,14 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 
 **Expected result:**
 
-- A list of `.absheet` files stored on the quark is displayed.
+- A list of `.qsheet` files stored on the quark is displayed.
 - Empty state is shown if no spreadsheets exist.
 
 ---
 
 ### JN-SH-002: Open an existing spreadsheet
 
-**Preconditions:** At least one `.absheet` file exists in Files.
+**Preconditions:** At least one `.qsheet` file exists in Files.
 
 **Steps:**
 
@@ -48,7 +48,7 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 
 **Expected result:**
 
-- New `.absheet` file is created on the quark.
+- New `.qsheet` file is created on the quark.
 - Editor opens for the new file with an empty grid.
 
 ---
@@ -74,11 +74,11 @@ Covers the Sheets page (`/sheets`) and the spreadsheet editor for `.absheet` fil
 
 ### JN-SH-005: Deep-link directly to a spreadsheet
 
-**Preconditions:** A `.absheet` file exists at `data/budget.absheet`.
+**Preconditions:** A `.qsheet` file exists at `data/budget.qsheet`.
 
 **Steps:**
 
-1. Navigate directly to `/sheets/data/budget.absheet`.
+1. Navigate directly to `/sheets/data/budget.qsheet`.
 
 **Expected result:**
 

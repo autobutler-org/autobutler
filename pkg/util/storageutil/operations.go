@@ -379,7 +379,7 @@ type UploadFilesStreamedParams struct {
 	RootDir      string
 	DeviceSerial string
 	// Overwrite, when true, replaces an existing file with the same name instead
-	// of appending a numeric suffix (e.g. file_(1).abdoc).
+	// of appending a numeric suffix (e.g. file_(1).qdoc).
 	Overwrite bool
 }
 

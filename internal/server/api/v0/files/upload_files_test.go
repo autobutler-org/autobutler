@@ -18,8 +18,8 @@ import (
 // does not change the behavior these tests assert.
 //
 // That silent flattening is what made "New Document" 404: the frontend sent
-// "notes/meeting.abdoc" as the filename and then navigated to /docs/notes/
-// meeting.abdoc, while the file was written to the root as meeting.abdoc
+// "notes/meeting.qdoc" as the filename and then navigated to /docs/notes/
+// meeting.qdoc, while the file was written to the root as meeting.qdoc
 // (#1603). The fix is client-side — a "/" is now rejected in the New Document
 // / New Spreadsheet dialog — so what these tests pin is the backend half of
 // the invariant: for a flat name, the path the caller navigates to and the
@@ -36,14 +36,14 @@ func TestUploadStripsDirectoryFromFileName(t *testing.T) {
 	}{
 		{
 			name:     "nested name flattens to its basename",
-			uploaded: "notes/meeting.abdoc",
-			want:     "meeting.abdoc",
+			uploaded: "notes/meeting.qdoc",
+			want:     "meeting.qdoc",
 			wantGone: "notes",
 		},
 		{
 			name:     "traversal cannot escape the upload root",
-			uploaded: "../../escape.abdoc",
-			want:     "escape.abdoc",
+			uploaded: "../../escape.qdoc",
+			want:     "escape.qdoc",
 		},
 	}
 
@@ -69,11 +69,11 @@ func TestUploadIntoNestedRootDirKeepsTheDirectory(t *testing.T) {
 	t.Parallel()
 
 	e, filesDir := newStorageVFSTestEngine(t)
-	w := uploadFile(t, e, "/api/v0/files/upload/notes", "meeting.abdoc", "{}")
+	w := uploadFile(t, e, "/api/v0/files/upload/notes", "meeting.qdoc", "{}")
 	if w.Code != http.StatusOK {
 		t.Fatalf("upload returned %d: %s", w.Code, w.Body.String())
 	}
-	assertFileExists(t, filepath.Join(filesDir, "notes", "meeting.abdoc"))
+	assertFileExists(t, filepath.Join(filesDir, "notes", "meeting.qdoc"))
 }
 
 func assertUploadLandsAt(

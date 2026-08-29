@@ -80,9 +80,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
 
   String get _displayName {
     final name = widget.filePath.split('/').last;
-    return name.endsWith('.absheet')
-        ? name.substring(0, name.length - 8)
-        : name;
+    return name.endsWith('.qsheet') ? name.substring(0, name.length - 8) : name;
   }
 
   /// The live location, canonicalized. go_router always reports it
@@ -241,7 +239,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
         'tabs': _tabs.map((t) => t.toJson()).toList(),
       });
       final bytes = utf8.encode(jsonStr);
-      final fileName = '$_displayName.absheet';
+      final fileName = '$_displayName.qsheet';
       final parentDir = parentPath(widget.filePath);
       final file = http.MultipartFile.fromBytes(
         'files',
