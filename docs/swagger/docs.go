@@ -1993,7 +1993,7 @@ const docTemplate = `{
                                 "groups": {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/definitions/v0_photos.DuplicateGroupJSON"
+                                        "$ref": "#/definitions/photoutil.DuplicateGroup"
                                     }
                                 }
                             }
@@ -2979,6 +2979,102 @@ const docTemplate = `{
                 }
             }
         },
+        "photoutil.AlbumRef": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "photoutil.DuplicateGroup": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "description": "Kind is \"exact\" (identical content hash) or \"near\" (perceptual hash\nHamming distance within the configured threshold).",
+                    "type": "string"
+                },
+                "photos": {
+                    "description": "Photos is the list of photos in this duplicate group.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/photoutil.DuplicatePhoto"
+                    }
+                }
+            }
+        },
+        "photoutil.DuplicatePhoto": {
+            "type": "object",
+            "properties": {
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "relPath": {
+                    "type": "string"
+                }
+            }
+        },
+        "photoutil.ExifSummary": {
+            "type": "object",
+            "properties": {
+                "aperture": {
+                    "type": "number"
+                },
+                "dateTaken": {
+                    "type": "string"
+                },
+                "focalLength": {
+                    "type": "number"
+                },
+                "iso": {
+                    "type": "integer"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "lens": {
+                    "type": "string"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "make": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "shutterSpeed": {
+                    "type": "string"
+                }
+            }
+        },
+        "photoutil.PhotoSummary": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "hasLiveVideo": {
+                    "type": "boolean"
+                },
+                "mtime": {
+                    "type": "integer"
+                },
+                "relPath": {
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
         "serverutil.ContentType": {
             "type": "string",
             "enum": [
@@ -3453,79 +3549,6 @@ const docTemplate = `{
                 }
             }
         },
-        "v0_photos.AlbumRefJSON": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "v0_photos.DuplicateGroupJSON": {
-            "type": "object",
-            "properties": {
-                "kind": {
-                    "description": "Kind is \"exact\" (identical content hash) or \"near\" (perceptual hash\nHamming distance within the configured threshold).",
-                    "type": "string"
-                },
-                "photos": {
-                    "description": "Photos is the list of photos in this duplicate group.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v0_photos.DuplicatePhotoJSON"
-                    }
-                }
-            }
-        },
-        "v0_photos.DuplicatePhotoJSON": {
-            "type": "object",
-            "properties": {
-                "deviceSerial": {
-                    "type": "string"
-                },
-                "relPath": {
-                    "type": "string"
-                }
-            }
-        },
-        "v0_photos.ExifJSON": {
-            "type": "object",
-            "properties": {
-                "aperture": {
-                    "type": "number"
-                },
-                "dateTaken": {
-                    "type": "string"
-                },
-                "focalLength": {
-                    "type": "number"
-                },
-                "iso": {
-                    "type": "integer"
-                },
-                "latitude": {
-                    "type": "number"
-                },
-                "lens": {
-                    "type": "string"
-                },
-                "longitude": {
-                    "type": "number"
-                },
-                "make": {
-                    "type": "string"
-                },
-                "model": {
-                    "type": "string"
-                },
-                "shutterSpeed": {
-                    "type": "string"
-                }
-            }
-        },
         "v0_photos.PaginatedPhotosResponse": {
             "type": "object",
             "properties": {
@@ -3538,33 +3561,10 @@ const docTemplate = `{
                 "photos": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v0_photos.PhotoJSON"
+                        "$ref": "#/definitions/photoutil.PhotoSummary"
                     }
                 },
                 "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "v0_photos.PhotoJSON": {
-            "type": "object",
-            "properties": {
-                "fileName": {
-                    "type": "string"
-                },
-                "hasLiveVideo": {
-                    "type": "boolean"
-                },
-                "mtime": {
-                    "type": "integer"
-                },
-                "relPath": {
-                    "type": "string"
-                },
-                "serial": {
-                    "type": "string"
-                },
-                "size": {
                     "type": "integer"
                 }
             }
@@ -3575,11 +3575,11 @@ const docTemplate = `{
                 "albums": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v0_photos.AlbumRefJSON"
+                        "$ref": "#/definitions/photoutil.AlbumRef"
                     }
                 },
                 "exif": {
-                    "$ref": "#/definitions/v0_photos.ExifJSON"
+                    "$ref": "#/definitions/photoutil.ExifSummary"
                 },
                 "fileName": {
                     "type": "string"
