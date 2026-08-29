@@ -162,6 +162,21 @@ class StorageService with AuthenticatedService {
     invalidateDeviceCache();
   }
 
+  /// Unmounts a USB storage device so it can be removed safely.
+  ///
+  /// Not yet called from the UI — the eject action is part 2 of issue #1664.
+  /// Do not delete as unused; the endpoint and this client are deliberate
+  /// groundwork for safe eject.
+  static Future<void> unmountDevice(String serial) async {
+    final uri = apiBaseUri.resolve('/api/v0/storage/devices/usb/$serial');
+    final response = await http.delete(uri, headers: _authHeaders);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      throwApiError(response.statusCode, body?['error'], 'Unmount failed');
+    }
+    invalidateDeviceCache();
+  }
+
   /// Sets a custom display name for a device identified by [devicePath].
   static Future<void> renameDevice(String devicePath, String name) async {
     // Device paths contain slashes (e.g. /dev/disk3s5) — pass as a query
