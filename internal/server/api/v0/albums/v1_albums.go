@@ -2,7 +2,7 @@ package v0_albums
 
 import "github.com/autobutler-org/quark/pkg/util/serverutil"
 
-// Router for /api/v1/albums endpoints
+// Router for /api/v0/albums endpoints
 
 type router struct{}
 

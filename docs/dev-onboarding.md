@@ -110,7 +110,6 @@ internal/
     favorites/          Favorites toggle, list, and check
     photos/             Photo listing, metadata, rotation
     thumbnails/         Thumbnail generation and cache
-  server/api/v1/        Mounted at /api/v1 — currently only vfs/
   server/middleware/    Gin middleware (auth, OTEL, etc.)
 pkg/util/               Shared utilities
   authutil/             Auth: hashing, session tokens, recovery phrases

@@ -81,7 +81,6 @@ curl -s $QUARK_URL/api/v0/storage/devices/status -H "Authorization: Bearer $TOKE
 - `$QUARK_URL` depends on how the quark is being run: `http://localhost:8080` for
   `make watch/backend`, `https://localhost` (:443, self-signed — `curl` needs `-k`) for
   `make watch/backend/secure`, and `http://<tailscale-ip>:80` over remote access
-- All endpoints listed here are under the `/api/v0/` prefix. `/api/v1/` exists but
-  currently mounts only `/vfs`
+- All endpoints listed here are under the `/api/v0/` prefix — it is the only API version
 - Swagger UI available at `$QUARK_URL/swagger` when the backend is running
 - **Always set a `User-Agent` header** matching your agent name (e.g. `exokomodo-bot`, `sable-bot`). The quark tracks connected devices by IP + User-Agent — this is how the admin sees which agent is talking to the quark in the devices list.

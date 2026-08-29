@@ -1,7 +1,7 @@
 paths = {
-  "/api/v1/thumbnails/perf/sample-1.jpg",
-  "/api/v1/thumbnails/perf/sample-2.jpg",
-  "/api/v1/thumbnails/perf/nested/sample-3.jpg"
+  "/api/v0/thumbnails/perf/sample-1.jpg",
+  "/api/v0/thumbnails/perf/sample-2.jpg",
+  "/api/v0/thumbnails/perf/nested/sample-3.jpg"
 }
 
 counter = 0

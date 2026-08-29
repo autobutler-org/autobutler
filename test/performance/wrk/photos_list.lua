@@ -5,6 +5,6 @@ request = function()
   local offset = ((counter - 1) % 10) * 10
   return wrk.format(
     "GET",
-    "/api/v1/photos?limit=50&offset=" .. offset
+    "/api/v0/photos?limit=50&offset=" .. offset
   )
 end
