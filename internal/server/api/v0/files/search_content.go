@@ -1,7 +1,6 @@
 package v0_files
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
@@ -49,15 +48,7 @@ func searchContent(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(nil)
 	}
 
-	limit := searchutil.DefaultLimit
-	if raw := c.Query("limit"); raw != "" {
-		if n, err := strconv.Atoi(raw); err == nil && n > 0 {
-			if n > 200 {
-				n = 200
-			}
-			limit = n
-		}
-	}
+	limit := searchutil.ParseLimit(c.Query("limit"))
 
 	dbConn := deps.Database()
 	if dbConn == nil || dbConn.Db == nil {

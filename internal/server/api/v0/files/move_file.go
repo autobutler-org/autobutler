@@ -3,9 +3,8 @@ package v0_files
 import (
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
-	"github.com/autobutler-org/quark/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
-	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,36 +30,18 @@ func moveFile(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
-	// Use VFS.Move for same-device renames (no serials); fall through to StorageService for cross-device ops.
-	if req.OldDeviceSerial == "" && req.NewDeviceSerial == "" {
-		if reg := deps.VFSRegistry(); reg != nil {
-			if fsys, ok := reg.Get("files"); ok {
-				if err := fsys.Move(c.Request.Context(), req.OldFilePath, req.NewFilePath); err != nil {
-					return serverutil.InternalServerError(err)
-				}
-				deps.EventBus().Publish(eventbus.Event{
-					Kind:    eventbus.EventMove,
-					Path:    req.OldFilePath,
-					NewPath: req.NewFilePath,
-				})
-				return serverutil.Ok()
-			}
-		}
-	}
-	if _, err := deps.StorageService().MoveFile(storageutil.MoveFileParams{
+	if _, err := fileutil.MoveFile(fileutil.MoveFileParams{
+		Ctx:             c.Request.Context(),
+		Registry:        deps.VFSRegistry(),
+		Storage:         deps.StorageService(),
+		EventBus:        deps.EventBus(),
 		OldFilePath:     req.OldFilePath,
 		NewFilePath:     req.NewFilePath,
 		OldDeviceSerial: req.OldDeviceSerial,
 		NewDeviceSerial: req.NewDeviceSerial,
 	}); err != nil {
-		return serverutil.InternalServerError(err)
+		return fileError(err)
 	}
-
-	deps.EventBus().Publish(eventbus.Event{
-		Kind:    eventbus.EventMove,
-		Path:    req.OldFilePath,
-		NewPath: req.NewFilePath,
-	})
 	return serverutil.Ok()
 }
 

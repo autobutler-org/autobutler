@@ -2,13 +2,11 @@ package v0_files
 
 import (
 	"errors"
-	"path"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
-	"github.com/autobutler-org/quark/pkg/util/eventbus"
+	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
-	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +27,6 @@ import (
 func newFolder(c *gin.Context) *serverutil.Response {
 	folderDir := c.Param("folderDir")
 	folderName := c.PostForm("folderName")
-	serial := c.Query("serial")
 
 	if folderDir == "" {
 		return serverutil.BadRequest(errors.New("folderDir is required"))
@@ -42,33 +39,18 @@ func newFolder(c *gin.Context) *serverutil.Response {
 	if !ok {
 		return serverutil.InternalServerError(nil)
 	}
-	// Use VFS.MkdirAll for no-serial folder creation; fall back for device-scoped ops.
-	if serial == "" {
-		if reg := deps.VFSRegistry(); reg != nil {
-			if fsys, ok := reg.Get("files"); ok {
-				if err := fsys.MkdirAll(c.Request.Context(), path.Join(folderDir, folderName)); err != nil {
-					return serverutil.InternalServerError(err)
-				}
-				deps.EventBus().Publish(eventbus.Event{
-					Kind: eventbus.EventNewFolder,
-					Path: path.Join(folderDir, folderName),
-				})
-				return serverutil.Ok()
-			}
-		}
-	}
-	if _, err := deps.StorageService().CreateFolder(storageutil.CreateFolderParams{
-		FolderDir:    folderDir,
-		FolderName:   folderName,
-		DeviceSerial: serial,
-	}); err != nil {
-		return serverutil.InternalServerError(err)
-	}
 
-	deps.EventBus().Publish(eventbus.Event{
-		Kind: eventbus.EventNewFolder,
-		Path: path.Join(folderDir, folderName),
-	})
+	if _, err := fileutil.CreateFolder(fileutil.CreateFolderParams{
+		Ctx:        c.Request.Context(),
+		Registry:   deps.VFSRegistry(),
+		Storage:    deps.StorageService(),
+		EventBus:   deps.EventBus(),
+		FolderDir:  folderDir,
+		FolderName: folderName,
+		Serial:     c.Query("serial"),
+	}); err != nil {
+		return fileError(err)
+	}
 	return serverutil.Ok()
 }
 

@@ -1,29 +1,17 @@
 package v0_files
 
 import (
-	"archive/zip"
 	"fmt"
-	"image"
-	"image/jpeg"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
-	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
-	// Registers the HEIC decoder with image.Decode.
-	_ "github.com/gen2brain/heic"
 	"github.com/gin-gonic/gin"
-	// Register the BMP, TIFF and WebP decoders with image.Decode.
-	_ "golang.org/x/image/bmp"
-	_ "golang.org/x/image/tiff"
-	_ "golang.org/x/image/webp"
 )
 
 // downloadFile godoc
@@ -53,46 +41,35 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	// only works with a real filesystem path, so those always fall through to
 	// StorageService even when VFS is present.
 	if serial == "" && (!wantsJPEG || !photoutil.IsRawFile(filePath)) {
-		if reg := deps.VFSRegistry(); reg != nil {
-			if fsys, ok := reg.Get("files"); ok {
-				return downloadFileVFS(c, deps, fsys, filePath, wantsJPEG)
-			}
+		if fsys := fileutil.FilesVFS(deps.VFSRegistry()); fsys != nil {
+			return downloadFileVFS(c, deps, fsys, filePath, wantsJPEG)
 		}
 	}
 
 	// StorageService fallback (serial routing, RAW conversion, etc.)
-	result, err := deps.StorageService().DownloadFile(storageutil.DownloadFileParams{
-		FilePath:     filePath,
-		DeviceSerial: serial,
+	opened, err := fileutil.OpenDownload(fileutil.OpenDownloadParams{
+		Storage:   deps.StorageService(),
+		FilePath:  filePath,
+		Serial:    serial,
+		WantsJPEG: wantsJPEG,
 	})
 	if err != nil {
-		return serverutil.NotFound(err)
+		return fileError(err)
+	}
+	if opened.File != nil {
+		defer opened.File.Close()
 	}
 
-	if result.IsFolder {
-		zipWriter := zip.NewWriter(c.Writer)
-		defer zipWriter.Close()
-		dirFs := os.DirFS(result.FullPath)
-		if err := zipWriter.AddFS(dirFs); err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to zip folder: %w", err))
+	switch opened.Kind {
+	case fileutil.DownloadFolder:
+		if err := fileutil.ZipDir(c.Writer, opened.FullPath); err != nil {
+			return serverutil.InternalServerError(err)
 		}
-		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", filepath.Base(result.FullPath)))
+		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", opened.FileName))
 		c.Writer.Header().Set("Content-Type", "application/octet-stream")
 		return nil // response written directly to writer
-	}
 
-	f, err := os.Open(result.FullPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return serverutil.NotFound(fmt.Errorf("file not found: %s", filePath))
-		}
-		return serverutil.InternalServerError(fmt.Errorf("failed to open file: %w", err))
-	}
-	defer f.Close()
-
-	ext := strings.ToLower(filepath.Ext(result.FullPath))
-
-	if wantsJPEG && result.FileType == storageutil.FileTypeImage {
+	case fileutil.DownloadRawJPEG, fileutil.DownloadJPEG:
 		// Acquire IO semaphore: JPEG conversion is the most memory-intensive IO
 		// path (full uncompressed image.Image decode + re-encode). Limit
 		// concurrency to prevent RAM spikes and disk thrashing under concurrent
@@ -100,7 +77,7 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		if sem := deps.IOSemaphore(); sem != nil {
 			if !sem.AcquireDefault(c.Request.Context()) {
 				slog.Warn("download: IO semaphore timed out for JPEG conversion",
-					"path", result.FullPath,
+					"path", opened.FullPath,
 					"available", sem.Available(),
 					"cap", sem.Cap(),
 				)
@@ -111,49 +88,35 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 			defer sem.Release()
 		}
 
-		baseName := strings.TrimSuffix(filepath.Base(result.FullPath), ext) + ".jpg"
-
-		if photoutil.IsRawFile(result.FullPath) {
-			jpegBytes, err := photoutil.RawToJPEGBytes(result.FullPath, 92)
+		if opened.Kind == fileutil.DownloadRawJPEG {
+			jpegBytes, err := fileutil.RawJPEGBytes(opened.FullPath)
 			if err != nil {
-				return serverutil.InternalServerError(fmt.Errorf("failed to convert RAW to JPEG: %w", err))
+				return serverutil.InternalServerError(err)
 			}
-			c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
+			c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", opened.FileName))
 			c.Data(http.StatusOK, "image/jpeg", jpegBytes)
 			return nil
 		}
 
-		img, _, err := image.Decode(f)
+		img, err := fileutil.DecodeImage(opened.File)
 		if err != nil {
-			return serverutil.InternalServerError(fmt.Errorf("failed to decode image: %w", err))
+			return serverutil.InternalServerError(err)
 		}
 
-		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", baseName))
+		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", opened.FileName))
 		c.Header("Content-Type", "image/jpeg")
 		c.Status(http.StatusOK)
-		if err := jpeg.Encode(c.Writer, img, &jpeg.Options{Quality: 92}); err != nil {
+		if err := fileutil.EncodeJPEG(c.Writer, img); err != nil {
 			// Headers already committed; log only.
-			slog.Error("download: JPEG stream encode failed", "path", result.FullPath, "err", err)
+			slog.Error("download: JPEG stream encode failed", "path", opened.FullPath, "err", err)
 		}
 		return nil
 	}
 
-	f.Close() // close before c.File re-opens it
-	disposition := "inline"
-	contentType := "application/octet-stream"
-	switch result.FileType {
-	case storageutil.FileTypePDF:
-		contentType = "application/pdf"
-	case storageutil.FileTypeImage:
-		contentType = storageutil.ImageMIMETypeFromExtension(filepath.Ext(result.FullPath))
-	case storageutil.FileTypeVideo:
-		contentType = storageutil.VideoMIMETypeFromExtension(filepath.Ext(result.FullPath))
-	case storageutil.FileTypeAudio:
-		contentType = storageutil.AudioMIMETypeFromExtension(filepath.Ext(result.FullPath))
-	}
-	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=%s", disposition, filepath.Base(result.FullPath)))
-	c.Header("Content-Type", contentType)
-	c.File(result.FullPath)
+	opened.File.Close() // close before c.File re-opens it
+	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", opened.FileName))
+	c.Header("Content-Type", opened.ContentType)
+	c.File(opened.FullPath)
 	return nil // response written directly via c.File
 }
 

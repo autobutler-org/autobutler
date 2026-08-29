@@ -389,3 +389,23 @@ func TestFTS5PorterStemming(t *testing.T) {
 		t.Errorf("expected snippet to contain the stemmed match, got %q", results[0].Snippet)
 	}
 }
+
+func TestParseLimit(t *testing.T) {
+	cases := []struct {
+		raw  string
+		want int
+	}{
+		{"", DefaultLimit},
+		{"25", 25},
+		{"200", MaxLimit},
+		{"1000", MaxLimit},
+		{"0", DefaultLimit},
+		{"-1", DefaultLimit},
+		{"abc", DefaultLimit},
+	}
+	for _, tc := range cases {
+		if got := ParseLimit(tc.raw); got != tc.want {
+			t.Errorf("ParseLimit(%q) = %d, want %d", tc.raw, got, tc.want)
+		}
+	}
+}
