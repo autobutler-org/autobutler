@@ -35,11 +35,6 @@ func GetFilesDir() (string, error) {
 }
 
 // GetFilesDirForDevice returns the storage root on an external device.
-//
-// Note: a device formatted by a build from before the Cirrus -> Files rename
-// (#1601) keeps its data under <dataDir>/cirrus, and is deliberately not
-// migrated — only the system data dir is, on startup. This is a decision, not
-// an oversight; such a device shows up empty until someone moves it by hand.
 func GetFilesDirForDevice(mountPoint string) (string, error) {
 	if mountPoint == "" {
 		return "", errors.New("mount point is empty")

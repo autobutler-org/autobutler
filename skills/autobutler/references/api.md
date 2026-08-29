@@ -75,7 +75,7 @@ Base URL: configured in `TOOLS.md`. All endpoints require `Authorization: Bearer
 	"isInternal": true,
 	"isEnabled": true,
 	"dataDir": "/var/lib/quark/data",
-	"filesDir": "/var/lib/quark/data/cirrus"
+	"filesDir": "/var/lib/quark/data/files"
 }
 ```
 
