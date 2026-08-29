@@ -16,10 +16,6 @@ func (r *router) Routes() []*serverutil.Route {
 		authLoginRoute,
 		authLogoutRoute,
 		authRecoverRoute,
-		// Google OAuth (for cloud migration feature)
-		googleAuthorizeRoute,
-		googleCallbackRoute,
-		googleDisconnectRoute,
 		// Session management
 		listSessionsRoute,
 		revokeSessionRoute,

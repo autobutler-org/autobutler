@@ -331,27 +331,6 @@ definitions:
       temperatureCelsius:
         type: number
     type: object
-  v0_migration.StartImportRequest:
-    properties:
-      deviceSerial:
-        description: 'Optional: empty string for internal drive'
-        type: string
-      email:
-        description: User's Google email
-        type: string
-      services:
-        properties:
-          calendar:
-            description: 'UNUSED: calendar migration is not yet implemented (see #856)'
-            type: boolean
-          contacts:
-            type: boolean
-          drive:
-            type: boolean
-          photos:
-            type: boolean
-        type: object
-    type: object
   v0_photos.AlbumRefJSON:
     properties:
       id:
@@ -1063,77 +1042,6 @@ paths:
       summary: Rename a photo album
       tags:
       - albums
-  /auth/google/authorize:
-    get:
-      description: Returns an authorization URL and state token for starting OAuth
-        flow
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Get Google authorization URL
-      tags:
-      - auth
-  /auth/google/callback:
-    get:
-      description: Callback endpoint used by Google OAuth. Exchanges code for token
-        and returns HTML.
-      parameters:
-      - description: OAuth state token
-        in: query
-        name: state
-        required: true
-        type: string
-      - description: Authorization code
-        in: query
-        name: code
-        required: true
-        type: string
-      responses:
-        "200":
-          description: HTML page
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Google OAuth callback
-      tags:
-      - auth
-  /auth/google/disconnect:
-    post:
-      consumes:
-      - application/json
-      description: Removes stored Google OAuth token for a user (or all tokens if
-        no email provided)
-      parameters:
-      - description: '{email: string}'
-        in: body
-        name: body
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      summary: Disconnect Google account
-      tags:
-      - auth
   /auth/login:
     post:
       consumes:
@@ -2003,68 +1911,6 @@ paths:
       summary: Get system health status
       tags:
       - health
-  /migration/google/start:
-    post:
-      consumes:
-      - application/json
-      description: Starts an import job for selected Google services for the given
-        email
-      parameters:
-      - description: Start import request
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v0_migration.StartImportRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Start Google import/migration
-      tags:
-      - migration
-  /migration/google/status/{jobId}:
-    get:
-      description: Returns the status of a previously started import job
-      parameters:
-      - description: Job ID
-        in: path
-        name: jobId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      summary: Get Google import job status
-      tags:
-      - migration
   /photos:
     get:
       description: Finds all photos across all managed devices with pagination support.
