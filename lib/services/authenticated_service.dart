@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/local_trust.dart';
+import 'package:quark/utils/error_text.dart';
 
 /// Thrown when an API call returns 401 — session expired or invalid.
 class UnauthorizedException implements Exception {
@@ -104,6 +105,46 @@ mixin AuthenticatedService {
     }
   }
 
+  /// Authenticated GET streamed straight onto disk, returning where it landed.
+  ///
+  /// The body never enters memory. A download used to arrive whole as
+  /// `response.bodyBytes` and get copied a second time on its way to the file,
+  /// so saving a large file cost twice its size in RAM on a phone (#1723).
+  ///
+  /// The caller owns the returned file and must [DownloadedFile.delete] it.
+  /// Not available on web, which has no filesystem to stream onto.
+  Future<DownloadedFile> authenticatedDownload(
+    Uri uri, {
+    Map<String, String>? headers,
+  }) async {
+    final client = httpClient;
+    try {
+      final request = http.Request('GET', uri)
+        ..headers.addAll({...authHeaders, ...?headers});
+      final response = await client.send(request);
+
+      if (response.statusCode == 401) {
+        AppSettings.instance.setSessionToken(null);
+        throw const UnauthorizedException();
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(response.statusCode, 'Failed to download file');
+      }
+
+      final dir = await Directory.systemTemp.createTemp('quark_download_');
+      final file = File('${dir.path}/download');
+      final sink = file.openWrite();
+      try {
+        await response.stream.pipe(sink);
+      } finally {
+        await sink.close();
+      }
+      return DownloadedFile._(dir, file.path, response.headers);
+    } finally {
+      client.close();
+    }
+  }
+
   /// Authenticated POST — injects auth headers and checks for 401 automatically.
   Future<http.Response> authenticatedPost(
     Uri uri, {
@@ -181,6 +222,30 @@ mixin AuthenticatedService {
       return response;
     } finally {
       client.close();
+    }
+  }
+}
+
+/// A download that landed on disk instead of in memory, plus the response
+/// headers the caller still needs (Content-Disposition, for the file name).
+class DownloadedFile {
+  const DownloadedFile._(this._dir, this.path, this.headers);
+
+  final Directory _dir;
+
+  /// Path of the downloaded file. Valid until [delete].
+  final String path;
+
+  /// Response headers from the download.
+  final Map<String, String> headers;
+
+  /// Removes the temporary file and the directory holding it. Failure to clean
+  /// up is not worth failing a completed download over, so it is swallowed.
+  Future<void> delete() async {
+    try {
+      await _dir.delete(recursive: true);
+    } catch (_) {
+      // Best effort: the OS reclaims its own temp directory.
     }
   }
 }
