@@ -83,4 +83,7 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/release-android.yml
+    with:
+      track: internal
+      upload: true
     secrets: inherit

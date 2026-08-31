@@ -442,6 +442,7 @@ ANDROID_KEY_PROPERTIES := android/key.properties
 # GitHub Release assets by regex, so the APK name has to stay predictable across
 # releases -- see docs/android-release.md.
 ANDROID_DIST_DIR ?= build/android-release
+ANDROID_TRACK ?= internal
 
 # .SILENT: at the top of this file means a build prints almost nothing until it finishes.
 # FLUTTER_VERBOSE=1 passes --verbose through to Flutter and Gradle when you need to see
@@ -636,6 +637,14 @@ check/frontend/android/apk: ## Verify an APK is a real release build (ANDROID_AP
 		exit 1
 	fi
 	echo "OK: $$apk is a release build."
+
+.PHONY: publish/frontend/android
+publish/frontend/android: ## Upload the Android AAB to Google Play (ANDROID_TRACK=internal)
+	echo "==> publish/frontend/android"
+	scripts/android-publish.bash \
+		--track "$(ANDROID_TRACK)" \
+		$(if $(ANDROID_AAB),--aab "$(ANDROID_AAB)",) \
+		$(if $(ANDROID_PUBLISH_DRY_RUN),--dry-run,)
 
 .PHONY: build/frontend/web
 build/frontend/web: internal/server/public/stub.txt generate/frontend/sbom ## Build web app
