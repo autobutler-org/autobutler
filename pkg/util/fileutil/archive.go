@@ -97,10 +97,11 @@ func ListArchive(params ListArchiveParams) (ListArchiveResult, error) {
 
 // listArchiveVFS lists an archive read out of the VFS namespace.
 func listArchiveVFS(params ListArchiveParams, fsys vfs.VFS) (ListArchiveResult, error) {
-	zr, err := readZipVFS(params.Ctx, fsys, params.FilePath)
+	zr, archive, err := readZipVFS(params.Ctx, fsys, params.FilePath)
 	if err != nil {
 		return ListArchiveResult{}, err
 	}
+	defer archive.Close()
 
 	// Normalize subPath (no leading/trailing slash).
 	normalizedSub := strings.Trim(filepath.ToSlash(params.SubPath), "/")
@@ -227,7 +228,7 @@ func OpenArchiveEntry(params OpenArchiveEntryParams) (OpenArchiveEntryResult, er
 
 // openArchiveEntryVFS finds an entry in an archive read out of the VFS namespace.
 func openArchiveEntryVFS(params OpenArchiveEntryParams, fsys vfs.VFS) (OpenArchiveEntryResult, error) {
-	zr, err := readZipVFS(params.Ctx, fsys, params.ArchivePath)
+	zr, archive, err := readZipVFS(params.Ctx, fsys, params.ArchivePath)
 	if err != nil {
 		return OpenArchiveEntryResult{}, err
 	}
@@ -241,52 +242,88 @@ func openArchiveEntryVFS(params OpenArchiveEntryParams, fsys vfs.VFS) (OpenArchi
 			continue
 		}
 
-		rc, err := f.Open()
+		rc, err := openZipEntry(f)
 		if err != nil {
-			return OpenArchiveEntryResult{}, fmt.Errorf("failed to open archive entry: %w", err)
+			archive.Close()
+			return OpenArchiveEntryResult{}, err
 		}
-		return OpenArchiveEntryResult{Reader: rc, Size: int64(f.UncompressedSize64)}, nil
+		// The entry streams out of the archive, so the archive closes with it.
+		return OpenArchiveEntryResult{
+			Reader: entryReader{ReadCloser: rc, archive: archive},
+			Size:   int64(f.UncompressedSize64),
+		}, nil
 	}
 
+	archive.Close()
 	return OpenArchiveEntryResult{}, notFoundf("entry %q not found in archive", params.EntryPath)
 }
 
-// readZipVFS reads a whole archive out of the VFS namespace into memory. A
-// namespace has no OS path, and a zip reader needs random access, so there is
-// nothing to stream from.
-func readZipVFS(ctx context.Context, fsys vfs.VFS, filePath string) (*zip.Reader, error) {
+// readZipVFS opens an archive in the VFS namespace for random access, which is
+// what a zip reader needs. The namespaces that hand back an *os.File (local
+// disk, storage service) supply that directly; only a namespace whose Open is a
+// plain stream has to be buffered. Buffering unconditionally is what turned a
+// 4 GiB archive into a 500 — io.ReadAll wanted ~12 GiB of heap to hold it
+// (#1705). The returned Closer owns the archive and must outlive every entry
+// reader taken from it.
+func readZipVFS(ctx context.Context, fsys vfs.VFS, filePath string) (*zip.Reader, io.Closer, error) {
 	r, err := fsys.Open(ctx, filePath)
 	if err != nil {
-		return nil, notFound(err)
+		return nil, nil, notFound(err)
 	}
+
+	if ra, ok := r.(io.ReaderAt); ok {
+		if info, statErr := fsys.Stat(ctx, filePath); statErr == nil && info.Size > 0 {
+			zr, err := zip.NewReader(ra, info.Size)
+			if err != nil {
+				r.Close()
+				return nil, nil, fmt.Errorf("failed to open zip archive: %w", err)
+			}
+			return zr, r, nil
+		}
+	}
+
 	defer r.Close()
 
 	data, err := io.ReadAll(r)
 	if err != nil {
-		return nil, err
-	}
-
-	return zip.NewReader(bytes.NewReader(data), int64(len(data)))
-}
-
-// ExtractZipVFS extracts a .zip archive via the VFS layer.
-// It reads the archive into memory, then writes each entry back via VFS.Write / VFS.MkdirAll.
-func ExtractZipVFS(ctx context.Context, fsys vfs.VFS, filePath string) error {
-	r, err := fsys.Open(ctx, filePath)
-	if err != nil {
-		return fmt.Errorf("file not found: %s", filePath)
-	}
-	defer r.Close()
-
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return fmt.Errorf("failed to read archive: %w", err)
+		return nil, nil, fmt.Errorf("failed to read archive: %w", err)
 	}
 
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
-		return fmt.Errorf("failed to open zip archive: %w", err)
+		return nil, nil, fmt.Errorf("failed to open zip archive: %w", err)
 	}
+	return zr, nopCloser{}, nil
+}
+
+// nopCloser closes the buffered archive that has nothing to close.
+type nopCloser struct{}
+
+func (nopCloser) Close() error { return nil }
+
+// entryReader keeps the archive open behind a streaming entry and closes it
+// with the entry.
+type entryReader struct {
+	io.ReadCloser
+	archive io.Closer
+}
+
+func (e entryReader) Close() error {
+	err := e.ReadCloser.Close()
+	if cerr := e.archive.Close(); err == nil {
+		err = cerr
+	}
+	return err
+}
+
+// ExtractZipVFS extracts a .zip archive via the VFS layer, streaming each entry
+// out of the archive and back through VFS.Write / VFS.MkdirAll.
+func ExtractZipVFS(ctx context.Context, fsys vfs.VFS, filePath string) error {
+	zr, archive, err := readZipVFS(ctx, fsys, filePath)
+	if err != nil {
+		return err
+	}
+	defer archive.Close()
 
 	// Determine the destination directory: sibling dir named after the archive stem.
 	base := filepath.Base(filePath)
@@ -302,6 +339,12 @@ func ExtractZipVFS(ctx context.Context, fsys vfs.VFS, filePath string) error {
 
 	var entryCount int
 	for _, f := range zr.File {
+		// Extracting a multi-gigabyte archive takes minutes; stop writing when
+		// the caller has gone away rather than finishing the whole thing.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		entryCount++
 		if entryCount > storageutil.MaxArchiveEntries {
 			return fmt.Errorf("archive exceeds maximum of %d entries", storageutil.MaxArchiveEntries)
@@ -334,13 +377,20 @@ func ExtractZipVFS(ctx context.Context, fsys vfs.VFS, filePath string) error {
 			return fmt.Errorf("failed to create parent directory for %s: %w", destPath, err)
 		}
 
-		rc, err := f.Open()
+		rc, err := openZipEntry(f)
 		if err != nil {
-			return fmt.Errorf("failed to open archive entry %s: %w", f.Name, err)
+			return err
 		}
 
-		// Apply per-entry size limit.
-		limited := io.LimitReader(rc, storageutil.MaxArchiveEntryBytes+1)
+		// Apply per-entry size limit. The declared size rejects an honest
+		// oversized entry outright; the LimitReader caps a lying header. Reading
+		// one byte past the limit and never checking it, as this used to, wrote
+		// the entry silently truncated instead of refusing it.
+		if f.UncompressedSize64 > uint64(storageutil.MaxArchiveEntryBytes) {
+			rc.Close()
+			return fmt.Errorf("archive entry %s exceeds maximum allowed size of %d bytes", f.Name, storageutil.MaxArchiveEntryBytes)
+		}
+		limited := io.LimitReader(rc, storageutil.MaxArchiveEntryBytes)
 		if err := fsys.Write(ctx, destPath, limited, vfs.WriteOptions{}); err != nil {
 			rc.Close()
 			return fmt.Errorf("failed to write %s: %w", destPath, err)

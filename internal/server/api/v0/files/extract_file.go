@@ -2,6 +2,7 @@ package v0_files
 
 import (
 	"errors"
+	"log/slog"
 	"path/filepath"
 	"strings"
 
@@ -44,11 +45,10 @@ func extractFile(c *gin.Context) *serverutil.Response {
 	if serial == "" && strings.ToLower(filepath.Ext(filePath)) == ".zip" {
 		if fsys := fileutil.FilesVFS(deps.VFSRegistry()); fsys != nil {
 			if err := fileutil.ExtractZipVFS(c.Request.Context(), fsys, filePath); err != nil {
-				msg := err.Error()
-				if strings.Contains(msg, "file not found") {
-					return serverutil.NotFound(err)
-				}
-				return serverutil.InternalServerError(err)
+				// The access log only ever showed the status code, so an
+				// extraction failure was undiagnosable from the server logs (#1705).
+				slog.Error("extract: VFS zip extraction failed", "path", filePath, "err", err)
+				return fileError(err)
 			}
 			return serverutil.Ok()
 		}
@@ -63,6 +63,13 @@ func extractFile(c *gin.Context) *serverutil.Response {
 			return serverutil.NotFound(err)
 		}
 		if strings.Contains(msg, "file is not an archive") || strings.Contains(msg, "only zip archives are supported") {
+			return serverutil.BadRequest(err)
+		}
+		// A compression method Go's archive/zip cannot decompress (Deflate64 and
+		// friends) is the caller's archive, not a server fault. The VFS branch
+		// above answers 400 for it, and this one serves the same file whenever a
+		// serial is passed, so it cannot answer something else (#1705).
+		if strings.Contains(msg, "unsupported compression") {
 			return serverutil.BadRequest(err)
 		}
 		return serverutil.InternalServerError(err)

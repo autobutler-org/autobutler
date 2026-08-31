@@ -64,6 +64,18 @@ func (e *NotFoundError) Error() string { return e.Err.Error() }
 
 func (e *NotFoundError) Unwrap() error { return e.Err }
 
+// UnsupportedError reports something the request asked for that this build
+// cannot do — an archive compressed with a method Go's archive/zip does not
+// implement, say. The caller is at fault, not the server, so the handler
+// answers it with 400 rather than the bare 500 it used to (#1705).
+type UnsupportedError struct {
+	Err error
+}
+
+func (e *UnsupportedError) Error() string { return e.Err.Error() }
+
+func (e *UnsupportedError) Unwrap() error { return e.Err }
+
 // FilesVFS returns the VFS backing the local files namespace, or nil when
 // there is none to route to and the StorageService has to serve the request.
 func FilesVFS(registry vfs.Registry) vfs.VFS {
