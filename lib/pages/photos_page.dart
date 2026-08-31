@@ -834,25 +834,7 @@ class PhotosPageState extends State<PhotosPage>
                     serial: c.deviceSerial,
                     getImageCount: () async =>
                         (await _photosForCategory(_selectedCategory)).length,
-                    onLoadImage: (newIdx) async {
-                      final live = await _photosForCategory(_selectedCategory);
-                      if (newIdx >= live.length) return (null, '', null, null);
-                      final item = live[newIdx];
-                      if (item.isFiles) {
-                        final nc = item.quark!;
-                        var b = await FilesService.downloadFileBytes(
-                          nc.apiPath,
-                          serial: nc.deviceSerial,
-                        );
-                        if (b == null) await manualRefresh();
-                        return (b, nc.name, nc.apiPath, nc.deviceSerial);
-                      } else {
-                        final na = item.asset!;
-                        final b = await na.originBytes;
-                        if (b == null) await manualRefresh();
-                        return (b, na.id, null, null);
-                      }
-                    },
+                    onLoadImage: _loadPhotoAt,
                   ),
                 ),
               );
@@ -907,25 +889,7 @@ class PhotosPageState extends State<PhotosPage>
                   imageCount: photos.length,
                   getImageCount: () async =>
                       (await _photosForCategory(_selectedCategory)).length,
-                  onLoadImage: (newIdx) async {
-                    final live = await _photosForCategory(_selectedCategory);
-                    if (newIdx >= live.length) return (null, '', null, null);
-                    final item = live[newIdx];
-                    if (item.isFiles) {
-                      final nc = item.quark!;
-                      var b = await FilesService.downloadFileBytes(
-                        nc.apiPath,
-                        serial: nc.deviceSerial,
-                      );
-                      if (b == null) await manualRefresh();
-                      return (b, nc.name, nc.apiPath, nc.deviceSerial);
-                    } else {
-                      final na = item.asset!;
-                      final b = await na.originBytes;
-                      if (b == null) await manualRefresh();
-                      return (b, na.id, null, null);
-                    }
-                  },
+                  onLoadImage: _loadPhotoAt,
                 ),
               ),
             );
@@ -937,6 +901,36 @@ class PhotosPageState extends State<PhotosPage>
         child: assetThumb,
       ),
     );
+  }
+
+  /// Loads the photo at [newIdx] for the open viewer.
+  ///
+  /// A 404 is the only answer that means the photo is really gone, and it is
+  /// the only one worth a full grid refetch — the grid behind the viewer is
+  /// stale. Every other failure propagates so the viewer can offer a retry,
+  /// and leaves the grid alone rather than paying for a refetch on one flaky
+  /// request (#1708).
+  Future<(Uint8List?, String, String?, String?)> _loadPhotoAt(
+    int newIdx,
+  ) async {
+    final live = await _photosForCategory(_selectedCategory);
+    if (newIdx >= live.length) return (null, '', null, null);
+    final item = live[newIdx];
+    if (!item.isFiles) {
+      final na = item.asset!;
+      return (await na.originBytes, na.id, null, null);
+    }
+    final nc = item.quark!;
+    try {
+      final bytes = await FilesService.downloadFileBytes(
+        nc.apiPath,
+        serial: nc.deviceSerial,
+      );
+      return (bytes, nc.name, nc.apiPath, nc.deviceSerial);
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) await manualRefresh();
+      rethrow;
+    }
   }
 
   Widget _buildPhotoGrid(List<PhotoItem> photos, int crossAxisCount) {
