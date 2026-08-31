@@ -592,8 +592,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       backgroundColor: Colors.black,
       foregroundColor: Colors.white,
       leading: IconButton(
-        icon: const Icon(QuarkIcons.arrow_back),
-        tooltip: 'Back (Esc)',
+        icon: const Icon(QuarkIcons.close),
+        tooltip: 'Close (Esc)',
         onPressed: () => Navigator.of(context).pop(_listChanged),
       ),
       title: showNav
