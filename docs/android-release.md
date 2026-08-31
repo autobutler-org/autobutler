@@ -6,9 +6,10 @@ For *development* setup (running on a device or emulator), see
 [Dev Onboarding](./dev-onboarding.md) and `make emulate/android`. This document is only
 about shipping to Play.
 
-Every release also attaches a signed universal APK to the GitHub Release, which is what
-Obtainium and direct-download users install. The wider non-Google story — F-Droid, a
-self-hosted repo, published checksums — is tracked separately and not covered here.
+This pipeline produces two workflow artifacts: an AAB for the Play Console, and an APK for
+local testing. Neither is published to a GitHub Release. Direct distribution — Obtainium,
+F-Droid, published checksums — is tracked separately, and the APK it needs is not the one
+built here; see [The APK built here is not distributable](#the-apk-built-here-is-not-distributable).
 
 ## Identifiers
 
@@ -27,10 +28,19 @@ stays `org.autobutler`; the two are independent, and the sources do not move.
 the first upload means a new listing with no installs, no reviews and no upgrade path for
 existing users.
 
-## Signing key
+## Signing keys
 
-Android will not install an update signed by a different key than the installed app. The
-key therefore outlives every other decision here.
+Android will not install an update signed by a different key than the installed app, so
+signing outlives every other decision here. Two different keys are involved, and confusing
+them is the most expensive mistake available in this document.
+
+| Key | Who holds it | What it signs |
+|---|---|---|
+| **Upload key** | us — `quark-release.jks` | the AAB we hand to Play, and nothing users ever see |
+| **App signing key** | Google | what Play actually installs on devices |
+
+Play verifies our upload key, strips that signature, and re-signs with the app signing key
+it holds. Every AAB must be signed with the upload key or the upload is rejected outright.
 
 ### Create the upload keystore
 
@@ -50,27 +60,55 @@ it.
 Keep the keystore out of the repo. `android/.gitignore` covers `key.properties`,
 `**/*.keystore` and `**/*.jks`, so a stray copy will not be committed by accident.
 
-### Give Play a copy of it
+### Google holds the app signing key
 
-New apps are enrolled in Play App Signing by default, with a key **Google generates**.
-That default would mean the app users install is signed by a key we do not hold, and a
-directly-distributed APK signed by our key becomes a permanently separate app.
+New apps are enrolled in Play App Signing automatically, with **quantum-ready hybrid
+signing using Google-generated keys**. That is what Quark uses. Providing a copy of our own
+app signing key instead was possible at app creation and was deliberately not taken.
 
-Instead, choose **"Provide a copy of your app signing key"** when creating the app in the
-Play Console, and upload the keystore above. Then:
+Three certificates are downloadable from Play Console > Test and release > Setup > App
+signing:
 
-- Play signs releases with the same key we use everywhere else, so the Play build and any
-  direct APK remain the same app and users can move between them.
-- Google holds a copy, so losing the local one is recoverable.
-- The upload key can be reset at any time from the Play Console if it is lost or
-  compromised, without breaking updates for installed users.
+| Certificate | Algorithm | Role |
+|---|---|---|
+| `deployment_cert.der` | RSA | what pre-Android 17 devices verify |
+| `hybrid_classical_cert.der` | RSA | classical half of the hybrid signature |
+| `hybrid_pqc_cert.der` | ML-DSA-65 | post-quantum half of the hybrid signature |
 
-**This choice is only available while creating the app, and locks once a release reaches
-the open testing or production track.** Internal testing is still inside the window, but
-it closes quietly — decide before the first open-testing rollout, not after.
+These are **public certificates**. They contain no private key and nothing to leak — they
+exist so anyone can verify what Play signed. Google holds the private keys, and the hybrid
+scheme is not something an upload key could reproduce.
 
-If the key is ever lost *and* Play does not hold a copy, there is no recovery. Google
-cannot retrieve it, and updates to the existing listing become impossible.
+The practical consequences:
+
+- **Losing the upload key is recoverable.** Request an upload key reset in the Play
+  Console, generate a new keystore, and updates keep flowing to installed users, because
+  the app signing key is untouched. Still back it up — a reset is support friction, not a
+  disaster, and it is avoidable.
+- **The fingerprint to publish** for anyone verifying a sideloaded download is the
+  *deployment certificate's*, not the upload key's. Users verify what Play signed.
+- **CI's printed fingerprint** should be compared against Play's **upload** certificate,
+  never the app signing one. They are supposed to differ.
+
+### The APK built here is not distributable
+
+`make build/frontend/android/apk` produces an APK signed with the **upload key**. Play
+installs a build signed with the **app signing key**. Those signatures do not match, and
+Android treats a different signature as a different app.
+
+**Anyone who installs this APK cannot then take a Play update.** They would have to
+uninstall first, losing local app data. Do not put it on a release page, a website, or in
+front of a user. It is for installing on your own device to check a build.
+
+The APK for direct distribution has to come *from* Play, after it processes the bundle:
+
+- Play Console > Test and release > Latest releases and bundles > select the bundle >
+  **Downloads** tab > signed universal APK, or
+- the Play Developer API, `generatedapks.list` and `generatedapks.download`.
+
+That APK carries the app signing key's signature, so a Play install and a sideloaded
+install remain the same app and users can move between them. Automating that pull is
+tracked with the rest of the non-Google distribution work and is not wired up yet.
 
 ### `android/key.properties`
 
@@ -102,8 +140,9 @@ is to hand you a correctly signed AAB.
 2. Play Console > Test and release > Internal testing > Create new release.
 3. Upload `quark-v<version>.aab`.
 
-Do the [Play App Signing](#give-play-a-copy-of-it) step before that first upload, not
-after.
+The app signing key is Google's and is set up automatically — see
+[Google holds the app signing key](#google-holds-the-app-signing-key). Upload the **AAB**,
+never the APK from `build/android-release/`.
 
 ## Building
 
@@ -118,10 +157,20 @@ Both land in `build/android-release/` under their published names:
 | File | Goes to |
 |---|---|
 | `quark-v<version>.aab` | Play Console, by hand |
-| `quark-v<version>-universal.apk` | GitHub Release asset |
+| `quark-v<version>-universal.apk` | your own device, for testing only |
 
-The APK name has to stay stable across releases: Obtainium finds the asset with a regex,
-and renaming the pattern breaks update detection for everyone already tracking the repo.
+The APK is **not** publishable — see
+[The APK built here is not distributable](#the-apk-built-here-is-not-distributable). The
+name is nonetheless kept stable and predictable, because direct distribution will need one
+Obtainium can match with a regex, and changing the pattern later breaks update detection
+for everyone already tracking it.
+
+Builds are near-silent by default: the Makefile sets `.SILENT:`, and Flutter prints a
+single spinner line while Gradle runs. To see what is happening:
+
+```bash
+make build/frontend/android/aab FLUTTER_VERBOSE=1
+```
 
 Each build target verifies its own artifact is a genuine release build before handing it
 over — see [Debug build shipped to a store](#debug-build-shipped-to-a-store). To check one
@@ -132,9 +181,10 @@ make check/frontend/android/aab                    # newest AAB in the output di
 make check/frontend/android/apk ANDROID_APK=path   # a specific one
 ```
 
-A universal APK, not per-ABI splits: Obtainium matches a single asset, and splits would
-give it three to choose between. The size cost only affects direct downloads — Play serves
-per-device APKs generated from the AAB regardless.
+A universal APK, not per-ABI splits: one file is simpler to install by hand, and direct
+distribution will want a single asset to match rather than three to choose between. The
+size cost never reaches Play users — Play serves per-device APKs generated from the AAB
+regardless.
 
 ## Continuous integration
 
@@ -143,13 +193,10 @@ builds are Linux-native, so unlike iOS this costs no macOS runner minutes. It ru
 automatically as a job in `release.yml` on any `v*.*.*` tag push, after the GoReleaser job
 succeeds, and can also be triggered by hand from the Actions tab.
 
-A tag run produces both artifacts and **attaches the APK to that tag's GitHub Release**.
-The AAB is deliberately left off the release page: it is not installable, and publishing it
-beside the APK invites someone to download the wrong file. It stays a workflow artifact for
-whoever does the Play Console upload.
-
-A `workflow_dispatch` run builds and verifies both artifacts and touches no release, so the
-pipeline can be exercised at any time without side effects.
+Every run — tag or manual — produces both artifacts as workflow artifacts and publishes
+nothing. Download `android-aab` from the run to get the file for the Play Console. No run
+touches a GitHub Release, so the pipeline can be exercised at any time without side
+effects.
 
 CI runs the same `make` targets as a local build, so the two cannot drift. The only
 difference is where the keystore comes from: locally `android/key.properties` is a file you
@@ -170,19 +217,19 @@ All four are required. Add them under Settings > Secrets and variables > Actions
 base64 -i quark-release.jks | gh secret set ANDROID_KEYSTORE_BASE64 --repo autobutler-org/quark
 ```
 
-Attaching the APK to the release needs no secret: the job uses the workflow's own
-`GITHUB_TOKEN` with `contents: write`.
-
 `scripts/android-ci-signing.bash` proves all four signing secrets actually open the key
 before any build starts, and names the one that is wrong. It also prints the key's SHA-256
-fingerprint: it must match what Play shows under Release > Setup > App integrity. A
-different fingerprint means the build was signed by a key users cannot upgrade from.
+fingerprint. Compare it against the **upload** certificate shown under Test and release >
+Setup > App signing — not the app signing certificate, which is Google's and is supposed to
+differ. A mismatch there means CI holds the wrong keystore and Play will reject the
+upload.
 
 ### Expiry
 
-The keystore above is valid for 10000 days. Play rejects a signing certificate that
-expires before 2033, which a shorter `-validity` would produce. Nothing else here expires
-— unlike iOS, there are no annually-renewed certificates or profiles.
+The upload keystore above is valid for 10000 days. Play rejects a signing certificate that
+expires before 2033, which a shorter `-validity` would produce. The app signing key's
+lifetime is Google's to manage. Nothing else here expires — unlike iOS, there are no
+annually-renewed certificates or profiles.
 
 ## Versioning rules
 

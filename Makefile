@@ -428,7 +428,13 @@ publish/frontend/ios: ## Upload the iOS IPA to App Store Connect
 # Compute it positionally instead. major*10000 + minor*100 + patch is monotonic across
 # that boundary and stays far below the 2100000000 cap (up to version 209999.99.99).
 # Override with ANDROID_BUILD_NUMBER=N to get above a code Play has already seen.
-ANDROID_BUILD_NUMBER ?= $(shell echo "$(BUILD_NAME)" | awk -F. '{printf "%d", ($$1*10000)+($$2*100)+$$3}')
+#
+# := not ?=, for the reason #1727 fixed the other shell-backed variables: a recursive
+# definition re-runs its $(shell ...) on every expansion, and the bare `export` above
+# forces one per recipe. This one runs two subprocesses each time, since $(BUILD_NAME)
+# is itself a shell call. $(or ...) keeps an environment or command-line override winning,
+# which a bare := would have silently dropped.
+ANDROID_BUILD_NUMBER := $(or $(ANDROID_BUILD_NUMBER),$(shell echo "$(BUILD_NAME)" | awk -F. '{printf "%d", ($$1*10000)+($$2*100)+$$3}'))
 ANDROID_AAB_DIR ?= build/app/outputs/bundle/release
 ANDROID_APK_DIR ?= build/app/outputs/flutter-apk
 ANDROID_KEY_PROPERTIES := android/key.properties
@@ -436,6 +442,11 @@ ANDROID_KEY_PROPERTIES := android/key.properties
 # GitHub Release assets by regex, so the APK name has to stay predictable across
 # releases -- see docs/android-release.md.
 ANDROID_DIST_DIR ?= build/android-release
+
+# .SILENT: at the top of this file means a build prints almost nothing until it finishes.
+# FLUTTER_VERBOSE=1 passes --verbose through to Flutter and Gradle when you need to see
+# why one is stuck or failing.
+FLUTTER_VERBOSE ?=
 
 # FLUTTER_BUILD_MODE is pinned here for the same reason as build/frontend/ios/ipa: the
 # bare `export` at the top of this file pushes every make variable into recipe
@@ -447,6 +458,7 @@ build/frontend/android/aab: FLUTTER_BUILD_MODE := release
 build/frontend/android/aab: check/frontend/android/release check/frontend/android/cmdline-tools generate/frontend/sbom ## Build a signed Android AAB for Google Play
 	echo "Building $(BUILD_NAME) (versionCode $(ANDROID_BUILD_NUMBER))"
 	flutter build appbundle \
+		$(if $(FLUTTER_VERBOSE),--verbose,) \
 		--release \
 		--build-name=$(BUILD_NAME) \
 		--build-number=$(ANDROID_BUILD_NUMBER)
@@ -465,6 +477,7 @@ build/frontend/android/aab: check/frontend/android/release check/frontend/androi
 
 .PHONY: check/frontend/android/aab
 check/frontend/android/aab: ## Verify an AAB is a real release build (ANDROID_AAB=path)
+	echo "==> check/frontend/android/aab"
 	aab="$(ANDROID_AAB)"
 	if [ -z "$$aab" ]; then
 		aab="$$(ls -t $(ANDROID_AAB_DIR)/*.aab 2>/dev/null | head -1)"
@@ -499,6 +512,7 @@ check/frontend/android/aab: ## Verify an AAB is a real release build (ANDROID_AA
 # `flutter build apk` does no such check, so the APK target does not depend on this.
 .PHONY: check/frontend/android/cmdline-tools
 check/frontend/android/cmdline-tools: ## Check the Android SDK has cmdline-tools (AAB builds only)
+	echo "==> check/frontend/android/cmdline-tools"
 	sdk="$$ANDROID_HOME"
 	[ -n "$$sdk" ] || sdk="$$ANDROID_SDK_ROOT"
 	[ -n "$$sdk" ] || sdk="$$(sed -n 's/^sdk.dir=//p' android/local.properties 2>/dev/null | head -1)"
@@ -516,6 +530,7 @@ check/frontend/android/cmdline-tools: ## Check the Android SDK has cmdline-tools
 
 .PHONY: check/frontend/android/release
 check/frontend/android/release: ## Check Android Play release prerequisites
+	echo "==> check/frontend/android/release"
 	failed=0
 	if [ -z "$(BUILD_NAME)" ]; then
 		echo "Error: no git tag found to derive the app version from."
@@ -539,14 +554,16 @@ check/frontend/android/release: ## Check Android Play release prerequisites
 		echo "  In CI this file is written by scripts/android-ci-signing.bash."
 		failed=1
 	else
+		# Java's Properties.load tolerates whitespace around the key, so these checks must
+		# too -- otherwise they reject a key.properties that Gradle reads perfectly well.
 		for key in storeFile storePassword keyAlias keyPassword; do
-			if ! grep -q "^$$key=" "$(ANDROID_KEY_PROPERTIES)"; then
+			if ! grep -qE "^[[:space:]]*$$key[[:space:]]*=" "$(ANDROID_KEY_PROPERTIES)"; then
 				echo "Missing: '$$key=' in $(ANDROID_KEY_PROPERTIES)."
 				echo "  All four of storeFile, storePassword, keyAlias and keyPassword are required."
 				failed=1
 			fi
 		done
-		store="$$(sed -n 's/^storeFile=//p' "$(ANDROID_KEY_PROPERTIES)" | head -1)"
+		store="$$(sed -n 's/^[[:space:]]*storeFile[[:space:]]*=[[:space:]]*//p' "$(ANDROID_KEY_PROPERTIES)" | head -1)"
 		# A bare filename in key.properties resolves against android/, which is what
 		# rootProject.file() does in android/app/build.gradle.kts.
 		case "$$store" in
@@ -575,6 +592,7 @@ build/frontend/android/apk: FLUTTER_BUILD_MODE := release
 build/frontend/android/apk: check/frontend/android/release generate/frontend/sbom ## Build a signed universal Android APK
 	echo "Building $(BUILD_NAME) (versionCode $(ANDROID_BUILD_NUMBER))"
 	flutter build apk \
+		$(if $(FLUTTER_VERBOSE),--verbose,) \
 		--release \
 		--build-name=$(BUILD_NAME) \
 		--build-number=$(ANDROID_BUILD_NUMBER)
@@ -592,6 +610,7 @@ build/frontend/android/apk: check/frontend/android/release generate/frontend/sbo
 
 .PHONY: check/frontend/android/apk
 check/frontend/android/apk: ## Verify an APK is a real release build (ANDROID_APK=path)
+	echo "==> check/frontend/android/apk"
 	apk="$(ANDROID_APK)"
 	if [ -z "$$apk" ]; then
 		apk="$$(ls -t $(ANDROID_APK_DIR)/*.apk 2>/dev/null | head -1)"
