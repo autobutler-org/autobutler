@@ -418,6 +418,206 @@ publish/frontend/ios: ## Upload the iOS IPA to App Store Connect
 	echo "Uploaded $$ipa to App Store Connect."
 	echo "Next: the build appears under TestFlight after processing (usually 5-30 minutes)."
 
+
+# Google Play distribution. Android's versionCode is a monotonic int32: Play rejects any
+# upload whose code is not strictly above the highest it has already accepted, and never
+# frees one. Flutter derives versionCode by stripping non-digits from --build-number, so
+# passing the version alone would yield 331 for 0.33.1 and then 100 for 1.0.0 -- going
+# BACKWARDS at the 0.x boundary and locking the app out of Play permanently.
+#
+# Compute it positionally instead. major*10000 + minor*100 + patch is monotonic across
+# that boundary and stays far below the 2100000000 cap (up to version 209999.99.99).
+# Override with ANDROID_BUILD_NUMBER=N to get above a code Play has already seen.
+ANDROID_BUILD_NUMBER ?= $(shell echo "$(BUILD_NAME)" | awk -F. '{printf "%d", ($$1*10000)+($$2*100)+$$3}')
+ANDROID_AAB_DIR ?= build/app/outputs/bundle/release
+ANDROID_APK_DIR ?= build/app/outputs/flutter-apk
+ANDROID_KEY_PROPERTIES := android/key.properties
+# Release artifacts are copied here under their published names. Obtainium matches
+# GitHub Release assets by regex, so the APK name has to stay predictable across
+# releases -- see docs/android-release.md.
+ANDROID_DIST_DIR ?= build/android-release
+
+# FLUTTER_BUILD_MODE is pinned here for the same reason as build/frontend/ios/ipa: the
+# bare `export` at the top of this file pushes every make variable into recipe
+# environments, and Flutter's build backend reads FLUTTER_BUILD_MODE in preference to the
+# real configuration. This target is one of the two that hardcode --release, so it is one
+# of the two that can diverge. See docs/android-release.md.
+.PHONY: build/frontend/android/aab
+build/frontend/android/aab: FLUTTER_BUILD_MODE := release
+build/frontend/android/aab: check/frontend/android/release check/frontend/android/cmdline-tools generate/frontend/sbom ## Build a signed Android AAB for Google Play
+	echo "Building $(BUILD_NAME) (versionCode $(ANDROID_BUILD_NUMBER))"
+	flutter build appbundle \
+		--release \
+		--build-name=$(BUILD_NAME) \
+		--build-number=$(ANDROID_BUILD_NUMBER)
+	aab="$$(ls -t $(ANDROID_AAB_DIR)/*.aab 2>/dev/null | head -1)"
+	if [ -z "$$aab" ]; then
+		echo "Error: no AAB was produced in $(ANDROID_AAB_DIR)."
+		echo "  Check the Gradle output above; a signing failure is the usual cause."
+		echo "  Run 'make check/frontend/android/release' to verify the prerequisites."
+		exit 1
+	fi
+	$(MAKE) check/frontend/android/aab ANDROID_AAB="$$aab"
+	mkdir -p $(ANDROID_DIST_DIR)
+	cp "$$aab" "$(ANDROID_DIST_DIR)/quark-v$(BUILD_NAME).aab"
+	echo "Built $(ANDROID_DIST_DIR)/quark-v$(BUILD_NAME).aab"
+	echo "Next: upload it in the Play Console. See docs/android-release.md."
+
+.PHONY: check/frontend/android/aab
+check/frontend/android/aab: ## Verify an AAB is a real release build (ANDROID_AAB=path)
+	aab="$(ANDROID_AAB)"
+	if [ -z "$$aab" ]; then
+		aab="$$(ls -t $(ANDROID_AAB_DIR)/*.aab 2>/dev/null | head -1)"
+	fi
+	if [ -z "$$aab" ] || [ ! -f "$$aab" ]; then
+		echo "Error: no AAB to check. Run 'make build/frontend/android/aab' first."
+		exit 1
+	fi
+	# A debug Flutter build ships a JIT kernel blob instead of AOT machine code. It
+	# uploads and installs fine, then refuses to launch. The iOS equivalent of this
+	# reached TestFlight once; see docs/android-release.md.
+	if unzip -l "$$aab" | grep -q "kernel_blob.bin"; then
+		echo "Error: $$aab is a DEBUG build (contains flutter_assets/kernel_blob.bin)."
+		echo "  It would install from Play and then refuse to launch."
+		echo "  Cause: FLUTTER_BUILD_MODE leaked into the environment as 'debug', or a"
+		echo "         stale debug intermediate was reused. Check: make --eval='p:; @env |"
+		echo "         grep FLUTTER_BUILD_MODE' p"
+		exit 1
+	fi
+	if ! unzip -l "$$aab" | grep -qE "base/lib/[^/]+/libapp\.so"; then
+		echo "Error: $$aab has no base/lib/*/libapp.so (AOT-compiled Dart)."
+		echo "  A release build carries one shared library per ABI. Rebuild with"
+		echo "  'make build/frontend/android/aab'."
+		exit 1
+	fi
+	echo "OK: $$aab is a release build."
+
+# Only `flutter build appbundle` needs this: it inspects the finished bundle for debug
+# symbols using apkanalyzer, which ships in cmdline-tools. Without it the build fails at
+# the very end -- after a full Gradle run -- with "failed to strip debug symbols from
+# native libraries", which points at the NDK rather than at the missing package.
+# `flutter build apk` does no such check, so the APK target does not depend on this.
+.PHONY: check/frontend/android/cmdline-tools
+check/frontend/android/cmdline-tools: ## Check the Android SDK has cmdline-tools (AAB builds only)
+	sdk="$$ANDROID_HOME"
+	[ -n "$$sdk" ] || sdk="$$ANDROID_SDK_ROOT"
+	[ -n "$$sdk" ] || sdk="$$(sed -n 's/^sdk.dir=//p' android/local.properties 2>/dev/null | head -1)"
+	if [ -n "$$sdk" ] && [ ! -d "$$sdk/cmdline-tools" ]; then
+		echo "Missing: Android cmdline-tools in $$sdk."
+		echo "  flutter build appbundle needs apkanalyzer from it to verify the finished"
+		echo "  bundle, and fails only at the end of a full Gradle build without it."
+		echo "  Fix: Android Studio > Settings > Languages & Frameworks > Android SDK >"
+		echo "       SDK Tools > tick 'Android SDK Command-line Tools', or"
+		echo "       sdkmanager --install 'cmdline-tools;latest'"
+		echo
+		echo "  'make build/frontend/android/apk' does not need it."
+		exit 1
+	fi
+
+.PHONY: check/frontend/android/release
+check/frontend/android/release: ## Check Android Play release prerequisites
+	failed=0
+	if [ -z "$(BUILD_NAME)" ]; then
+		echo "Error: no git tag found to derive the app version from."
+		echo "  The version comes from the most recent tag, for example v0.33.1."
+		echo "  Fix: git fetch --tags   (CI needs fetch-tags on actions/checkout)"
+		echo "       or pass BUILD_NAME=X.Y.Z explicitly."
+		failed=1
+	fi
+	if ! echo "$(ANDROID_BUILD_NUMBER)" | grep -qE '^[1-9][0-9]*$$'; then
+		echo "Error: versionCode resolved to '$(ANDROID_BUILD_NUMBER)', which Play will reject."
+		echo "  It is derived from BUILD_NAME=$(BUILD_NAME) as major*10000+minor*100+patch."
+		echo "  Fix: pass ANDROID_BUILD_NUMBER=N explicitly."
+		failed=1
+	fi
+	if [ ! -f "$(ANDROID_KEY_PROPERTIES)" ]; then
+		echo "Missing: $(ANDROID_KEY_PROPERTIES)."
+		echo "  Without it the release build is signed with the Android debug key, which"
+		echo "  Play rejects on upload."
+		echo "  Fix: create the upload keystore and key.properties -- see the 'Signing key'"
+		echo "       section of docs/android-release.md."
+		echo "  In CI this file is written by scripts/android-ci-signing.bash."
+		failed=1
+	else
+		for key in storeFile storePassword keyAlias keyPassword; do
+			if ! grep -q "^$$key=" "$(ANDROID_KEY_PROPERTIES)"; then
+				echo "Missing: '$$key=' in $(ANDROID_KEY_PROPERTIES)."
+				echo "  All four of storeFile, storePassword, keyAlias and keyPassword are required."
+				failed=1
+			fi
+		done
+		store="$$(sed -n 's/^storeFile=//p' "$(ANDROID_KEY_PROPERTIES)" | head -1)"
+		# A bare filename in key.properties resolves against android/, which is what
+		# rootProject.file() does in android/app/build.gradle.kts.
+		case "$$store" in
+			/*) ;;
+			*) store="android/$$store" ;;
+		esac
+		if [ -n "$$store" ] && [ ! -r "$$store" ]; then
+			echo "Missing: keystore '$$store', named by storeFile= in $(ANDROID_KEY_PROPERTIES)."
+			echo "  Fix: correct storeFile=, or regenerate the keystore per docs/android-release.md."
+			failed=1
+		fi
+	fi
+	if [ $$failed -ne 0 ]; then
+		echo
+		echo "Android release prerequisites are not satisfied."
+		exit 1
+	fi
+	echo "Android release prerequisites OK."
+
+# A universal APK, not per-ABI splits. Obtainium tracks a GitHub Release by matching one
+# asset name with a regex, and splits would give it three to choose between. The extra
+# size only affects direct downloads; Play serves per-device APKs from the AAB anyway.
+# FLUTTER_BUILD_MODE is pinned for the same reason as the AAB target above.
+.PHONY: build/frontend/android/apk
+build/frontend/android/apk: FLUTTER_BUILD_MODE := release
+build/frontend/android/apk: check/frontend/android/release generate/frontend/sbom ## Build a signed universal Android APK
+	echo "Building $(BUILD_NAME) (versionCode $(ANDROID_BUILD_NUMBER))"
+	flutter build apk \
+		--release \
+		--build-name=$(BUILD_NAME) \
+		--build-number=$(ANDROID_BUILD_NUMBER)
+	apk="$$(ls -t $(ANDROID_APK_DIR)/*.apk 2>/dev/null | head -1)"
+	if [ -z "$$apk" ]; then
+		echo "Error: no APK was produced in $(ANDROID_APK_DIR)."
+		echo "  Check the Gradle output above; a signing failure is the usual cause."
+		echo "  Run 'make check/frontend/android/release' to verify the prerequisites."
+		exit 1
+	fi
+	$(MAKE) check/frontend/android/apk ANDROID_APK="$$apk"
+	mkdir -p $(ANDROID_DIST_DIR)
+	cp "$$apk" "$(ANDROID_DIST_DIR)/quark-v$(BUILD_NAME)-universal.apk"
+	echo "Built $(ANDROID_DIST_DIR)/quark-v$(BUILD_NAME)-universal.apk"
+
+.PHONY: check/frontend/android/apk
+check/frontend/android/apk: ## Verify an APK is a real release build (ANDROID_APK=path)
+	apk="$(ANDROID_APK)"
+	if [ -z "$$apk" ]; then
+		apk="$$(ls -t $(ANDROID_APK_DIR)/*.apk 2>/dev/null | head -1)"
+	fi
+	if [ -z "$$apk" ] || [ ! -f "$$apk" ]; then
+		echo "Error: no APK to check. Run 'make build/frontend/android/apk' first."
+		exit 1
+	fi
+	# Same debug-build guard as the AAB check; an APK just nests the entries one level
+	# higher. A debug APK installs from a direct download and then refuses to launch.
+	if unzip -l "$$apk" | grep -q "kernel_blob.bin"; then
+		echo "Error: $$apk is a DEBUG build (contains flutter_assets/kernel_blob.bin)."
+		echo "  It would install and then refuse to launch."
+		echo "  Cause: FLUTTER_BUILD_MODE leaked into the environment as 'debug', or a"
+		echo "         stale debug intermediate was reused. Check: make --eval='p:; @env |"
+		echo "         grep FLUTTER_BUILD_MODE' p"
+		exit 1
+	fi
+	if ! unzip -l "$$apk" | grep -qE "lib/[^/]+/libapp\.so"; then
+		echo "Error: $$apk has no lib/*/libapp.so (AOT-compiled Dart)."
+		echo "  A release build carries one shared library per ABI. Rebuild with"
+		echo "  'make build/frontend/android/apk'."
+		exit 1
+	fi
+	echo "OK: $$apk is a release build."
+
 .PHONY: build/frontend/web
 build/frontend/web: internal/server/public/stub.txt generate/frontend/sbom ## Build web app
 	flutter build web --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)

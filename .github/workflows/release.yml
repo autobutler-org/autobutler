@@ -76,3 +76,12 @@ jobs:
     with:
       upload: true
     secrets: inherit
+
+  release-android:
+    needs: release
+    if: success() && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      # write, not read: the job attaches the signed APK to the tag's release.
+      contents: write
+    uses: ./.github/workflows/release-android.yml
+    secrets: inherit
