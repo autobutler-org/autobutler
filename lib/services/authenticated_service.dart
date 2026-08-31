@@ -13,22 +13,30 @@ class UnauthorizedException implements Exception {
   String toString() => 'Session expired. Please log in again.';
 }
 
+/// How long to wait for a TCP connection before giving up on the Quark.
+///
+/// Bounds only the connect phase, so it is safe on requests with a large body
+/// (chunked uploads) — those are bounded separately by the upload manager's
+/// own per-attempt timeout.
+/// A host that is silent rather than actively refusing otherwise hangs for
+/// however long the OS feels like waiting.
+const Duration kConnectTimeout = Duration(seconds: 5);
+
 /// Returns an [http.Client] that trusts self-signed certificates when the
 /// active host is a local/LAN address (see [isLocalTrustHost]).
 ///
-/// On web, the browser manages TLS trust natively, so the default client is
-/// returned unchanged.
+/// On web, the browser manages TLS trust natively and imposes its own connect
+/// deadline, so the default client is returned unchanged.
 http.Client buildLocalTrustHttpClient() {
   if (kIsWeb) return http.Client();
 
   final host = _extractHost(AppSettings.instance.activeHost);
 
+  final inner = HttpClient()..connectionTimeout = kConnectTimeout;
   if (isLocalTrustHost(host)) {
-    final inner = HttpClient()
-      ..badCertificateCallback = (cert, host, port) => true;
-    return IOClient(inner);
+    inner.badCertificateCallback = (cert, host, port) => true;
   }
-  return http.Client();
+  return IOClient(inner);
 }
 
 /// Extracts the hostname portion from a URL string (or returns the raw string

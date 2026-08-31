@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -30,6 +31,20 @@ class LoginResult {
   const LoginResult({required this.sessionToken});
 }
 
+/// How long an auth request may go unanswered before the Quark counts as
+/// unreachable.
+///
+/// These all hit a local device over a LAN and return a few bytes, so anything
+/// slower than this is a dead host, not a slow one. Bounds the whole request,
+/// not just the connect phase, so a host that accepts the connection and then
+/// goes silent still fails fast. [isQuarkUnreachableError] treats the resulting
+/// [TimeoutException] as unreachable and routes to the disconnected UI.
+const Duration kAuthRequestTimeout = Duration(seconds: 5);
+
+/// Builds the client every auth call goes out through. Overridable in tests.
+@visibleForTesting
+http.Client Function() authHttpClientFactory = buildLocalTrustHttpClient;
+
 /// Communicates with the quark auth API.
 class AuthService {
   static Uri get _baseUri => Uri.parse(apiBaseUrl);
@@ -37,10 +52,10 @@ class AuthService {
   /// Checks whether initial setup has been completed on the quark.
   static Future<AuthStatus> checkStatus() async {
     final uri = _baseUri.resolve('/api/v0/auth/status');
-    final client = buildLocalTrustHttpClient();
+    final client = authHttpClientFactory();
     final http.Response response;
     try {
-      response = await client.get(uri);
+      response = await client.get(uri).timeout(kAuthRequestTimeout);
     } finally {
       client.close();
     }
@@ -59,14 +74,16 @@ class AuthService {
     required String password,
   }) async {
     final uri = _baseUri.resolve('/api/v0/auth/setup');
-    final client = buildLocalTrustHttpClient();
+    final client = authHttpClientFactory();
     final http.Response response;
     try {
-      response = await client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username, 'password': password}),
-      );
+      response = await client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(kAuthRequestTimeout);
     } finally {
       client.close();
     }
@@ -87,14 +104,16 @@ class AuthService {
     required String password,
   }) async {
     final uri = _baseUri.resolve('/api/v0/auth/login');
-    final client = buildLocalTrustHttpClient();
+    final client = authHttpClientFactory();
     final http.Response response;
     try {
-      response = await client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username, 'password': password}),
-      );
+      response = await client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(kAuthRequestTimeout);
     } finally {
       client.close();
     }
@@ -117,17 +136,19 @@ class AuthService {
     required String newPassword,
   }) async {
     final uri = _baseUri.resolve('/api/v0/auth/recover');
-    final client = buildLocalTrustHttpClient();
+    final client = authHttpClientFactory();
     final http.Response response;
     try {
-      response = await client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'recoveryPhrase': recoveryPhrase,
-          'newPassword': newPassword,
-        }),
-      );
+      response = await client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'recoveryPhrase': recoveryPhrase,
+              'newPassword': newPassword,
+            }),
+          )
+          .timeout(kAuthRequestTimeout);
     } finally {
       client.close();
     }
@@ -148,9 +169,11 @@ class AuthService {
     if (token == null) return;
     try {
       final uri = _baseUri.resolve('/api/v0/auth/logout');
-      final client = buildLocalTrustHttpClient();
+      final client = authHttpClientFactory();
       try {
-        await client.post(uri, headers: {'Authorization': 'Bearer $token'});
+        await client
+            .post(uri, headers: {'Authorization': 'Bearer $token'})
+            .timeout(kAuthRequestTimeout);
       } finally {
         client.close();
       }
