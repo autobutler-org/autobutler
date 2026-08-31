@@ -69,18 +69,28 @@ func (d *detector) DetectDevices() ([]Device, error) {
 			continue // Skip APFS snapshot devices
 		}
 
-		// Override with df values which are more accurate
-		device.TotalBytes = totalKB * 1024
-		device.UsedBytes = usedKB * 1024
-		device.AvailableBytes = availKB * 1024
-		device.MountPoint = mountPoint
-
-		// Mark this container as seen (for deduplication in summary)
+		// Only report one volume per APFS container: siblings share the same
+		// physical space, so listing each one double-counts the container.
 		containerID := d.getContainerID(devicePath)
 		if containerID != "" {
-			device.Model = containerID // Store container ID in Model for now
+			if seenContainers[containerID] {
+				continue
+			}
 			seenContainers[containerID] = true
 		}
+
+		// Override with df values which are more accurate.
+		// APFS volumes in one container share Size/Avail but report a
+		// per-volume Used, so derive Used from the shared free space instead
+		// (this matches df's own Capacity column).
+		device.TotalBytes = totalKB * 1024
+		device.AvailableBytes = availKB * 1024
+		if totalKB > availKB {
+			device.UsedBytes = (totalKB - availKB) * 1024
+		} else {
+			device.UsedBytes = usedKB * 1024
+		}
+		device.MountPoint = mountPoint
 
 		// Apply simple categorization for UI
 		device.ApplySimpleCategorization()
