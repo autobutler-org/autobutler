@@ -25,6 +25,10 @@ func fileError(err error) *serverutil.Response {
 	if errors.As(err, &notFound) {
 		return serverutil.NotFound(err)
 	}
+	var unsupported *fileutil.UnsupportedError
+	if errors.As(err, &unsupported) {
+		return serverutil.BadRequest(err)
+	}
 	return serverutil.InternalServerError(err)
 }
 

@@ -245,6 +245,7 @@
     "linenum",
     "loadtest",
     "lsusb",
+    "LZMA",
     "maputil",
     "matroska",
     "mattn",
@@ -456,6 +457,7 @@
     "xdraw",
     "xlink",
     "xxxyyz",
+    "Zstandard",
     "zzznomatch"
   ],
   "flagWords": []
