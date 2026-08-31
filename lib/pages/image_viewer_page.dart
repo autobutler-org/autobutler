@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quark/models/photo_album.dart';
@@ -17,6 +18,9 @@ import 'package:video_player/video_player.dart';
 
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
 const _kSidebarWidth = 288.0;
+
+// Horizontal flick speed (logical px/s) that counts as a navigation swipe.
+const _kSwipeVelocity = 200.0;
 
 /// A full-screen photo viewer with metadata sidebar (desktop) / bottom drawer
 /// (mobile), action toolbar, and keyboard shortcuts.
@@ -105,6 +109,11 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   SharedPreferences? _prefs;
   final _focusNode = FocusNode();
 
+  // Zoom/pan state of the photo. Swipe-to-navigate only applies while the
+  // photo is unzoomed; once zoomed, a horizontal drag pans the photo.
+  final _zoomController = TransformationController();
+  VelocityTracker? _swipeTracker;
+
   // DraggableScrollableSheet controller for mobile drawer
   final _drawerController = DraggableScrollableController();
 
@@ -133,6 +142,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _rotationAnim.dispose();
     _focusNode.dispose();
     _drawerController.dispose();
+    _zoomController.dispose();
     super.dispose();
   }
 
@@ -158,6 +168,21 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
   bool get _hasPrev => _currentIndex > 0;
   bool get _hasNext => _currentIndex < _liveImageCount - 1;
+
+  // InteractiveViewer's own scale recognizer wins the gesture arena against a
+  // drag detector wrapped around it, so an ancestor `onHorizontalDragEnd`
+  // never fires for a swipe that starts with any vertical drift (#1707).
+  // Reading raw pointer events instead keeps the swipe out of the arena.
+  void _endSwipe() {
+    final tracker = _swipeTracker;
+    _swipeTracker = null;
+    if (tracker == null) return;
+    // A zoomed-in photo pans instead of navigating.
+    if (_zoomController.value.getMaxScaleOnAxis() > 1.0) return;
+    final velocity = tracker.getVelocity().pixelsPerSecond.dx;
+    if (velocity < -_kSwipeVelocity) _navigate(1);
+    if (velocity > _kSwipeVelocity) _navigate(-1);
+  }
 
   Future<void> _navigate(int delta) async {
     if (_loading) return;
@@ -809,60 +834,63 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   Widget _buildPhotoArea({bool isMobile = false}) {
     final isLive = _metadata?.isLivePhoto ?? false;
 
-    return GestureDetector(
-      onTap: isMobile && _sidebarOpen
-          ? () => setState(() => _sidebarOpen = false)
-          : null,
-      onLongPressStart: isLive && _liveVideoReady
-          ? (_) => _startLivePlayback()
-          : null,
-      onLongPressEnd: isLive && _liveVideoPlaying
-          ? (_) => _stopLivePlayback()
-          : null,
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity == null) return;
-        if (details.primaryVelocity! < -200) _navigate(1);
-        if (details.primaryVelocity! > 200) _navigate(-1);
-      },
-      child: Stack(
-        children: [
-          Center(
-            child: _loading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : _liveVideoPlaying && _liveVideoController != null
-                ? AspectRatio(
-                    aspectRatio: _liveVideoController!.value.aspectRatio.clamp(
-                      0.1,
-                      10.0,
-                    ),
-                    child: VideoPlayer(_liveVideoController!),
-                  )
-                : AnimatedBuilder(
-                    animation: _rotationValue,
-                    builder: (_, child) => Transform.rotate(
-                      angle: _rotationValue.value,
-                      child: child,
-                    ),
-                    child: InteractiveViewer(
-                      child: Image.memory(
-                        _currentBytes,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stack) => const Icon(
-                          QuarkIcons.broken_image,
-                          size: 64,
-                          color: Colors.white54,
+    return Listener(
+      onPointerDown: (event) =>
+          _swipeTracker = VelocityTracker.withKind(event.kind)
+            ..addPosition(event.timeStamp, event.position),
+      onPointerMove: (event) =>
+          _swipeTracker?.addPosition(event.timeStamp, event.position),
+      onPointerUp: (_) => _endSwipe(),
+      onPointerCancel: (_) => _swipeTracker = null,
+      child: GestureDetector(
+        onTap: isMobile && _sidebarOpen
+            ? () => setState(() => _sidebarOpen = false)
+            : null,
+        onLongPressStart: isLive && _liveVideoReady
+            ? (_) => _startLivePlayback()
+            : null,
+        onLongPressEnd: isLive && _liveVideoPlaying
+            ? (_) => _stopLivePlayback()
+            : null,
+        child: Stack(
+          children: [
+            Center(
+              child: _loading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : _liveVideoPlaying && _liveVideoController != null
+                  ? AspectRatio(
+                      aspectRatio: _liveVideoController!.value.aspectRatio
+                          .clamp(0.1, 10.0),
+                      child: VideoPlayer(_liveVideoController!),
+                    )
+                  : AnimatedBuilder(
+                      animation: _rotationValue,
+                      builder: (_, child) => Transform.rotate(
+                        angle: _rotationValue.value,
+                        child: child,
+                      ),
+                      child: InteractiveViewer(
+                        transformationController: _zoomController,
+                        child: Image.memory(
+                          _currentBytes,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stack) => const Icon(
+                            QuarkIcons.broken_image,
+                            size: 64,
+                            color: Colors.white54,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-          ),
-          if (isLive && !_loading)
-            Positioned(
-              top: 12,
-              left: 12,
-              child: _LiveBadge(ready: _liveVideoReady),
             ),
-        ],
+            if (isLive && !_loading)
+              Positioned(
+                top: 12,
+                left: 12,
+                child: _LiveBadge(ready: _liveVideoReady),
+              ),
+          ],
+        ),
       ),
     );
   }
