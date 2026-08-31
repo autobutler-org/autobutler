@@ -934,8 +934,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   /// RGBA held for a frame nobody can see the detail in. Same bytes off the
   /// network either way — this is free speed (#1710).
   ///
-  /// The *larger* viewport side is used because `BoxFit.contain` may be
-  /// letterboxing on either axis and `Transform.rotate` may have turned the
+  /// The *larger* viewport side is used because `BoxFit.contain` may add a
+  /// letterbox on either axis and `Transform.rotate` may have turned the
   /// photo a quarter turn, so the smaller side is not a safe bound. Zoomed in,
   /// the downscaled decode is no longer enough and the full-resolution one is
   /// what the user pinched for.
