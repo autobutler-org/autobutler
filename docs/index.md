@@ -13,6 +13,7 @@ Looking for setup instructions? Start with the [README](../README.md).
 - [UI Components](./ui/index.md) — How to edit the frontend
 - [iOS Dev Setup](./ios-dev/README.md) — running the app on your own iPhone
 - [iOS App Store Release](./ios-release.md) — building and publishing to the App Store
+- [Android Play Store Release](./android-release.md) — building and publishing to Google Play
 
 ## Features
 

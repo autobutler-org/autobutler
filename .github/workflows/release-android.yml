@@ -1,0 +1,123 @@
+name: Android Release
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Android versionCode. Leave empty to derive it from the tag (major*10000 + minor*100 + patch)."
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      build_number:
+        required: false
+        type: string
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: true
+      ANDROID_KEYSTORE_PASSWORD:
+        required: true
+      ANDROID_KEY_ALIAS:
+        required: true
+      ANDROID_KEY_PASSWORD:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release-android:
+    # Android builds are Linux-native, so unlike iOS this needs no macOS runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      # Needed to attach the APK to the tag's GitHub Release.
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # The version and the versionCode both come from the most recent tag. The
+          # default checkout is shallow and fetches none, which would silently build
+          # Flutter's 1.0.0 default.
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+
+      - name: Setup GNU make
+        uses: ./.github/actions/setup-gnu-make
+
+      - name: Restore Gradle caches
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle.kts', 'pubspec.lock') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Prepare code signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./scripts/android-ci-signing.bash
+
+      # No versionCode is passed by default: the Makefile derives it from the tag, which
+      # is monotonic by construction. github.run_number cannot be used -- it is a
+      # per-workflow counter, so a tag release and a standalone dispatch draw from
+      # different sequences, and Play never frees a consumed versionCode.
+      #
+      # Both artifacts are built from the same checkout so they carry the same version
+      # and versionCode: the AAB is what gets uploaded to Play, the APK is what a user
+      # installs directly.
+      - name: Build signed AAB and APK
+        env:
+          INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          args=()
+          # Only override when explicitly asked. An empty ANDROID_BUILD_NUMBER would
+          # still count as "set" to make and suppress the derived value.
+          if [[ -n "${INPUT_BUILD_NUMBER}" ]]; then
+            args+=("ANDROID_BUILD_NUMBER=${INPUT_BUILD_NUMBER}")
+          fi
+          make build/frontend/android/aab "${args[@]}"
+          make build/frontend/android/apk "${args[@]}"
+
+      # The file the maintainer uploads to the Play Console. Nothing here is published to
+      # a GitHub Release -- both artifacts stay attached to the workflow run.
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-aab
+          path: build/android-release/*.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      # A job artifact, never a published download. This APK carries the UPLOAD key's
+      # signature, but Play App Signing strips that and re-signs with the app signing key
+      # Google holds -- so it does not match what Play installs. Anyone who sideloaded it
+      # could not then take a Play update; Android treats a different signature as a
+      # different app. The APK for direct distribution has to be the Play-generated
+      # universal APK, pulled back out after publishing (#1602).
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-apk
+          path: build/android-release/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Clean up signing material
+        if: always()
+        run: |
+          rm -f android/key.properties
+          rm -f android/quark-release.jks
