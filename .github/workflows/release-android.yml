@@ -10,11 +10,34 @@ on:
         description: "Android versionCode. Leave empty to derive it from the tag (major*10000 + minor*100 + patch)."
         required: false
         type: string
+      track:
+        description: "Play track to release on."
+        required: false
+        type: choice
+        default: internal
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+      upload:
+        description: "Publish to Google Play. Uncheck to build and verify only."
+        required: false
+        type: boolean
+        default: true
   workflow_call:
     inputs:
       build_number:
         required: false
         type: string
+      track:
+        required: false
+        type: string
+        default: internal
+      upload:
+        required: false
+        type: boolean
+        default: true
     secrets:
       ANDROID_KEYSTORE_BASE64:
         required: true
@@ -23,6 +46,8 @@ on:
       ANDROID_KEY_ALIAS:
         required: true
       ANDROID_KEY_PASSWORD:
+        required: true
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:
         required: true
 
 defaults:
@@ -35,8 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
-      # Needed to attach the APK to the tag's GitHub Release.
-      contents: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -115,6 +139,14 @@ jobs:
           path: build/android-release/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      # Runs after both artifacts are uploaded, so a Play failure still leaves the AAB
+      # downloadable from the run and a retry needs no rebuild.
+      - name: Publish to Google Play
+        if: ${{ inputs.upload }}
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: make publish/frontend/android ANDROID_TRACK="${{ inputs.track || 'internal' }}"
 
       - name: Clean up signing material
         if: always()

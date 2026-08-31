@@ -127,3 +127,10 @@ testplugin
 
 # Generated on CI runners by scripts/ios-ci-signing.bash
 ios/ExportOptions.ci.plist
+
+# Google service account keys. Play Console downloads them as
+# <project>-<keyid>.json, which no existing rule matched -- one landed at the
+# repo root during setup, unignored, next to a `git add -A`. The documented
+# home is ~/.config/quark/play-service-account.json, outside the repo.
+*service-account*.json
+quark-[0-9]*-*.json

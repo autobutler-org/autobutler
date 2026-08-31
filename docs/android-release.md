@@ -131,9 +131,9 @@ accident.
 ## The first release is uploaded by hand
 
 Play requires an **AAB** for a new app — a standalone APK is not accepted as a first
-release — and the very first one has to go through the Play Console by hand. Automated
-publishing through the Play Developer API is a follow-up change; today this pipeline's job
-is to hand you a correctly signed AAB.
+release — and the very first one has to go through the Play Console by hand. This is a
+one-time step. Once it is done the app is no longer a *draft app*, and every subsequent
+tag publishes automatically through the Play Developer API — see [Publishing](#publishing).
 
 1. Run the build, or download the `android-aab` artifact from a
    [release-android workflow run](../../../actions/workflows/release-android.yml).
@@ -156,7 +156,7 @@ Both land in `build/android-release/` under their published names:
 
 | File | Goes to |
 |---|---|
-| `quark-v<version>.aab` | Play Console, by hand |
+| `quark-v<version>.aab` | Play, via `make publish/frontend/android` (by hand for the first release only) |
 | `quark-v<version>-universal.apk` | your own device, for testing only |
 
 The APK is **not** publishable — see
@@ -186,6 +186,46 @@ distribution will want a single asset to match rather than three to choose betwe
 size cost never reaches Play users — Play serves per-device APKs generated from the AAB
 regardless.
 
+## Publishing
+
+```bash
+make publish/frontend/android                            # to the internal track
+make publish/frontend/android ANDROID_TRACK=alpha        # somewhere else
+make publish/frontend/android ANDROID_PUBLISH_DRY_RUN=1  # prove it works, publish nothing
+```
+
+`scripts/android-publish.bash` uploads the newest AAB in `build/android-release/` to a Play
+track. It talks to the Play Developer API v3 directly with `curl` and `openssl` — no
+fastlane, no `gcloud`, matching how the iOS scripts authenticate.
+
+The API works in *edits*: open one, upload into it, point a track at the uploaded
+versionCode, then commit. Nothing reaches testers until that commit, and any failure
+abandons the edit, so a half-finished attempt never blocks a retry. `ANDROID_PUBLISH_DRY_RUN=1`
+does everything except the commit — the way to prove credentials and the bundle are good
+without consuming anything.
+
+The package name is read from `android/app/build.gradle.kts` rather than configured
+separately, so the two cannot disagree about which listing is being published to.
+
+### Service account
+
+Publishing authenticates as a Google Cloud service account, not as you.
+
+1. In the Google Cloud project linked to your Play Console, enable the **Google Play
+   Android Developer API**.
+2. IAM & Admin > Service Accounts > create one, then Keys > Add key > JSON. Save it as
+   `~/.config/quark/play-service-account.json`, or set the whole file's contents as
+   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
+3. Play Console > Users and permissions > Invite new users, using the service account's
+   `client_email`. Grant it **Release manager** on this app.
+
+Permission changes are not instant. A newly granted service account can return `403` for a
+while before Play catches up; if the credentials are right, wait and retry rather than
+re-issuing the key.
+
+Keep the JSON out of the repo. It is a credential in its own right — anyone holding it can
+publish to your listing.
+
 ## Continuous integration
 
 `.github/workflows/release-android.yml` builds on an `ubuntu-latest` runner — Android
@@ -193,10 +233,13 @@ builds are Linux-native, so unlike iOS this costs no macOS runner minutes. It ru
 automatically as a job in `release.yml` on any `v*.*.*` tag push, after the GoReleaser job
 succeeds, and can also be triggered by hand from the Actions tab.
 
-Every run — tag or manual — produces both artifacts as workflow artifacts and publishes
-nothing. Download `android-aab` from the run to get the file for the Play Console. No run
-touches a GitHub Release, so the pipeline can be exercised at any time without side
-effects.
+Every run produces both artifacts as workflow artifacts, and a tag run then publishes the
+AAB to the internal track. A manual run can clear the **upload** checkbox to build and
+verify without publishing, which is how to exercise the pipeline without consuming a
+versionCode. Either way, download `android-aab` from the run if you need the file itself.
+
+No run touches a GitHub Release. The APK is a test artifact, not a download — see
+[The APK built here is not distributable](#the-apk-built-here-is-not-distributable).
 
 CI runs the same `make` targets as a local build, so the two cannot drift. The only
 difference is where the keystore comes from: locally `android/key.properties` is a file you
@@ -204,7 +247,8 @@ created, while CI writes it from secrets and deletes it again.
 
 ### Secrets
 
-All four are required. Add them under Settings > Secrets and variables > Actions.
+All five are required — the workflow declares them so, so a tagged release fails outright
+if one is missing. Add them under Settings > Secrets and variables > Actions.
 
 | Secret | What it is |
 |---|---|
@@ -212,9 +256,12 @@ All four are required. Add them under Settings > Secrets and variables > Actions
 | `ANDROID_KEYSTORE_PASSWORD` | the keystore password |
 | `ANDROID_KEY_ALIAS` | the key alias, `quark-upload` |
 | `ANDROID_KEY_PASSWORD` | the key password (same as the store password, for PKCS12) |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | the whole service account JSON key file |
 
 ```bash
 base64 -i quark-release.jks | gh secret set ANDROID_KEYSTORE_BASE64 --repo autobutler-org/quark
+gh secret set GOOGLE_PLAY_SERVICE_ACCOUNT_JSON --repo autobutler-org/quark \
+  < ~/.config/quark/play-service-account.json
 ```
 
 `scripts/android-ci-signing.bash` proves all four signing secrets actually open the key
