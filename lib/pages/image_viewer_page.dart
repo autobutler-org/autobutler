@@ -110,7 +110,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   final _focusNode = FocusNode();
 
   // Zoom/pan state of the photo. Swipe-to-navigate only applies while the
-  // photo is unzoomed; once zoomed, a horizontal drag pans the photo.
+  // photo sits at 1x; once zoomed, a horizontal drag pans the photo.
   final _zoomController = TransformationController();
   VelocityTracker? _swipeTracker;
 
