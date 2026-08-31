@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:photo_manager/photo_manager.dart';
+import 'package:quark/controllers/photo_bytes_cache.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/pages/album_page.dart';
@@ -835,6 +836,7 @@ class PhotosPageState extends State<PhotosPage>
                     getImageCount: () async =>
                         (await _photosForCategory(_selectedCategory)).length,
                     onLoadImage: _loadPhotoAt,
+                    onPrefetchImage: _prefetchPhotoAt,
                   ),
                 ),
               );
@@ -890,6 +892,7 @@ class PhotosPageState extends State<PhotosPage>
                   getImageCount: () async =>
                       (await _photosForCategory(_selectedCategory)).length,
                   onLoadImage: _loadPhotoAt,
+                  onPrefetchImage: _prefetchPhotoAt,
                 ),
               ),
             );
@@ -922,16 +925,39 @@ class PhotosPageState extends State<PhotosPage>
     }
     final nc = item.quark!;
     try {
-      final bytes = await FilesService.downloadFileBytes(
-        nc.apiPath,
-        serial: nc.deviceSerial,
-      );
+      final bytes = await _quarkPhotoBytes(nc);
       return (bytes, nc.name, nc.apiPath, nc.deviceSerial);
     } on ApiException catch (e) {
       if (e.statusCode == 404) await manualRefresh();
       rethrow;
     }
   }
+
+  /// Downloads the photo at [idx] into the cache so the viewer's next step is
+  /// instant (#1710).
+  ///
+  /// Unlike [_loadPhotoAt] this reacts to nothing: the user did not ask for
+  /// this photo, so a 404 on it is not a reason to refetch the grid and no
+  /// failure here is worth telling them about. The viewer swallows what this
+  /// throws.
+  Future<void> _prefetchPhotoAt(int idx) async {
+    final live = await _photosForCategory(_selectedCategory);
+    if (idx < 0 || idx >= live.length) return;
+    final item = live[idx];
+    // Local device assets come off disk through photo_manager's own cache;
+    // only the network round trip is worth pre-paying.
+    if (!item.isFiles) return;
+    await _quarkPhotoBytes(item.quark!);
+  }
+
+  Future<Uint8List?> _quarkPhotoBytes(FileNode photo) =>
+      PhotoBytesCache.instance.fetch(
+        PhotoBytesCache.key(photo.apiPath, photo.deviceSerial),
+        () => FilesService.downloadFileBytes(
+          photo.apiPath,
+          serial: photo.deviceSerial,
+        ),
+      );
 
   Widget _buildPhotoGrid(List<PhotoItem> photos, int crossAxisCount) {
     // When viewing Quark-stored photos (or all), we may have more pages to load.

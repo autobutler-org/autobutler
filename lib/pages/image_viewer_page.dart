@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quark/controllers/photo_bytes_cache.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/models/photo_metadata.dart';
 import 'package:quark/pages/album_page.dart';
@@ -9,6 +11,7 @@ import 'package:quark/services/album_service.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/favorites_service.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/image_viewer_config.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/photos/photo_selection_bar.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -45,6 +48,15 @@ class ImageViewerPage extends StatefulWidget {
   /// for local-device assets that have no Quark path.
   final Future<(Uint8List?, String, String?, String?)> Function(int index)?
   onLoadImage;
+
+  /// Warms whatever cache backs [onLoadImage] for [index], in the background.
+  ///
+  /// Separate from [onLoadImage] because a prefetch must stay invisible: it
+  /// may not show the user anything, and it may not react to a failure the way
+  /// a navigation does (a 404 on a photo the user never asked for is not a
+  /// reason to refetch the grid behind them).
+  final Future<void> Function(int index)? onPrefetchImage;
+
   final Future<int> Function()? getImageCount;
 
   /// Relative path on the Quark device (enables metadata & server actions).
@@ -64,6 +76,7 @@ class ImageViewerPage extends StatefulWidget {
     this.initialIndex = 0,
     this.imageCount = 1,
     this.onLoadImage,
+    this.onPrefetchImage,
     this.getImageCount,
     this.relPath,
     this.serial,
@@ -109,7 +122,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   final _focusNode = FocusNode();
 
   // Zoom/pan state of the photo. Swipe-to-navigate only applies while the
-  // photo sits at 1x; once zoomed, a horizontal drag pans the photo.
+  // photo sits at 1x; once zoomed, a horizontal drag pans the photo, and the
+  // downscaled decode stops being enough so the full-resolution one is worth
+  // paying for.
   final _zoomController = TransformationController();
   bool _zoomedIn = false;
   late PageController _pageController;
@@ -136,6 +151,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _rotationValue = Tween<double>(begin: 0, end: 0).animate(_rotationAnim);
 
     _initPrefs();
+    _prefetchNeighbors();
   }
 
   @override
@@ -202,10 +218,33 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 
   // A zoomed photo pans inside the InteractiveViewer, so the PageView has to
-  // stop scrolling until it is back at 1x.
+  // stop scrolling until it is back at 1x, and the photo has to be redecoded
+  // at full resolution. Both start the moment the user pinches, so one flag
+  // and one threshold cover them (#1707, #1710).
   void _onZoomChanged() {
-    final zoomed = _zoomController.value.getMaxScaleOnAxis() > 1.0;
+    final zoomed =
+        _zoomController.value.getMaxScaleOnAxis() >
+        ImageViewerConfig.zoomedInScale;
     if (zoomed != _zoomedIn) setState(() => _zoomedIn = zoomed);
+  }
+
+  /// Downloads the photos either side of this one into the loader's cache.
+  ///
+  /// The next thing the user does is nearly always "next photo" or "previous
+  /// photo", so paying for those while they look at this one is what makes the
+  /// step feel instant. Nothing here is awaited, nothing here touches state,
+  /// and a failure is swallowed: a photo the user never asked for must not
+  /// produce a snackbar, and the widget may well be gone before the download
+  /// lands (#1710).
+  void _prefetchNeighbors() {
+    final prefetch = widget.onPrefetchImage;
+    if (prefetch == null) return;
+    for (var delta = 1; delta <= ImageViewerConfig.prefetchWindow; delta++) {
+      for (final index in [_currentIndex - delta, _currentIndex + delta]) {
+        if (index < 0 || index >= _liveImageCount) continue;
+        unawaited(prefetch(index).catchError((Object _) {}));
+      }
+    }
   }
 
   Future<void> _navigate(int delta) async {
@@ -249,6 +288,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         _rotationValue = Tween<double>(begin: 0, end: 0).animate(_rotationAnim);
       });
       _loadMetadataForCurrent();
+      _prefetchNeighbors();
     } catch (e) {
       debugPrint('ImageViewerPage: failed to load image $newIndex: $e');
       if (!mounted) return;
@@ -426,6 +466,11 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         serial: _currentSerial,
       ).toString();
       await NetworkImage(thumbUrl).evict();
+      // Same reason, for the full-resolution bytes: the cache is keyed by path
+      // and serial, neither of which a rotation changes (#1710).
+      PhotoBytesCache.instance.evict(
+        PhotoBytesCache.key(_currentRelPath!, _currentSerial),
+      );
       _listChanged = true;
     } catch (e) {
       // Roll back the visual rotation and inform the user.
@@ -882,6 +927,25 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     );
   }
 
+  /// Pixel width to decode the photo at, or null for its full resolution.
+  ///
+  /// A phone photo is several times wider than the screen showing it, and
+  /// decoding one at full sensor resolution costs both the decode and ~48MB of
+  /// RGBA held for a frame nobody can see the detail in. Same bytes off the
+  /// network either way — this is free speed (#1710).
+  ///
+  /// The *larger* viewport side is used because `BoxFit.contain` may be
+  /// letterboxing on either axis and `Transform.rotate` may have turned the
+  /// photo a quarter turn, so the smaller side is not a safe bound. Zoomed in,
+  /// the downscaled decode is no longer enough and the full-resolution one is
+  /// what the user pinched for.
+  int? _decodeWidth(BuildContext context, BoxConstraints constraints) {
+    if (_zoomedIn) return null;
+    final side = math.max(constraints.maxWidth, constraints.maxHeight);
+    if (!side.isFinite || side <= 0) return null;
+    return (side * MediaQuery.devicePixelRatioOf(context)).round();
+  }
+
   Widget _buildPhotoArea({bool isMobile = false}) {
     final isLive = _metadata?.isLivePhoto ?? false;
 
@@ -937,13 +1001,19 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           Transform.rotate(angle: _rotationValue.value, child: child),
       child: InteractiveViewer(
         transformationController: _zoomController,
-        child: Image.memory(
-          _currentBytes,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stack) => const Icon(
-            QuarkIcons.broken_image,
-            size: 64,
-            color: Colors.white54,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Image.memory(
+            _currentBytes,
+            fit: BoxFit.contain,
+            cacheWidth: _decodeWidth(context, constraints),
+            // Keep the downscaled frame on screen while the full-resolution
+            // one decodes, so starting a pinch doesn't blank the photo.
+            gaplessPlayback: true,
+            errorBuilder: (context, error, stack) => const Icon(
+              QuarkIcons.broken_image,
+              size: 64,
+              color: Colors.white54,
+            ),
           ),
         ),
       ),
