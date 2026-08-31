@@ -107,10 +107,15 @@ func serveCachedThumbnail(c *gin.Context, cachedPath string, cachedModTime time.
 		return nil
 	}
 
-	data, err := thumbnailutil.ReadCached(cachedPath)
+	f, err := thumbnailutil.OpenCached(cachedPath)
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
-	c.Data(http.StatusOK, contentType, data)
+	defer f.Close()
+
+	// ServeContent streams the entry and fills in Content-Length and range
+	// handling. The Content-Type set above stands: an empty name leaves
+	// ServeContent nothing to sniff from.
+	http.ServeContent(c.Writer, c.Request, "", cachedModTime, f)
 	return nil
 }

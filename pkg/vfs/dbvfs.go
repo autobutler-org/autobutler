@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"path"
@@ -161,8 +162,11 @@ func (v *DBVFS) Write(ctx context.Context, p string, r io.Reader, opts WriteOpti
 		}
 	}
 
-	content, err := io.ReadAll(r)
+	content, err := readBounded(r)
 	if err != nil {
+		if errors.Is(err, ErrTooLarge) {
+			return err
+		}
 		return fmt.Errorf("dbvfs write read: %w", err)
 	}
 

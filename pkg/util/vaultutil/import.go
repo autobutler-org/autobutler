@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/autobutler-org/quark/internal/db"
@@ -60,6 +61,31 @@ type ImportResult struct {
 //
 // It returns [ErrUnsupportedImportFormat] for a format it has no reader for;
 // the caller names the format in the copy it renders.
+// MaxImportBytes caps an import file. Detection and every parser here work on
+// the whole document, so this is content that genuinely cannot be streamed —
+// which makes the bound the caller's job rather than an optional extra. A real
+// vault export of tens of thousands of entries is a few megabytes; this leaves
+// an order of magnitude of headroom and still refuses a body that would
+// otherwise be allocated in full (#1723).
+const MaxImportBytes int64 = 32 * 1024 * 1024
+
+// ErrImportTooLarge reports an import file over [MaxImportBytes].
+var ErrImportTooLarge = fmt.Errorf("import file exceeds the maximum of %d bytes", MaxImportBytes)
+
+// ReadImport reads an import file from r, refusing anything over
+// [MaxImportBytes]. It reads one byte past the cap so an oversized file is
+// rejected rather than silently truncated into a partial import.
+func ReadImport(r io.Reader) ([]byte, error) {
+	data, err := io.ReadAll(io.LimitReader(r, MaxImportBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > MaxImportBytes {
+		return nil, ErrImportTooLarge
+	}
+	return data, nil
+}
+
 func Import(ctx context.Context, params ImportParams) (ImportResult, error) {
 	format := params.Format
 	if format == FormatAuto {

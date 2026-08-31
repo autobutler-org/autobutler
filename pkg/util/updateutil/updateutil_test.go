@@ -2,6 +2,7 @@ package updateutil
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
@@ -158,13 +159,38 @@ func (r *bytesReader) Read(p []byte) (n int, err error) {
 func TestReplaceSelf_BinaryNotInArchive(t *testing.T) {
 	tarData := createMockTarGz(t, "wrongname", []byte("content"))
 
-	err := replaceSelf(io.NopCloser(newBytesReader(tarData)))
+	err := replaceSelf(io.NopCloser(newBytesReader(tarData)), nil)
 	if err == nil {
 		t.Error("Expected error when binary not found in archive")
 	}
 
 	if err.Error() != "binary not found in archive" {
 		t.Errorf("Expected 'binary not found in archive', got: %v", err)
+	}
+}
+
+// The archive is hashed while it streams to disk, and nothing is extracted
+// until verify accepts that digest. A rejected archive must therefore fail
+// before the "binary not found in archive" check the extraction does — proof
+// the verification really does gate the install rather than run alongside it
+// (#1723).
+func TestReplaceSelf_VerifyRejectsBeforeExtracting(t *testing.T) {
+	// An archive that would otherwise get as far as the extraction error.
+	tarData := createMockTarGz(t, "wrongname", []byte("content"))
+
+	rejected := errors.New("checksum mismatch")
+	var sawSum []byte
+	err := replaceSelf(io.NopCloser(newBytesReader(tarData)), func(sum []byte) error {
+		sawSum = sum
+		return rejected
+	})
+	if !errors.Is(err, rejected) {
+		t.Fatalf("a rejected checksum must stop the update, got: %v", err)
+	}
+
+	want := sha256.Sum256(tarData)
+	if !bytes.Equal(sawSum, want[:]) {
+		t.Errorf("verify got digest %x, want the digest of the streamed archive %x", sawSum, want)
 	}
 }
 
@@ -200,7 +226,7 @@ func TestUpdate_RealRelease_ReplaceSelf(t *testing.T) {
 	// In the test runner context this will succeed or fail with a permission
 	// error — either way is acceptable. What we verify is no panic and no
 	// unexpected error (only permission/read-only are OK to get).
-	err = replaceSelf(strings.NewReader(string(data)))
+	err = replaceSelf(strings.NewReader(string(data)), nil)
 	if err != nil &&
 		!strings.Contains(err.Error(), "permission") &&
 		!strings.Contains(err.Error(), "read-only") &&
@@ -503,7 +529,7 @@ func TestListPossibleUpdates_FilteredToEmpty_ReturnsEmptySliceNotNil(t *testing.
 	}
 }
 
-// --- verifyChecksum / fetchURL ---
+// --- verifyChecksumOf / fetchURL ---
 
 func TestVerifyChecksum_Match(t *testing.T) {
 	data := []byte("hello, quark")
@@ -515,7 +541,7 @@ func TestVerifyChecksum_Match(t *testing.T) {
 	}))
 	defer server.Close()
 
-	if err := verifyChecksum(data, server.URL+"/checksum"); err != nil {
+	if err := verifyChecksumOf(sha256Of(data), server.URL+"/checksum"); err != nil {
 		t.Errorf("expected no error for matching checksum, got %v", err)
 	}
 }
@@ -528,7 +554,7 @@ func TestVerifyChecksum_Mismatch(t *testing.T) {
 	}))
 	defer server.Close()
 
-	err := verifyChecksum(data, server.URL+"/checksum")
+	err := verifyChecksumOf(sha256Of(data), server.URL+"/checksum")
 	if err == nil {
 		t.Error("expected error for mismatched checksum")
 	}
@@ -548,7 +574,7 @@ func TestVerifyChecksum_Sha256sumFormat(t *testing.T) {
 	}))
 	defer server.Close()
 
-	if err := verifyChecksum(data, server.URL+"/checksum"); err != nil {
+	if err := verifyChecksumOf(sha256Of(data), server.URL+"/checksum"); err != nil {
 		t.Errorf("expected no error for sha256sum-format checksum, got %v", err)
 	}
 }
@@ -560,7 +586,7 @@ func TestVerifyChecksum_Unavailable(t *testing.T) {
 	}))
 	defer server.Close()
 
-	err := verifyChecksum(data, server.URL+"/checksum.sha256")
+	err := verifyChecksumOf(sha256Of(data), server.URL+"/checksum.sha256")
 	if !errors.Is(err, errChecksumUnavailable) {
 		t.Errorf("expected errChecksumUnavailable for 404, got %v", err)
 	}
@@ -574,7 +600,7 @@ func TestVerifyChecksum_EmptyFile(t *testing.T) {
 	}))
 	defer server.Close()
 
-	err := verifyChecksum(data, server.URL+"/checksum")
+	err := verifyChecksumOf(sha256Of(data), server.URL+"/checksum")
 	if err == nil {
 		t.Error("expected error for empty checksum file")
 	}
@@ -587,7 +613,7 @@ func TestVerifyChecksum_InvalidHex(t *testing.T) {
 	}))
 	defer server.Close()
 
-	err := verifyChecksum(data, server.URL+"/checksum")
+	err := verifyChecksumOf(sha256Of(data), server.URL+"/checksum")
 	if err == nil {
 		t.Error("expected error for invalid hex checksum")
 	}
@@ -678,4 +704,11 @@ func TestIsAllowedUpdateHost(t *testing.T) {
 			t.Errorf("isAllowedUpdateHost(%q) = %v, want %v", c.host, got, c.allowed)
 		}
 	}
+}
+
+// sha256Of is what SelfUpdate now hands verifyChecksumOf: the digest of the
+// archive, computed while it streamed to disk rather than from a buffer.
+func sha256Of(data []byte) []byte {
+	sum := sha256.Sum256(data)
+	return sum[:]
 }

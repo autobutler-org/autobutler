@@ -135,7 +135,7 @@ func TestVerifyChecksum_404StillMeansChecksumUnavailable(t *testing.T) {
 	}))
 	defer server.Close()
 
-	err := verifyChecksum([]byte("payload"), server.URL+"/archive.tar.gz.sha256")
+	err := verifyChecksumOf(sha256Of([]byte("payload")), server.URL+"/archive.tar.gz.sha256")
 	if !errors.Is(err, errChecksumUnavailable) {
 		t.Errorf("expected errChecksumUnavailable, got %v", err)
 	}

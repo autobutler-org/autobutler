@@ -3,7 +3,6 @@
 package updateutil
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -302,9 +301,11 @@ func Update(source *UpdateSource, version string) error {
 	url := fmt.Sprintf("%s/%s/%s", baseUrl, version, archiveName)
 	fmt.Println("Downloading update from", url)
 
-	// Download the archive into memory so we can verify its checksum before
-	// overwriting the running binary.
-	archiveBytes, err := fetchURL(url)
+	// Stream the archive to disk rather than into memory: self-update runs on
+	// the device, and holding a whole release in a []byte is the last thing a
+	// low-memory box needs (#1723). replaceSelf hashes what it writes, and the
+	// checksum is verified before anything is extracted.
+	body, err := fetchStream(url)
 	if err != nil {
 		if errors.Is(err, errNotFound) {
 			return fmt.Errorf(
@@ -315,20 +316,23 @@ func Update(source *UpdateSource, version string) error {
 		}
 		return fmt.Errorf("failed to download update from %s: %w", url, err)
 	}
+	defer body.Close()
 
-	// Attempt checksum verification. A 404 on the .sha256 file is treated as
-	// "checksum unavailable" (warning only) to stay compatible with older
-	// release assets that predate this feature.
+	// A 404 on the .sha256 file is treated as "checksum unavailable" (warning
+	// only) to stay compatible with release assets that predate this feature.
 	checksumURL := url + ".sha256"
-	if err := verifyChecksum(archiveBytes, checksumURL); err != nil {
-		if errors.Is(err, errChecksumUnavailable) {
-			fmt.Println("Warning: no checksum file available at", checksumURL, "— skipping verification")
-		} else {
+	verify := func(sum []byte) error {
+		if err := verifyChecksumOf(sum, checksumURL); err != nil {
+			if errors.Is(err, errChecksumUnavailable) {
+				fmt.Println("Warning: no checksum file available at", checksumURL, "— skipping verification")
+				return nil
+			}
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
+		return nil
 	}
 
-	if err := replaceSelf(bytes.NewReader(archiveBytes)); err != nil {
+	if err := replaceSelf(body, verify); err != nil {
 		return fmt.Errorf("failed to replace self with update from %s: %w", url, err)
 	}
 

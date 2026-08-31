@@ -210,7 +210,7 @@ func (m *MemVFS) Write(ctx context.Context, path string, r io.Reader, opts Write
 		}
 	}
 
-	data, err := io.ReadAll(r)
+	data, err := readBounded(r)
 	if err != nil {
 		return err
 	}
