@@ -78,9 +78,7 @@ void main() {
   /// holding an error body.
   test('throws on a non-success status', () async {
     final service = _TestService(
-      _StubClient(
-        (_) => http.StreamedResponse(const Stream.empty(), 404),
-      ),
+      _StubClient((_) => http.StreamedResponse(const Stream.empty(), 404)),
     );
 
     await expectLater(

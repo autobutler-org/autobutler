@@ -226,7 +226,6 @@ mixin AuthenticatedService {
   }
 }
 
-
 /// A download that landed on disk instead of in memory, plus the response
 /// headers the caller still needs (Content-Disposition, for the file name).
 class DownloadedFile {
