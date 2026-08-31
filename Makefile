@@ -14,6 +14,11 @@ On macOS run `brew install make` and use `gmake`, or put \
 "$$(brew --prefix)/opt/make/libexec/gnubin" first on PATH.)
 endif
 
+# The bare `export` below exports every variable, so make expands all of them into
+# each recipe's environment. A `?=` or `=` variable holding a $(shell ...) is
+# recursively expanded and re-runs its subprocess every single time -- which cost
+# ~50 seconds per invocation before the := conversions below. Keep shell-backed
+# variables simply-expanded, and use $(or ...) so an override still wins. See #1726.
 ifneq (,$(wildcard ./.env))
     include .env
     export
@@ -25,8 +30,8 @@ AIR := $(shell which air)
 # without it, $(GO) is empty and the shell call becomes `env GOOS`, which floods the
 # log with "env: GOOS: No such file or directory" on every recipe.
 ifneq ($(GO),)
-export GOOS ?= $(shell $(GO) env GOOS)
-export GOARCH ?= $(shell $(GO) env GOARCH)
+export GOOS := $(or $(GOOS),$(shell $(GO) env GOOS))
+export GOARCH := $(or $(GOARCH),$(shell $(GO) env GOARCH))
 endif
 export GOPROXY ?= https://proxy.golang.org,direct
 
@@ -37,14 +42,14 @@ EXE := ./build/quark
 # version that was never released. pubspec.yaml deliberately has no `version:` field --
 # it was a second place to edit and drifted from the tags it was meant to track.
 # Override with BUILD_NAME=X.Y.Z.
-BUILD_NAME ?= $(shell git describe --tags --abbrev=0 2>/dev/null | sed -E 's/^v//')
+BUILD_NAME := $(or $(BUILD_NAME),$(shell git describe --tags --abbrev=0 2>/dev/null | sed -E 's/^v//'))
 
 # Dev runs get no tag: `flutter run` stamps no --build-name, on purpose -- a dirty
 # working tree must not report itself as a released version. The commit identifies it
 # instead, passed as a Dart compile-time constant so it reaches web the same as mobile
 # (version.json is a release-build artifact; --build-number is an integer on Android).
 # Seven characters to match what the Quark's own commit is shortened to in Settings.
-GIT_SHA ?= $(shell git rev-parse --short=7 HEAD 2>/dev/null)
+GIT_SHA := $(or $(GIT_SHA),$(shell git rev-parse --short=7 HEAD 2>/dev/null))
 FLUTTER_RUN_DEFINES := $(if $(GIT_SHA),--dart-define=GIT_SHA=$(GIT_SHA),)
 
 # AS_ROOT=1 runs the backend targets under sudo. Needed for USB device mounting
@@ -69,7 +74,7 @@ endif
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
-FLUTTER_VERSION=$(shell grep -Eo 'flutter: (.+)' pubspec.yaml | sed -E 's/^flutter: (.+)$$/\1/')
+FLUTTER_VERSION := $(shell grep -Eo 'flutter: (.+)' pubspec.yaml | sed -E 's/^flutter: (.+)$$/\1/')
 GO_MOD_VERSION := $(shell awk '/^go /{print $$2; exit}' go.mod)
 export GOTOOLCHAIN=go$(GO_MOD_VERSION)
 
