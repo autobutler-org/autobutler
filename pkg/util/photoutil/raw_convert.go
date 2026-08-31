@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,17 +32,19 @@ func RawToJPEG(filePath string) (image.Image, error) {
 	return nil, fmt.Errorf("no RAW converter available (install dcraw, exiftool, or ffmpeg)")
 }
 
-// RawToJPEGBytes converts a camera RAW file to JPEG bytes.
-func RawToJPEGBytes(filePath string, quality int) ([]byte, error) {
+// WriteRawAsJPEG converts a camera RAW file and encodes it straight onto w.
+// It used to return the JPEG as a []byte, which put a whole converted image on
+// the heap for every concurrent request before a single byte was written
+// (#1723).
+func WriteRawAsJPEG(w io.Writer, filePath string, quality int) error {
 	img, err := RawToJPEG(filePath)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality}); err != nil {
-		return nil, fmt.Errorf("encode JPEG: %w", err)
+	if err := jpeg.Encode(w, img, &jpeg.Options{Quality: quality}); err != nil {
+		return fmt.Errorf("encode JPEG: %w", err)
 	}
-	return buf.Bytes(), nil
+	return nil
 }
 
 // IsRawFile checks whether a file path has a camera RAW extension.

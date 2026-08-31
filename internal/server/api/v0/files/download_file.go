@@ -89,12 +89,17 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		}
 
 		if opened.Kind == fileutil.DownloadRawJPEG {
-			jpegBytes, err := fileutil.RawJPEGBytes(opened.FullPath)
-			if err != nil {
-				return serverutil.InternalServerError(err)
-			}
+			// The conversion is written straight onto the response, matching the
+			// non-RAW branch below. Buffering it first put a whole converted
+			// image on the heap per concurrent request (#1723). The trade is
+			// that a mid-encode failure arrives after the headers, so it can
+			// only be logged — same as the branch below.
 			c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", opened.FileName))
-			c.Data(http.StatusOK, "image/jpeg", jpegBytes)
+			c.Header("Content-Type", "image/jpeg")
+			c.Status(http.StatusOK)
+			if err := fileutil.WriteRawJPEG(c.Writer, opened.FullPath); err != nil {
+				slog.Error("download: RAW to JPEG stream failed", "path", opened.FullPath, "err", err)
+			}
 			return nil
 		}
 

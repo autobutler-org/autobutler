@@ -3,7 +3,6 @@ package v0_vault
 import (
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
@@ -25,7 +24,10 @@ var importVaultRoute = serverutil.ApiRoute(
 		}
 		defer file.Close()
 
-		data, err := io.ReadAll(file)
+		data, err := vaultutil.ReadImport(file)
+		if errors.Is(err, vaultutil.ErrImportTooLarge) {
+			return serverutil.BadRequest(err)
+		}
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("read file: %w", err))
 		}

@@ -2,8 +2,7 @@ package v0_vault
 
 import (
 	"encoding/csv"
-	"fmt"
-	"strings"
+	"log/slog"
 
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
@@ -40,13 +39,18 @@ var exportVaultRoute = serverutil.ApiRoute(
 				records = append(records, []string{e.Name, e.URL, e.Username, e.Password, e.Notes, e.TOTPSecret, e.FolderName})
 			}
 
-			var buf strings.Builder
-			if err := csv.NewWriter(&buf).WriteAll(records); err != nil {
-				return serverutil.InternalServerError(fmt.Errorf("write csv: %w", err))
-			}
-
 			c.Header("Content-Disposition", "attachment; filename=quark_vault.csv")
-			c.Data(200, "text/csv; charset=utf-8", []byte(buf.String()))
+			c.Header("Content-Type", "text/csv; charset=utf-8")
+			c.Status(200)
+
+			// Written straight onto the response. It used to go into a
+			// strings.Builder and then through []byte(buf.String()), which made
+			// two full copies of the export before anything was sent (#1723).
+			// The cost is that a mid-write failure lands after the headers, so
+			// it can only be logged.
+			if err := csv.NewWriter(c.Writer).WriteAll(records); err != nil {
+				slog.Error("vault export: csv stream write failed", "err", err)
+			}
 			return nil
 
 		default:

@@ -254,14 +254,13 @@ func ZipVFSDir(ctx context.Context, fsys vfs.VFS, basePath string, w io.Writer) 
 	return nil
 }
 
-// RawJPEGBytes converts a camera RAW file to JPEG bytes by extracting its
+// WriteRawJPEG converts a camera RAW file to JPEG straight onto w by extracting its
 // embedded preview.
-func RawJPEGBytes(fullPath string) ([]byte, error) {
-	jpegBytes, err := photoutil.RawToJPEGBytes(fullPath, jpegQuality)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert RAW to JPEG: %w", err)
+func WriteRawJPEG(w io.Writer, fullPath string) error {
+	if err := photoutil.WriteRawAsJPEG(w, fullPath, jpegQuality); err != nil {
+		return fmt.Errorf("failed to convert RAW to JPEG: %w", err)
 	}
-	return jpegBytes, nil
+	return nil
 }
 
 // DecodeImage decodes an image stream. Importing this package registers the

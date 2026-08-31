@@ -226,12 +226,14 @@ func GenerateThumbnailFromReader(r io.Reader, ext string, width, height uint) (*
 		return nil, fmt.Errorf("GenerateThumbnailFromReader: unsupported file type for extension %q", ext)
 	}
 
-	// Buffer the reader so we can seek back for EXIF after image decode.
-	data, err := io.ReadAll(r)
+	// EXIF is read after the decode has consumed the stream, so this needs to
+	// seek back. It used to buffer the whole image to get that, which put a
+	// multi-hundred-megabyte TIFF or RAW on the heap once per concurrent
+	// request (#1723).
+	rs, err := AsReadSeeker(r)
 	if err != nil {
 		return nil, fmt.Errorf("GenerateThumbnailFromReader: read: %w", err)
 	}
-	rs := bytes.NewReader(data)
 
 	img, format, err := image.Decode(rs)
 	if err != nil {
@@ -239,7 +241,7 @@ func GenerateThumbnailFromReader(r io.Reader, ext string, width, height uint) (*
 	}
 
 	// Seek back and apply EXIF orientation.
-	if _, seekErr := rs.Seek(0, 0); seekErr == nil {
+	if _, seekErr := rs.Seek(0, io.SeekStart); seekErr == nil {
 		imgFormat := ImageFormatFromPath("file" + ext)
 		if imgFormat != 0 {
 			orientation := GetOrientation(rs, imgFormat)
@@ -301,4 +303,23 @@ func GenerateThumbnail(params GenerateThumbnailParams) (*GenerateThumbnailResult
 		Thumbnail: thumbnail,
 		Format:    format,
 	}, nil
+}
+
+// AsReadSeeker returns r as an io.ReadSeeker for the decoders that have to
+// re-read a stream (image decode, then EXIF off the same bytes).
+//
+// A source that already seeks is used in place — vfs.VFS.Open hands back an
+// *os.File for both the local and storage-service namespaces, so in production
+// this is the branch taken and nothing is buffered. Only a stream-only source
+// falls back to holding the whole thing in memory, which is what every caller
+// used to do unconditionally (#1723).
+func AsReadSeeker(r io.Reader) (io.ReadSeeker, error) {
+	if rs, ok := r.(io.ReadSeeker); ok {
+		return rs, nil
+	}
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(data), nil
 }

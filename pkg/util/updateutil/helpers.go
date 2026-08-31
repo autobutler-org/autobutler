@@ -26,11 +26,36 @@ func init() {
 	}
 }
 
-// fetchURL performs a GET and returns the response body as bytes.
-// Only HTTPS connections to known update hosts are allowed.
-// Returns errNotFound on HTTP 404; other non-200 responses return a
-// descriptive error.
+// maxMetadataBytes caps what fetchURL will hold in memory. It only ever
+// retrieves small companion files — a .sha256 digest is 64 bytes — while the
+// release archive itself goes through fetchStream and is never buffered.
+const maxMetadataBytes = 64 * 1024
+
+// fetchURL performs a GET and returns the response body as bytes, refusing
+// anything larger than maxMetadataBytes. Use it for small companion files
+// only; fetchStream is what a release archive travels on (#1723).
 func fetchURL(rawURL string) ([]byte, error) {
+	body, err := fetchStream(rawURL)
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+
+	data, err := io.ReadAll(io.LimitReader(body, maxMetadataBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > maxMetadataBytes {
+		return nil, fmt.Errorf("response from %s exceeds %d bytes", rawURL, maxMetadataBytes)
+	}
+	return data, nil
+}
+
+// fetchStream performs a GET and returns the response body for the caller to
+// stream. Only HTTPS connections to known update hosts are allowed. Returns
+// errNotFound on HTTP 404; other non-200 responses return a descriptive error.
+// The caller owns the returned ReadCloser.
+func fetchStream(rawURL string) (io.ReadCloser, error) {
 	parsed, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid URL: %w", err)
@@ -82,14 +107,15 @@ func fetchURL(rawURL string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
 		return nil, errNotFound
 	}
 	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
 		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, requestHost)
 	}
-	return io.ReadAll(resp.Body)
+	return resp.Body, nil
 }
 
 // canonicalUpdateHost returns the allowlist entry that matches host, and true
@@ -110,12 +136,16 @@ func isAllowedUpdateHost(host string) bool {
 	return ok
 }
 
-// verifyChecksum fetches a .sha256 file from checksumURL and compares it
-// against the SHA-256 hash of data. The .sha256 file may contain the bare
-// hex digest or a line in the format produced by sha256sum(1):
+// verifyChecksumOf fetches a .sha256 file from checksumURL and compares it
+// against sum, the SHA-256 digest of the archive. It takes the digest rather
+// than the archive so the caller can compute it while streaming to disk — the
+// archive used to be held in memory purely to be hashed here (#1723).
+//
+// The .sha256 file may contain the bare hex digest or a line in the format
+// produced by sha256sum(1):
 //
 //	<hex>  <filename>
-func verifyChecksum(data []byte, checksumURL string) error {
+func verifyChecksumOf(sum []byte, checksumURL string) error {
 	checksumBytes, err := fetchURL(checksumURL)
 	if err != nil {
 		if errors.Is(err, errNotFound) {
@@ -136,9 +166,8 @@ func verifyChecksum(data []byte, checksumURL string) error {
 		return fmt.Errorf("invalid checksum format: %w", err)
 	}
 
-	actual := sha256.Sum256(data)
-	if !hmacEqual(actual[:], expected) {
-		return fmt.Errorf("checksum mismatch: expected %x, got %x", expected, actual)
+	if !hmacEqual(sum, expected) {
+		return fmt.Errorf("checksum mismatch: expected %x, got %x", expected, sum)
 	}
 	return nil
 }
@@ -181,7 +210,17 @@ func backupSelf() (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func replaceSelf(body io.Reader) error {
+// replaceSelf streams the update archive from body onto disk and, once verify
+// accepts what landed, extracts the binary and atomically replaces the running
+// executable.
+//
+// verify receives the SHA-256 of the bytes written and may be nil when no
+// checksum was published. Hashing happens as the archive streams to the temp
+// file, so a 100 MB release never sits in memory — it used to be downloaded
+// into a []byte purely so it could be hashed before this call (#1723).
+// Extraction only begins after verify returns, so an archive that fails the
+// check never reaches the executable.
+func replaceSelf(body io.Reader, verify func(sum []byte) error) error {
 	execPath, err := resolvedExecutable()
 	if err != nil {
 		return err
@@ -193,14 +232,20 @@ func replaceSelf(body io.Reader) error {
 	defer os.Remove(tmpFile.Name())
 	defer tmpFile.Close()
 
-	if _, err := tmpFile.ReadFrom(body); err != nil {
+	hash := sha256.New()
+	if _, err := tmpFile.ReadFrom(io.TeeReader(body, hash)); err != nil {
 		return fmt.Errorf("failed to write update to temp file: %w", err)
 	}
 	if err := tmpFile.Sync(); err != nil {
 		return fmt.Errorf("failed to sync temp file: %w", err)
 	}
+	if verify != nil {
+		if err := verify(hash.Sum(nil)); err != nil {
+			return err
+		}
+	}
 	// Rewind the temp file to the beginning
-	if _, err := tmpFile.Seek(0, 0); err != nil {
+	if _, err := tmpFile.Seek(0, io.SeekStart); err != nil {
 		return fmt.Errorf("failed to seek in temp file: %w", err)
 	}
 

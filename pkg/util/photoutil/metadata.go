@@ -1,12 +1,10 @@
 package photoutil
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"os"
 	"path"
@@ -212,17 +210,13 @@ func statPhoto(params MetadataParams) (photoStat, error) {
 		imgFormat := ImageFormatFromPath(params.RelPath)
 		if imgFormat != 0 {
 			if rc, openErr := params.FS.Open(params.Ctx, params.RelPath); openErr == nil {
-				var rs io.ReadSeeker
-				if seekable, ok := rc.(io.ReadSeeker); ok {
-					rs = seekable
-				} else {
-					raw, _ := io.ReadAll(rc)
-					rs = bytes.NewReader(raw)
-				}
-				if data, exifErr := DecodeExif(rs, imgFormat); exifErr == nil && data != nil {
-					stat.exif = SummarizeExif(data)
-					stat.width = data.Width
-					stat.height = data.Height
+				rs, seekErr := AsReadSeeker(rc)
+				if seekErr == nil {
+					if data, exifErr := DecodeExif(rs, imgFormat); exifErr == nil && data != nil {
+						stat.exif = SummarizeExif(data)
+						stat.width = data.Width
+						stat.height = data.Height
+					}
 				}
 				rc.Close()
 			}

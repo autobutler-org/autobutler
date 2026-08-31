@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -122,12 +123,19 @@ func ExportVault(ctx context.Context, queries *db.Queries, liveKey []byte, recov
 
 // BackupVaultChecksum returns the hex-encoded SHA-256 of the backup vault DB file.
 func BackupVaultChecksum(path string) (string, error) {
-	data, err := os.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
-	h := sha256.Sum256(data)
-	return hex.EncodeToString(h[:]), nil
+	defer f.Close()
+
+	// Streamed rather than read whole: the vault DB grows with entry count and
+	// hashing never needed it in memory (#1723).
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func createBackupVaultSchema(d *sql.DB) error {

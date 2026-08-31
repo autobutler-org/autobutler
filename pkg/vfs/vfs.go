@@ -87,7 +87,22 @@ var (
 	ErrWatchNotSupported = errors.New("vfs: watch not supported by this implementation")
 	ErrNamespaceConflict = errors.New("vfs: namespace already registered")
 	ErrConflict          = errors.New("vfs: conflict")
+	// ErrTooLarge reports a write over [MaxInMemoryWriteBytes] into a namespace
+	// that holds content in memory.
+	ErrTooLarge = errors.New("vfs: content too large for an in-memory namespace")
 )
+
+// MaxInMemoryWriteBytes caps a write into a namespace that keeps content in
+// memory: DBVFS (a SQLite BLOB) and MemVFS (a map). Neither can stream, and
+// that is deliberate — they are small-object stores, not file stores. What was
+// missing is the bound: without it an oversized write is an OOM with nothing
+// to diagnose it by, so the limit is enforced and reported instead (#1723).
+//
+// The `files` namespace is backed by StorageServiceVFS (see
+// deputil.DefaultDependencies), which streams to disk, so no user upload is
+// subject to this today. The cap exists so that stays true if a namespace is
+// ever re-pointed.
+const MaxInMemoryWriteBytes int64 = 64 * 1024 * 1024
 
 type Registry interface {
 	Register(ns Namespace, impl VFS) error

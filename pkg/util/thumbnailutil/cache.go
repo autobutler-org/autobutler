@@ -73,13 +73,16 @@ func Prepare(params PrepareParams) (PrepareResult, error) {
 	return result, nil
 }
 
-// ReadCached returns the bytes of a committed cache entry.
-func ReadCached(cachedPath string) ([]byte, error) {
-	data, err := os.ReadFile(cachedPath)
+// OpenCached opens a committed cache entry for the caller to stream. It hands
+// back the *os.File rather than the bytes so the response can be served with
+// http.ServeContent, which brings Content-Length and range support along and
+// keeps the entry off the heap (#1723). The caller owns the file.
+func OpenCached(cachedPath string) (*os.File, error) {
+	f, err := os.Open(cachedPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read cached thumbnail: %w", err)
 	}
-	return data, nil
+	return f, nil
 }
 
 // writeCache encodes img and commits it to cachedPath through a temporary
