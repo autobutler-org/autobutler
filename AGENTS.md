@@ -6,6 +6,34 @@
 
 - Respect the linting and formatting conventions of the various linting and formatting configurations and tools being used.
 
+### Streaming and memory (always)
+
+The service runs in low-memory environments and file sizes are user-controlled
+and unbounded. A 4 GiB archive must cost megabytes of heap, not gigabytes.
+
+- Thread `io.Reader` / `io.Writer` through. Never materialize a file, an upload,
+  a download, or an archive entry as a `[]byte` or a `string`.
+- On any path that can carry file content, treat these as defects: `io.ReadAll`,
+  `os.ReadFile`, `ioutil.ReadAll`, `c.GetRawData()`, and a `bytes.Buffer` that
+  accumulates a whole body before it is written anywhere.
+- Move bytes with `io.Copy` / `io.CopyBuffer`. Serve them with
+  `http.ServeContent` or `c.DataFromReader` rather than buffering and then
+  writing.
+- Need random access (zip readers, image decoding, HTTP range requests)? Take
+  the `io.ReaderAt` / `io.ReadSeeker` the source already offers and size it from
+  `Stat`. Do not buffer a stream to make it seekable. `vfs.VFS.Open` returns an
+  `*os.File` for the local and storage-service namespaces, so both satisfy this.
+- Ownership travels with the reader: if a returned reader streams out of a file,
+  the returned `Close` has to close that file.
+- Bound what genuinely cannot be streamed. Wrap it in `io.LimitReader` and
+  check whether the limit was reached — never trust a size a caller declared.
+- Reading something whole is fine when its size is bounded by us, not by a
+  user: config files, JSON request bodies, a generated thumbnail. The rule is
+  about anything a user can make arbitrarily large.
+
+See #1705: `io.ReadAll` on a 4 GiB zip asked for ~12 GiB of heap and returned a
+500. Streaming the same archive costs 17 MiB.
+
 ### Minimizing Database Usage
 
 - Add or modify DB tables only as a last resort.
