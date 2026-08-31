@@ -509,26 +509,43 @@ class FilesService with AuthenticatedService {
     String? fileName,
   }) async {
     final uri = _buildDownloadUri(filePath, serial: serial);
-    final response = await instance.authenticatedGet(uri);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(response.statusCode, 'Failed to download file');
-    }
-
-    final resolvedName = _resolveDownloadFileName(
-      response.headers['content-disposition'],
-      preferredName: fileName,
-      fallbackPath: filePath,
-    );
-
-    final bytes = Uint8List.fromList(response.bodyBytes);
 
     if (kIsWeb) {
-      return web_download.saveBytesForDownload(bytes, resolvedName);
+      // A browser download has no temp file to stream onto, so this path still
+      // holds the response in memory — the platform gives it nowhere else to go.
+      final response = await instance.authenticatedGet(uri);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(response.statusCode, 'Failed to download file');
+      }
+      return web_download.saveBytesForDownload(
+        response.bodyBytes,
+        _resolveDownloadFileName(
+          response.headers['content-disposition'],
+          preferredName: fileName,
+          fallbackPath: filePath,
+        ),
+      );
     }
 
-    final params = SaveFileDialogParams(data: bytes, fileName: resolvedName);
-
-    return FlutterFileDialog.saveFile(params: params);
+    // Everywhere else the download streams to a temp file and the save dialog
+    // copies from there. It used to arrive as bodyBytes and then be copied
+    // again by Uint8List.fromList, costing twice the file's size in RAM
+    // before the dialog even opened (#1723).
+    final downloaded = await instance.authenticatedDownload(uri);
+    try {
+      return FlutterFileDialog.saveFile(
+        params: SaveFileDialogParams(
+          sourceFilePath: downloaded.path,
+          fileName: _resolveDownloadFileName(
+            downloaded.headers['content-disposition'],
+            preferredName: fileName,
+            fallbackPath: filePath,
+          ),
+        ),
+      );
+    } finally {
+      await downloaded.delete();
+    }
   }
 
   /// Saves raw bytes to disk (or browser download) using the same logic as [saveFile].
