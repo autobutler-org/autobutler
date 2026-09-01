@@ -580,13 +580,17 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       onKeyEvent: (e) => _handleKey(_focusNode, e),
       child: Scaffold(
         backgroundColor: Colors.black,
-        appBar: _buildAppBar(context),
+        appBar: _buildAppBar(context, isDesktop),
         body: isDesktop ? _buildDesktopBody() : _buildMobileBody(),
       ),
     );
   }
 
-  AppBar _buildAppBar(BuildContext context) {
+  /// The bar carries the close button, the counter and the prev/next
+  /// chevrons at every width. Narrow screens have no room for the rest, so
+  /// favorite, rotate, download and info fold into the more menu instead of
+  /// crowding the close button (#1709).
+  AppBar _buildAppBar(BuildContext context, bool isDesktop) {
     final showNav = _liveImageCount > 1;
     return AppBar(
       backgroundColor: Colors.black,
@@ -616,51 +620,61 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           ),
           const SizedBox(width: 8),
         ],
-        Tooltip(
-          message: 'Favorite (F)',
-          child: IconButton(
-            icon: Icon(
-              _isFavorite ? QuarkIcons.star : QuarkIcons.star_border,
-              color: _isFavorite
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.white,
-            ),
-            onPressed: _toggleFavorite,
-          ),
-        ),
-        Tooltip(
-          message: 'Rotate 90° CW (R)',
-          child: IconButton(
-            icon: const Icon(QuarkIcons.rotate_90_degrees_cw_outlined),
-            onPressed: _rotate,
-          ),
-        ),
-        if (_currentRelPath != null)
+        if (isDesktop) ...[
           Tooltip(
-            message: 'Download',
+            message: 'Favorite (F)',
             child: IconButton(
-              icon: const Icon(QuarkIcons.download_outlined),
-              onPressed: _download,
+              icon: Icon(
+                _isFavorite ? QuarkIcons.star : QuarkIcons.star_border,
+                color: _isFavorite
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.white,
+              ),
+              onPressed: _toggleFavorite,
             ),
           ),
-        Tooltip(
-          message: 'Info (I)',
-          child: IconButton(
-            icon: Icon(
-              _sidebarOpen ? QuarkIcons.info : QuarkIcons.info_outline,
-              color: _sidebarOpen
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.white,
+          Tooltip(
+            message: 'Rotate 90° CW (R)',
+            child: IconButton(
+              icon: const Icon(QuarkIcons.rotate_90_degrees_cw_outlined),
+              onPressed: _rotate,
             ),
-            onPressed: _toggleSidebar,
           ),
-        ),
-        if (_currentRelPath != null)
+          if (_currentRelPath != null)
+            Tooltip(
+              message: 'Download',
+              child: IconButton(
+                icon: const Icon(QuarkIcons.download_outlined),
+                onPressed: _download,
+              ),
+            ),
+          Tooltip(
+            message: 'Info (I)',
+            child: IconButton(
+              icon: Icon(
+                _sidebarOpen ? QuarkIcons.info : QuarkIcons.info_outline,
+                color: _sidebarOpen
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.white,
+              ),
+              onPressed: _toggleSidebar,
+            ),
+          ),
+        ],
+        if (!isDesktop || _currentRelPath != null)
           PopupMenuButton<_MoreAction>(
             icon: const Icon(QuarkIcons.more_vert),
             color: const Color(0xFF1E1E1E),
             onSelected: (action) {
               switch (action) {
+                case _MoreAction.favorite:
+                  _toggleFavorite();
+                case _MoreAction.rotate:
+                  _rotate();
+                case _MoreAction.download:
+                  _download();
+                case _MoreAction.info:
+                  _toggleSidebar();
                 case _MoreAction.addToAlbum:
                   _addToAlbum();
                 case _MoreAction.removeFromAlbum:
@@ -672,47 +686,87 @@ class _ImageViewerPageState extends State<ImageViewerPage>
               }
             },
             itemBuilder: (_) => [
-              if (widget.sourceAlbum != null)
+              if (!isDesktop) ...[
                 PopupMenuItem(
-                  value: _MoreAction.removeFromAlbum,
+                  value: _MoreAction.favorite,
                   child: Text(
-                    'Remove from ${widget.sourceAlbum!.name}',
+                    _isFavorite ? 'Unfavorite' : 'Favorite',
                     style: const TextStyle(color: Colors.white),
                   ),
-                )
-              else
+                ),
                 const PopupMenuItem(
-                  value: _MoreAction.addToAlbum,
+                  value: _MoreAction.rotate,
                   child: Text(
-                    'Add to Album',
+                    'Rotate 90° CW',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-              const PopupMenuItem(
-                value: _MoreAction.makeACopy,
-                child: Text(
-                  'Make a Copy',
-                  style: TextStyle(color: Colors.white),
+                if (_currentRelPath != null)
+                  const PopupMenuItem(
+                    value: _MoreAction.download,
+                    child: Text(
+                      'Download',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                PopupMenuItem(
+                  value: _MoreAction.info,
+                  child: Text(
+                    _sidebarOpen ? 'Hide info' : 'Show info',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: _MoreAction.delete,
-                child: Text(
-                  'Delete photo',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ],
+              if (_currentRelPath != null) ...[
+                if (!isDesktop) const PopupMenuDivider(),
+                if (widget.sourceAlbum != null)
+                  PopupMenuItem(
+                    value: _MoreAction.removeFromAlbum,
+                    child: Text(
+                      'Remove from ${widget.sourceAlbum!.name}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  )
+                else
+                  const PopupMenuItem(
+                    value: _MoreAction.addToAlbum,
+                    child: Text(
+                      'Add to Album',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                const PopupMenuItem(
+                  value: _MoreAction.makeACopy,
+                  child: Text(
+                    'Make a Copy',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
+                PopupMenuItem(
+                  value: _MoreAction.delete,
+                  child: Text(
+                    'Delete photo',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-        Tooltip(
-          message: 'Keyboard shortcuts (?)',
-          child: IconButton(
-            icon: const Icon(QuarkIcons.keyboard_outlined, size: 20),
-            onPressed: () => _showShortcutsDialog(context),
+        // Keyboard shortcuts and the theme toggle need a keyboard and a wider
+        // bar; on a phone they stay on the pages that have room for them.
+        if (isDesktop) ...[
+          Tooltip(
+            message: 'Keyboard shortcuts (?)',
+            child: IconButton(
+              icon: const Icon(QuarkIcons.keyboard_outlined, size: 20),
+              onPressed: () => _showShortcutsDialog(context),
+            ),
           ),
-        ),
-        const SizedBox(width: 4),
-        const ThemeToggleButton(),
+          const SizedBox(width: 4),
+          const ThemeToggleButton(),
+        ],
       ],
     );
   }
@@ -861,7 +915,16 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 }
 
-enum _MoreAction { addToAlbum, removeFromAlbum, makeACopy, delete }
+enum _MoreAction {
+  favorite,
+  rotate,
+  download,
+  info,
+  addToAlbum,
+  removeFromAlbum,
+  makeACopy,
+  delete,
+}
 
 // ---------------------------------------------------------------------------
 // Metadata sidebar (desktop)
