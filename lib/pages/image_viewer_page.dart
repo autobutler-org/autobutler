@@ -624,14 +624,27 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 600;
-    return KeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true,
-      onKeyEvent: (e) => _handleKey(_focusNode, e),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: _buildAppBar(context, isDesktop),
-        body: isDesktop ? _buildDesktopBody() : _buildMobileBody(),
+    // `canPop: false` reports `RoutePopDisposition.doNotPop`, which is what
+    // turns off the iOS left-edge back-swipe on this route. Without it that
+    // edge gesture beats the photo page view near the bezel and drops the
+    // user out of the viewer mid-swipe (#1707). Every other exit still calls
+    // `Navigator.pop` directly, which never consults this scope, so only a
+    // system back arrives here and it is popped by hand.
+    return PopScope<bool>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        Navigator.of(context).pop(_listChanged);
+      },
+      child: KeyboardListener(
+        focusNode: _focusNode,
+        autofocus: true,
+        onKeyEvent: (e) => _handleKey(_focusNode, e),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: _buildAppBar(context, isDesktop),
+          body: isDesktop ? _buildDesktopBody() : _buildMobileBody(),
+        ),
       ),
     );
   }
