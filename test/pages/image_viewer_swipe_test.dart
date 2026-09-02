@@ -175,4 +175,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(requested, [0]);
   });
+
+  // A pinch is given no snap-back, so one that ends near 1x settles wherever
+  // the fingers left it rather than on exactly 1.0. A residual that small is
+  // not magnification, and treating it as such would pin the physics and kill
+  // the swipe for as long as the photo stayed on screen (#1707).
+  testWidgets('a residual near-1x scale leaves the page scrollable', (
+    tester,
+  ) async {
+    await pumpViewer(tester);
+    final controller = tester
+        .widget<InteractiveViewer>(find.byType(InteractiveViewer))
+        .transformationController!;
+
+    controller.value = Matrix4.diagonal3Values(1.000001, 1.000001, 1);
+    await tester.pump();
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).physics,
+      isA<PageScrollPhysics>(),
+    );
+
+    controller.value = Matrix4.diagonal3Values(1.5, 1.5, 1);
+    await tester.pump();
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).physics,
+      isA<NeverScrollableScrollPhysics>(),
+    );
+  });
 }
