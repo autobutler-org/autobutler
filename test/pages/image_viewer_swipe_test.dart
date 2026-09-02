@@ -1,14 +1,14 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/pages/image_viewer_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// #1707: swiping the photo left/right did nothing. [InteractiveViewer]'s own
-/// scale recognizer wins the gesture arena against a drag detector wrapped
-/// around it, so the swipe has to be read from raw pointer events.
+/// #1707: swiping the photo left/right did nothing, and a swipe that did
+/// register gave no feedback while the finger moved. A [PageView] carries the
+/// photo so it tracks the finger and settles with an animation.
 void main() {
   // 64x64 solid PNG — the photo needs a real box for a gesture to land on.
   final bytes = Uint8List.fromList(
@@ -48,56 +48,131 @@ void main() {
     return requested;
   }
 
+  /// Drags [dx] across the photo the way a finger does: 25 logical pixels per
+  /// frame. A single big jump is not the same gesture — it clears
+  /// InteractiveViewer's 36px pan slop in the same event that it clears the
+  /// page scroll slop, and the scale recognizer takes the tie.
+  Future<TestGesture> dragBy(WidgetTester tester, double dx) async {
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(PageView)),
+    );
+    final steps = (dx.abs() / 25).ceil();
+    for (var i = 0; i < steps; i++) {
+      await gesture.moveBy(Offset(dx / steps, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    return gesture;
+  }
+
   testWidgets('swiping left loads the next image', (tester) async {
     final requested = await pumpViewer(tester);
-    await tester.fling(
-      find.byType(InteractiveViewer),
-      const Offset(-300, 0),
-      1200,
-    );
+    await tester.fling(find.byType(PageView), const Offset(-300, 0), 1200);
     await tester.pumpAndSettle();
     expect(requested, [2]);
   });
 
   testWidgets('swiping right loads the previous image', (tester) async {
     final requested = await pumpViewer(tester);
-    await tester.fling(
-      find.byType(InteractiveViewer),
-      const Offset(300, 0),
-      1200,
-    );
+    await tester.fling(find.byType(PageView), const Offset(300, 0), 1200);
     await tester.pumpAndSettle();
     expect(requested, [0]);
   });
 
-  // The regression itself: a real finger drifts vertically before it travels
-  // sideways, which is enough for InteractiveViewer to claim the gesture.
-  testWidgets('a swipe that starts with vertical drift still navigates', (
-    tester,
-  ) async {
-    final requested = await pumpViewer(tester);
-    var elapsed = Duration.zero;
-    Duration tick() => elapsed += const Duration(milliseconds: 16);
+  // The point of the PageView: the photo moves with the finger instead of
+  // waiting for it to lift, so the swipe is visible while it happens (#1707).
+  testWidgets('the photo follows the finger mid-swipe', (tester) async {
+    await pumpViewer(tester);
+    final startX = tester.getCenter(find.byType(Image)).dx;
 
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.byType(InteractiveViewer)),
-    );
-    await gesture.moveBy(const Offset(-8, -34), timeStamp: tick());
-    await tester.pump(const Duration(milliseconds: 16));
-    await gesture.moveBy(const Offset(-60, -6), timeStamp: tick());
-    await tester.pump(const Duration(milliseconds: 16));
-    await gesture.moveBy(const Offset(-60, 0), timeStamp: tick());
-    await tester.pump(const Duration(milliseconds: 16));
-    await gesture.up(timeStamp: tick());
+    final gesture = await dragBy(tester, -200);
+    expect(tester.getCenter(find.byType(Image)).dx, lessThan(startX - 100));
+
+    await gesture.up();
     await tester.pumpAndSettle();
+  });
 
+  // No flick needed: dragging most of the way across settles on the next page
+  // on its own, which the old velocity threshold could not do.
+  testWidgets('a slow drag past half the page navigates', (tester) async {
+    final requested = await pumpViewer(tester);
+    final width = tester.getSize(find.byType(PageView)).width;
+    final gesture = await dragBy(tester, -width * 0.6);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(requested, [2]);
+  });
+
+  // A drag that gives up before halfway springs back instead of navigating.
+  testWidgets('a short drag springs back', (tester) async {
+    final requested = await pumpViewer(tester);
+    final gesture = await dragBy(tester, -60);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(requested, isEmpty);
+  });
+
+  // The mobile body stacks the photo under a drawer instead of putting it in
+  // a Row, so the PageView gets its constraints a different way there.
+  testWidgets('swiping works on a phone-width layout', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final requested = await pumpViewer(tester);
+    await tester.fling(find.byType(PageView), const Offset(-200, 0), 1200);
+    await tester.pumpAndSettle();
     expect(requested, [2]);
   });
 
   testWidgets('a tap does not navigate', (tester) async {
     final requested = await pumpViewer(tester);
-    await tester.tap(find.byType(InteractiveViewer));
+    await tester.tap(find.byType(PageView));
     await tester.pumpAndSettle();
     expect(requested, isEmpty);
+  });
+
+  // The chevrons and the arrow keys drive the same PageView, so they animate
+  // the same way a swipe does.
+  testWidgets('the app bar chevron navigates', (tester) async {
+    final requested = await pumpViewer(tester);
+    await tester.tap(find.byTooltip('Next (\u2192)'));
+    await tester.pumpAndSettle();
+    expect(requested, [2]);
+  });
+
+  // A zoomed photo pans inside the InteractiveViewer, so the page must stop
+  // scrolling until the pinch is undone.
+  testWidgets('pinching to zoom locks page scrolling', (tester) async {
+    await pumpViewer(tester);
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).physics,
+      isA<PageScrollPhysics>(),
+    );
+
+    final center = tester.getCenter(find.byType(PageView));
+    final left = await tester.startGesture(center - const Offset(20, 0));
+    final right = await tester.startGesture(center + const Offset(20, 0));
+    for (var i = 0; i < 10; i++) {
+      await left.moveBy(const Offset(-8, 0));
+      await right.moveBy(const Offset(8, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).physics,
+      isA<NeverScrollableScrollPhysics>(),
+    );
+
+    await left.up();
+    await right.up();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('the arrow keys navigate', (tester) async {
+    final requested = await pumpViewer(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(requested, [0]);
   });
 }
