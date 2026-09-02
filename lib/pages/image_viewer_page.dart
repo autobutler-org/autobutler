@@ -209,7 +209,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   }
 
   Future<void> _navigate(int delta) async {
-    if (_loading) return;
+    if (!mounted || _loading) return;
     final newIndex = _currentIndex + delta;
     if (newIndex < 0 || newIndex >= _liveImageCount) return;
     if (widget.onLoadImage == null) return;
@@ -222,11 +222,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       if (!mounted) return;
       if (bytes == null) {
         setState(() => _loading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Image no longer available')),
-          );
-        }
+        _showLoadFailure(null, delta);
         return;
       }
       int updatedCount = _liveImageCount;
@@ -253,14 +249,31 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         _rotationValue = Tween<double>(begin: 0, end: 0).animate(_rotationAnim);
       });
       _loadMetadataForCurrent();
-    } catch (_) {
-      if (mounted) {
-        setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image no longer available')),
-        );
-      }
+    } catch (e) {
+      debugPrint('ImageViewerPage: failed to load image $newIndex: $e');
+      if (!mounted) return;
+      setState(() => _loading = false);
+      _showLoadFailure(e, delta);
     }
+  }
+
+  /// Tells the user a photo wouldn't load, and offers another go at it.
+  ///
+  /// A 404 is the one answer that means the photo really is gone, so it gets
+  /// the "no longer there" copy and no retry. Everything else — a dropped
+  /// request, a busy Quark, a list that moved underneath us — is worth trying
+  /// again, so the snackbar carries a Retry rather than stranding the viewer
+  /// on the photo it was already showing (#1708).
+  void _showLoadFailure(Object? error, int delta) {
+    final gone = error is ApiException && error.statusCode == 404;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(Errors.message(error, 'load the photo')),
+        action: gone
+            ? null
+            : SnackBarAction(label: 'Retry', onPressed: () => _navigate(delta)),
+      ),
+    );
   }
 
   // --- Metadata ---
