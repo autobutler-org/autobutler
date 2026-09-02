@@ -98,6 +98,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   bool _loading = false;
   late int _liveImageCount;
 
+  // The photo most recently asked for. A download whose target no longer
+  // matches this has been superseded by a later swipe and drops its result.
+  late int _targetIndex;
+
   // UI state
   bool _sidebarOpen = true;
   bool _isFavorite = false;
@@ -136,6 +140,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _targetIndex = widget.initialIndex;
     _currentBytes = widget.bytes;
     _currentName = widget.name;
     _currentRelPath = widget.relPath;
@@ -186,17 +191,23 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
   // --- Navigation ---
 
-  bool get _hasPrev => _currentIndex > 0;
-  bool get _hasNext => _currentIndex < _liveImageCount - 1;
+  // Measured from the newest requested photo so the chevrons stay live, and
+  // keep stepping, while a download is still in flight.
+  bool get _hasPrev => _targetIndex > 0;
+  bool get _hasNext => _targetIndex < _liveImageCount - 1;
 
   // A PageView carries the swipe so the photo tracks the finger and settles
   // with an animation (#1707). The keyboard and the chevrons drive the same
   // controller so every route to the next photo animates the same way.
+  //
+  // The step counts from the newest requested photo rather than the one on
+  // screen, so a second press while the first is still downloading moves on
+  // instead of asking for the same photo twice (#1710).
   void _goToPage(int delta) {
-    final target = _currentIndex + delta;
+    final target = _targetIndex + delta;
     if (target < 0 || target >= _liveImageCount) return;
     if (!_pageController.hasClients) {
-      _navigate(delta);
+      _navigate(target);
       return;
     }
     _pageController.animateToPage(
@@ -208,18 +219,20 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
   Future<void> _onPageChanged(int index) async {
     if (index == _currentIndex) return;
-    await _navigate(index - _currentIndex);
+    await _navigate(index);
     // The load failed, so there are no bytes for the page the finger settled
-    // on. Put the view back on the photo we still have.
-    if (!mounted || index == _currentIndex || !_pageController.hasClients) {
-      return;
-    }
+    // on. Put the view back on the photo we still have — but only once nothing
+    // is in flight, because a target that no longer matches what is on screen
+    // means the user has swiped on again and this recovery would drag them
+    // back off the photo they asked for (#1710).
+    if (!mounted || !_pageController.hasClients) return;
+    if (_targetIndex != _currentIndex || index == _currentIndex) return;
     _pageController.jumpToPage(_currentIndex);
   }
 
   // A zoomed photo pans inside the InteractiveViewer, so the PageView has to
-  // stop scrolling until it is back at 1x, and the photo has to be redecoded
-  // at full resolution. Both start the moment the user pinches, so one flag
+  // stop scrolling until it is back at 1x, and the photo has to be decoded
+  // again at full resolution. Both start the moment the user pinches, so one flag
   // and one threshold cover them (#1707, #1710).
   void _onZoomChanged() {
     final zoomed =
@@ -247,28 +260,40 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     }
   }
 
-  Future<void> _navigate(int delta) async {
-    if (!mounted || _loading) return;
-    final newIndex = _currentIndex + delta;
+  /// Shows the photo at [newIndex], downloading it first.
+  ///
+  /// Navigations coalesce: the newest one wins. A request that arrives while
+  /// an earlier download is still in flight used to be dropped on the floor,
+  /// which meant swiping faster than the network could answer threw away every
+  /// swipe but the first — and left [_onPageChanged] snapping the view back to
+  /// the photo it already had. Now every request runs, and each one checks
+  /// after every await whether the user has since asked for somewhere else; if
+  /// they have, it discards its result rather than yanking them back to a
+  /// photo they have already passed. The bytes it downloaded still land in
+  /// [PhotoBytesCache], so a superseded load is not wasted (#1710).
+  Future<void> _navigate(int newIndex) async {
+    if (!mounted) return;
     if (newIndex < 0 || newIndex >= _liveImageCount) return;
     if (widget.onLoadImage == null) return;
 
+    _targetIndex = newIndex;
     setState(() => _loading = true);
     try {
       final (bytes, name, relPath, serial) = await widget.onLoadImage!(
         newIndex,
       );
-      if (!mounted) return;
+      if (!mounted || _targetIndex != newIndex) return;
       if (bytes == null) {
+        _targetIndex = _currentIndex;
         setState(() => _loading = false);
-        _showLoadFailure(null, delta);
+        _showLoadFailure(null, newIndex);
         return;
       }
       int updatedCount = _liveImageCount;
       if (widget.getImageCount != null) {
         updatedCount = await widget.getImageCount!();
       }
-      if (!mounted) return;
+      if (!mounted || _targetIndex != newIndex) return;
 
       _disposeLiveVideo();
       _zoomController.value = Matrix4.identity();
@@ -291,9 +316,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       _prefetchNeighbors();
     } catch (e) {
       debugPrint('ImageViewerPage: failed to load image $newIndex: $e');
-      if (!mounted) return;
+      if (!mounted || _targetIndex != newIndex) return;
+      _targetIndex = _currentIndex;
       setState(() => _loading = false);
-      _showLoadFailure(e, delta);
+      _showLoadFailure(e, newIndex);
     }
   }
 
@@ -304,14 +330,17 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   /// request, a busy Quark, a list that moved underneath us — is worth trying
   /// again, so the snackbar carries a Retry rather than stranding the viewer
   /// on the photo it was already showing (#1708).
-  void _showLoadFailure(Object? error, int delta) {
+  void _showLoadFailure(Object? error, int newIndex) {
     final gone = error is ApiException && error.statusCode == 404;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(Errors.message(error, 'load the photo')),
         action: gone
             ? null
-            : SnackBarAction(label: 'Retry', onPressed: () => _navigate(delta)),
+            : SnackBarAction(
+                label: 'Retry',
+                onPressed: () => _navigate(newIndex),
+              ),
       ),
     );
   }
@@ -732,12 +761,12 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           IconButton(
             icon: const Icon(QuarkIcons.chevron_left),
             tooltip: 'Previous (←)',
-            onPressed: (_hasPrev && !_loading) ? () => _goToPage(-1) : null,
+            onPressed: _hasPrev ? () => _goToPage(-1) : null,
           ),
           IconButton(
             icon: const Icon(QuarkIcons.chevron_right),
             tooltip: 'Next (→)',
-            onPressed: (_hasNext && !_loading) ? () => _goToPage(1) : null,
+            onPressed: _hasNext ? () => _goToPage(1) : null,
           ),
           const SizedBox(width: 8),
         ],

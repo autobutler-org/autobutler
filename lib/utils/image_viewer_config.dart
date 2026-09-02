@@ -21,7 +21,9 @@ abstract final class ImageViewerConfig {
   ///
   /// One. The next action is almost always the next or previous photo, and
   /// every step past that spends a stranger's cellular data on a photo they
-  /// may never reach.
+  /// may never reach. Swiping faster than one photo per download costs nothing
+  /// either: navigations coalesce, and the bytes a superseded one downloaded
+  /// still land in the cache, so a fast swipe warms everything it passes.
   static const int prefetchWindow = 1;
 
   /// Zoom scale above which the photo counts as magnified.
