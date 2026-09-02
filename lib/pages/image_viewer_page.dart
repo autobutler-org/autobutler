@@ -18,6 +18,9 @@ import 'package:video_player/video_player.dart';
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
 const _kSidebarWidth = 288.0;
 
+// How long the page settles when the keyboard or a chevron turns it.
+const _kPageAnimDuration = Duration(milliseconds: 250);
+
 /// A full-screen photo viewer with metadata sidebar (desktop) / bottom drawer
 /// (mobile), action toolbar, and keyboard shortcuts.
 ///
@@ -105,6 +108,12 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   SharedPreferences? _prefs;
   final _focusNode = FocusNode();
 
+  // Zoom/pan state of the photo. Swipe-to-navigate only applies while the
+  // photo sits at 1x; once zoomed, a horizontal drag pans the photo.
+  final _zoomController = TransformationController();
+  bool _zoomedIn = false;
+  late PageController _pageController;
+
   // DraggableScrollableSheet controller for mobile drawer
   final _drawerController = DraggableScrollableController();
 
@@ -117,6 +126,8 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _currentRelPath = widget.relPath;
     _currentSerial = widget.serial;
     _liveImageCount = widget.imageCount;
+    _pageController = PageController(initialPage: widget.initialIndex);
+    _zoomController.addListener(_onZoomChanged);
 
     _rotationAnim = AnimationController(
       vsync: this,
@@ -133,6 +144,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     _rotationAnim.dispose();
     _focusNode.dispose();
     _drawerController.dispose();
+    _zoomController.removeListener(_onZoomChanged);
+    _zoomController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -158,6 +172,41 @@ class _ImageViewerPageState extends State<ImageViewerPage>
 
   bool get _hasPrev => _currentIndex > 0;
   bool get _hasNext => _currentIndex < _liveImageCount - 1;
+
+  // A PageView carries the swipe so the photo tracks the finger and settles
+  // with an animation (#1707). The keyboard and the chevrons drive the same
+  // controller so every route to the next photo animates the same way.
+  void _goToPage(int delta) {
+    final target = _currentIndex + delta;
+    if (target < 0 || target >= _liveImageCount) return;
+    if (!_pageController.hasClients) {
+      _navigate(delta);
+      return;
+    }
+    _pageController.animateToPage(
+      target,
+      duration: _kPageAnimDuration,
+      curve: Curves.easeOut,
+    );
+  }
+
+  Future<void> _onPageChanged(int index) async {
+    if (index == _currentIndex) return;
+    await _navigate(index - _currentIndex);
+    // The load failed, so there are no bytes for the page the finger settled
+    // on. Put the view back on the photo we still have.
+    if (!mounted || index == _currentIndex || !_pageController.hasClients) {
+      return;
+    }
+    _pageController.jumpToPage(_currentIndex);
+  }
+
+  // A zoomed photo pans inside the InteractiveViewer, so the PageView has to
+  // stop scrolling until it is back at 1x.
+  void _onZoomChanged() {
+    final zoomed = _zoomController.value.getMaxScaleOnAxis() > 1.0;
+    if (zoomed != _zoomedIn) setState(() => _zoomedIn = zoomed);
+  }
 
   Future<void> _navigate(int delta) async {
     if (_loading) return;
@@ -187,6 +236,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       if (!mounted) return;
 
       _disposeLiveVideo();
+      _zoomController.value = Matrix4.identity();
       // Reset rotation and favorite to defaults; _loadMetadataForCurrent
       // will apply server-persisted values once metadata arrives.
       setState(() {
@@ -545,10 +595,10 @@ class _ImageViewerPageState extends State<ImageViewerPage>
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     switch (event.logicalKey) {
       case LogicalKeyboardKey.arrowLeft:
-        _navigate(-1);
+        _goToPage(-1);
         return KeyEventResult.handled;
       case LogicalKeyboardKey.arrowRight:
-        _navigate(1);
+        _goToPage(1);
         return KeyEventResult.handled;
       case LogicalKeyboardKey.escape:
         Navigator.of(context).pop(_listChanged);
@@ -574,14 +624,27 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 600;
-    return KeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true,
-      onKeyEvent: (e) => _handleKey(_focusNode, e),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: _buildAppBar(context, isDesktop),
-        body: isDesktop ? _buildDesktopBody() : _buildMobileBody(),
+    // `canPop: false` reports `RoutePopDisposition.doNotPop`, which is what
+    // turns off the iOS left-edge back-swipe on this route. Without it that
+    // edge gesture beats the photo page view near the bezel and drops the
+    // user out of the viewer mid-swipe (#1707). Every other exit still calls
+    // `Navigator.pop` directly, which never consults this scope, so only a
+    // system back arrives here and it is popped by hand.
+    return PopScope<bool>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        Navigator.of(context).pop(_listChanged);
+      },
+      child: KeyboardListener(
+        focusNode: _focusNode,
+        autofocus: true,
+        onKeyEvent: (e) => _handleKey(_focusNode, e),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: _buildAppBar(context, isDesktop),
+          body: isDesktop ? _buildDesktopBody() : _buildMobileBody(),
+        ),
       ),
     );
   }
@@ -611,12 +674,12 @@ class _ImageViewerPageState extends State<ImageViewerPage>
           IconButton(
             icon: const Icon(QuarkIcons.chevron_left),
             tooltip: 'Previous (←)',
-            onPressed: (_hasPrev && !_loading) ? () => _navigate(-1) : null,
+            onPressed: (_hasPrev && !_loading) ? () => _goToPage(-1) : null,
           ),
           IconButton(
             icon: const Icon(QuarkIcons.chevron_right),
             tooltip: 'Next (→)',
-            onPressed: (_hasNext && !_loading) ? () => _navigate(1) : null,
+            onPressed: (_hasNext && !_loading) ? () => _goToPage(1) : null,
           ),
           const SizedBox(width: 8),
         ],
@@ -819,42 +882,23 @@ class _ImageViewerPageState extends State<ImageViewerPage>
       onLongPressEnd: isLive && _liveVideoPlaying
           ? (_) => _stopLivePlayback()
           : null,
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity == null) return;
-        if (details.primaryVelocity! < -200) _navigate(1);
-        if (details.primaryVelocity! > 200) _navigate(-1);
-      },
       child: Stack(
         children: [
-          Center(
-            child: _loading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : _liveVideoPlaying && _liveVideoController != null
-                ? AspectRatio(
-                    aspectRatio: _liveVideoController!.value.aspectRatio.clamp(
-                      0.1,
-                      10.0,
-                    ),
-                    child: VideoPlayer(_liveVideoController!),
-                  )
-                : AnimatedBuilder(
-                    animation: _rotationValue,
-                    builder: (_, child) => Transform.rotate(
-                      angle: _rotationValue.value,
-                      child: child,
-                    ),
-                    child: InteractiveViewer(
-                      child: Image.memory(
-                        _currentBytes,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stack) => const Icon(
-                          QuarkIcons.broken_image,
-                          size: 64,
-                          color: Colors.white54,
-                        ),
-                      ),
-                    ),
-                  ),
+          // The viewer is index-based and only ever holds the bytes for the
+          // photo on screen, so the pages the finger drags in from show a
+          // spinner until _navigate has loaded them.
+          PageView.builder(
+            controller: _pageController,
+            physics: _zoomedIn
+                ? const NeverScrollableScrollPhysics()
+                : const PageScrollPhysics(),
+            itemCount: math.max(_liveImageCount, 1),
+            onPageChanged: _onPageChanged,
+            itemBuilder: (_, index) => Center(
+              child: index == _currentIndex
+                  ? _buildCurrentPhoto()
+                  : const CircularProgressIndicator(color: Colors.white),
+            ),
           ),
           if (isLive && !_loading)
             Positioned(
@@ -863,6 +907,32 @@ class _ImageViewerPageState extends State<ImageViewerPage>
               child: _LiveBadge(ready: _liveVideoReady),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCurrentPhoto() {
+    if (_liveVideoPlaying && _liveVideoController != null) {
+      return AspectRatio(
+        aspectRatio: _liveVideoController!.value.aspectRatio.clamp(0.1, 10.0),
+        child: VideoPlayer(_liveVideoController!),
+      );
+    }
+    return AnimatedBuilder(
+      animation: _rotationValue,
+      builder: (_, child) =>
+          Transform.rotate(angle: _rotationValue.value, child: child),
+      child: InteractiveViewer(
+        transformationController: _zoomController,
+        child: Image.memory(
+          _currentBytes,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stack) => const Icon(
+            QuarkIcons.broken_image,
+            size: 64,
+            color: Colors.white54,
+          ),
+        ),
       ),
     );
   }
