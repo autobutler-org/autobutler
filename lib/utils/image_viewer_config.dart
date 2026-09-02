@@ -28,10 +28,16 @@ abstract final class ImageViewerConfig {
 
   /// Zoom scale above which the photo counts as magnified.
   ///
-  /// Exactly 1.0 — `InteractiveViewer` sits there until the user pinches, so
-  /// crossing it is the same instant for both things that care: the page
-  /// physics has to stop scrolling so a drag pans instead of turning the page,
-  /// and the downscaled decode has to give way to the full-resolution one
-  /// before anything looks soft.
-  static const double zoomedInScale = 1.0;
+  /// One threshold covers both things that care: the page physics has to stop
+  /// scrolling so a drag pans instead of turning the page, and the downscaled
+  /// decode has to give way to the full-resolution one before anything looks
+  /// soft.
+  ///
+  /// Just above 1.0 rather than exactly 1.0, because `InteractiveViewer` is
+  /// given no snap-back — a pinch that ends near 1x settles wherever the
+  /// fingers left it, which is rarely 1.0 to the last bit. On exactly 1.0 a
+  /// residual 1.0000001 would read as magnified forever, pinning the page
+  /// physics and killing the swipe the viewer just gained (#1707). The 1%
+  /// band this trades away is magnification no one can see.
+  static const double zoomedInScale = 1.01;
 }
