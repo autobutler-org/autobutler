@@ -295,6 +295,14 @@ package widgets and wires callbacks back to controller methods. Navigation stays
 service calls as injectable function parameters with defaults pointing at the real static methods, so a controller test
 passes fakes without a mocking library.
 
+**Pages are compositions.** A page's `build` is package widgets arranged with plain Flutter layout (`Column`, `Row`,
+`Expanded`, `Padding`, `SafeArea`) and nothing else. No sizing math, no `MediaQuery` breakpoints, no `LayoutBuilder`
+branching, no private `_build*` methods that amount to an unnamed widget. Responsive behavior lives in package layout
+widgets (a page scaffold, a split view that collapses its sidebar under a breakpoint, a section, a toolbar) so every page
+shares the same breakpoints and a layout fix lands once. If a page needs a layout the package lacks, add the layout
+widget to the package first, then compose. The test of a good page is that a new one is mostly a list of package
+widgets and reads in one screen.
+
 ### Testing and validation
 
 - Prefer adding or updating focused tests under `test/` for non-trivial logic changes.
