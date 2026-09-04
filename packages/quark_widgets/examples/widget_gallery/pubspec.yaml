@@ -1,0 +1,22 @@
+name: quark_widgets_example_widget_gallery
+description: Live gallery for the quark_widgets package, with an editable theme.
+publish_to: "none"
+
+environment:
+  sdk: ^3.11.0
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  quark_widgets:
+    path: ../..
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

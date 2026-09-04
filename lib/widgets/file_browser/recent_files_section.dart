@@ -1,6 +1,6 @@
 import 'package:quark/models/file_node.dart';
 import 'package:quark/services/files_service.dart';
-import 'package:quark/theme/quark_colors.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/widgets/core/quark_file_icon.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';

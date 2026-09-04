@@ -1,4 +1,4 @@
-import 'package:quark/theme/quark_colors.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 import 'package:flutter/material.dart';
 
 class QuarkStorageBar extends StatelessWidget {

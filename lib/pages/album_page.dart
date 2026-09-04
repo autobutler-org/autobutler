@@ -4,7 +4,7 @@ import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/services/files_service.dart';
-import 'package:quark/theme/quark_colors.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/core/empty_state_widget.dart';

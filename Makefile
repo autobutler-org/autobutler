@@ -712,7 +712,7 @@ generate/backend/swagger: ## Generate Swagger docs
 	swag init -g ./cmd/quark/main.go -o ./docs/swagger --parseInternal
 
 .PHONY: generate/frontend
-generate/frontend: generate/frontend/icons generate/frontend/quark-icons generate/frontend/sbom ## Generate frontend files
+generate/frontend: generate/frontend/icons generate/frontend/quark-icons generate/frontend/sbom generate/frontend/widget-docs ## Generate frontend files
 
 .PHONY: generate/frontend/pub-get
 generate/frontend/pub-get: ## Refresh the workspace resolution for `dart run`
@@ -734,6 +734,10 @@ generate/frontend/quark-icons: ## Regenerate QuarkIcons.ttf from SVGs using fant
 		--name QuarkIcons \
 		--config packages/quark_icons/.fantasticonrc.json \
 		--normalize
+
+.PHONY: generate/frontend/widget-docs
+generate/frontend/widget-docs: ## Regenerate the widget gallery's docs from /// class comments
+	$(MAKE) -C packages/quark_widgets generate/docs
 
 .PHONY: generate/frontend/sbom
 generate/frontend/sbom: generate/frontend/pub-get ## Generate Flutter SBOM asset from pubspec.lock
