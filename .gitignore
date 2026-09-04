@@ -103,8 +103,12 @@ test-results/performance/*
 # Ralph loops
 .ralph/
 ## Skills
+.agents/skills
 .claude/skills
 .github/skills
+## `dart run skills@ get` writes install timestamps and hashes here. Per
+## developer, and per agent they chose, so it is not shared state.
+.config/dart_skills/
 
 ## Claude Code workspace (agents are shared; everything else is per-developer)
 .claude/*

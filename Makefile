@@ -101,7 +101,14 @@ clean/flutter: ## Clean flutter project
 	flutter clean
 
 .PHONY: setup
-setup: setup/gotools setup/golangci-lint setup/probe setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
+setup: setup/gotools setup/golangci-lint setup/probe setup/air setup/sqlc setup/swag setup/flutter setup/skills setup/hooks ## Setup development environment
+
+.PHONY: setup/skills
+setup/skills: ## Install the pub package skills bundled with our packages
+	# Reads every workspace dependency's `skills/` directory and writes the
+	# ones it finds into .claude/skills (Claude Code) and .agents/skills
+	# (everything else). Both are gitignored, so this leaves the tree clean.
+	dart run skills@ get --all
 
 .PHONY: setup/wrk
 setup/wrk: ## Install wrk load-testing CLI
