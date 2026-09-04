@@ -6,7 +6,7 @@ import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/local_trust_overrides_stub.dart'
     if (dart.library.io) 'package:quark/services/local_trust_overrides_io.dart';
-import 'package:quark/theme/quark_theme.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 Future<void> main() async {
   usePathUrlStrategy();

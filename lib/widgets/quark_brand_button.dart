@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quark/theme/quark_colors.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark_icons/quark_icons.dart';
 
 /// Styled brand button used in the top bar across all main pages.

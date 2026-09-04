@@ -17,7 +17,7 @@ lib/widgets/
 
 ## Theming
 
-All widgets use `QuarkColors` (from `lib/theme/quark_colors.dart`) for colors, radii, and spacing. Avoid hard-coded color values in widget code.
+All widgets take colors, radii, and spacing from `QuarkTokens` in `packages/quark_widgets` (`QuarkTokens.of(context)`, or the legacy `QuarkColors` facade). Avoid hard-coded color values in widget code.
 
 ---
 

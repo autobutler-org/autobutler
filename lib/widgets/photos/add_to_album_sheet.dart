@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/services/album_service.dart';
-import 'package:quark/theme/quark_colors.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark/utils/error_text.dart';
 
