@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 void main() {
   group('Errors.message', () {

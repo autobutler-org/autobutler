@@ -3,14 +3,13 @@ import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
-import 'package:quark/widgets/core/quark_file_icon.dart';
-import 'package:quark/widgets/core/empty_state_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 enum FileMenuAction {
   download,
@@ -790,7 +789,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   /// risking an overflow, with the thumbnail replacing the icon only once it
   /// decodes.
   Widget _buildGridPreview(FileNode item) {
-    final icon = Center(child: QuarkFileIcon(node: item, size: 48));
+    final icon = Center(
+      child: QuarkFileIcon(name: item.name, isDir: item.isDir, size: 48),
+    );
 
     return SizedBox(
       width: double.infinity,
@@ -818,7 +819,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
   static const double _listLeadingSize = 40;
 
   Widget _buildListLeading(FileNode item) {
-    final icon = Center(child: QuarkFileIcon(node: item));
+    final icon = Center(
+      child: QuarkFileIcon(name: item.name, isDir: item.isDir),
+    );
 
     return SizedBox(
       width: _listLeadingSize,

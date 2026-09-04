@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quark/widgets/core/quark_storage_bar.dart';
 import 'package:quark/widgets/file_browser/file_storage_footer.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 // The footer is the last child of the file browser's Column, so it sits flush
 // against the physical bottom edge — the band where iOS draws the home

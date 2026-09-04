@@ -8,8 +8,9 @@ import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark/services/app_settings.dart';
 
 /// A simple plaintext editor for text-like files (txt, md, json, yaml, etc.)
 class PlaintextEditorPage extends StatefulWidget {
@@ -160,7 +161,7 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
               tooltip: 'Save',
               onPressed: _dirty ? _saveFile : null,
             ),
-          const ThemeToggleButton(),
+          const AppThemeToggle(),
         ],
       ),
       body: _buildBody(context),
@@ -175,7 +176,10 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
     final error = _error;
     if (error != null) {
       if (isQuarkUnreachableError(error)) {
-        return QuarkDisconnectedView(onRetry: _loadFile);
+        return QuarkDisconnectedView(
+          hostAddress: AppSettings.instance.activeHost,
+          onRetry: _loadFile,
+        );
       }
       return Center(
         child: Column(

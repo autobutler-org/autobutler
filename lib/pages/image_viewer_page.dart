@@ -13,10 +13,10 @@ import 'package:quark/services/favorites_service.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/image_viewer_config.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
-import 'package:quark/widgets/photos/photo_selection_bar.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
+import 'package:quark/widgets/photos/album_picker_sheet.dart';
 
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
 const _kSidebarWidth = 288.0;
@@ -915,7 +915,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
             ),
           ),
           const SizedBox(width: 4),
-          const ThemeToggleButton(),
+          const AppThemeToggle(),
         ],
       ],
     );

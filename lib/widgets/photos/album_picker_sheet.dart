@@ -1,68 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/services/album_service.dart';
-import 'package:quark_widgets/quark_widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:quark_icons/quark_icons.dart';
 import 'package:quark/utils/error_text.dart';
-
-/// Sticky bottom bar shown during photo selection mode.
-/// Shows count + "Add to Album" button.
-class PhotoSelectionBar extends StatelessWidget {
-  const PhotoSelectionBar({
-    required this.selectedCount,
-    required this.onAddToAlbum,
-    required this.onCancel,
-    super.key,
-  });
-
-  final int selectedCount;
-  final VoidCallback onAddToAlbum;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          border: Border(top: BorderSide(color: colorScheme.outline)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            TextButton(onPressed: onCancel, child: const Text('Cancel')),
-            const Spacer(),
-            Text(
-              '$selectedCount ${selectedCount == 1 ? 'photo' : 'photos'} selected',
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            const Spacer(),
-            FilledButton.icon(
-              onPressed: selectedCount > 0 ? onAddToAlbum : null,
-              icon: const Icon(QuarkIcons.photo_album_outlined, size: 16),
-              label: const Text('Add to Album'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 /// Bottom sheet for picking an album to add selected photos to.
-/// Shows album list; on tap calls [onAlbumPicked].
+///
+/// Still service-coupled: it loads the album list itself. Decoupling it into
+/// the package belongs to the photos page issue (#1732).
 class AlbumPickerSheet extends StatefulWidget {
   const AlbumPickerSheet({required this.selectedCount, super.key});
 

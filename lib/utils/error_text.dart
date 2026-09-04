@@ -1,6 +1,6 @@
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/utils/connection_error.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 /// Every user-facing error string in the app is produced here (#1622).
 ///

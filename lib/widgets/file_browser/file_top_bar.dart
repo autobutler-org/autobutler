@@ -3,9 +3,7 @@ import 'dart:math' as math;
 
 import 'package:quark/services/storage_service.dart';
 import 'package:quark_widgets/quark_widgets.dart';
-import 'package:quark/widgets/quark_brand_button.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
-import 'package:quark/widgets/refresh_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:flutter/services.dart';
@@ -189,7 +187,7 @@ class _FileTopBarState extends State<FileTopBar> {
               onTap: widget.onOpenSettings,
               tooltip: 'Settings',
             ),
-            const ThemeToggleButton(),
+            const AppThemeToggle(),
           ],
         ),
       ),

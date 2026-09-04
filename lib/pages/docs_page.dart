@@ -11,10 +11,10 @@ import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
-import 'package:quark/widgets/layout/quark_app_bar.dart';
-import 'package:quark/widgets/quark_drawer.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/services/app_settings.dart';
 
 class DocsPage extends StatefulWidget {
   const DocsPage({super.key});
@@ -168,6 +168,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
             tooltip: 'Settings',
             onPressed: () => context.go('/settings'),
           ),
+          const AppThemeToggle(),
         ],
       ),
       drawer: QuarkDrawer(
@@ -232,6 +233,7 @@ class _DocsPageState extends State<DocsPage> with SafeSetStateMixin {
     if (error != null) {
       if (isQuarkUnreachableError(error)) {
         return QuarkDisconnectedView(
+          hostAddress: AppSettings.instance.activeHost,
           onRetry: _load,
           onManageHosts: () => context.go(AppRoutes.settings),
         );
