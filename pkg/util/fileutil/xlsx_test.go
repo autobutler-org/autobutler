@@ -254,7 +254,7 @@ func TestConvertXlsxToQsheetLeavesNothingBehindWhenALaterSheetFails(t *testing.T
 	// The failure that actually strands a partial document: the first sheet
 	// measures, converts and is written, and only then does the second turn
 	// out to be malformed. Whatever reached the destination has to go.
-	f := newXlsxFixture(t, "twosheet.xlsx")
+	f := newXlsxFixture(t, "two_sheets.xlsx")
 	parts := workbookParts()
 	parts["xl/workbook.xml"] = `<?xml version="1.0"?><workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
 		`<sheets><sheet name="Good" sheetId="1" r:id="rId1"/><sheet name="Bad" sheetId="2" r:id="rId2"/></sheets></workbook>`
@@ -263,12 +263,12 @@ func TestConvertXlsxToQsheetLeavesNothingBehindWhenALaterSheetFails(t *testing.T
 		`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>` +
 		`</Relationships>`
 	parts["xl/worksheets/sheet2.xml"] = `<?xml version="1.0"?><worksheet><sheetData><row r="1"><c r="A1"><v>1</v></c></row>` // never closed
-	seedParts(t, f.root, "twosheet.xlsx", parts)
+	seedParts(t, f.root, "two_sheets.xlsx", parts)
 
 	if _, err := fileutil.ConvertXlsxToQsheet(f.params); err == nil {
 		t.Fatal("a workbook with a malformed sheet converted without error")
 	}
-	if _, err := os.Stat(filepath.Join(f.root, "twosheet.qsheet")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(f.root, "two_sheets.qsheet")); !os.IsNotExist(err) {
 		t.Errorf("a .qsheet was left behind for a workbook that did not convert")
 	}
 	if left := leftovers(t, f.root); len(left) != 0 {
@@ -301,7 +301,7 @@ func (b bluntVFS) Write(_ context.Context, name string, r io.Reader, _ vfs.Write
 }
 
 func TestConvertXlsxToQsheetSurvivesANonAtomicNamespace(t *testing.T) {
-	f := newXlsxFixture(t, "twosheet.xlsx")
+	f := newXlsxFixture(t, "two_sheets.xlsx")
 	parts := workbookParts()
 	parts["xl/workbook.xml"] = `<?xml version="1.0"?><workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
 		`<sheets><sheet name="Good" sheetId="1" r:id="rId1"/><sheet name="Bad" sheetId="2" r:id="rId2"/></sheets></workbook>`
@@ -310,10 +310,10 @@ func TestConvertXlsxToQsheetSurvivesANonAtomicNamespace(t *testing.T) {
 		`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>` +
 		`</Relationships>`
 	parts["xl/worksheets/sheet2.xml"] = `<?xml version="1.0"?><worksheet><sheetData><row r="1"><c r="A1"><v>1</v></c></row>`
-	seedParts(t, f.root, "twosheet.xlsx", parts)
+	seedParts(t, f.root, "two_sheets.xlsx", parts)
 
 	// A .qsheet the user already has, which the failed conversion must not touch.
-	if err := os.WriteFile(filepath.Join(f.root, "twosheet.qsheet"),
+	if err := os.WriteFile(filepath.Join(f.root, "two_sheets.qsheet"),
 		[]byte(`{"tabs":[{"name":"Mine","data":{"rows":[["keep me"]]}}]}`), 0o600); err != nil {
 		t.Fatalf("seed existing sheet: %v", err)
 	}
@@ -333,7 +333,7 @@ func TestConvertXlsxToQsheetSurvivesANonAtomicNamespace(t *testing.T) {
 		t.Fatal("a workbook with a malformed sheet converted without error")
 	}
 
-	rows := rowsOf(t, f.root, "twosheet.qsheet")
+	rows := rowsOf(t, f.root, "two_sheets.qsheet")
 	if len(rows) != 1 || rows[0][0] != "keep me" {
 		t.Errorf("the existing sheet was replaced by a failed conversion: %v", rows)
 	}

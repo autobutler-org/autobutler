@@ -186,7 +186,7 @@ func TestConvertToQsheetEmptySheetKeepsARow(t *testing.T) {
 
 func TestConvertToQsheetDates(t *testing.T) {
 	// numFmtId 14 is the builtin short date; 164 and up are the workbook's own
-	// codes. The last two are the regression: a colour section and a quoted
+	// codes. The last two are the regression: a color section and a quoted
 	// suffix are literal text, but both spell date letters ("Red", "days"), so
 	// a reader that scans the raw code calls a plain number a date. See
 	// stripFormatLiterals.
@@ -225,7 +225,7 @@ func TestConvertToQsheetDates(t *testing.T) {
 	assertRows(t, doc.Tabs[0].Data.Rows, [][]string{{
 		"2023-03-15",          // builtin date format
 		"2023-03-15 12:00:00", // custom date-and-time format
-		"45000",               // a [Red] colour section, not a date
+		"45000",               // a [Red] color section, not a date
 		"06:00:00",            // builtin time format
 		"45000",               // General, not a date
 		"45000",               // a quoted " days" suffix, not a date

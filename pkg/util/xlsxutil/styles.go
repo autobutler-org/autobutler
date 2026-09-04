@@ -131,7 +131,7 @@ func numFmtIDAttr(start xml.StartElement) int {
 
 // dateKindOf reads a format code for the date parts it displays. Only its date
 // tokens matter, so the literal text a code can carry — quoted runs, escaped
-// characters, the colour and condition sections in brackets — is stripped
+// characters, the color and condition sections in brackets — is stripped
 // first. Without that a plain currency format like [$$-409]#,##0.00 reads as a
 // date, because its locale tag contains a "d".
 func dateKindOf(code string) dateKind {
@@ -173,7 +173,7 @@ func dateKindOf(code string) dateKind {
 
 // stripFormatLiterals removes the parts of a number format code that are text
 // rather than a placeholder: quoted runs, backslash-escaped characters, and
-// the bracketed colour, condition and locale sections.
+// the bracketed color, condition and locale sections.
 func stripFormatLiterals(code string) string {
 	var b strings.Builder
 	for i := 0; i < len(code); i++ {
