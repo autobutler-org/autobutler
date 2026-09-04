@@ -533,7 +533,9 @@ class FilesService with AuthenticatedService {
     // before the dialog even opened (#1723).
     final downloaded = await instance.authenticatedDownload(uri);
     try {
-      return FlutterFileDialog.saveFile(
+      // Awaited, not just returned: the finally below deletes the temp file, and
+      // an unawaited future would let that race the dialog reading it.
+      return await FlutterFileDialog.saveFile(
         params: SaveFileDialogParams(
           sourceFilePath: downloaded.path,
           fileName: _resolveDownloadFileName(
