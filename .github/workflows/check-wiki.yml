@@ -7,8 +7,6 @@ on:
   # The wiki inherits its lint rules from this repo, so a change here can
   # break the wiki. Catch that in the PR instead of after merge.
   pull_request:
-    branches:
-      - main
     paths:
       - .markdownlint.yaml
       - .github/workflows/check-wiki.yml
