@@ -1,6 +1,6 @@
 # Settings Journeys
 
-Covers the Settings page (`/settings`) — host management, theme, version updates, remote access, connected devices, SMB, and sign out.
+Covers the Settings page (`/settings`) — host management, theme, version updates, remote access, connected devices, and sign out.
 
 ---
 
@@ -285,22 +285,6 @@ Covers the Settings page (`/settings`) — host management, theme, version updat
 
 - Device name is updated everywhere in the UI.
 - See also JN-SD-006.
-
----
-
-### JN-ST-019: View SMB / network drive info
-
-**Preconditions:** SMB is configured on the quark.
-
-**Steps:**
-
-1. Navigate to `/settings`.
-2. Scroll to the **Network Drive** section.
-
-**Expected result:**
-
-- SMB connection details (hostname, share name) are displayed.
-- User can copy the connection string.
 
 ---
 

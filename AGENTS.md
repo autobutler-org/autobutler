@@ -89,7 +89,7 @@ its URL without grepping.
 - **`helpers.go` holds every other private function**, whatever it is shared with. Two helpers files split by
   topic (`upload_session_helpers.go` next to `helpers.go`) is the layout this convention replaced.
 - **One handler per file, named `verb_noun.go`** after what the handler does: `list_albums.go`,
-  `delete_device.go`, `setup_smb.go`. Never a file named after the resource alone (`albums.go` holding all
+  `delete_device.go`, `rename_device.go`. Never a file named after the resource alone (`albums.go` holding all
   five CRUD routes) — that is the layout this convention replaced. **The handler itself is the one private
   function exempt from `helpers.go`**: it stays in its own file along with the
   `var xxxRoute = serverutil.ApiRoute(...)` that registers it, because splitting a route from its handler is
