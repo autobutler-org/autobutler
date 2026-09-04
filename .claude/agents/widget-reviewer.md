@@ -24,9 +24,18 @@ For each widget, check:
 - `///` docs on the class, every parameter, every callback.
 - A test file exists with narrow and wide viewport cases and covers each state and callback.
 - A gallery registry entry exists.
+- After a widget is moved or added, `git grep` the app's `lib/` for its class name. Zero callers is a finding, never a
+  pass: either "moved but not wired", the page still builds its own copy and must call the package widget, or "dead
+  before the move, delete it". Say which.
 
 For each page or controller in the diff, check that every service call lives in the controller, the page rebuilds with
 `ListenableBuilder`, and controllers take service calls as injectable function parameters.
+
+Also for each page or controller:
+
+- A private `_Something extends StatelessWidget` left in a page that duplicates a package widget is a finding: delete
+  it and call the package widget. If the package widget lacks a state the private copy has, the fix is a new input on
+  the package widget, not a second copy.
 
 Output one line per finding: `path:line  what is wrong  what to change`. Group by file. If a file is clean, say so in
 one line. End with a one-line verdict: ready, or not ready and why. No praise, no essays.
