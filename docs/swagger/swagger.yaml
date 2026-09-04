@@ -378,7 +378,7 @@ definitions:
       hostname:
         description: |-
           Hostname is the OS hostname of the quark device.
-          Clients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).
+          Clients can use this to display the device's LAN name (e.g. quark.local).
         type: string
       memPercent:
         type: number

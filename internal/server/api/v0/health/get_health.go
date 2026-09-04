@@ -22,7 +22,7 @@ type HealthJSON struct {
 	DiskTotalBytes     uint64    `json:"diskTotalBytes"`
 	TemperatureCelsius float64   `json:"temperatureCelsius"`
 	// Hostname is the OS hostname of the quark device.
-	// Clients can use this to display accurate LAN mount paths (e.g. smb://hostname.local).
+	// Clients can use this to display the device's LAN name (e.g. quark.local).
 	Hostname string `json:"hostname"`
 }
 
