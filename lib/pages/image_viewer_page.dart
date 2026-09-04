@@ -13,10 +13,11 @@ import 'package:quark/services/favorites_service.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/image_viewer_config.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
-import 'package:quark/widgets/photos/photo_selection_bar.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
+import 'package:quark/widgets/photos/album_picker_sheet.dart';
 
 const _kSidebarOpenKey = 'photo_viewer_sidebar_open';
 const _kSidebarWidth = 288.0;
@@ -915,7 +916,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
             ),
           ),
           const SizedBox(width: 4),
-          const ThemeToggleButton(),
+          const AppThemeToggle(),
         ],
       ],
     );
@@ -1010,7 +1011,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
             Positioned(
               top: 12,
               left: 12,
-              child: _LiveBadge(ready: _liveVideoReady),
+              child: LiveBadge(ready: _liveVideoReady),
             ),
         ],
       ),
@@ -1531,44 +1532,6 @@ class _ShortcutRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(description, style: const TextStyle(color: Colors.white70)),
-        ],
-      ),
-    );
-  }
-}
-
-class _LiveBadge extends StatelessWidget {
-  final bool ready;
-
-  const _LiveBadge({required this.ready});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.circle,
-            size: 8,
-            color: ready ? Colors.yellowAccent : Colors.white38,
-          ),
-          const SizedBox(width: 5),
-          Text(
-            'LIVE',
-            style: TextStyle(
-              color: ready ? Colors.white : Colors.white54,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
         ],
       ),
     );

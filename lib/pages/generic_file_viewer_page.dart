@@ -6,8 +6,8 @@ import 'package:quark/pages/generic_file_viewer_open_stub.dart'
     as native_open;
 import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/widgets/core/quark_file_icon.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 class GenericFileViewerPage extends StatefulWidget {
   final FileNode node;
@@ -99,7 +99,7 @@ class _GenericFileViewerPageState extends State<GenericFileViewerPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.node.name),
-        actions: const [ThemeToggleButton()],
+        actions: const [AppThemeToggle()],
       ),
       body: Center(
         child: Padding(
@@ -108,7 +108,8 @@ class _GenericFileViewerPageState extends State<GenericFileViewerPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               QuarkFileIcon(
-                node: widget.node,
+                name: widget.node.name,
+                isDir: widget.node.isDir,
                 size: 80,
                 color: theme.colorScheme.onSurfaceVariant,
               ),

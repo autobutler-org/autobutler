@@ -182,7 +182,7 @@ class _FileViewerPageState extends State<FileViewerPage> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Open File'),
-          actions: const [ThemeToggleButton()],
+          actions: const [AppThemeToggle()],
         ),
         body: Center(
           child: Padding(

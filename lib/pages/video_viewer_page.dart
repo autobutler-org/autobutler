@@ -365,7 +365,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
-          const ThemeToggleButton(),
+          const AppThemeToggle(),
         ],
       ),
       body: Center(

@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:quark/pages/login_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 
 import '../support/unreachable_quark.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 /// #1637: signing in to a Quark the app cannot reach used to render the raw
 /// connection failure in the credentials banner — which reads as "wrong

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/widgets/core/copy_button.dart';
-import 'package:quark/widgets/password_strength_bar.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark/utils/clipboard_utils.dart';
 
 /// First-boot setup screen — creates the owner account on the quark.
 ///
@@ -404,7 +404,12 @@ class _RecoveryPhraseStep extends StatelessWidget {
                   text: phrase,
                   icon: QuarkIcons.copy_outlined,
                   variant: CopyButtonVariant.outlined,
-                  successMessage: 'Recovery phrase copied to clipboard',
+                  unavailableReason: clipboardUnavailableReason,
+                  onCopy: (value) => copyToClipboard(
+                    context,
+                    value,
+                    message: 'Recovery phrase copied to clipboard',
+                  ),
                 ),
               ],
             ),

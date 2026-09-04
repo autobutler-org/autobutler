@@ -15,10 +15,10 @@ import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quark/services/app_settings.dart';
 
 // ── Quill styles ──────────────────────────────────────────────────────────────
 
@@ -690,7 +690,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
         tooltip: 'Settings',
         onPressed: () => context.go(AppRoutes.settings),
       ),
-      const ThemeToggleButton(),
+      const AppThemeToggle(),
       // Auto-save toggle (only relevant in edit mode)
       if (!_isReadOnly)
         IconButton(
@@ -822,7 +822,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     final error = _error;
     if (error != null) {
       if (isQuarkUnreachableError(error)) {
-        return QuarkDisconnectedView(onRetry: _loadDocument);
+        return QuarkDisconnectedView(
+          hostAddress: AppSettings.instance.activeHost,
+          onRetry: _loadDocument,
+        );
       }
       return Center(
         child: Column(

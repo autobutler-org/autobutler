@@ -19,16 +19,12 @@ import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/widgets/core/empty_state_widget.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
-import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/photos/album_sidebar.dart';
-import 'package:quark/widgets/photos/photo_selection_bar.dart';
-import 'package:quark/widgets/quark_drawer.dart';
-import 'package:quark/widgets/refresh_icon_button.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark/widgets/photos/album_picker_sheet.dart';
 
 class PhotosPage extends StatefulWidget {
   const PhotosPage({this.addingToAlbum, super.key});
@@ -800,7 +796,7 @@ class PhotosPageState extends State<PhotosPage>
           fit: StackFit.expand,
           children: [
             thumbnail,
-            const Positioned(top: 4, left: 4, child: _ThumbnailLiveBadge()),
+            const Positioned(top: 4, left: 4, child: LiveBadge()),
           ],
         );
       }
@@ -975,6 +971,7 @@ class PhotosPageState extends State<PhotosPage>
           // reach, so an unreachable Quark wins over every empty state (#1637).
           ? (_quarkUnreachable
                 ? QuarkDisconnectedView(
+                    hostAddress: AppSettings.instance.activeHost,
                     onRetry: manualRefresh,
                     onManageHosts: () => context.go(AppRoutes.settings),
                   )
@@ -1261,7 +1258,7 @@ class PhotosPageState extends State<PhotosPage>
                       },
                       child: const Text('Cancel'),
                     ),
-                    const ThemeToggleButton(),
+                    const AppThemeToggle(),
                   ],
                 )
               : QuarkAppBar(
@@ -1288,6 +1285,7 @@ class PhotosPageState extends State<PhotosPage>
                       onPressed: manualRefresh,
                       tooltip: 'Reload photos',
                     ),
+                    const AppThemeToggle(),
                   ],
                 ),
           drawer: QuarkDrawer(
@@ -1514,30 +1512,6 @@ class PhotosPageState extends State<PhotosPage>
               );
             },
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ThumbnailLiveBadge extends StatelessWidget {
-  const _ThumbnailLiveBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: const Text(
-        'LIVE',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 9,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
         ),
       ),
     );

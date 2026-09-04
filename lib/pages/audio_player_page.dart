@@ -127,7 +127,7 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
                 : const Icon(Icons.download_rounded),
             tooltip: 'Download',
           ),
-          const ThemeToggleButton(),
+          const AppThemeToggle(),
         ],
       ),
       body: Center(

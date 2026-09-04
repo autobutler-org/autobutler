@@ -3,7 +3,6 @@ import 'package:quark/models/photo_album.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark_widgets/quark_widgets.dart';
-import 'package:quark/widgets/photos/album_tree_tile.dart';
 import 'package:quark_icons/quark_icons.dart';
 
 class AlbumSidebar extends StatefulWidget {
@@ -33,6 +32,10 @@ class AlbumSidebar extends StatefulWidget {
 class AlbumSidebarState extends State<AlbumSidebar> {
   List<PhotoAlbum> _albums = [];
   bool _loading = true;
+
+  /// Which album subtrees are open. The package tile takes expansion as an
+  /// input, so it lives here rather than inside each row.
+  final Set<int> _expandedIds = {};
 
   @override
   void initState() {
@@ -211,25 +214,54 @@ class AlbumSidebarState extends State<AlbumSidebar> {
   }
 
   Widget _buildAlbumTile(BuildContext context, PhotoAlbum album) {
-    if (album.isSystemAlbum) {
-      // System albums: no long-press menu, distinct icon
-      return AlbumTreeTile(
-        album: album,
-        selectedAlbumId: widget.selectedAlbumId,
-        onSelected: widget.onAlbumSelected,
-        systemIcon: album.isFavorites
-            ? QuarkIcons.star_rounded
-            : QuarkIcons.pending_actions_outlined,
-      );
-    }
-    return GestureDetector(
-      onLongPress: () => _showAlbumContextMenu(context, album),
-      child: AlbumTreeTile(
-        album: album,
-        selectedAlbumId: widget.selectedAlbumId,
-        onSelected: widget.onAlbumSelected,
-      ),
+    return AlbumTreeTile(
+      album: _toItem(album),
+      selectedAlbumId: widget.selectedAlbumId,
+      expandedIds: _expandedIds,
+      onSelected: (item) => widget.onAlbumSelected(_byId(item.id)),
+      onToggleExpanded: (id) => setState(() {
+        if (!_expandedIds.remove(id)) _expandedIds.add(id);
+      }),
+      // System albums are the Quark's, not the user's, so they get no rename
+      // or delete menu.
+      onLongPress: album.isSystemAlbum
+          ? null
+          : (item) {
+              final target = _byId(item.id);
+              if (target != null) _showAlbumContextMenu(context, target);
+            },
+      systemIcon: album.isSystemAlbum
+          ? (album.isFavorites
+                ? QuarkIcons.star_rounded
+                : QuarkIcons.pending_actions_outlined)
+          : null,
     );
+  }
+
+  /// The package's view of [album], with its subtree mapped too.
+  AlbumItem _toItem(PhotoAlbum album) => AlbumItem(
+    id: album.id,
+    name: album.name,
+    parentId: album.parentId,
+    itemCount: album.itemCount,
+    isSystem: album.isSystemAlbum,
+    isFavorites: album.isFavorites,
+    children: album.children.map(_toItem).toList(),
+  );
+
+  /// The app album behind an [AlbumItem] a callback handed back, searched
+  /// through the whole loaded tree because callbacks arrive from any depth.
+  PhotoAlbum? _byId(int id) {
+    PhotoAlbum? search(List<PhotoAlbum> albums) {
+      for (final album in albums) {
+        if (album.id == id) return album;
+        final found = search(album.children);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    return search(_albums);
   }
 
   void _showAlbumContextMenu(BuildContext context, PhotoAlbum album) {

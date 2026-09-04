@@ -6,8 +6,8 @@ import 'package:quark/models/move_rename_result.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/quark_widget.dart';
-import 'package:quark/widgets/file_browser/file_breadcrumb_bar.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 Future<String?> promptForFolderName(BuildContext context) async {
   final value = await _promptForText(

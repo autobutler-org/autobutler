@@ -10,11 +10,10 @@ import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
-import 'package:quark/widgets/layout/quark_app_bar.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
-import 'package:quark/widgets/quark_drawer.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark/services/app_settings.dart';
 
 class VaultPage extends StatefulWidget {
   const VaultPage({super.key});
@@ -181,6 +180,7 @@ class _VaultPageState extends State<VaultPage> {
               ],
             ),
           ],
+          const AppThemeToggle(),
         ],
       ),
       drawer: QuarkDrawer(
@@ -215,6 +215,7 @@ class _VaultPageState extends State<VaultPage> {
     if (error != null) {
       if (isQuarkUnreachableError(error)) {
         return QuarkDisconnectedView(
+          hostAddress: AppSettings.instance.activeHost,
           onRetry: _loadStatus,
           onManageHosts: () => context.go(AppRoutes.settings),
         );
@@ -777,7 +778,7 @@ class _EntryDetailPageState extends State<_EntryDetailPage> {
             ),
           if (_editing)
             TextButton(onPressed: _saveEntry, child: const Text('Save')),
-          const ThemeToggleButton(),
+          const AppThemeToggle(),
         ],
       ),
       body: SingleChildScrollView(
@@ -1060,7 +1061,7 @@ class _EntryEditorPageState extends State<_EntryEditorPage> {
             onPressed: _saving ? null : _save,
             child: const Text('Save'),
           ),
-          const ThemeToggleButton(),
+          const AppThemeToggle(),
         ],
       ),
       body: SingleChildScrollView(

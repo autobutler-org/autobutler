@@ -33,19 +33,15 @@ import 'package:quark/utils/file_browser_drag_config.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
-import 'package:quark/widgets/core/empty_state_widget.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
-import 'package:quark/widgets/file_browser/file_browser_header.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
-import 'package:quark/widgets/file_browser/file_selection_bar.dart';
 import 'package:quark/widgets/file_browser/file_storage_footer.dart';
 import 'package:quark/widgets/file_browser/file_top_bar.dart';
 import 'package:quark/widgets/file_browser/new_file_dialog.dart';
 import 'package:quark/widgets/file_browser/recent_files_section.dart';
 import 'package:quark/widgets/quark_connect_form.dart';
-import 'package:quark/widgets/quark_drawer.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 class FileBrowserPage extends StatefulWidget {
   /// Optional path to navigate to on load, e.g. 'photos/2024'.
@@ -1446,6 +1442,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // parent" cannot fix it — say what is actually wrong instead (#1637).
     if (isQuarkUnreachableError(error)) {
       return QuarkDisconnectedView(
+        hostAddress: AppSettings.instance.activeHost,
         onRetry: _refreshFileState,
         onManageHosts: () => context.go(AppRoutes.settings),
       );
@@ -1502,6 +1499,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   ) {
     if (failure.isUnreachable) {
       return QuarkDisconnectedView(
+        hostAddress: AppSettings.instance.activeHost,
         onRetry: () => _retryRouteFailure(failure),
         onManageHosts: () => context.go(AppRoutes.settings),
       );
@@ -2049,21 +2047,23 @@ class _FileBrowserPageState extends State<FileBrowserPage>
               );
             },
           ),
-          FileBrowserHeader(
-            isGridView: _isGridView,
-            isSearchMode: _isSearchMode,
-            filesFuture: _isSearchMode
+          FutureBuilder<List<FileNode>>(
+            future: _isSearchMode
                 ? (_searchFuture ?? Future.value(const <FileNode>[]))
                 : _filesFuture,
-            searchQuery: _searchQuery,
-            onClose: () {
-              setState(() {
-                _isSearchMode = false;
-                _searchFuture = null;
-                _searchQuery = null;
-                _reloadFiles();
-              });
-            },
+            builder: (context, snapshot) => FileBrowserHeader(
+              isSearchMode: _isSearchMode,
+              resultCount: snapshot.data?.length,
+              searchQuery: _searchQuery,
+              onClose: () {
+                setState(() {
+                  _isSearchMode = false;
+                  _searchFuture = null;
+                  _searchQuery = null;
+                  _reloadFiles();
+                });
+              },
+            ),
           ),
 
           // Hide Recent Files on mobile — show only on tablet/desktop (#959).

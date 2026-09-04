@@ -10,9 +10,10 @@ import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark/services/app_settings.dart';
 
 // ---------------------------------------------------------------------------
 // Per-tab state
@@ -290,10 +291,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
 
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(title),
-          actions: const [ThemeToggleButton()],
-        ),
+        appBar: AppBar(title: Text(title), actions: const [AppThemeToggle()]),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -301,12 +299,12 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
     final error = _error;
     if (error != null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(title),
-          actions: const [ThemeToggleButton()],
-        ),
+        appBar: AppBar(title: Text(title), actions: const [AppThemeToggle()]),
         body: isQuarkUnreachableError(error)
-            ? QuarkDisconnectedView(onRetry: _loadFile)
+            ? QuarkDisconnectedView(
+                hostAddress: AppSettings.instance.activeHost,
+                onRetry: _loadFile,
+              )
             : Center(child: Text(Errors.message(error, 'load the sheet'))),
       );
     }
@@ -340,7 +338,7 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
                 tooltip: 'Save',
                 onPressed: _manualSave,
               ),
-            const ThemeToggleButton(),
+            const AppThemeToggle(),
           ],
           bottom: multiTab
               ? TabBar(

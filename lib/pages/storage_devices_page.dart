@@ -10,12 +10,9 @@ import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/quark_widget.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
-import 'package:quark/widgets/core/quark_storage_bar.dart';
-import 'package:quark/widgets/layout/quark_app_bar.dart';
-import 'package:quark/widgets/quark_drawer.dart';
-import 'package:quark/widgets/refresh_icon_button.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
 
 class StorageDevicesPage extends StatefulWidget {
   const StorageDevicesPage({super.key});
@@ -331,6 +328,7 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
             isRefreshing: isRefreshing,
             onPressed: manualRefresh,
           ),
+          const AppThemeToggle(),
         ],
       ),
       drawer: QuarkDrawer(
@@ -356,6 +354,7 @@ class _StorageDevicesPageState extends State<StorageDevicesPage>
     if (error != null) {
       if (isQuarkUnreachableError(error)) {
         return QuarkDisconnectedView(
+          hostAddress: AppSettings.instance.activeHost,
           onRetry: manualRefresh,
           onManageHosts: () => context.go(AppRoutes.settings),
         );

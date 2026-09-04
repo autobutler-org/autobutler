@@ -7,9 +7,9 @@ import 'package:quark/models/upload_session.dart';
 import 'package:quark/services/resumable_upload_service.dart';
 import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/services/upload_manager.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/utils/upload_session_record.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 /// An upload must outlive the folder it was started from.
 ///

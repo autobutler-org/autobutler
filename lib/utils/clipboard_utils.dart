@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:quark/utils/clipboard_utils_stub.dart'
     if (dart.library.js_interop) 'package:quark/utils/clipboard_utils_web.dart';
 
@@ -7,3 +9,26 @@ import 'package:quark/utils/clipboard_utils_stub.dart'
 /// running in a secure context (HTTPS or localhost). Returns `false` on
 /// plain HTTP web contexts where the browser blocks clipboard access.
 bool get isClipboardAvailable => isClipboardAvailablePlatform;
+
+/// Why the clipboard cannot be used right now, or null when it can.
+///
+/// Hand this to `CopyButton.unavailableReason`: the package renders the
+/// sentence, the app writes it.
+String? get clipboardUnavailableReason =>
+    isClipboardAvailable ? null : 'Clipboard unavailable — use HTTPS to enable';
+
+/// Copies [text] and confirms it with a snack bar reading [message].
+///
+/// The clipboard is a platform channel, so it stays app-side; `CopyButton`
+/// reaches it through its `onCopy` handler.
+Future<void> copyToClipboard(
+  BuildContext context,
+  String text, {
+  String message = 'Copied to clipboard',
+}) async {
+  await Clipboard.setData(ClipboardData(text: text));
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+  );
+}

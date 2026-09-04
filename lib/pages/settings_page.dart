@@ -12,14 +12,12 @@ import 'package:quark/services/settings_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/widgets/core/copy_button.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/host_manager.dart';
-import 'package:quark/widgets/layout/quark_app_bar.dart';
-import 'package:quark/widgets/quark_drawer.dart';
-import 'package:quark/widgets/refresh_icon_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/utils/clipboard_utils.dart';
 
 /// The commit a `make serve/...` or `make watch/frontend` run was built from.
 ///
@@ -582,9 +580,10 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const QuarkAppBar(
+      appBar: QuarkAppBar(
         label: 'Settings',
         icon: QuarkIcons.settings_outlined,
+        actions: const [AppThemeToggle()],
       ),
       drawer: QuarkDrawer(
         activeSection: QuarkDrawerSection.settings,
@@ -1410,7 +1409,11 @@ class _CodeBlock extends StatelessWidget {
               style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
             ),
           ),
-          CopyButton(text: text),
+          CopyButton(
+            text: text,
+            onCopy: (value) => copyToClipboard(context, value),
+            unavailableReason: clipboardUnavailableReason,
+          ),
         ],
       ),
     );

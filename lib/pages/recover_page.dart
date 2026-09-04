@@ -72,7 +72,7 @@ class _RecoverPageState extends State<RecoverPage> {
         title: const Text('Recover account'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: const [ThemeToggleButton()],
+        actions: const [AppThemeToggle()],
       ),
       body: SafeArea(
         child: Center(

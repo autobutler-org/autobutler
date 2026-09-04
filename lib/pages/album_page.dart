@@ -7,11 +7,10 @@ import 'package:quark/services/files_service.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/widgets/core/empty_state_widget.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/photos/add_to_album_sheet.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark/services/app_settings.dart';
 
 class AlbumPage extends StatefulWidget {
   const AlbumPage({required this.album, super.key});
@@ -155,14 +154,17 @@ class _AlbumPageState extends State<AlbumPage> {
               ),
             ],
           ),
-          const ThemeToggleButton(),
+          const AppThemeToggle(),
         ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? (isQuarkUnreachableError(_error!)
-                ? QuarkDisconnectedView(onRetry: _load)
+                ? QuarkDisconnectedView(
+                    hostAddress: AppSettings.instance.activeHost,
+                    onRetry: _load,
+                  )
                 : Center(
                     child: Text(Errors.message(_error!, 'load the album')),
                   ))

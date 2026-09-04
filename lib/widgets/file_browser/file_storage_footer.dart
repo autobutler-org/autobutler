@@ -1,7 +1,7 @@
 import 'package:quark/services/health_service.dart';
-import 'package:quark/widgets/core/quark_storage_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 class FileStorageFooter extends StatefulWidget {
   const FileStorageFooter({super.key});
@@ -53,7 +53,10 @@ class _FileStorageFooterState extends State<FileStorageFooter> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final barColor = QuarkStorageBar.colorForFraction(_diskPercent);
+    final barColor = QuarkStorageBar.colorForFraction(
+      _diskPercent,
+      QuarkTokens.of(context),
+    );
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.secondary,

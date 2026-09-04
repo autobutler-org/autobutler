@@ -7,9 +7,9 @@ import 'package:quark/pages/health_page.dart';
 import 'package:quark/pages/settings_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
-import 'package:quark/widgets/core/quark_disconnected_state.dart';
 
 import '../support/unreachable_quark.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 /// #1637: with a Quark configured but out of reach, every page that loads from
 /// it used to render the raw connection failure. A page with nothing left to
