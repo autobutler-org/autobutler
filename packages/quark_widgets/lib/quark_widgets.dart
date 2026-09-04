@@ -15,7 +15,6 @@ export 'src/core/password_strength_bar.dart';
 export 'src/core/quark_disconnected_state.dart';
 export 'src/core/quark_file_icon.dart';
 export 'src/core/quark_storage_bar.dart';
-export 'src/file_browser/file_actions_bar.dart';
 export 'src/file_browser/file_breadcrumb_bar.dart';
 export 'src/file_browser/file_browser_header.dart';
 export 'src/file_browser/file_selection_bar.dart';

@@ -796,7 +796,7 @@ class PhotosPageState extends State<PhotosPage>
           fit: StackFit.expand,
           children: [
             thumbnail,
-            const Positioned(top: 4, left: 4, child: _ThumbnailLiveBadge()),
+            const Positioned(top: 4, left: 4, child: LiveBadge()),
           ],
         );
       }
@@ -1512,30 +1512,6 @@ class PhotosPageState extends State<PhotosPage>
               );
             },
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ThumbnailLiveBadge extends StatelessWidget {
-  const _ThumbnailLiveBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: const Text(
-        'LIVE',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 9,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
         ),
       ),
     );

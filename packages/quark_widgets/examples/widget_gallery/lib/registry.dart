@@ -238,32 +238,6 @@ final List<GalleryEntry> registry = [
 
   // ── File browser ──────────────────────────────────────────────────────────
   GalleryEntry(
-    name: 'FileActionsBar',
-    group: 'File browser',
-    build: (context, log) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FileActionsBar(
-          isUploading: false,
-          isCreatingFolder: false,
-          isSearchMode: false,
-          onUploadPressed: () => log('FileActionsBar.onUploadPressed'),
-          onCreateFolderPressed: () =>
-              log('FileActionsBar.onCreateFolderPressed'),
-        ),
-        FileActionsBar(
-          isUploading: true,
-          isCreatingFolder: true,
-          isSearchMode: false,
-          uploadTotal: 5,
-          uploadCompleted: 2,
-          onUploadPressed: () => log('never called'),
-          onCreateFolderPressed: () => log('never called'),
-        ),
-      ],
-    ),
-  ),
-  GalleryEntry(
     name: 'FileBreadcrumbBar',
     group: 'File browser',
     build: (context, log) => FileBreadcrumbBar(
@@ -329,12 +303,22 @@ final List<GalleryEntry> registry = [
     name: 'LiveBadge',
     group: 'Photos',
     build: (context, log) => Container(
-      width: 120,
+      width: 240,
       height: 120,
       color: const Color(0xFF7C8AA0),
       alignment: Alignment.topLeft,
       padding: const EdgeInsets.all(4),
-      child: const LiveBadge(),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 12,
+        children: [
+          // The thumbnail chip, then the viewer badge loading and ready.
+          LiveBadge(),
+          LiveBadge(ready: false),
+          LiveBadge(ready: true),
+        ],
+      ),
     ),
   ),
 
