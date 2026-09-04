@@ -4,7 +4,9 @@ version: 0.0.1
 homepage: "https://github.com/autobutler-org/quark"
 license: "MIT"
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ^3.6.0
+
+resolution: workspace
 
 # Pure Dart package (no Flutter)
 

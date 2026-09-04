@@ -2,7 +2,9 @@ name: data_table
 description: Pure Dart data table engine (headless) for Flutter.
 version: 0.0.1
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ^3.6.0
+
+resolution: workspace
 
 publish_to: none
 

@@ -24,6 +24,16 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
+# Keep git's per-invocation environment out of recipes. When make runs from a git
+# hook (see `make setup/hooks`), git exports GIT_DIR and friends pointing at this
+# repository. Flutter reads its own version with git, so it then inspects the wrong
+# checkout, reports 0.0.0-unknown, and every pub resolution fails against the
+# `flutter:` version pinned in pubspec.yaml.
+unexport GIT_DIR
+unexport GIT_INDEX_FILE
+unexport GIT_WORK_TREE
+unexport GIT_PREFIX
+
 GO := $(shell which go)
 AIR := $(shell which air)
 # Only ask Go for its defaults when Go is actually installed. On a macOS CI runner
@@ -698,8 +708,16 @@ generate/backend/swagger: ## Generate Swagger docs
 .PHONY: generate/frontend
 generate/frontend: generate/frontend/icons generate/frontend/quark-icons generate/frontend/sbom ## Generate frontend files
 
+.PHONY: generate/frontend/pub-get
+generate/frontend/pub-get: ## Refresh the workspace resolution for `dart run`
+	# `dart run` re-resolves whenever it decides the workspace resolution is
+	# stale, and plain `dart pub get` cannot resolve a workspace that needs the
+	# Flutter SDK. Refresh with `flutter pub get` first so the targets below
+	# always find an up-to-date resolution.
+	flutter pub get
+
 .PHONY: generate/frontend/icons
-generate/frontend/icons: ## Generate app icons
+generate/frontend/icons: generate/frontend/pub-get ## Generate app icons
 	dart run flutter_launcher_icons
 
 .PHONY: generate/frontend/quark-icons
@@ -712,7 +730,7 @@ generate/frontend/quark-icons: ## Regenerate QuarkIcons.ttf from SVGs using fant
 		--normalize
 
 .PHONY: generate/frontend/sbom
-generate/frontend/sbom: ## Generate Flutter SBOM asset from pubspec.lock
+generate/frontend/sbom: generate/frontend/pub-get ## Generate Flutter SBOM asset from pubspec.lock
 	dart run scripts/generate_flutter_sbom.dart
 
 DEPLOY_HOST ?= quark
@@ -879,13 +897,9 @@ tidy: tidy/flutter tidy/go ## Tidy dependencies
 
 .PHONY: tidy/flutter
 tidy/flutter: ## Tidy Flutter dependencies
+	# The repo is a Dart pub workspace: one resolution at the root covers the
+	# app, every package under packages/, and every example app.
 	flutter pub get
-	for pkg in packages/*/; do
-		if [ -f "$$pkg/pubspec.yaml" ] && [ -d "$$pkg/test" ]; then
-			echo "Downloading packages for $$pkg..."
-			$(MAKE) -C "$$pkg" tidy || exit 1
-		fi
-	done
 ifeq ($(UNAME_S),Darwin)
 	cd ios && pod install
 endif
