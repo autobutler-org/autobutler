@@ -21,6 +21,17 @@ environment:
   sdk: ^3.11.0
   flutter: 3.41.9
 
+# Dart pub workspace: one shared pubspec.lock and one resolution for the app,
+# every package under packages/, and every example app. Members declare
+# `resolution: workspace` in their own pubspec.
+workspace:
+  - packages/data_table
+  - packages/data_table/examples/minimal
+  - packages/data_table/examples/spreadsheet
+  - packages/quark_formula
+  - packages/quark_icons
+  - packages/quark_icons/examples/icon_gallery
+
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
