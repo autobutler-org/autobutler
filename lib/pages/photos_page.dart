@@ -559,102 +559,107 @@ class PhotosPageState extends State<PhotosPage>
       },
     );
 
-    return Container(
-      width: compact ? double.infinity : 280,
-      padding: const EdgeInsets.all(16),
+    // Material, not a colored Container: the category ListTiles below paint
+    // their background and ink on the nearest Material ancestor, and a plain
+    // ColoredBox in between would hide both (Flutter 3.47 asserts on it).
+    return Material(
       color: theme.colorScheme.surfaceContainerLowest,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                onPressed: selectedColumns > minColumns
-                    ? () {
-                        setState(() {
-                          _previewColumns = (selectedColumns - 1).clamp(
-                            minColumns,
-                            maxColumns,
-                          );
-                        });
-                      }
-                    : null,
-                icon: const Icon(QuarkIcons.crop_square_outlined),
-                tooltip: 'Larger photos',
-              ),
-              Expanded(
-                child: Slider(
-                  min: minColumns.toDouble(),
-                  max: maxColumns.toDouble(),
-                  divisions: divisions > 0 ? divisions : null,
-                  value: selectedColumns.toDouble(),
-                  onChanged: (value) {
-                    setState(() {
-                      _previewColumns = value.round();
-                    });
-                  },
+      child: Container(
+        width: compact ? double.infinity : 280,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  onPressed: selectedColumns > minColumns
+                      ? () {
+                          setState(() {
+                            _previewColumns = (selectedColumns - 1).clamp(
+                              minColumns,
+                              maxColumns,
+                            );
+                          });
+                        }
+                      : null,
+                  icon: const Icon(QuarkIcons.crop_square_outlined),
+                  tooltip: 'Larger photos',
                 ),
-              ),
-              IconButton(
-                onPressed: selectedColumns < maxColumns
-                    ? () {
-                        setState(() {
-                          _previewColumns = (selectedColumns + 1).clamp(
-                            minColumns,
-                            maxColumns,
-                          );
-                        });
-                      }
-                    : null,
-                icon: const Icon(QuarkIcons.grid_view_outlined),
-                tooltip: 'Smaller photos',
-              ),
-            ],
-          ),
-          if (!kIsWeb) ...[
-            const SizedBox(height: 8),
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Showing'),
-              subtitle: Text(
-                '$selectedLabel: ${switch (_selectedCategory) {
-                  PhotoCategory.all => quarkDisplayCount + mobileCount,
-                  PhotoCategory.quark => quarkDisplayCount,
-                  PhotoCategory.mobile => mobileCount,
-                  PhotoCategory.favorites => _favoriteKeys.length,
-                }}',
-              ),
-              trailing: Icon(
-                _categoriesExpanded
-                    ? QuarkIcons.expand_less
-                    : QuarkIcons.expand_more,
-              ),
-              onTap: () {
-                setState(() {
-                  _categoriesExpanded = !_categoriesExpanded;
-                });
-              },
+                Expanded(
+                  child: Slider(
+                    min: minColumns.toDouble(),
+                    max: maxColumns.toDouble(),
+                    divisions: divisions > 0 ? divisions : null,
+                    value: selectedColumns.toDouble(),
+                    onChanged: (value) {
+                      setState(() {
+                        _previewColumns = value.round();
+                      });
+                    },
+                  ),
+                ),
+                IconButton(
+                  onPressed: selectedColumns < maxColumns
+                      ? () {
+                          setState(() {
+                            _previewColumns = (selectedColumns + 1).clamp(
+                              minColumns,
+                              maxColumns,
+                            );
+                          });
+                        }
+                      : null,
+                  icon: const Icon(QuarkIcons.grid_view_outlined),
+                  tooltip: 'Smaller photos',
+                ),
+              ],
             ),
-            if (_categoriesExpanded) ...[
-              categoryButton(
-                PhotoCategory.all,
-                'All',
-                quarkDisplayCount + mobileCount,
+            if (!kIsWeb) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Showing'),
+                subtitle: Text(
+                  '$selectedLabel: ${switch (_selectedCategory) {
+                    PhotoCategory.all => quarkDisplayCount + mobileCount,
+                    PhotoCategory.quark => quarkDisplayCount,
+                    PhotoCategory.mobile => mobileCount,
+                    PhotoCategory.favorites => _favoriteKeys.length,
+                  }}',
+                ),
+                trailing: Icon(
+                  _categoriesExpanded
+                      ? QuarkIcons.expand_less
+                      : QuarkIcons.expand_more,
+                ),
+                onTap: () {
+                  setState(() {
+                    _categoriesExpanded = !_categoriesExpanded;
+                  });
+                },
               ),
-              categoryButton(PhotoCategory.quark, 'Quark', quarkDisplayCount),
-              categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
-              categoryButton(
-                PhotoCategory.favorites,
-                'Favorites',
-                _favoriteKeys.length,
-              ),
+              if (_categoriesExpanded) ...[
+                categoryButton(
+                  PhotoCategory.all,
+                  'All',
+                  quarkDisplayCount + mobileCount,
+                ),
+                categoryButton(PhotoCategory.quark, 'Quark', quarkDisplayCount),
+                categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
+                categoryButton(
+                  PhotoCategory.favorites,
+                  'Favorites',
+                  _favoriteKeys.length,
+                ),
+              ],
             ],
+            const SizedBox(height: 16),
+            if (compact) albumSidebar else Expanded(child: albumSidebar),
           ],
-          const SizedBox(height: 16),
-          if (compact) albumSidebar else Expanded(child: albumSidebar),
-        ],
+        ),
       ),
     );
   }

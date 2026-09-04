@@ -34,6 +34,26 @@ make -C packages/quark_widgets/examples/widget_gallery serve   # local web serve
 make -C packages/quark_widgets/examples/widget_gallery build   # static web build
 ```
 
+## Skills
+
+The package ships two [pub package skills](https://dart.dev/tools/pub/package-skills):
+instructions an AI coding agent loads when it is doing the matching kind of
+work, bundled with the package under `skills/` so they travel with it. They
+are self-contained, so a consumer who has never seen this repo can follow
+them.
+
+```sh
+dart run skills@ get --all     # from the repo root; make setup/skills does it too
+```
+
+The installer writes into `.claude/skills/` for Claude Code and `.agents/skills/`
+for other agents. Both are gitignored.
+
+| Skill | What it is for |
+| --- | --- |
+| `quark-widgets-widget-tests` | Writing or extending a widget test: the case matrix (every state, both viewports, every callback, every key, both token sets, tooltips, overflow) with the exact assertion for each, plus a template and worked examples. |
+| `quark-widgets-decouple` | Turning a `StatefulWidget` or page that fetches into stateless widgets plus a `ChangeNotifier` controller: what to lift, what stays local, and a full before-and-after. |
+
 ## Adding a widget
 
 1. **File.** `lib/src/<group>/<name>.dart`, one public class, `super.key`, and a
