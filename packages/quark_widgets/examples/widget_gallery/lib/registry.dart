@@ -235,6 +235,75 @@ final List<GalleryEntry> registry = [
       ],
     ),
   ),
+
+  // ── File browser ──────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'FileActionsBar',
+    group: 'File browser',
+    build: (context, log) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FileActionsBar(
+          isUploading: false,
+          isCreatingFolder: false,
+          isSearchMode: false,
+          onUploadPressed: () => log('FileActionsBar.onUploadPressed'),
+          onCreateFolderPressed: () =>
+              log('FileActionsBar.onCreateFolderPressed'),
+        ),
+        FileActionsBar(
+          isUploading: true,
+          isCreatingFolder: true,
+          isSearchMode: false,
+          uploadTotal: 5,
+          uploadCompleted: 2,
+          onUploadPressed: () => log('never called'),
+          onCreateFolderPressed: () => log('never called'),
+        ),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'FileBreadcrumbBar',
+    group: 'File browser',
+    build: (context, log) => FileBreadcrumbBar(
+      currentPath: '/photos/2024/june',
+      isSearchMode: false,
+      onGoHome: () => log('FileBreadcrumbBar.onGoHome'),
+      onGoUp: () => log('FileBreadcrumbBar.onGoUp'),
+      onPathSelected: (path) => log('FileBreadcrumbBar.onPathSelected($path)'),
+    ),
+  ),
+  GalleryEntry(
+    name: 'FileBrowserHeader',
+    group: 'File browser',
+    build: (context, log) => FileBrowserHeader(
+      isSearchMode: true,
+      searchQuery: 'invoice',
+      resultCount: 4,
+      onClose: () => log('FileBrowserHeader.onClose'),
+    ),
+  ),
+  GalleryEntry(
+    name: 'FileSelectionBar',
+    group: 'File browser',
+    build: (context, log) => FileSelectionBar(
+      selectedCount: 2,
+      totalCount: 7,
+      onSelectAll: () => log('FileSelectionBar.onSelectAll'),
+      onDeselectAll: () => log('FileSelectionBar.onDeselectAll'),
+      onCancel: () => log('FileSelectionBar.onCancel'),
+      onDelete: () => log('FileSelectionBar.onDelete'),
+    ),
+  ),
+  GalleryEntry(
+    name: 'NewFileDialog',
+    group: 'File browser',
+    build: (context, log) => NewFileDialog(
+      onCreate: (name) => log('NewFileDialog.onCreate($name)'),
+      onCancel: () => log('NewFileDialog.onCancel'),
+    ),
+  ),
 ];
 
 /// The fake album tree the gallery shows, three levels deep so indentation and
