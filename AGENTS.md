@@ -256,6 +256,53 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - If a new page requires auth gating, add the path to the `publicRoutes` set in `_authRedirect` in `lib/router.dart` if
   it should be accessible without login, or do nothing if it should be protected.
 
+### Widget package rules (`packages/quark_widgets`, always follow this)
+
+Every reusable visual component lives in `packages/quark_widgets`. Pages, controllers, and services stay in the app.
+The package is a separate pub package with no dependency on the app, so it cannot import `lib/services`,
+`lib/router.dart`, `AppSettings`, `http`, or platform channels. Keep it that way: never add those to the package pubspec.
+
+- **Data in, callbacks out.** A widget's constructor takes immutable values (`final` fields, `const` constructor where
+  possible) and handlers (`VoidCallback`, `ValueChanged<T>`). It never fetches, never reads global state, never
+  navigates. The parent decides what happens on an action.
+- **Domain state lives in the caller.** Selection, expansion, the chosen album, favorites, sort order, loading and error
+  flags are all passed in and changed by calling back out (`selectedIds` in, `onSelect` out). `StatefulWidget` is
+  allowed only for state Flutter forces on you: `AnimationController`, `FocusNode`, `TextEditingController`,
+  `ScrollController`, hover and pressed visuals. Even then, expose the outcome through a callback if a caller could care.
+- **Loading, empty, and error are explicit inputs.** A widget that lists things takes `isLoading` and `error` (or a
+  sealed state) and renders each case. It never decides when to load.
+- **Anything that needs the network is a builder.** `thumbnailBuilder(BuildContext, PhotoItem)` and friends. The app
+  supplies `CachedNetworkImage`; the gallery supplies a placeholder.
+- **The package owns its value types.** Small immutable classes in `lib/src/models/` (`AlbumItem`, `PhotoItem`, ...).
+  Controllers in the app map `lib/models` into them. The package never imports app models.
+- **Keys for Flutter Probe.** Every widget takes `super.key`. Every tappable part gets a deterministic `ValueKey` built
+  from a documented prefix and the item id, for example `ValueKey('album_tile_$id')`. The class doc lists its prefixes
+  so a `.probe` script can write `tap #album_tile_vacation`.
+- **Layout survives narrow viewports.** No `Expanded` or `Flexible` inside slivers or other unbounded parents (#1599).
+  Every test file has a narrow (360x640) and a wide (1280x800) case.
+- **Each widget ships as a set.** One file in `lib/src/<group>/` exported from the barrel; `///` docs on the class
+  (purpose, key prefixes, one usage snippet), every constructor parameter, and every callback; one test file
+  `test/<group>/<name>_test.dart`; one entry in `examples/widget_gallery/lib/registry.dart` with fake data and callbacks
+  that log to the gallery's event panel. A gallery test fails when a barrel export has no registry entry.
+- **Theme through tokens.** Colors, radii, and spacing come from `QuarkTokens` reached through the theme, never a
+  hardcoded color in a widget. The gallery's theme panel edits the tokens live, so a hardcoded value is a bug you can see.
+- **Error copy still comes from the app.** The package never composes a user-facing error sentence. It takes
+  `String? error` and renders it; the page builds it with `Errors.message`.
+
+In the app, a page is a thin `StatefulWidget` that owns a controller (a `ChangeNotifier` in `lib/controllers/`) and
+rebuilds with `ListenableBuilder`. Every service call goes through the controller. The page maps controller state into
+package widgets and wires callbacks back to controller methods. Navigation stays in the page. Controllers take their
+service calls as injectable function parameters with defaults pointing at the real static methods, so a controller test
+passes fakes without a mocking library.
+
+**Pages are compositions.** A page's `build` is package widgets arranged with plain Flutter layout (`Column`, `Row`,
+`Expanded`, `Padding`, `SafeArea`) and nothing else. No sizing math, no `MediaQuery` breakpoints, no `LayoutBuilder`
+branching, no private `_build*` methods that amount to an unnamed widget. Responsive behavior lives in package layout
+widgets (a page scaffold, a split view that collapses its sidebar under a breakpoint, a section, a toolbar) so every page
+shares the same breakpoints and a layout fix lands once. If a page needs a layout the package lacks, add the layout
+widget to the package first, then compose. The test of a good page is that a new one is mostly a list of package
+widgets and reads in one screen.
+
 ### Testing and validation
 
 - Prefer adding or updating focused tests under `test/` for non-trivial logic changes.

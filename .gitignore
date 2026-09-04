@@ -106,8 +106,9 @@ test-results/performance/*
 .claude/skills
 .github/skills
 
-## Claude Code workspace
-.claude/
+## Claude Code workspace (agents are shared; everything else is per-developer)
+.claude/*
+!.claude/agents/
 
 ## Sable's personal dev context (AI co-developer workspace)
 sable/

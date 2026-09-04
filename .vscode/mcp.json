@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "flutter-probe": {
+      "type": "stdio",
+      "command": "${userHome}/go/bin/probe-mcp"
+    }
+  }
+}
