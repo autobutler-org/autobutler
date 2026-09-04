@@ -35,6 +35,7 @@ unexport GIT_WORK_TREE
 unexport GIT_PREFIX
 
 GO := $(shell which go)
+PROBE_VERSION := v0.14.0
 AIR := $(shell which air)
 # Only ask Go for its defaults when Go is actually installed. On a macOS CI runner
 # without it, $(GO) is empty and the shell call becomes `env GOOS`, which floods the
@@ -100,7 +101,7 @@ clean/flutter: ## Clean flutter project
 	flutter clean
 
 .PHONY: setup
-setup: setup/gotools setup/golangci-lint setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
+setup: setup/gotools setup/golangci-lint setup/probe setup/air setup/sqlc setup/swag setup/flutter setup/hooks ## Setup development environment
 
 .PHONY: setup/wrk
 setup/wrk: ## Install wrk load-testing CLI
@@ -218,6 +219,11 @@ setup/sqlc: ## Install sqlc tool
 .PHONY: setup/golangci-lint
 setup/golangci-lint: ## Install golangci-lint
 	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.6.2
+
+.PHONY: setup/probe
+setup/probe: ## Install the Flutter Probe e2e CLI and its MCP server (probe, probe-mcp)
+	$(GO) install github.com/alphawavesystems/flutter-probe/cmd/probe@$(PROBE_VERSION)
+	$(GO) install github.com/alphawavesystems/flutter-probe/cmd/probe-mcp@$(PROBE_VERSION)
 
 .PHONY: setup/swag
 setup/swag: ## Install swag tool
