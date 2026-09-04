@@ -1,0 +1,13 @@
+/// Quark's reusable widgets and design tokens.
+///
+/// Everything the app renders that is not a page, a controller, or a service
+/// lives here. The package depends on Flutter and `quark_icons` and nothing
+/// else — no services, no router, no HTTP — so every widget is testable in
+/// isolation and can be shown in `examples/widget_gallery`.
+///
+/// See the "Widget package rules" section of `AGENTS.md` for the contract.
+library;
+
+export 'src/theme/quark_colors.dart';
+export 'src/theme/quark_theme.dart';
+export 'src/theme/quark_tokens.dart';

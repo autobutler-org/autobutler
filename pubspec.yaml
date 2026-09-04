@@ -31,6 +31,8 @@ workspace:
   - packages/quark_formula
   - packages/quark_icons
   - packages/quark_icons/examples/icon_gallery
+  - packages/quark_widgets
+  - packages/quark_widgets/examples/widget_gallery
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -73,6 +75,8 @@ dependencies:
     path: packages/data_table
   quark_icons:
     path: packages/quark_icons
+  quark_widgets:
+    path: packages/quark_widgets
 
 dev_dependencies:
   flutter_test:

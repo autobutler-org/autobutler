@@ -1,0 +1,7 @@
+include: package:flutter_lints/flutter.yaml
+
+# This package is a public API for the app and the gallery, so an undocumented
+# public member is an analysis failure here, not a style preference.
+linter:
+  rules:
+    public_member_api_docs: true
