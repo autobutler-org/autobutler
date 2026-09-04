@@ -49,6 +49,13 @@ void main() {
       expect(usesGenericFileViewer('epub'), isTrue);
     });
 
+    test('covers a raw workbook opened by URL', () {
+      // The file browser offers to convert a workbook before it gets here, so
+      // this is the deep-link fallback: download and "Open with", not the
+      // dead end an unnamed type used to reach (#1741).
+      expect(usesGenericFileViewer('xlsx'), isTrue);
+    });
+
     test('covers unclassified files', () {
       expect(usesGenericFileViewer('generic'), isTrue);
       expect(usesGenericFileViewer(''), isTrue);

@@ -30,6 +30,7 @@ const (
 	FileTypeQsheet    FileType = "qsheet"
 	FileTypeSlideshow FileType = "slideshow"
 	FileTypeVideo     FileType = "video"
+	FileTypeXlsx      FileType = "xlsx"
 	FileTypeSpacer    FileType = "spacer"
 	FileTypeArchive   FileType = "archive"
 	FileTypeText      FileType = "text"
@@ -195,6 +196,11 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeQsheet
 	case ".docx":
 		return FileTypeDocx
+	// .xlsm is the same OOXML package as .xlsx with macros attached, so it
+	// reads identically. .xls is deliberately absent: the legacy binary
+	// format is not OOXML and needs a different parser entirely (#1741).
+	case ".xlsx", ".xlsm":
+		return FileTypeXlsx
 	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
 		return FileTypeArchive
 	case ".txt", ".md", ".markdown", ".rst", ".log", ".env":

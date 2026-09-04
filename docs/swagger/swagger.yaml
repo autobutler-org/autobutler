@@ -235,6 +235,17 @@ definitions:
           Matched terms are enclosed in <b> tags.
         type: string
     type: object
+  v0_files.ConvertXlsxJSON:
+    properties:
+      cells:
+        type: integer
+      path:
+        type: string
+      rows:
+        type: integer
+      tabs:
+        type: integer
+    type: object
   v0_files.FileNodeJSON:
     properties:
       compressedSize:
@@ -1329,6 +1340,52 @@ paths:
           schema:
             $ref: '#/definitions/serverutil.Response'
       summary: List all files of a given type
+      tags:
+      - files
+  /files/convert/xlsx:
+    post:
+      description: Reads an .xlsx or .xlsm workbook and writes it back as a sibling
+        .qsheet, the format the Sheets editor opens. The workbook itself is left untouched.
+        Answers 409 when a .qsheet of that name already exists and overwrite was not
+        asked for.
+      parameters:
+      - description: Path to the .xlsx or .xlsm file to convert
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      - description: Replace an existing .qsheet of the same name
+        in: query
+        name: overwrite
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_files.ConvertXlsxJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Convert a spreadsheet to a Quark spreadsheet
       tags:
       - files
   /files/download:

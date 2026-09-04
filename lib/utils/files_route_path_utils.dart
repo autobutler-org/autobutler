@@ -39,8 +39,13 @@ bool hasSupportedFilesEditorForType(String fileType) {
 /// than falling through to the "No supported editor" dead end. Named document
 /// types are included deliberately: without them a `.pdf` ends up worse off
 /// than an unclassified file, which reaches that page as `generic` (#1184).
+///
+/// `xlsx` is here for the same reason, and only as a fallback: the file
+/// browser offers to convert a workbook to a `.qsheet` before reaching this,
+/// so a raw workbook lands here when it is opened by URL rather than tapped
+/// (#1741). Sheets reads `.qsheet`, never `.xlsx` itself.
 bool usesGenericFileViewer(String fileType) {
-  const noInAppViewer = {'generic', 'pdf', 'docx', 'slideshow', 'epub'};
+  const noInAppViewer = {'generic', 'pdf', 'docx', 'slideshow', 'epub', 'xlsx'};
   final normalized = fileType.trim().toLowerCase();
   return normalized.isEmpty || noInAppViewer.contains(normalized);
 }

@@ -22,7 +22,7 @@ import 'package:quark/widgets/layout/theme_toggle_button.dart';
 /// | `qdoc`                          | /docs/&lt;path&gt;              |
 /// | `qsheet`                        | /sheets/&lt;path&gt;            |
 /// | `text`                           | /edit/&lt;path&gt;              |
-/// | `pdf`, `docx`, `epub`, `slideshow`, `generic` | [GenericFileViewerPage] |
+/// | `pdf`, `docx`, `epub`, `slideshow`, `xlsx`, `generic` | [GenericFileViewerPage] |
 /// | directory                        | /files/&lt;path&gt; (browser)  |
 ///
 /// Navigate to the route built with [AppRoutes.viewFile] to trigger this.
@@ -148,6 +148,10 @@ class _FileViewerPageState extends State<FileViewerPage> {
         case 'docx':
         case 'epub':
         case 'slideshow':
+        // A workbook opened by URL rather than tapped in the browser: the
+        // conversion offer lives there, so this is download and "Open with"
+        // (#1741).
+        case 'xlsx':
         case 'generic':
         default:
           // No dedicated viewer yet — show download + "Open with" actions.

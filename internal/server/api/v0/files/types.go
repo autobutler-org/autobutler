@@ -10,6 +10,7 @@ type router struct{}
 
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
+		convertXlsxRoute,
 		deleteFilesRoute,
 		downloadArchiveFileRoute,
 		downloadFileRoute,
