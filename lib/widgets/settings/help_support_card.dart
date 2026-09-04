@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// The card in Settings that points at the support page and the bug tracker.
+///
+/// Both links open in the platform browser rather than in the app, since
+/// neither is a Quark screen.
 class HelpSupportCard extends StatelessWidget {
+  /// Creates the card.
   const HelpSupportCard({super.key});
 
   static const _supportUrl = 'https://quark.autobutler.org/support';

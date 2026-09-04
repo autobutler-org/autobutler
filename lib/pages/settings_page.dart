@@ -13,13 +13,12 @@ import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/host_manager.dart';
+import 'package:quark/widgets/settings/help_support_card.dart';
+import 'package:quark/widgets/settings/sbom_expansion_tile.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/settings/code_block.dart';
-import 'package:quark/widgets/settings/help_support_card.dart';
-import 'package:quark/widgets/settings/info_section_header.dart';
-import 'package:quark/widgets/settings/sbom_expansion_tile.dart';
 
 /// The commit a `make serve/...` or `make watch/frontend` run was built from.
 ///
@@ -1174,65 +1173,83 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           const SizedBox(height: 24),
 
-          const InfoSectionHeader(label: 'Help & Support'),
-          const SizedBox(height: 8),
-          const HelpSupportCard(),
-          const SizedBox(height: 16),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.gavel_outlined),
-              title: const Text('Terms of Service'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(AppRoutes.terms),
+          QuarkSection(
+            title: 'Help & Support',
+            icon: QuarkIcons.info_outline,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const HelpSupportCard(),
+                const SizedBox(height: 16),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.gavel_outlined),
+                    title: const Text('Terms of Service'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(AppRoutes.terms),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
 
-          const InfoSectionHeader(label: 'Software Bill of Materials'),
-          const SizedBox(height: 8),
-          if (_isLoadingSbom)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else ...[
-            if (_sbomError != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  _sbomError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            if (_flutterSbom != null)
-              SbomExpansionTile(
-                title: 'Flutter dependencies',
-                subtitle: '${_flutterSbom!.length} packages',
-                items: _flutterSbom!
-                    .map(
-                      (p) => SbomEntry(
-                        name: p.name,
-                        version: p.version,
-                        url: p.url,
+          QuarkSection(
+            title: 'Software Bill of Materials',
+            icon: QuarkIcons.info_outline,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_isLoadingSbom)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else ...[
+                  if (_sbomError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        _sbomError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
-                    )
-                    .toList(),
-              ),
-            const SizedBox(height: 8),
-            if (_goSbom != null)
-              SbomExpansionTile(
-                title: 'Go dependencies',
-                subtitle:
-                    '${_goSbom!.dependencies.length} packages · ${_goSbom!.goVersion}',
-                items: _goSbom!.dependencies
-                    .map((d) => SbomEntry(name: d.path, version: d.version))
-                    .toList(),
-              ),
-            if (_goSbom == null && _flutterSbom == null)
-              const Text('No SBOM data available.'),
-          ],
+                    ),
+                  if (_flutterSbom != null)
+                    SbomExpansionTile(
+                      title: 'Flutter dependencies',
+                      subtitle: '${_flutterSbom!.length} packages',
+                      items: _flutterSbom!
+                          .map(
+                            (p) => SbomEntry(
+                              name: p.name,
+                              version: p.version,
+                              url: p.url,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  const SizedBox(height: 8),
+                  if (_goSbom != null)
+                    SbomExpansionTile(
+                      title: 'Go dependencies',
+                      subtitle:
+                          '${_goSbom!.dependencies.length} packages · ${_goSbom!.goVersion}',
+                      items: _goSbom!.dependencies
+                          .map(
+                            (d) => SbomEntry(name: d.path, version: d.version),
+                          )
+                          .toList(),
+                    ),
+                  if (_goSbom == null && _flutterSbom == null)
+                    const Text('No SBOM data available.'),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

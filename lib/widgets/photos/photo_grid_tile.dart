@@ -1,39 +1,64 @@
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/services/files_service.dart';
-import 'package:quark/widgets/photos/star_overlay.dart';
+import 'package:quark/widgets/photos/photo_star_overlay.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-/// One photo in the grid — a Quark thumbnail or a device asset — with its
-/// selection, favorite and open gestures.
-class PhotoTile extends StatelessWidget {
-  final PhotoItem item;
-  final bool isSelected;
-  final bool isFavorite;
-  final bool selectionMode;
-  final VoidCallback onOpen;
-  final VoidCallback onToggleSelection;
-  final VoidCallback onEnterSelectionMode;
-  final VoidCallback onToggleFavorite;
-
-  const PhotoTile({
-    super.key,
-    required this.item,
+/// A single photo tile. Shared so both the desktop GridView and the mobile
+/// SliverGrid render the same tile.
+///
+/// Quark-stored photos load their thumbnail over the network; device assets
+/// come off disk through photo_manager. Selection mode swaps the tap gestures
+/// for selection and paints the dim/border/checkbox overlay on top.
+class PhotoGridTile extends StatelessWidget {
+  const PhotoGridTile({
+    required this.photo,
     required this.isSelected,
     required this.isFavorite,
     required this.selectionMode,
     required this.onOpen,
+    required this.onToggleFavorite,
     required this.onToggleSelection,
     required this.onEnterSelectionMode,
-    required this.onToggleFavorite,
+    super.key,
   });
+
+  /// The photo this tile renders — either a Quark-stored file or a device
+  /// asset.
+  final PhotoItem photo;
+
+  /// Whether [photo] is part of the current selection. Drives the teal border
+  /// and the filled checkbox.
+  final bool isSelected;
+
+  /// Whether [photo] is a favorite. Drives the star overlay.
+  final bool isFavorite;
+
+  /// Whether the grid is in selection mode. When true, tapping selects rather
+  /// than opening the photo, and every tile shows a checkbox.
+  final bool selectionMode;
+
+  /// Called when the user taps the tile outside selection mode, to open the
+  /// photo in the viewer.
+  final VoidCallback onOpen;
+
+  /// Called on a double tap of a Quark-stored photo, to toggle its favorite
+  /// state.
+  final VoidCallback onToggleFavorite;
+
+  /// Called to add or remove [photo] from the selection.
+  final VoidCallback onToggleSelection;
+
+  /// Called on a long press outside selection mode, to enter selection mode.
+  final VoidCallback onEnterSelectionMode;
 
   @override
   Widget build(BuildContext context) {
-    final p = item;
+    final p = photo;
     final colorScheme = Theme.of(context).colorScheme;
 
     // In selection mode wrap everything with selection overlay
@@ -132,7 +157,7 @@ class PhotoTile extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               thumbnail,
-              StarOverlay(isFavorite: isFavorite),
+              PhotoStarOverlay(isFavorite: isFavorite),
             ],
           ),
         ),

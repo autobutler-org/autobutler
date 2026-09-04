@@ -22,8 +22,9 @@ import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/photos/album_sidebar.dart';
-import 'package:quark/widgets/photos/photo_grid.dart';
-import 'package:quark/widgets/photos/photo_tile.dart';
+import 'package:quark/widgets/photos/photo_grid_tile.dart';
+import 'package:quark/widgets/photos/photos_scroll_hint.dart';
+import 'package:quark/widgets/photos/photos_selection_app_bar.dart';
 import 'package:quark/widgets/photos/photos_sidebar.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -475,13 +476,12 @@ class PhotosPageState extends State<PhotosPage>
     return (availableWidth / _minTileWidth).floor().clamp(1, 100);
   }
 
-  /// The column count the slider may pick from, narrowed to what the width
-  /// can actually fit.
-  (int, int) _columnBounds(double availableWidth) {
+  /// The column bounds allowed at [availableWidth]: the scale limits, further
+  /// clamped so a tile never has to shrink below its minimum width.
+  ({int min, int max}) _columnBounds(double availableWidth) {
     final maxByWidth = _maxColumnsByWidth(availableWidth);
     var minColumns = _minColumnsByScale();
     var maxColumns = _maxColumnsByScale();
-
     if (minColumns > maxByWidth) {
       minColumns = maxByWidth;
     }
@@ -491,13 +491,12 @@ class PhotosPageState extends State<PhotosPage>
     if (minColumns > maxColumns) {
       minColumns = maxColumns;
     }
-
-    return (minColumns, maxColumns);
+    return (min: minColumns, max: maxColumns);
   }
 
   int _effectiveCrossAxisCount(double availableWidth) {
-    final (minColumns, maxColumns) = _columnBounds(availableWidth);
-    return _previewColumns.clamp(minColumns, maxColumns);
+    final bounds = _columnBounds(availableWidth);
+    return _previewColumns.clamp(bounds.min, bounds.max);
   }
 
   Future<void> _toggleFavorite(PhotoItem item) async {
@@ -528,7 +527,10 @@ class PhotosPageState extends State<PhotosPage>
     }
   }
 
-  /// Opens the photo at [idx] in the full-screen viewer.
+  /// Opens the photo at [idx] of [photos] in the image viewer.
+  ///
+  /// Guarded by [_isOpeningPhoto] so a second tap while the bytes are still
+  /// downloading cannot push a second viewer.
   Future<void> _openPhoto(List<PhotoItem> photos, int idx) async {
     if (_isOpeningPhoto) return;
     _isOpeningPhoto = true;
@@ -563,28 +565,27 @@ class PhotosPageState extends State<PhotosPage>
           await manualRefresh();
           _albumSidebarKey.currentState?.reload();
         }
-        return;
-      }
-
-      final a = p.asset!;
-      final bytes = await a.originBytes;
-      if (bytes == null) return;
-      if (!mounted) return;
-      final changed = await navigator.push<bool>(
-        MaterialPageRoute(
-          builder: (_) => ImageViewerPage(
-            bytes: bytes,
-            name: a.id,
-            initialIndex: idx,
-            imageCount: photos.length,
-            getImageCount: () async =>
-                (await _photosForCategory(_selectedCategory)).length,
-            onLoadImage: _loadPhotoAt,
-            onPrefetchImage: _prefetchPhotoAt,
+      } else {
+        final a = p.asset!;
+        final bytes = await a.originBytes;
+        if (bytes == null) return;
+        if (!mounted) return;
+        final changed = await navigator.push<bool>(
+          MaterialPageRoute(
+            builder: (_) => ImageViewerPage(
+              bytes: bytes,
+              name: a.id,
+              initialIndex: idx,
+              imageCount: photos.length,
+              getImageCount: () async =>
+                  (await _photosForCategory(_selectedCategory)).length,
+              onLoadImage: _loadPhotoAt,
+              onPrefetchImage: _prefetchPhotoAt,
+            ),
           ),
-        ),
-      );
-      if (changed == true) await manualRefresh();
+        );
+        if (changed == true) await manualRefresh();
+      }
     } finally {
       if (mounted) setState(() => _isOpeningPhoto = false);
     }
@@ -833,6 +834,19 @@ class PhotosPageState extends State<PhotosPage>
 
   @override
   Widget build(BuildContext context) {
+    // The split view owns the breakpoint. The page only asks which layout it
+    // is in because the nav panel exists solely in the collapsed one, so that
+    // is the only layout with anything to measure or to hint about.
+    final compact = QuarkSplitView.isCollapsed(context);
+    _compactLayout = compact;
+    if (compact && !_navScrollInitialized) {
+      _scheduleNavMeasure();
+    }
+
+    final contentWidth = QuarkSplitView.contentWidthOf(context);
+    final crossAxisCount = _effectiveCrossAxisCount(contentWidth);
+    final columnBounds = _columnBounds(contentWidth);
+
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): () {
@@ -845,369 +859,235 @@ class PhotosPageState extends State<PhotosPage>
       },
       child: Focus(
         autofocus: true,
-        child: Scaffold(
-          appBar: _selectionMode
-              ? AppBar(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  automaticallyImplyLeading: false,
-                  title: _addingToAlbum != null
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Adding to ${_addingToAlbum!.name}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (_selectedKeys.isNotEmpty)
-                              Text(
-                                '${_selectedKeys.length} selected',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.5),
-                                ),
-                              ),
-                          ],
+        child: FutureBuilder<List<PhotoItem>>(
+          future: _photosFuture,
+          builder: (context, snapshot) {
+            final photos = snapshot.data ?? const <PhotoItem>[];
+            final isWaiting =
+                snapshot.connectionState == ConnectionState.waiting &&
+                photos.isEmpty;
+            final error = snapshot.hasError
+                ? Errors.message(snapshot.error!, 'load your photos')
+                : null;
+
+            // When viewing Quark-stored photos (or all), we may have more
+            // pages to load. Show an extra item as a loading indicator if
+            // there are more.
+            final showLoadingIndicator =
+                _hasMoreQuark &&
+                (_selectedCategory == PhotoCategory.quark ||
+                    _selectedCategory == PhotoCategory.all);
+            final itemCount = photos.length + (showLoadingIndicator ? 1 : 0);
+
+            return QuarkPageScaffold(
+              title: 'Photos',
+              icon: QuarkIcons.photo_library_outlined,
+              actions: [
+                IconButton(
+                  icon: _isUploading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text('${_selectedKeys.length} selected'),
-                  actions: [
-                    if (_addingToAlbum != null)
-                      TextButton(
-                        onPressed: _selectedKeys.isNotEmpty
-                            ? _confirmAddToAlbum
-                            : null,
-                        child: Text('Done (${_selectedKeys.length})'),
-                      ),
-                    TextButton(
-                      onPressed: () {
+                      : const Icon(Icons.add),
+                  tooltip: 'Upload photos',
+                  onPressed: _isUploading ? null : _handleUploadPhotos,
+                ),
+                TextButton(
+                  onPressed: _enterSelectionMode,
+                  child: const Text('Select'),
+                ),
+                RefreshIconButton(
+                  isRefreshing: isRefreshing,
+                  onPressed: manualRefresh,
+                  tooltip: 'Reload photos',
+                ),
+                const AppThemeToggle(),
+              ],
+              appBar: _selectionMode
+                  ? PhotosSelectionAppBar(
+                      selectedCount: _selectedKeys.length,
+                      albumName: _addingToAlbum?.name,
+                      onConfirm: _selectedKeys.isNotEmpty
+                          ? _confirmAddToAlbum
+                          : null,
+                      onCancel: () {
                         final wasAdding = _addingToAlbum != null;
                         _exitSelectionMode();
                         if (wasAdding) Navigator.of(context).pop();
                       },
-                      child: const Text('Cancel'),
-                    ),
-                    const AppThemeToggle(),
-                  ],
-                )
-              : QuarkAppBar(
-                  label: 'Photos',
-                  icon: QuarkIcons.photo_library_outlined,
-                  actions: [
-                    IconButton(
-                      icon: _isUploading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.add),
-                      tooltip: 'Upload photos',
-                      onPressed: _isUploading ? null : _handleUploadPhotos,
-                    ),
-                    TextButton(
-                      onPressed: _enterSelectionMode,
-                      child: const Text('Select'),
-                    ),
-                    RefreshIconButton(
-                      isRefreshing: isRefreshing,
-                      onPressed: manualRefresh,
-                      tooltip: 'Reload photos',
-                    ),
-                    const AppThemeToggle(),
-                  ],
-                ),
-          drawer: QuarkDrawer(
-            activeSection: QuarkDrawerSection.photos,
-            onTapFiles: () {
-              context.go(AppRoutes.files);
-            },
-            onTapPhotos: () {
-              Navigator.of(context).pop();
-            },
-            onTapDocs: () {
-              context.go(AppRoutes.docs);
-            },
-            onTapSheets: () {
-              context.go(AppRoutes.sheets);
-            },
-            onTapDevices: () {
-              context.go(AppRoutes.devices);
-            },
-            onTapHealth: () {
-              context.go(AppRoutes.health);
-            },
-            onTapVault: () {
-              context.go(AppRoutes.vault);
-            },
-            onTapSettings: () {
-              context.go(AppRoutes.settings);
-            },
-          ),
-          body: FutureBuilder<List<PhotoItem>>(
-            future: _photosFuture,
-            builder: (context, snapshot) {
-              final photos = snapshot.data ?? const <PhotoItem>[];
-
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 900;
-                  // Recorded for _measureAndJumpNav, which runs after this
-                  // build and only has something to measure in compact mode.
-                  _compactLayout = compact;
-                  if (compact && !_navScrollInitialized) {
-                    _scheduleNavMeasure();
-                  }
-                  final contentWidth = compact
-                      ? constraints.maxWidth
-                      : (constraints.maxWidth - 281)
-                            .clamp(1.0, double.infinity)
-                            .toDouble();
-                  final crossAxisCount = _effectiveCrossAxisCount(contentWidth);
-
-                  final (minColumns, maxColumns) = _columnBounds(contentWidth);
-                  // For Quark-stored photos, show total from server (includes
-                  // un-fetched pages)
-                  final quarkDisplayCount = _quarkInitialLoadDone
-                      ? _quarkTotal
-                      : _quarkPhotos.length;
-
-                  // The compact layout puts this sidebar inside a
-                  // SliverToBoxAdapter, which hands its child unbounded height.
-                  // `Expanded` there is a hard layout error — the subtree fails
-                  // to lay out and the whole view renders empty, silently in
-                  // release builds (#1599). So compact shrink-wraps instead, and
-                  // the album list scrolls with the page rather than inside
-                  // itself.
-                  final sidebar = PhotosSidebar(
-                    compact: compact,
-                    minColumns: minColumns,
-                    maxColumns: maxColumns,
-                    previewColumns: _previewColumns,
-                    onColumnsChanged: (columns) =>
-                        setState(() => _previewColumns = columns),
-                    selectedCategory: _selectedCategory,
-                    onCategorySelected: _selectCategory,
-                    quarkDisplayCount: quarkDisplayCount,
-                    mobileCount: _mobilePhotos.length,
-                    favoritesCount: _favoriteKeys.length,
-                    categoriesExpanded: _categoriesExpanded,
-                    onToggleCategories: () => setState(() {
-                      _categoriesExpanded = !_categoriesExpanded;
-                    }),
-                    albumSidebar: AlbumSidebar(
-                      key: _albumSidebarKey,
-                      selectedAlbumId: null,
-                      shrinkWrap: compact,
-                      onAlbumSelected: (album) {
-                        if (album == null) return;
-                        Navigator.of(context).push(
+                    )
+                  : null,
+              drawer: QuarkDrawer(
+                activeSection: QuarkDrawerSection.photos,
+                onTapFiles: () {
+                  context.go(AppRoutes.files);
+                },
+                onTapPhotos: () {
+                  Navigator.of(context).pop();
+                },
+                onTapDocs: () {
+                  context.go(AppRoutes.docs);
+                },
+                onTapSheets: () {
+                  context.go(AppRoutes.sheets);
+                },
+                onTapDevices: () {
+                  context.go(AppRoutes.devices);
+                },
+                onTapHealth: () {
+                  context.go(AppRoutes.health);
+                },
+                onTapVault: () {
+                  context.go(AppRoutes.vault);
+                },
+                onTapSettings: () {
+                  context.go(AppRoutes.settings);
+                },
+              ),
+              bottomBar: _selectionMode && _addingToAlbum == null
+                  ? PhotoSelectionBar(
+                      selectedCount: _selectedKeys.length,
+                      onAddToAlbum: () => _handleAddToAlbum(photos),
+                      onCancel: _exitSelectionMode,
+                    )
+                  : null,
+              body: Stack(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: manualRefresh,
+                    child: QuarkSplitView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      // The collapsed layout stacks the sidebar above the
+                      // grid in the same scroll view, and the page measures
+                      // it so the grid starts flush with the top.
+                      collapsedSidebarKey: _navPanelKey,
+                      sidebar: PhotosSidebar(
+                        selectedCategory: _selectedCategory,
+                        quarkCount: _quarkPhotos.length,
+                        mobileCount: _mobilePhotos.length,
+                        quarkTotal: _quarkTotal,
+                        quarkInitialLoadDone: _quarkInitialLoadDone,
+                        favoriteCount: _favoriteKeys.length,
+                        categoriesExpanded: _categoriesExpanded,
+                        previewColumns: _previewColumns,
+                        minColumns: columnBounds.min,
+                        maxColumns: columnBounds.max,
+                        onColumnsChanged: (columns) =>
+                            setState(() => _previewColumns = columns),
+                        onToggleCategories: () => setState(
+                          () => _categoriesExpanded = !_categoriesExpanded,
+                        ),
+                        onSelectCategory: _selectCategory,
+                        onAlbumSelected: (album) => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => AlbumPage(album: album),
                           ),
-                        );
-                      },
-                    ),
-                  );
-
-                  Widget photoTile(BuildContext context, int idx) {
-                    final p = photos[idx];
-                    return PhotoTile(
-                      item: p,
-                      isSelected: _selectedKeys.contains(p.selectionKey),
-                      isFavorite: _favoriteKeys.contains(p.selectionKey),
-                      selectionMode: _selectionMode,
-                      onOpen: () => _openPhoto(photos, idx),
-                      onToggleSelection: () => _toggleSelection(p),
-                      onEnterSelectionMode: _enterSelectionMode,
-                      onToggleFavorite: () => _toggleFavorite(p),
-                    );
-                  }
-
-                  // Desktop: sidebar + grid side-by-side (unchanged behavior)
-                  if (!compact) {
-                    Widget buildDesktop(Widget content) => Row(
-                      children: [
-                        sidebar,
-                        const VerticalDivider(width: 1),
-                        Expanded(child: content),
-                      ],
-                    );
-                    if (snapshot.connectionState == ConnectionState.waiting &&
-                        photos.isEmpty) {
-                      return buildDesktop(
-                        const Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    if (snapshot.hasError) {
-                      return buildDesktop(
-                        Center(
-                          child: Text(
-                            Errors.message(snapshot.error!, 'load your photos'),
-                          ),
                         ),
-                      );
-                    }
-                    return buildDesktop(
-                      PhotoGrid(
-                        photos: photos,
-                        crossAxisCount: crossAxisCount,
-                        selectedCategory: _selectedCategory,
-                        isLoadingMoreQuark: _isLoadingMoreQuark,
-                        quarkUnreachable: _quarkUnreachable,
-                        // When viewing Quark-stored photos (or all), we may have
-                        // more pages to load. Show an extra item as a loading
-                        // indicator if there are more.
-                        showLoadingIndicator:
-                            _hasMoreQuark &&
-                            (_selectedCategory == PhotoCategory.quark ||
-                                _selectedCategory == PhotoCategory.all),
-                        selectionMode: _selectionMode,
-                        scrollController: _scrollController,
-                        onRefresh: manualRefresh,
-                        tileBuilder: photoTile,
+                        albumSidebarKey: _albumSidebarKey,
+                        compact: compact,
                       ),
-                    );
-                  }
-
-                  // Mobile: nav panel lives *above* the photo grid in the scroll
-                  // stack. On mount we jump to navHeight so only the grid is
-                  // visible. Scroll up to reveal the nav.
-                  if (snapshot.connectionState == ConnectionState.waiting &&
-                      photos.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        Errors.message(snapshot.error!, 'load your photos'),
-                      ),
-                    );
-                  }
-
-                  final showLoadingIndicator =
-                      _hasMoreQuark &&
-                      (_selectedCategory == PhotoCategory.quark ||
-                          _selectedCategory == PhotoCategory.all);
-                  final itemCount =
-                      photos.length + (showLoadingIndicator ? 1 : 0);
-
-                  return Stack(
-                    children: [
-                      RefreshIndicator(
-                        onRefresh: manualRefresh,
-                        child: CustomScrollView(
-                          controller: _scrollController,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          slivers: [
-                            // Nav panel — hidden above viewport on load
-                            SliverToBoxAdapter(
-                              child: Container(
-                                key: _navPanelKey,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    sidebar,
-                                    Divider(
-                                      height: 1,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.outline,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            // Photo grid
-                            photos.isEmpty
-                                ? const SliverFillRemaining(
-                                    child: EmptyStateWidget(
-                                      icon: QuarkIcons.photo_library_outlined,
-                                      headline: 'No photos yet',
-                                      subtext:
-                                          'Photos you upload to Quark will appear here.',
-                                    ),
+                      slivers: [
+                        if (isWaiting)
+                          const SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else if (error != null)
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(child: Text(error)),
+                          )
+                        else if (photos.isEmpty && !_isLoadingMoreQuark)
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            // "No photos yet" would be a lie when the library
+                            // is merely out of reach, so an unreachable Quark
+                            // wins over every empty state (#1637).
+                            child: _quarkUnreachable
+                                ? QuarkDisconnectedView(
+                                    hostAddress:
+                                        AppSettings.instance.activeHost,
+                                    onRetry: manualRefresh,
+                                    onManageHosts: () =>
+                                        context.go(AppRoutes.settings),
                                   )
-                                : SliverGrid(
-                                    delegate: SliverChildBuilderDelegate((
-                                      context,
-                                      idx,
-                                    ) {
-                                      if (idx >= photos.length) {
-                                        return const Center(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(16),
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      return photoTile(context, idx);
-                                    }, childCount: itemCount),
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: crossAxisCount,
-                                          crossAxisSpacing: 2,
-                                          mainAxisSpacing: 2,
-                                        ),
+                                : _selectedCategory == PhotoCategory.favorites
+                                ? const EmptyStateWidget(
+                                    icon: QuarkIcons.star_outline_rounded,
+                                    headline: 'No favorites yet',
+                                    subtext:
+                                        'Tap ★ on any photo to save it '
+                                        'here.',
+                                  )
+                                : const EmptyStateWidget(
+                                    icon: QuarkIcons.photo_library_outlined,
+                                    headline: 'No photos yet',
+                                    subtext:
+                                        'Photos you upload to Quark will '
+                                        'appear here.',
                                   ),
-                          ],
-                        ),
-                      ),
-                      // Selection action bar — shown at bottom when in selection mode
-                      if (_selectionMode && _addingToAlbum == null)
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: PhotoSelectionBar(
-                            selectedCount: _selectedKeys.length,
-                            onAddToAlbum: () => _handleAddToAlbum(photos),
-                            onCancel: _exitSelectionMode,
-                          ),
-                        ),
-                      // Scroll-up hint — subtle chevron at top, fades when user scrolls
-                      if (_showScrollHint)
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: IgnorePointer(
-                            child: Container(
-                              height: 32,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Theme.of(context).colorScheme.surface
-                                        .withValues(alpha: 0.7),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  QuarkIcons.keyboard_arrow_up_rounded,
-                                  size: 20,
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.4),
-                                ),
-                              ),
+                          )
+                        else
+                          SliverPadding(
+                            padding: const EdgeInsets.all(2),
+                            sliver: SliverGrid(
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                idx,
+                              ) {
+                                if (idx >= photos.length) {
+                                  return const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final p = photos[idx];
+                                return PhotoGridTile(
+                                  photo: p,
+                                  isSelected: _selectedKeys.contains(
+                                    p.selectionKey,
+                                  ),
+                                  isFavorite: _favoriteKeys.contains(
+                                    p.selectionKey,
+                                  ),
+                                  selectionMode: _selectionMode,
+                                  onOpen: () => _openPhoto(photos, idx),
+                                  onToggleFavorite: () => _toggleFavorite(p),
+                                  onToggleSelection: () => _toggleSelection(p),
+                                  onEnterSelectionMode: _enterSelectionMode,
+                                );
+                              }, childCount: itemCount),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: crossAxisCount,
+                                    crossAxisSpacing: 2,
+                                    mainAxisSpacing: 2,
+                                  ),
                             ),
                           ),
-                        ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
+                      ],
+                    ),
+                  ),
+                  // The collapsed layout starts scrolled past its nav panel,
+                  // so the chevron is the only sign the panel is up there.
+                  if (compact && _showScrollHint)
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: PhotosScrollHint(),
+                    ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
