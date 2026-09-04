@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 import 'token_fields.dart';
@@ -37,8 +38,102 @@ final List<GalleryEntry> registry = [
     group: 'Theme',
     build: (context, log) => const _TokenSwatches(),
   ),
+
+  // ── Layout ────────────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'QuarkAppBar',
+    group: 'Layout',
+    build: (context, log) => SizedBox(
+      height: 360,
+      child: Scaffold(
+        appBar: QuarkAppBar(
+          label: 'Photos',
+          icon: QuarkIcons.photo_library_outlined,
+          actions: [
+            RefreshIconButton(
+              isRefreshing: false,
+              onPressed: () => log('QuarkAppBar refresh'),
+            ),
+            ThemeToggleButton(
+              mode: ThemeMode.dark,
+              onChanged: (mode) => log('ThemeToggleButton.onChanged($mode)'),
+            ),
+          ],
+        ),
+        drawer: QuarkDrawer(
+          activeSection: QuarkDrawerSection.photos,
+          onTapFiles: () => log('QuarkDrawer files'),
+        ),
+        body: const Center(child: Text('Tap the brand button')),
+      ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkBrandButton',
+    group: 'Layout',
+    build: (context, log) => Align(
+      alignment: Alignment.centerLeft,
+      child: QuarkBrandButton(
+        label: 'Files',
+        onTap: () => log('QuarkBrandButton.onTap'),
+      ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkDrawer',
+    group: 'Layout',
+    build: (context, log) => SizedBox(
+      height: 520,
+      width: 304,
+      child: QuarkDrawer(
+        activeSection: QuarkDrawerSection.photos,
+        onTapFiles: () => log('QuarkDrawer.onTapFiles'),
+        onTapPhotos: () => log('QuarkDrawer.onTapPhotos'),
+        onTapDocs: () => log('QuarkDrawer.onTapDocs'),
+        onTapSheets: () => log('QuarkDrawer.onTapSheets'),
+        onTapDevices: () => log('QuarkDrawer.onTapDevices'),
+        onTapHealth: () => log('QuarkDrawer.onTapHealth'),
+        onTapVault: () => log('QuarkDrawer.onTapVault'),
+        onTapSettings: () => log('QuarkDrawer.onTapSettings'),
+      ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'RefreshIconButton',
+    group: 'Layout',
+    build: (context, log) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RefreshIconButton(
+          isRefreshing: false,
+          onPressed: () => log('RefreshIconButton.onPressed'),
+        ),
+        const RefreshIconButton(isRefreshing: true, onPressed: null),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'ThemeToggleButton',
+    group: 'Layout',
+    build: (context, log) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final mode in ThemeMode.values)
+          ThemeToggleButton(
+            mode: mode,
+            onChanged: (next) => log('ThemeToggleButton: $mode -> $next'),
+          ),
+      ],
+    ),
+  ),
 ];
 
+/// The fake album tree the gallery shows, three levels deep so indentation and
+/// expansion are both visible.
+/// Holds the expansion and selection the tile refuses to hold, which is the
+/// point of the example: the gallery is the caller.
+/// Types into a real field so the bar animates, which a static example cannot
+/// show.
 /// Every token in the current theme, drawn from the theme itself.
 ///
 /// This is the gallery's own canary: edit a color in the theme panel and the

@@ -8,6 +8,11 @@
 /// See the "Widget package rules" section of `AGENTS.md` for the contract.
 library;
 
+export 'src/layout/quark_app_bar.dart';
+export 'src/layout/quark_brand_button.dart';
+export 'src/layout/quark_drawer.dart';
+export 'src/layout/refresh_icon_button.dart';
+export 'src/layout/theme_toggle_button.dart';
 export 'src/theme/quark_colors.dart';
 export 'src/theme/quark_theme.dart';
 export 'src/theme/quark_tokens.dart';
