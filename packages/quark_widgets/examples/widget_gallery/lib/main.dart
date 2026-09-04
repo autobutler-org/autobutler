@@ -373,8 +373,12 @@ class _HexFieldState extends State<_HexField> {
           labelText: widget.name,
           prefixIcon: Padding(
             padding: EdgeInsets.all(tokens.spacingSm),
+            // The prefix slot hands down loose constraints, so the swatch needs
+            // an explicit height or it collapses to its 2px border and the
+            // color it is meant to show is invisible.
             child: Container(
               width: 16,
+              height: 16,
               decoration: BoxDecoration(
                 color: widget.value,
                 border: Border.all(color: tokens.border),
@@ -382,7 +386,10 @@ class _HexFieldState extends State<_HexField> {
               ),
             ),
           ),
-          prefixIconConstraints: const BoxConstraints(minWidth: 36),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 36,
+            minHeight: 16,
+          ),
         ),
       ),
     );
