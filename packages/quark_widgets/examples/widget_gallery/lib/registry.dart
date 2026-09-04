@@ -39,6 +39,115 @@ final List<GalleryEntry> registry = [
     build: (context, log) => const _TokenSwatches(),
   ),
 
+  // ── Core ──────────────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'EmptyStateWidget',
+    group: 'Core',
+    build: (context, log) => EmptyStateWidget(
+      icon: QuarkIcons.folder_outlined,
+      headline: 'This folder is empty',
+      subtext: 'Upload a file to get started.',
+      action: FilledButton(
+        onPressed: () => log('EmptyStateWidget action tapped'),
+        child: const Text('Upload'),
+      ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkFileIcon',
+    group: 'Core',
+    build: (context, log) => Wrap(
+      spacing: 24,
+      runSpacing: 16,
+      children: [
+        for (final entry in const [
+          ('Photos', true),
+          ('holiday.jpg', false),
+          ('clip.mp4', false),
+          ('song.flac', false),
+          ('report.pdf', false),
+          ('notes.qdoc', false),
+          ('budget.qsheet', false),
+          ('backup.zip', false),
+          ('unknown.xyz', false),
+        ])
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              QuarkFileIcon(name: entry.$1, isDir: entry.$2, size: 32),
+              const SizedBox(height: 4),
+              Text(entry.$1, style: const TextStyle(fontSize: 11)),
+            ],
+          ),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkStorageBar',
+    group: 'Core',
+    build: (context, log) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final fraction in const [0.2, 0.8, 0.95]) ...[
+          Text('${(fraction * 100).round()}% used'),
+          const SizedBox(height: 4),
+          QuarkStorageBar(usedFraction: fraction),
+          const SizedBox(height: 16),
+        ],
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'CopyButton',
+    group: 'Core',
+    build: (context, log) => Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        CopyButton(
+          text: 'quark-token-1234',
+          onCopy: (value) async => log('CopyButton.onCopy($value)'),
+        ),
+        CopyButton(
+          text: 'quark-token-1234',
+          label: 'Copy phrase',
+          variant: CopyButtonVariant.outlined,
+          onCopy: (value) async => log('CopyButton.onCopy($value)'),
+        ),
+        CopyButton(
+          text: 'quark-token-1234',
+          unavailableReason: 'Clipboard unavailable — use HTTPS to enable',
+          onCopy: (value) async => log('never called'),
+        ),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'PasswordStrengthBar',
+    group: 'Core',
+    build: (context, log) => const _PasswordStrengthDemo(),
+  ),
+  GalleryEntry(
+    name: 'QuarkDisconnectedView',
+    group: 'Core',
+    build: (context, log) => SizedBox(
+      height: 520,
+      child: QuarkDisconnectedView(
+        hostAddress: 'https://quark.local',
+        onRetry: () => log('QuarkDisconnectedView.onRetry'),
+        onManageHosts: () => log('QuarkDisconnectedView.onManageHosts'),
+      ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkDisconnectedBanner',
+    group: 'Core',
+    build: (context, log) => QuarkDisconnectedBanner(
+      onRetry: () => log('QuarkDisconnectedBanner.onRetry'),
+    ),
+  ),
+
   // ── Layout ────────────────────────────────────────────────────────────────
   GalleryEntry(
     name: 'QuarkAppBar',
@@ -134,6 +243,42 @@ final List<GalleryEntry> registry = [
 /// point of the example: the gallery is the caller.
 /// Types into a real field so the bar animates, which a static example cannot
 /// show.
+class _PasswordStrengthDemo extends StatefulWidget {
+  const _PasswordStrengthDemo();
+
+  @override
+  State<_PasswordStrengthDemo> createState() => _PasswordStrengthDemoState();
+}
+
+class _PasswordStrengthDemoState extends State<_PasswordStrengthDemo> {
+  final _controller = TextEditingController(text: 'hunter2');
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 320,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _controller,
+            decoration: const InputDecoration(labelText: 'Password'),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 8),
+          PasswordStrengthBar(password: _controller.text),
+        ],
+      ),
+    );
+  }
+}
+
 /// Every token in the current theme, drawn from the theme itself.
 ///
 /// This is the gallery's own canary: edit a color in the theme panel and the

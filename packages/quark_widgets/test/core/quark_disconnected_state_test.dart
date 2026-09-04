@@ -1,0 +1,186 @@
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+
+import '../support/pump.dart';
+
+/// #1637: away from the Quark's network the app used to show whatever
+/// connection error came back. These pin the replacement — the plain
+/// statement, the troubleshooting steps, and the fact that neither shape ever
+/// renders an exception.
+///
+/// Moved here with the widgets from the app's own test suite, where the state
+/// used to read the host address out of `AppSettings` instead of taking it in.
+void main() {
+  group('QuarkDisconnectedView', () {
+    testBothViewports('states plainly that the app is not connected', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(tester, const QuarkDisconnectedView(), size: size);
+
+      expect(find.text(quarkDisconnectedHeadline), findsOneWidget);
+      expect(find.text(quarkDisconnectedBody), findsOneWidget);
+    });
+
+    testBothViewports('lists every troubleshooting step', (tester, size) async {
+      await pumpAt(tester, const QuarkDisconnectedView(), size: size);
+
+      for (final step in quarkTroubleshootingSteps) {
+        expect(find.text(step), findsOneWidget);
+      }
+    });
+
+    testBothViewports('shows the address it could not reach', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(
+        tester,
+        const QuarkDisconnectedView(hostAddress: 'https://quark.local'),
+        size: size,
+      );
+
+      expect(find.text('https://quark.local'), findsOneWidget);
+    });
+
+    testWidgets('shows no address when the app names none', (tester) async {
+      await pumpAt(
+        tester,
+        const QuarkDisconnectedView(hostAddress: ''),
+        size: narrowViewport,
+      );
+
+      // Headline, body, and the three steps — no address line.
+      expect(
+        find.textContaining('http'),
+        findsNothing,
+        reason: 'an empty address must not render an empty line',
+      );
+    });
+
+    testWidgets('offers no actions unless the caller supplies them', (
+      tester,
+    ) async {
+      await pumpAt(tester, const QuarkDisconnectedView(), size: narrowViewport);
+
+      // "Check the address" must not appear on a page that cannot go
+      // anywhere useful — a button leading nowhere is worse than none.
+      expect(find.text('Try again'), findsNothing);
+      expect(find.text('Check the address'), findsNothing);
+    });
+
+    testBothViewports('retries through the callback the page supplied', (
+      tester,
+      size,
+    ) async {
+      var retries = 0;
+      await pumpAt(
+        tester,
+        QuarkDisconnectedView(onRetry: () => retries++),
+        size: size,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('disconnected_retry')));
+      await tester.pumpAndSettle();
+
+      expect(retries, 1);
+    });
+
+    testBothViewports('routes to host management through its callback', (
+      tester,
+      size,
+    ) async {
+      var opened = 0;
+      await pumpAt(
+        tester,
+        QuarkDisconnectedView(onManageHosts: () => opened++),
+        size: size,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('disconnected_manage_hosts')));
+      await tester.pumpAndSettle();
+
+      expect(opened, 1);
+    });
+
+    testWidgets('renders the steps the caller chose', (tester) async {
+      await pumpAt(
+        tester,
+        const QuarkDisconnectedView(steps: quarkTroubleshootingStepsInPlace),
+        size: wideViewport,
+      );
+
+      expect(
+        find.text('Confirm the Quark address is correct.'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('QuarkDisconnectedBanner', () {
+    testBothViewports('carries the same message in the compact shape', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(tester, const QuarkDisconnectedBanner(), size: size);
+
+      expect(find.text(quarkDisconnectedHeadline), findsOneWidget);
+      expect(find.text(quarkDisconnectedBody), findsOneWidget);
+    });
+
+    testWidgets('does not send the user to Settings they are already on', (
+      tester,
+    ) async {
+      await pumpAt(
+        tester,
+        const QuarkDisconnectedBanner(),
+        size: narrowViewport,
+      );
+
+      expect(
+        find.text('Confirm the Quark address is correct.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Confirm the Quark address in Settings is correct.'),
+        findsNothing,
+      );
+    });
+
+    test('gives no directional guidance', () {
+      // Login renders the host card above this banner and Settings renders
+      // host management below it, so any on-screen direction is wrong on one
+      // of them. Naming a destination is fine; pointing is not.
+      for (final step in quarkTroubleshootingStepsInPlace) {
+        expect(step, isNot(contains('below')));
+        expect(step, isNot(contains('above')));
+      }
+    });
+
+    testBothViewports('retries through the callback the page supplied', (
+      tester,
+      size,
+    ) async {
+      var retries = 0;
+      await pumpAt(
+        tester,
+        QuarkDisconnectedBanner(onRetry: () => retries++),
+        size: size,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('disconnected_banner_retry')));
+      await tester.pumpAndSettle();
+
+      expect(retries, 1);
+    });
+
+    testWidgets('hides the retry button when there is nothing to retry', (
+      tester,
+    ) async {
+      await pumpAt(tester, const QuarkDisconnectedBanner(), size: wideViewport);
+
+      expect(find.text('Try again'), findsNothing);
+    });
+  });
+}
