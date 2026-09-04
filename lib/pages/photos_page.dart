@@ -19,6 +19,7 @@ import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/photo_grid_config.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/photos/album_sidebar.dart';
@@ -67,10 +68,6 @@ class PhotoItem {
 
 class PhotosPageState extends State<PhotosPage>
     with WidgetsBindingObserver, AutoRefreshMixin {
-  static const int _defaultCrossAxisCount = 4;
-  static const int _minPreviewColumns = 1;
-  static const int _maxPreviewColumns = 8;
-  static const double _minTileWidth = 80;
   static const int _pageSize = 50;
 
   Future<List<PhotoItem>> _photosFuture = Future.value(const <PhotoItem>[]);
@@ -96,7 +93,7 @@ class PhotosPageState extends State<PhotosPage>
 
   bool _categoriesExpanded = false;
   bool _isUploading = false;
-  int _previewColumns = _defaultCrossAxisCount;
+  int _previewColumns = PhotoGridConfig.defaultColumns;
   PhotoCategory _selectedCategory = PhotoCategory.quark;
 
   // Favorites: set of selectionKeys for photos that are favorited.
@@ -464,41 +461,6 @@ class PhotosPageState extends State<PhotosPage>
 
   bool get _hasMoreQuark => _quarkInitialLoadDone && _quarkOffset < _quarkTotal;
 
-  int _minColumnsByScale() {
-    return _minPreviewColumns;
-  }
-
-  int _maxColumnsByScale() {
-    return _maxPreviewColumns;
-  }
-
-  int _maxColumnsByWidth(double availableWidth) {
-    return (availableWidth / _minTileWidth).floor().clamp(1, 100);
-  }
-
-  /// The column bounds allowed at [availableWidth]: the scale limits, further
-  /// clamped so a tile never has to shrink below its minimum width.
-  ({int min, int max}) _columnBounds(double availableWidth) {
-    final maxByWidth = _maxColumnsByWidth(availableWidth);
-    var minColumns = _minColumnsByScale();
-    var maxColumns = _maxColumnsByScale();
-    if (minColumns > maxByWidth) {
-      minColumns = maxByWidth;
-    }
-    if (maxColumns > maxByWidth) {
-      maxColumns = maxByWidth;
-    }
-    if (minColumns > maxColumns) {
-      minColumns = maxColumns;
-    }
-    return (min: minColumns, max: maxColumns);
-  }
-
-  int _effectiveCrossAxisCount(double availableWidth) {
-    final bounds = _columnBounds(availableWidth);
-    return _previewColumns.clamp(bounds.min, bounds.max);
-  }
-
   Future<void> _toggleFavorite(PhotoItem item) async {
     if (!item.isFiles) return;
     final c = item.quark!;
@@ -844,8 +806,11 @@ class PhotosPageState extends State<PhotosPage>
     }
 
     final contentWidth = QuarkSplitView.contentWidthOf(context);
-    final crossAxisCount = _effectiveCrossAxisCount(contentWidth);
-    final columnBounds = _columnBounds(contentWidth);
+    final crossAxisCount = PhotoGridConfig.columnsFor(
+      contentWidth,
+      _previewColumns,
+    );
+    final columnBounds = PhotoGridConfig.columnBounds(contentWidth);
 
     return CallbackShortcuts(
       bindings: {
@@ -987,7 +952,6 @@ class PhotosPageState extends State<PhotosPage>
                           ),
                         ),
                         albumSidebarKey: _albumSidebarKey,
-                        compact: compact,
                       ),
                       slivers: [
                         if (isWaiting)

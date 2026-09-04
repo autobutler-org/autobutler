@@ -66,6 +66,28 @@ void main() {
     expect(find.text('navigation'), findsOneWidget);
   });
 
+  testBothViewports('leaves the brand button inert when there is no drawer', (
+    tester,
+    size,
+  ) async {
+    await pumpAt(
+      tester,
+      const QuarkPageScaffold(
+        title: 'Photos',
+        icon: QuarkIcons.photo_library_outlined,
+        body: Text('the grid'),
+      ),
+      size: size,
+      scaffold: false,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('brand_button')));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull, reason: 'no drawer, no error');
+    expect(find.byType(Drawer), findsNothing);
+  });
+
   testBothViewports('swaps in the app bar a page hands it', (
     tester,
     size,

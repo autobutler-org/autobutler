@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/widgets/photos/photo_selection_overlay.dart';
 import 'package:quark/widgets/photos/photo_star_overlay.dart';
-import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 /// A single photo tile. Shared so both the desktop GridView and the mobile
@@ -59,64 +59,6 @@ class PhotoGridTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = photo;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // In selection mode wrap everything with selection overlay
-    Widget wrapWithSelection(Widget child) {
-      return GestureDetector(
-        onTap: onToggleSelection,
-        onLongPress: () {
-          if (!selectionMode) onEnterSelectionMode();
-          onToggleSelection();
-        },
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            child,
-            // Dim overlay for unselected
-            if (selectionMode && !isSelected)
-              Container(color: Colors.black.withValues(alpha: 0.3)),
-            // Teal border for selected
-            if (isSelected)
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.all(color: colorScheme.primary, width: 3),
-                ),
-              ),
-            // Checkbox in top-left
-            if (selectionMode)
-              Positioned(
-                top: 6,
-                left: 6,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected
-                        ? colorScheme.primary
-                        : Colors.transparent,
-                    border: Border.all(
-                      color: isSelected
-                          ? colorScheme.primary
-                          : Colors.white.withValues(alpha: 0.8),
-                      width: 2,
-                    ),
-                  ),
-                  child: isSelected
-                      ? const Icon(
-                          QuarkIcons.check,
-                          size: 14,
-                          color: Colors.white,
-                        )
-                      : null,
-                ),
-              ),
-          ],
-        ),
-      );
-    }
 
     if (p.isFiles) {
       final c = p.quark!;
@@ -143,7 +85,15 @@ class PhotoGridTile extends StatelessWidget {
           ],
         );
       }
-      if (selectionMode) return wrapWithSelection(thumbnail);
+      if (selectionMode) {
+        return PhotoSelectionOverlay(
+          isSelected: isSelected,
+          selectionMode: selectionMode,
+          onToggleSelection: onToggleSelection,
+          onEnterSelectionMode: onEnterSelectionMode,
+          child: thumbnail,
+        );
+      }
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
@@ -174,7 +124,15 @@ class PhotoGridTile extends StatelessWidget {
         return Image.memory(thumb, fit: BoxFit.cover);
       },
     );
-    if (selectionMode) return wrapWithSelection(assetThumb);
+    if (selectionMode) {
+      return PhotoSelectionOverlay(
+        isSelected: isSelected,
+        selectionMode: selectionMode,
+        onToggleSelection: onToggleSelection,
+        onEnterSelectionMode: onEnterSelectionMode,
+        child: assetThumb,
+      );
+    }
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(

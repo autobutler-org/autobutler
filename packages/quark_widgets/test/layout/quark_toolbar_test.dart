@@ -39,7 +39,14 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      for (final label in const ['Select all', 'Delete forever']) {
+      for (final label in const [
+        'Select all',
+        'Deselect all',
+        'Download',
+        'Move to folder',
+        'Add to album',
+        'Delete forever',
+      ]) {
         expect(find.byKey(ValueKey('toolbar_$label')), findsOneWidget);
       }
     });
@@ -51,7 +58,10 @@ void main() {
       final tapped = <String>[];
       await pumpAt(
         tester,
-        QuarkToolbar(actions: actionsThatDoNotFit(tapped.add)),
+        QuarkToolbar(
+          actions: actionsThatDoNotFit(tapped.add),
+          overflow: overflow,
+        ),
         size: size,
       );
 
@@ -129,6 +139,23 @@ void main() {
       final wrap = tester.widget<Wrap>(find.byType(Wrap));
       expect(wrap.spacing, tokens.spacingSm);
       expect(wrap.runSpacing, tokens.spacingXs);
+    });
+
+    testWidgets('$label: the scrolling gaps come from the tokens too', (
+      tester,
+    ) async {
+      await pumpAt(
+        tester,
+        QuarkToolbar(
+          actions: actionsThatDoNotFit((_) {}),
+          overflow: QuarkToolbarOverflow.scroll,
+        ),
+        brightness: brightness,
+      );
+
+      expect(tester.takeException(), isNull);
+      final row = tester.widget<Row>(find.byType(Row));
+      expect(row.spacing, tokens.spacingSm);
     });
   }
 

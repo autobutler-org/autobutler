@@ -56,4 +56,26 @@ void main() {
       lessThanOrEqualTo(narrowViewport.width),
     );
   });
+
+  testWidgets('clips a page name too long for its slot', (tester) async {
+    // The button lives in an app bar leading slot of a fixed width, so a long
+    // label has to be cut rather than overflow the bar.
+    await pumpAt(
+      tester,
+      SizedBox(
+        width: QuarkBrandButton.preferredWidth,
+        child: QuarkBrandButton(
+          label: 'Software Bill of Materials' * 4,
+          onTap: () {},
+        ),
+      ),
+      size: narrowViewport,
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getSize(find.byType(QuarkBrandButton)).width,
+      lessThanOrEqualTo(QuarkBrandButton.preferredWidth),
+    );
+  });
 }

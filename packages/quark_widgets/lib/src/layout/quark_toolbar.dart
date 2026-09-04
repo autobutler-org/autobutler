@@ -21,9 +21,11 @@ enum QuarkToolbarOverflow {
 /// stripes over the controls. Every bar in the app solved that separately.
 /// This solves it once, so a new bar starts out narrow-safe.
 ///
-/// The toolbar spaces its actions with the theme's small spacing token and has
-/// nothing tappable of its own, so the keys in a test or a `.probe` script are
-/// the ones the actions carry.
+/// The toolbar spaces its actions with the theme's small spacing token.
+///
+/// Key prefixes: none of its own. The toolbar has nothing tappable, so the
+/// keys a test or a `.probe` script reaches for are the ones the actions
+/// carry.
 ///
 /// ```dart
 /// QuarkToolbar(

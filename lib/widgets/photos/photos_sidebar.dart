@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/widgets/photos/album_sidebar.dart';
+import 'package:quark/widgets/photos/photo_category_tile.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 /// The photos view's sidebar: the tile-size slider, the category picker, and
 /// the album tree.
 ///
-/// Desktop shows it as a fixed 280px column beside the grid; compact shows it
-/// above the grid inside the page's scroll view.
+/// The [QuarkSplitView] it sits in decides which of its two shapes it takes:
+/// a pane of a fixed width beside the grid, or a shrink-wrapped block above
+/// the grid inside the same scroll view. The sidebar asks the split view
+/// rather than being told, so nothing upstream has to know the breakpoint.
 class PhotosSidebar extends StatelessWidget {
   const PhotosSidebar({
     required this.selectedCategory,
@@ -27,7 +31,6 @@ class PhotosSidebar extends StatelessWidget {
     required this.onSelectCategory,
     required this.onAlbumSelected,
     this.albumSidebarKey,
-    this.compact = false,
     super.key,
   });
 
@@ -82,33 +85,14 @@ class PhotosSidebar extends StatelessWidget {
   /// tree after a change made elsewhere.
   final GlobalKey<AlbumSidebarState>? albumSidebarKey;
 
-  /// Whether to render the compact (narrow) layout, which shrink-wraps rather
-  /// than filling its parent's height.
-  final bool compact;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // The collapsed layout puts this sidebar in a sliver, which hands it
+    // unbounded height, so it has to shrink-wrap there.
+    final compact = QuarkSplitView.isCollapsed(context);
     final selectedColumns = previewColumns.clamp(minColumns, maxColumns);
     final divisions = maxColumns - minColumns;
-
-    Widget categoryButton(PhotoCategory cat, String label, int count) {
-      final selected = selectedCategory == cat;
-      return ListTile(
-        dense: true,
-        visualDensity: VisualDensity.compact,
-        contentPadding: EdgeInsets.zero,
-        onTap: () => onSelectCategory(cat),
-        leading: Icon(switch (cat) {
-          PhotoCategory.quark => QuarkIcons.cloud,
-          PhotoCategory.mobile => QuarkIcons.smartphone,
-          PhotoCategory.all => QuarkIcons.photo_library,
-          PhotoCategory.favorites => QuarkIcons.star_rounded,
-        }, color: selected ? theme.colorScheme.primary : null),
-        title: Text('$label: $count', style: theme.textTheme.titleMedium),
-        trailing: selected ? const Icon(QuarkIcons.check, size: 16) : null,
-      );
-    }
 
     // For Quark-stored photos, show total from server (includes un-fetched pages)
     final quarkDisplayCount = quarkInitialLoadDone ? quarkTotal : quarkCount;
@@ -141,7 +125,8 @@ class PhotosSidebar extends StatelessWidget {
     return Material(
       color: theme.colorScheme.surfaceContainerLowest,
       child: Container(
-        width: compact ? double.infinity : 280,
+        // No width of its own: the split view sizes the pane in the wide
+        // layout and stretches it in the collapsed one.
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,20 +184,20 @@ class PhotosSidebar extends StatelessWidget {
                 ),
                 onTap: onToggleCategories,
               ),
-              if (categoriesExpanded) ...[
-                categoryButton(
-                  PhotoCategory.all,
-                  'All',
-                  quarkDisplayCount + mobileCount,
-                ),
-                categoryButton(PhotoCategory.quark, 'Quark', quarkDisplayCount),
-                categoryButton(PhotoCategory.mobile, 'Mobile', mobileCount),
-                categoryButton(
-                  PhotoCategory.favorites,
-                  'Favorites',
-                  favoriteCount,
-                ),
-              ],
+              if (categoriesExpanded)
+                for (final entry in <(PhotoCategory, String, int)>[
+                  (PhotoCategory.all, 'All', quarkDisplayCount + mobileCount),
+                  (PhotoCategory.quark, 'Quark', quarkDisplayCount),
+                  (PhotoCategory.mobile, 'Mobile', mobileCount),
+                  (PhotoCategory.favorites, 'Favorites', favoriteCount),
+                ])
+                  PhotoCategoryTile(
+                    category: entry.$1,
+                    label: entry.$2,
+                    count: entry.$3,
+                    isSelected: selectedCategory == entry.$1,
+                    onTap: () => onSelectCategory(entry.$1),
+                  ),
             ],
             const SizedBox(height: 16),
             if (compact) albumSidebar else Expanded(child: albumSidebar),

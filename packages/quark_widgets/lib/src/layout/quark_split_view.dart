@@ -60,6 +60,9 @@ class QuarkSplitView extends StatelessWidget {
   /// The width of the sidebar pane in the wide layout.
   static const double defaultSidebarWidth = 280;
 
+  /// The hairline between the sidebar and the content in the wide layout.
+  static const double dividerWidth = 1;
+
   /// Whether a [QuarkSplitView] built under [context] collapses its sidebar.
   ///
   /// For a caller that has to know the layout it is in for a reason other than
@@ -80,7 +83,7 @@ class QuarkSplitView extends StatelessWidget {
   }) {
     final width = MediaQuery.sizeOf(context).width;
     if (isCollapsed(context)) return width;
-    return (width - sidebarWidth - 1).clamp(1.0, double.infinity);
+    return (width - sidebarWidth - dividerWidth).clamp(1.0, double.infinity);
   }
 
   /// The sidebar, rendered as a pane when wide and stacked above the content
@@ -125,7 +128,7 @@ class QuarkSplitView extends StatelessWidget {
             width: sidebarWidth,
             child: sidebar,
           ),
-          VerticalDivider(width: 1, color: tokens.border),
+          VerticalDivider(width: dividerWidth, color: tokens.border),
           Expanded(
             child: CustomScrollView(
               controller: controller,
@@ -167,7 +170,7 @@ class QuarkSplitView extends StatelessWidget {
                   key: const ValueKey('split_view_sidebar'),
                   child: sidebar,
                 ),
-                Divider(height: 1, color: tokens.border),
+                Divider(height: dividerWidth, color: tokens.border),
               ],
             ),
           ),

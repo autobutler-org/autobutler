@@ -119,9 +119,56 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(QuarkToolbar), findsOneWidget);
-    for (final label in const ['Refresh', 'Remove everything']) {
+    for (final label in const ['Refresh', 'Add', 'Remove everything']) {
       expect(find.byKey(ValueKey('section_action_$label')), findsOneWidget);
     }
+    // Wrapped, not clipped and not scrolled: the last action sits on a later
+    // line than the first.
+    expect(
+      tester
+          .getRect(
+            find.byKey(
+              const ValueKey(
+                'section_action_Remove '
+                'everything',
+              ),
+            ),
+          )
+          .top,
+      greaterThan(
+        tester
+            .getRect(find.byKey(const ValueKey('section_action_Refresh')))
+            .top,
+      ),
+    );
+  });
+
+  testWidgets('a small action set leaves the heading its own width', (
+    tester,
+  ) async {
+    await pumpAt(
+      tester,
+      QuarkSection(
+        title: 'Backend hosts',
+        actions: [
+          IconButton(
+            key: const ValueKey('host_add'),
+            icon: const Icon(Icons.add),
+            tooltip: 'Add a host',
+            onPressed: () {},
+          ),
+        ],
+        child: const Text('content'),
+      ),
+      size: wideViewport,
+    );
+
+    // One small button must not cost the heading half the row, which is what
+    // a Row of two flexible children does.
+    final title = tester.getRect(find.text('Backend hosts'));
+    final action = tester.getRect(find.byKey(const ValueKey('host_add')));
+    expect(title.right, lessThan(wideViewport.width / 4));
+    expect(action.left, greaterThan(wideViewport.width / 2));
   });
 
   testWidgets('every icon-only action carries a tooltip', (tester) async {
@@ -161,13 +208,15 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      final gap = tester.widget<SizedBox>(
-        find.descendant(
-          of: find.byType(QuarkSection),
-          matching: find.byType(SizedBox),
-        ),
-      );
-      expect(gap.height, tokens.spacingSm);
+      final gaps = tester
+          .widgetList<SizedBox>(
+            find.descendant(
+              of: find.byType(QuarkSection),
+              matching: find.byType(SizedBox),
+            ),
+          )
+          .where((box) => box.height != null);
+      expect(gaps.first.height, tokens.spacingSm);
     });
   }
 

@@ -219,6 +219,36 @@ void main() {
     expect(find.text('Albums'), findsOneWidget);
   });
 
+  testWidgets('honors a sidebar width of the caller\'s choosing', (
+    tester,
+  ) async {
+    await pumpAt(
+      tester,
+      QuarkSplitView(
+        sidebarWidth: 360,
+        physics: const AlwaysScrollableScrollPhysics(),
+        sidebar: const Text('Albums'),
+        slivers: [
+          SliverList.builder(
+            itemCount: 3,
+            itemBuilder: (context, index) => Text('row $index'),
+          ),
+        ],
+      ),
+      size: wideViewport,
+    );
+
+    expect(
+      tester.getRect(find.byKey(const ValueKey('split_view_sidebar'))).width,
+      360,
+    );
+    expect(
+      tester.widget<CustomScrollView>(find.byType(CustomScrollView)).physics,
+      isA<AlwaysScrollableScrollPhysics>(),
+      reason: 'the physics the caller passed have to reach the scroll view',
+    );
+  });
+
   test('the breakpoint and the pane width are written down once', () {
     expect(QuarkSplitView.collapseBreakpoint, 900);
     expect(QuarkSplitView.defaultSidebarWidth, 280);
@@ -263,7 +293,9 @@ void main() {
     expect(wide, isFalse);
     expect(
       wideContent,
-      wideViewport.width - QuarkSplitView.defaultSidebarWidth - 1,
+      wideViewport.width -
+          QuarkSplitView.defaultSidebarWidth -
+          QuarkSplitView.dividerWidth,
       reason: 'the pane and its divider come off the content width',
     );
   });
