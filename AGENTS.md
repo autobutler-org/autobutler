@@ -284,6 +284,13 @@ The package is a separate pub package with no dependency on the app, so it canno
   (purpose, key prefixes, one usage snippet), every constructor parameter, and every callback; one test file
   `test/<group>/<name>_test.dart`; one entry in `examples/widget_gallery/lib/registry.dart` with fake data and callbacks
   that log to the gallery's event panel. A gallery test fails when a barrel export has no registry entry.
+- **One widget per file, no private widgets.** Every widget class is public and lives in a file named after it, even
+  when it has one caller. No `class _Part extends StatelessWidget` inside another widget's file, and no
+  `Widget _buildPart()` method that returns a subtree. In the package, a part of one parent lives in
+  `lib/src/<group>/<parent>/<part>.dart`, imported by the parent and not exported from the barrel until something else
+  needs it; a part is tested through its parent unless it has states or callbacks of its own. In the app, a page's
+  parts live under `lib/widgets/<page>/`. Long files hide reusable pieces; a directory of small files shows what can be
+  promoted.
 - **Theme through tokens.** Colors, radii, and spacing come from `QuarkTokens` reached through the theme, never a
   hardcoded color in a widget. The gallery's theme panel edits the tokens live, so a hardcoded value is a bug you can see.
 - **Error copy still comes from the app.** The package never composes a user-facing error sentence. It takes
@@ -297,7 +304,7 @@ passes fakes without a mocking library.
 
 **Pages are compositions.** A page's `build` is package widgets arranged with plain Flutter layout (`Column`, `Row`,
 `Expanded`, `Padding`, `SafeArea`) and nothing else. No sizing math, no `MediaQuery` breakpoints, no `LayoutBuilder`
-branching, no private `_build*` methods that amount to an unnamed widget. Responsive behavior lives in package layout
+branching, no private `_build*` methods and no private widget classes: every named subtree is its own file. Responsive behavior lives in package layout
 widgets (a page scaffold, a split view that collapses its sidebar under a breakpoint, a section, a toolbar) so every page
 shares the same breakpoints and a layout fix lands once. If a page needs a layout the package lacks, add the layout
 widget to the package first, then compose. The test of a good page is that a new one is mostly a list of package

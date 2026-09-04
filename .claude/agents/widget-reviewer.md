@@ -22,6 +22,8 @@ For each widget, check:
 - No hardcoded color, radius, or spacing; tokens come through the theme.
 - No user-facing error sentence composed in the package.
 - `///` docs on the class, every parameter, every callback.
+- One widget class per file. A private widget class or a `Widget _build*()` method in any file is a finding; name the
+  file it should become.
 - A test file exists with narrow and wide viewport cases and covers each state and callback.
 - A gallery registry entry exists.
 - After a widget is moved or added, `git grep` the app's `lib/` for its class name. Zero callers is a finding, never a

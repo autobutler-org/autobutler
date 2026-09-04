@@ -57,7 +57,10 @@ for other agents. Both are gitignored.
 ## Adding a widget
 
 1. **File.** `lib/src/<group>/<name>.dart`, one public class, `super.key`, and a
-   deterministic `ValueKey` on every tappable part.
+   deterministic `ValueKey` on every tappable part. No private widget classes:
+   a part only this widget uses goes in `lib/src/<group>/<name>/<part>.dart`,
+   public, imported by the widget, and not exported until something else
+   needs it.
 2. **Export.** Add it to `lib/quark_widgets.dart`.
 3. **Docs.** A `///` block on the class: what it is for, the `ValueKey` prefixes
    it emits, and one usage snippet. Document every parameter and callback.
