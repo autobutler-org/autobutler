@@ -56,6 +56,13 @@ func ResetRawDatabase(database *DatabaseRaw) error {
 // dropping an FTS5 virtual table takes its shadow tables with it — which is why
 // each statement is IF EXISTS: the shadow rows are still in the snapshot of
 // sqlite_master this read from.
+//
+// It needs no ordering and no deferred-constraint dance under PRAGMA
+// foreign_keys=on: sqlite_master lists tables in creation order, which is
+// parent-before-child, and every reference in the schema is ON DELETE CASCADE
+// or SET NULL, so the implicit DELETE a DROP TABLE performs resolves rather
+// than rejects. Verified against a populated database by the delete-account
+// tests, which reset one holding a user and a live session.
 func dropAllObjects(sqlDB *sql.DB) error {
 	const listObjects = `
 		SELECT type, name FROM sqlite_master

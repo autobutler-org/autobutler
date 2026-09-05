@@ -100,8 +100,8 @@ const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users WHERE id = ?
 `
 
-// Deletes one user. sessions.user_id is ON DELETE CASCADE (002_auth), so the
-// user's sessions go with the row.
+// Deletes one user. sessions.user_id is ON DELETE CASCADE (001_auth) and
+// connections set _foreign_keys=on, so the user's sessions go with the row.
 func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteUser, id)
 	return err

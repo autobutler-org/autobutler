@@ -332,7 +332,7 @@ func TestSearch_LimitRespected(t *testing.T) {
 // TestSQLiteDriverHasFTS5 asserts that the SQLite driver this binary is linked
 // against actually provides the fts5 module.
 //
-// Nothing in this package can work without it: migration 019 creates a virtual
+// Nothing in this package can work without it: migration 006 creates a virtual
 // table USING fts5, so an FTS5-less driver fails at boot with
 // "no such module: fts5" rather than at build time.
 //
@@ -358,7 +358,7 @@ func TestSQLiteDriverHasFTS5(t *testing.T) {
 	}
 
 	// The compile flag is necessary but not sufficient — prove the module
-	// registers and the tokenizer used by migration 019 is accepted.
+	// registers and the tokenizer used by migration 006 is accepted.
 	if _, err := db.Exec(
 		`CREATE VIRTUAL TABLE fts_probe USING fts5(body, tokenize='porter unicode61')`,
 	); err != nil {

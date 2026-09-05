@@ -430,10 +430,11 @@ type DeleteAccountResult struct {
 // session, leaving the caller logged out.
 //
 // DeleteAccount removes the caller's own users row and nothing else. The other
-// three aspects are a factory reset rather than a per-user delete: most of the
-// schema is not user-scoped — calendars and calendar_events carry no user_id
-// and vault_location is a CHECK (id = 1) singleton — so "delete this user's
-// data" is not expressible against it (#1759). Only the account row itself is.
+// three aspects are a factory reset rather than a per-user delete: users is the
+// only table in the schema that has a user at all — photos, the vault, device
+// roles and the search index carry no user_id, and vault_location is a
+// CHECK (id = 1) singleton — so "delete this user's data" is not expressible
+// against it (#1759). Only the account row itself is.
 //
 // The aspects map onto disk as:
 //
@@ -443,7 +444,7 @@ type DeleteAccountResult struct {
 //     unreachable.
 //
 //   - DeleteDatabase: the appliance's databases, quark.db and quark.health.db.
-//     An internal vault lives in quark.db itself (migration 007), so it goes
+//     An internal vault lives in quark.db itself (migration 005), so it goes
 //     with them; a separate vault.db file exists only on an external device.
 //
 //   - DeleteFiles: the file trees the appliance owns, <dataDir>/files and the
@@ -453,11 +454,12 @@ type DeleteAccountResult struct {
 //     device, which is what carries an off-appliance vault.
 //
 // Order is deliberate. Sessions go first so no client keeps operating against a
-// half-erased appliance — and that step is load-bearing rather than tidy:
-// sessions.user_id declares ON DELETE CASCADE (002_auth) but SQLite enforces
-// foreign keys only when PRAGMA foreign_keys is on, and nothing in this
-// codebase turns it on. Deleting a users row therefore strands its sessions,
-// so RevokeAllSessions, not the cascade, is what removes them.
+// half-erased appliance. Deleting the users row would take them too —
+// sessions.user_id declares ON DELETE CASCADE (001_auth) and connections carry
+// _foreign_keys=on, so the cascade actually runs — but the account aspect is
+// opt-in and the other three do not touch the users table, so a factory reset
+// without it would otherwise leave every session live against the wiped
+// appliance.
 //
 // The account row goes next, before the destructive filesystem work: a caller
 // who asked for their account to be deleted must not be left with it alive

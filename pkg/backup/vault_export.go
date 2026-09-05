@@ -46,7 +46,11 @@ func ExportVault(ctx context.Context, queries *db.Queries, liveKey []byte, recov
 	dbPath := filepath.Join(targetDir, backupVaultFilename)
 	os.Remove(dbPath)
 
-	backupDB, err := sql.Open("sqlite", dbPath)
+	// Through db.DSN like every other database this codebase opens: the rows
+	// below carry created_at and updated_at straight across, and a connection
+	// without _time_format=datetime&_timezone=UTC would write them in Go's
+	// t.String() form, which no SQLite date function can parse (#1650).
+	backupDB, err := sql.Open("sqlite", db.DSN(dbPath))
 	if err != nil {
 		return "", fmt.Errorf("open backup vault db: %w", err)
 	}
@@ -71,15 +75,8 @@ func ExportVault(ctx context.Context, queries *db.Queries, liveKey []byte, recov
 	if err != nil {
 		return "", fmt.Errorf("list vault folders: %w", err)
 	}
-	for _, f := range folders {
-		_, err := backupDB.ExecContext(ctx,
-			`INSERT INTO vault_folders (id, name, parent_id, sort_order, created_at)
-			VALUES (?, ?, ?, ?, ?)`,
-			f.ID, f.Name, f.ParentID, f.SortOrder, f.CreatedAt,
-		)
-		if err != nil {
-			return "", fmt.Errorf("insert backup folder %d: %w", f.ID, err)
-		}
+	if err := copyFolders(ctx, backupDB, folders); err != nil {
+		return "", err
 	}
 
 	entries, err := queries.ListAllVaultEntriesForReEncrypt(ctx)
@@ -140,4 +137,44 @@ func BackupVaultChecksum(path string) (string, error) {
 
 func createBackupVaultSchema(d *sql.DB) error {
 	return db.InitVaultSchema(d)
+}
+
+// copyFolders writes the folder tree into the backup database with its ids
+// preserved, so entries can point at the same folder they pointed at live.
+//
+// ListVaultFolders orders by sort_order then name, which says nothing about
+// depth: a child sorted before its parent arrives before the row its parent_id
+// names. Rather than topologically sort a tree that only has to survive until
+// COMMIT, the whole copy runs in one transaction with foreign key checks
+// deferred to the end of it — every parent is present by then, and a genuinely
+// dangling parent_id still fails, at COMMIT instead of at the INSERT.
+func copyFolders(ctx context.Context, backupDB *sql.DB, folders []db.VaultFolder) error {
+	tx, err := backupDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin backup folder copy: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Per-connection and per-transaction: SQLite clears it at COMMIT, and
+	// issuing it through the transaction pins it to the connection the inserts
+	// below actually run on.
+	if _, err := tx.ExecContext(ctx, `PRAGMA defer_foreign_keys = ON`); err != nil {
+		return fmt.Errorf("defer foreign keys: %w", err)
+	}
+
+	for _, f := range folders {
+		_, err := tx.ExecContext(ctx,
+			`INSERT INTO vault_folders (id, name, parent_id, sort_order, created_at)
+			VALUES (?, ?, ?, ?, ?)`,
+			f.ID, f.Name, f.ParentID, f.SortOrder, f.CreatedAt,
+		)
+		if err != nil {
+			return fmt.Errorf("insert backup folder %d: %w", f.ID, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit backup folder copy: %w", err)
+	}
+	return nil
 }
