@@ -400,6 +400,12 @@ type DeleteAccountParams struct {
 	DeviceDataDirs []string
 	Username       string
 	UserID         int64
+	// DeleteAccount removes the caller's own users row. It is the aspect App
+	// Store Review Guideline 5.1.1(v) requires: an app that lets a user create
+	// an account must let them delete it from inside the app. The factory-reset
+	// aspects do not satisfy it — DeleteDatabase erases every user's data to
+	// remove one account, which is the wrong operation on a shared appliance.
+	DeleteAccount  bool
 	DeleteDatabase bool
 	DeleteFiles    bool
 	DeleteDevices  bool
@@ -407,35 +413,63 @@ type DeleteAccountParams struct {
 
 // DeleteAccountResult reports which aspects were actually wiped.
 type DeleteAccountResult struct {
+	AccountDeleted  bool
 	DatabaseDeleted bool
 	FilesDeleted    bool
 	DevicesDeleted  bool
+	// FilesRetained is true when the account or the database went but the file
+	// tree stayed. That combination hands the stored files to whoever sets the
+	// appliance up next: with no users left the setup flow re-triggers, and the
+	// new owner has a normal account on an appliance still holding the previous
+	// owner's files. It is the default shape of an App Store account deletion,
+	// which is exactly why it is surfaced rather than left to be inferred.
+	FilesRetained bool
 }
 
 // DeleteAccount wipes the selected aspects of the appliance and revokes every
 // session, leaving the caller logged out.
 //
-// This is a factory reset, not a per-user delete. Most of the schema is not
-// user-scoped — calendars and calendar_events carry no user_id and
-// vault_location is a CHECK (id = 1) singleton — so "delete this user's rows"
-// is not expressible against it (#1759).
+// DeleteAccount removes the caller's own users row and nothing else. The other
+// three aspects are a factory reset rather than a per-user delete: most of the
+// schema is not user-scoped — calendars and calendar_events carry no user_id
+// and vault_location is a CHECK (id = 1) singleton — so "delete this user's
+// data" is not expressible against it (#1759). Only the account row itself is.
 //
-// The three aspects map onto disk as:
+// The aspects map onto disk as:
+//
+//   - DeleteAccount: the caller's row in users. Deleting the last one takes the
+//     appliance back to first boot, because IsSetupComplete is COUNT(users) > 0,
+//     so the setup flow re-triggers rather than the appliance becoming
+//     unreachable.
 //
 //   - DeleteDatabase: the appliance's databases, quark.db and quark.health.db.
 //     An internal vault lives in quark.db itself (migration 007), so it goes
 //     with them; a separate vault.db file exists only on an external device.
+//
 //   - DeleteFiles: the file trees the appliance owns, <dataDir>/files and the
 //     mount-point scaffolding under <dataDir>/mounts.
+//
 //   - DeleteDevices: the quark data directory on each attached external
 //     device, which is what carries an off-appliance vault.
 //
 // Order is deliberate. Sessions go first so no client keeps operating against a
-// half-erased appliance. The databases go last because a database reset that
-// fails after the files are gone leaves the user a working database and a retry
-// path, whereas the reverse leaves orphaned files behind a fresh database with
-// no session to retry from, and because the audit trail should outlive
+// half-erased appliance — and that step is load-bearing rather than tidy:
+// sessions.user_id declares ON DELETE CASCADE (002_auth) but SQLite enforces
+// foreign keys only when PRAGMA foreign_keys is on, and nothing in this
+// codebase turns it on. Deleting a users row therefore strands its sessions,
+// so RevokeAllSessions, not the cascade, is what removes them.
+//
+// The account row goes next, before the destructive filesystem work: a caller
+// who asked for their account to be deleted must not be left with it alive
+// because a later aspect failed. The databases go last because a database reset
+// that fails after the files are gone leaves the user a working database and a
+// retry path, whereas the reverse leaves orphaned files behind a fresh database
+// with no session to retry from, and because the audit trail should outlive
 // everything it describes.
+//
+// DeleteAccount combined with DeleteDatabase is redundant but not contradictory:
+// the reset drops the users table wholesale a few steps later. The row is still
+// deleted first so that a failure in between cannot leave the account standing.
 //
 // Every step is idempotent: removing a directory that is already gone,
 // re-migrating an already-empty database, and dropping objects from an already
@@ -443,8 +477,8 @@ type DeleteAccountResult struct {
 func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccountResult, error) {
 	var result DeleteAccountResult
 
-	if !params.DeleteDatabase && !params.DeleteFiles && !params.DeleteDevices {
-		return result, errors.New("no aspect selected: pass database=true, files=true, devices=true, or any combination")
+	if !params.DeleteAccount && !params.DeleteDatabase && !params.DeleteFiles && !params.DeleteDevices {
+		return result, errors.New("no aspect selected: pass account=true, database=true, files=true, devices=true, or any combination")
 	}
 	if params.Database == nil || params.Queries == nil {
 		return result, errors.New("database not initialized")
@@ -455,6 +489,7 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 	// exactly the moment it becomes useful (#1759).
 	slog.Warn("delete account requested",
 		"username", params.Username,
+		"account", params.DeleteAccount,
 		"database", params.DeleteDatabase,
 		"files", params.DeleteFiles,
 		"devices", params.DeleteDevices,
@@ -462,6 +497,13 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 
 	if err := RevokeAllSessions(ctx, params.Queries, params.UserID); err != nil {
 		return result, err
+	}
+
+	if params.DeleteAccount {
+		if err := params.Queries.DeleteUser(ctx, params.UserID); err != nil {
+			return result, fmt.Errorf("failed to delete account: %w", err)
+		}
+		result.AccountDeleted = true
 	}
 
 	if params.DeleteFiles {
@@ -495,8 +537,15 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 		result.DatabaseDeleted = true
 	}
 
+	// Recorded because it is the security-relevant outcome, not merely a summary
+	// of the request: the files outliving the account that owned them is what a
+	// later "how did the new owner see those?" question turns on.
+	result.FilesRetained = (result.AccountDeleted || result.DatabaseDeleted) && !result.FilesDeleted
+
 	slog.Warn("delete account completed",
 		"username", params.Username,
+		"accountDeleted", result.AccountDeleted,
+		"filesRetained", result.FilesRetained,
 		"databaseDeleted", result.DatabaseDeleted,
 		"filesDeleted", result.FilesDeleted,
 		"devicesDeleted", result.DevicesDeleted,

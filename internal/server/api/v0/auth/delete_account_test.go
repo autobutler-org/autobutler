@@ -92,8 +92,16 @@ func deleteAccountRequest(engine *gin.Engine, query string) *httptest.ResponseRe
 // decodeDeleted reads the {"deleted": {...}} envelope a successful call returns.
 func decodeDeleted(t *testing.T, w *httptest.ResponseRecorder) (bool, bool, bool) {
 	t.Helper()
+	_, database, files, devices := decodeDeletedAspects(t, w)
+	return database, files, devices
+}
+
+// decodeDeletedAspects reads all four aspects out of the envelope.
+func decodeDeletedAspects(t *testing.T, w *httptest.ResponseRecorder) (bool, bool, bool, bool) {
+	t.Helper()
 	var body struct {
 		Deleted struct {
+			Account  bool `json:"account"`
 			Database bool `json:"database"`
 			Files    bool `json:"files"`
 			Devices  bool `json:"devices"`
@@ -102,7 +110,20 @@ func decodeDeleted(t *testing.T, w *httptest.ResponseRecorder) (bool, bool, bool
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("unmarshal: %v\nbody: %s", err, w.Body.String())
 	}
-	return body.Deleted.Database, body.Deleted.Files, body.Deleted.Devices
+	return body.Deleted.Account, body.Deleted.Database, body.Deleted.Files, body.Deleted.Devices
+}
+
+// sessionCount reports how many session rows survive. sessions.user_id declares
+// ON DELETE CASCADE but SQLite enforces foreign keys only under PRAGMA
+// foreign_keys, which nothing here sets, so this asserts the explicit session
+// revocation did the work the cascade does not.
+func sessionCount(t *testing.T, sqlDB *sql.DB) int {
+	t.Helper()
+	var count int
+	if err := sqlDB.QueryRow(`SELECT count(*) FROM sessions`).Scan(&count); err != nil {
+		t.Fatalf("count sessions: %v", err)
+	}
+	return count
 }
 
 func userCount(t *testing.T, sqlDB *sql.DB) int {
@@ -123,6 +144,7 @@ func TestDeleteAccount_NoAspectSelected(t *testing.T) {
 		"confirm=" + deleteAccountUser,
 		"database=false&files=false&confirm=" + deleteAccountUser,
 		"database=false&files=false&devices=false&confirm=" + deleteAccountUser,
+		"account=false&database=false&files=false&devices=false&confirm=" + deleteAccountUser,
 	} {
 		w := deleteAccountRequest(engine, query)
 		if w.Code != http.StatusBadRequest {
@@ -337,5 +359,202 @@ func TestDeleteAccount_RevokesSessions(t *testing.T) {
 	}
 	if after != 0 {
 		t.Errorf("expected all sessions revoked, %d remain", after)
+	}
+}
+
+// TestDeleteAccount_AccountOnly verifies account=true removes the caller's user
+// row and its sessions while leaving the schema and stored files intact. This
+// is the aspect App Store Guideline 5.1.1(v) requires.
+func TestDeleteAccount_AccountOnly(t *testing.T) {
+	engine, sqlDB, filesDir := newDeleteAccountEngine(t)
+
+	w := deleteAccountRequest(engine, "account=true&confirm="+deleteAccountUser)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	accountDeleted, databaseDeleted, filesDeleted, devicesDeleted := decodeDeletedAspects(t, w)
+	if !accountDeleted || databaseDeleted || filesDeleted || devicesDeleted {
+		t.Errorf("expected account=true and nothing else, got account=%v database=%v files=%v devices=%v",
+			accountDeleted, databaseDeleted, filesDeleted, devicesDeleted)
+	}
+
+	if userCount(t, sqlDB) != 0 {
+		t.Error("the caller's user row should be gone")
+	}
+	if sessionCount(t, sqlDB) != 0 {
+		t.Error("the caller's sessions should be gone")
+	}
+	if _, err := os.Stat(filepath.Join(filesDir, "keep.txt")); err != nil {
+		t.Errorf("stored files should have survived an account-only delete: %v", err)
+	}
+	// The schema itself must survive: an account delete is not a reset, and the
+	// appliance has to stay usable for whoever else has an account on it.
+	if _, err := sqlDB.Exec(`SELECT 1 FROM users LIMIT 1`); err != nil {
+		t.Errorf("users table should still exist after an account-only delete: %v", err)
+	}
+}
+
+// TestDeleteAccount_AccountLeavesOtherUsersAlone is the isolation property that
+// separates this from a factory reset: deleting one account must not touch
+// anyone else's row or their sessions.
+func TestDeleteAccount_AccountLeavesOtherUsersAlone(t *testing.T) {
+	engine, sqlDB, _ := newDeleteAccountEngine(t)
+
+	database := &db.DatabaseSqlc{Db: sqlDB}
+	conn, err := sqlDB.Conn(context.Background())
+	if err != nil {
+		t.Fatalf("get connection: %v", err)
+	}
+	database.Queries = db.New(conn)
+
+	const otherUser = "other-user"
+	hash, err := authutil.HashPassword("OtherPassword123!")
+	if err != nil {
+		t.Fatalf("hash password: %v", err)
+	}
+	other, err := database.Queries.CreateUser(context.Background(), db.CreateUserParams{
+		Username:           otherUser,
+		PasswordHash:       hash,
+		RecoveryPhraseHash: hash,
+	})
+	if err != nil {
+		t.Fatalf("create second user: %v", err)
+	}
+	if userCount(t, sqlDB) != 2 {
+		t.Fatalf("expected 2 users before the delete, got %d", userCount(t, sqlDB))
+	}
+
+	w := deleteAccountRequest(engine, "account=true&confirm="+deleteAccountUser)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	if userCount(t, sqlDB) != 1 {
+		t.Fatalf("expected exactly the other user to remain, got %d rows", userCount(t, sqlDB))
+	}
+	survivor, err := database.Queries.GetUserByID(context.Background(), other.ID)
+	if err != nil {
+		t.Fatalf("the other user's row should have survived: %v", err)
+	}
+	if survivor.Username != otherUser {
+		t.Errorf("expected %q to survive, found %q", otherUser, survivor.Username)
+	}
+}
+
+// TestDeleteAccount_AccountRepeatIsIdempotent verifies a second account delete
+// reports success rather than a 500. The row is already gone, so the requested
+// state already holds.
+func TestDeleteAccount_AccountRepeatIsIdempotent(t *testing.T) {
+	engine, sqlDB, _ := newDeleteAccountEngine(t)
+
+	query := "account=true&confirm=" + deleteAccountUser
+	if w := deleteAccountRequest(engine, query); w.Code != http.StatusOK {
+		t.Fatalf("first call: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	w := deleteAccountRequest(engine, query)
+	if w.Code != http.StatusOK {
+		t.Fatalf("second call: expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	if userCount(t, sqlDB) != 0 {
+		t.Error("no user rows should remain")
+	}
+}
+
+// TestDeleteAccount_AccountRequiresConfirmation verifies the confirm guard
+// covers account=true as well, and that a mismatch touches nothing.
+func TestDeleteAccount_AccountRequiresConfirmation(t *testing.T) {
+	engine, sqlDB, _ := newDeleteAccountEngine(t)
+
+	for _, query := range []string{"account=true", "account=true&confirm=someone-else"} {
+		w := deleteAccountRequest(engine, query)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("%q: expected 400, got %d: %s", query, w.Code, w.Body.String())
+		}
+		if userCount(t, sqlDB) != 1 {
+			t.Fatalf("%q: the account must survive a rejected request", query)
+		}
+	}
+}
+
+// TestDeleteAccount_LastAccountReturnsToSetup verifies deleting the only account
+// takes the appliance back to first boot rather than bricking it: IsSetupComplete
+// is COUNT(users) > 0, so the setup flow re-triggers.
+func TestDeleteAccount_LastAccountReturnsToSetup(t *testing.T) {
+	engine, sqlDB, _ := newDeleteAccountEngine(t)
+
+	if w := deleteAccountRequest(engine, "account=true&confirm="+deleteAccountUser); w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	conn, err := sqlDB.Conn(context.Background())
+	if err != nil {
+		t.Fatalf("get connection: %v", err)
+	}
+	complete, err := authutil.IsSetupComplete(context.Background(), db.New(conn))
+	if err != nil {
+		t.Fatalf("IsSetupComplete: %v", err)
+	}
+	if complete {
+		t.Error("setup should report incomplete once the last account is gone")
+	}
+}
+
+// decodeFilesRetained reads the top-level flag warning that stored files
+// outlived the account or database that were deleted.
+func decodeFilesRetained(t *testing.T, w *httptest.ResponseRecorder) bool {
+	t.Helper()
+	var body struct {
+		FilesRetained bool `json:"filesRetained"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("unmarshal: %v\nbody: %s", err, w.Body.String())
+	}
+	return body.FilesRetained
+}
+
+// TestDeleteAccount_FilesRetainedWarning covers the disclosure that matters for
+// App Store account deletion: deleting the account without files leaves the
+// data on disk for whoever sets the appliance up next, and the response has to
+// say so. Passing files=true clears the flag because nothing was left behind.
+func TestDeleteAccount_FilesRetainedWarning(t *testing.T) {
+	for _, testCase := range []struct {
+		query string
+		want  bool
+	}{
+		{"account=true", true},
+		{"database=true", true},
+		{"account=true&database=true", true},
+		{"account=true&files=true", false},
+		{"database=true&files=true", false},
+		{"files=true", false},
+	} {
+		t.Run(testCase.query, func(t *testing.T) {
+			engine, _, _ := newDeleteAccountEngine(t)
+
+			w := deleteAccountRequest(engine, testCase.query+"&confirm="+deleteAccountUser)
+			if w.Code != http.StatusOK {
+				t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+			}
+			if got := decodeFilesRetained(t, w); got != testCase.want {
+				t.Errorf("filesRetained = %v, want %v", got, testCase.want)
+			}
+		})
+	}
+}
+
+// TestDeleteAccount_FilesSurviveAnAccountDelete is the concrete half of the
+// warning above: the flag is not decoration, the files really are still there.
+func TestDeleteAccount_FilesSurviveAnAccountDelete(t *testing.T) {
+	engine, _, filesDir := newDeleteAccountEngine(t)
+
+	w := deleteAccountRequest(engine, "account=true&database=true&confirm="+deleteAccountUser)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	if !decodeFilesRetained(t, w) {
+		t.Fatal("filesRetained should be true when the files were not selected")
+	}
+	if _, err := os.Stat(filepath.Join(filesDir, "keep.txt")); err != nil {
+		t.Errorf("the previous owner's file should still be on disk: %v", err)
 	}
 }

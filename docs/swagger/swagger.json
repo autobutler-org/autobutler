@@ -578,7 +578,7 @@
         },
         "/auth/account": {
             "delete": {
-                "description": "Wipes the selected aspects of the appliance and logs the caller out everywhere. All three aspects are opt-in and a request selecting none is rejected, so a truncated call cannot destroy anything. The confirm parameter must equal the authenticated username. Databases are dropped and re-migrated in place, so no restart is required. Repeat calls are idempotent. External device data is reached only when devices=true; a drive that is not attached at reset time keeps its data.",
+                "description": "Deletes the selected aspects and logs the caller out everywhere. Pass account=true to delete only the caller's own account, which is what App Store Guideline 5.1.1(v) requires; the other aspects are a factory reset of the appliance. All four are opt-in and a request selecting none is rejected, so a truncated call cannot destroy anything. The confirm parameter must equal the authenticated username. Databases are dropped and re-migrated in place, so no restart is required. Repeat calls are idempotent. External device data is reached only when devices=true; a drive that is not attached at reset time keeps its data. Deleting the last account returns the appliance to first-boot setup by design. Aspects are independent: deleting the account or the database does NOT delete stored files, and files left behind are readable by whoever sets the appliance up next — the response reports filesRetained=true whenever that happens, so pass files=true as well to erase the data itself.",
                 "produces": [
                     "application/json"
                 ],
@@ -589,7 +589,13 @@
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "Delete the appliance databases (quark.db, quark.health.db)",
+                        "description": "Delete the caller's own account (users row). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next.",
+                        "name": "account",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Delete the appliance databases (quark.db, quark.health.db). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next.",
                         "name": "database",
                         "in": "query"
                     },
@@ -622,6 +628,9 @@
                                 "deleted": {
                                     "type": "object",
                                     "properties": {
+                                        "account": {
+                                            "type": "boolean"
+                                        },
                                         "database": {
                                             "type": "boolean"
                                         },
@@ -632,6 +641,9 @@
                                             "type": "boolean"
                                         }
                                     }
+                                },
+                                "filesRetained": {
+                                    "type": "boolean"
                                 }
                             }
                         }
