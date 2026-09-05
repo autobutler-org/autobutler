@@ -111,6 +111,7 @@ test-results/performance/*
 !.claude/agents/
 !.claude/skills/
 .claude/skills/dart-*
+.claude/skills/flutter-*
 
 ## Sable's personal dev context (AI co-developer workspace)
 sable/
