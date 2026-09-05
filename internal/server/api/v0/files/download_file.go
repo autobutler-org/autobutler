@@ -36,6 +36,17 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(nil)
 	}
 
+	// Every branch below serves file content under a URL whose only variable is
+	// the path, so an edited file reuses the URL its previous contents were
+	// served under. http.ServeContent and c.File both send Last-Modified and no
+	// Cache-Control, which lets a browser apply heuristic freshness (RFC 9111
+	// §4.2.2) and serve the stale body without asking: a .qsheet saved from the
+	// editor reopened showing its pre-save contents.
+	//
+	// no-cache, not no-store — the response may still be stored, it just has to
+	// be revalidated, and both serving paths answer If-Modified-Since with a 304.
+	c.Header("Cache-Control", "no-cache")
+
 	// VFS path: only when serial is empty (no device routing needed) and not a
 	// RAW file needing OS-path conversion. RAW → JPEG requires dcraw/LibRaw which
 	// only works with a real filesystem path, so those always fall through to
