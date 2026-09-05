@@ -31,6 +31,19 @@ class LoginResult {
   const LoginResult({required this.sessionToken});
 }
 
+/// Result of [AuthService.deleteAccount] and [AuthService.resetQuark].
+class DeleteAccountResult {
+  /// Whether stored files survived the call and are still on the Quark.
+  ///
+  /// The Quark decides this rather than the app deriving it from what it
+  /// asked for: one place gets to say what counts as data left behind. True
+  /// after an account-only deletion, which is the default path, so the person
+  /// least expecting it is the one who meets it.
+  final bool filesRetained;
+
+  const DeleteAccountResult({required this.filesRetained});
+}
+
 /// How long an auth request may go unanswered before the Quark counts as
 /// unreachable.
 ///
@@ -95,6 +108,7 @@ class AuthService {
     final token = body['token'] as String;
     final phrase = body['recoveryPhrase'] as String;
     await AppSettings.instance.setSessionToken(token);
+    await AppSettings.instance.setUsername(username);
     return SetupResult(sessionToken: token, recoveryPhrase: phrase);
   }
 
@@ -127,6 +141,7 @@ class AuthService {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final token = body['token'] as String;
     await AppSettings.instance.setSessionToken(token);
+    await AppSettings.instance.setUsername(username);
     return LoginResult(sessionToken: token);
   }
 
@@ -180,6 +195,120 @@ class AuthService {
     } catch (_) {
       // Best-effort — token is already cleared locally.
     }
+  }
+
+  /// Deletes the signed-in user's account on the current Quark, and nothing
+  /// else (#1762).
+  ///
+  /// This is the App Store Guideline 5.1.1(v) path. It selects `account` and
+  /// none of the three appliance-wide aspects the endpoint also offers: those
+  /// are a factory reset, they go through [resetQuark], and nothing reachable
+  /// from "Delete account" may reach them. Two intents, two call sites, so no
+  /// stray parameter can turn one into the other.
+  ///
+  /// [confirmUsername] is what the user typed to confirm. The Quark answers
+  /// 400 unless it equals the authenticated username, so holding a session is
+  /// not on its own consent to delete the account.
+  static Future<DeleteAccountResult> deleteAccount({
+    required String confirmUsername,
+  }) => _deleteAspects(
+    confirmUsername: confirmUsername,
+    aspects: const {'account': 'true'},
+    context: 'Account deletion failed',
+  );
+
+  /// Factory-resets the current Quark, wiping the selected aspects (#1762).
+  ///
+  /// A different intent from [deleteAccount] and a different surface: this
+  /// leaves nothing of anybody's behind, so [database] and [files] are what a
+  /// caller is normally here for. [devices] additionally reaches the Quark
+  /// data directory on attached external drives, which is why it is never a
+  /// default — a drive plugged in for unrelated reasons must not be wiped
+  /// because someone accepted a form as it came.
+  ///
+  /// `account` is not selected: [database] takes the user rows with it, and a
+  /// reset that selected nothing but the account would be a deletion wearing a
+  /// reset's copy. Passing all three as false is a 400 from the Quark.
+  static Future<DeleteAccountResult> resetQuark({
+    required String confirmUsername,
+    required bool database,
+    required bool files,
+    required bool devices,
+  }) => _deleteAspects(
+    confirmUsername: confirmUsername,
+    aspects: {
+      'database': database.toString(),
+      'files': files.toString(),
+      'devices': devices.toString(),
+    },
+    context: 'Quark reset failed',
+  );
+
+  /// Issues the delete with [aspects] selected, and forgets the local session.
+  ///
+  /// The Quark revokes the session either way, so the token is dropped on
+  /// success and the caller routes the user out. Failure keeps it: nothing was
+  /// destroyed and the session still works.
+  static Future<DeleteAccountResult> _deleteAspects({
+    required String confirmUsername,
+    required Map<String, String> aspects,
+    required String context,
+  }) async {
+    final token = AppSettings.instance.sessionToken;
+    if (token == null) throw const UnauthorizedException();
+    final uri = _baseUri
+        .resolve('/api/v0/auth/account')
+        .replace(queryParameters: {...aspects, 'confirm': confirmUsername});
+    final client = authHttpClientFactory();
+    final http.Response response;
+    try {
+      response = await client
+          .delete(uri, headers: {'Authorization': 'Bearer $token'})
+          .timeout(kAuthRequestTimeout);
+    } finally {
+      client.close();
+    }
+    // A session the Quark no longer honors is handled the way the rest of the
+    // app handles one, rather than as a failure: the token is dropped and the
+    // caller routes the user out. Reading it as an error would put the Quark's
+    // own "not authenticated" text in front of someone who did nothing wrong
+    // and leave them parked on a page they can no longer use.
+    if (response.statusCode == 401) {
+      await _forgetLocalSession();
+      throw const UnauthorizedException();
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = _tryDecodeError(response.body);
+      throwApiError(response.statusCode, body, context);
+    }
+    await _forgetLocalSession();
+    return DeleteAccountResult(
+      filesRetained: _decodeFilesRetained(response.body),
+    );
+  }
+
+  /// Reads `filesRetained` out of a success body.
+  ///
+  /// Absent means false: an older Quark that does not report it is one whose
+  /// answer cannot support the claim that files were left behind, and the
+  /// notice is only worth showing when it is certainly true.
+  static bool _decodeFilesRetained(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map) return decoded['filesRetained'] as bool? ?? false;
+    } catch (_) {
+      debugPrint('[auth_service.dart] Unreadable deletion response');
+    }
+    return false;
+  }
+
+  /// Drops the current Quark's session and the username that went with it.
+  ///
+  /// Only this Quark's. The user may be signed in to others, and those
+  /// accounts are still there.
+  static Future<void> _forgetLocalSession() async {
+    await AppSettings.instance.setUsername(null);
+    await AppSettings.instance.setSessionToken(null);
   }
 
   static String? _tryDecodeError(String body) {
