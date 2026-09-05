@@ -405,6 +405,7 @@
     "svgs",
     "swaggerfiles",
     "swaggo",
+    "swipeable",
     "syscall",
     "sysfs",
     "Tailnet",
@@ -485,6 +486,7 @@
     "xlink",
     "xlsxutil",
     "xxxyyz",
+    "zoomable",
     "Zstandard",
     "zzznomatch"
   ],

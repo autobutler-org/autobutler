@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-import 'token_fields.dart';
+import 'widgets/album_tree_demo.dart';
+import 'widgets/password_strength_demo.dart';
+import 'widgets/token_swatches.dart';
 
 /// One widget in the gallery: a live example built from fake data.
 ///
@@ -36,7 +38,7 @@ final List<GalleryEntry> registry = [
   GalleryEntry(
     name: 'Theme tokens',
     group: 'Theme',
-    build: (context, log) => const _TokenSwatches(),
+    build: (context, log) => const TokenSwatches(),
   ),
 
   // ── Core ──────────────────────────────────────────────────────────────────
@@ -126,7 +128,7 @@ final List<GalleryEntry> registry = [
   GalleryEntry(
     name: 'PasswordStrengthBar',
     group: 'Core',
-    build: (context, log) => const _PasswordStrengthDemo(),
+    build: (context, log) => const PasswordStrengthDemo(),
   ),
   GalleryEntry(
     name: 'QuarkDisconnectedView',
@@ -326,259 +328,6 @@ final List<GalleryEntry> registry = [
   GalleryEntry(
     name: 'AlbumTreeTile',
     group: 'Albums',
-    build: (context, log) => _AlbumTreeDemo(log: log),
+    build: (context, log) => AlbumTreeDemo(log: log),
   ),
 ];
-
-/// The fake album tree the gallery shows, three levels deep so indentation and
-/// expansion are both visible.
-const AlbumItem _galleryAlbums = AlbumItem(
-  id: 1,
-  name: 'Trips',
-  itemCount: 128,
-  children: [
-    AlbumItem(
-      id: 2,
-      name: 'Iceland',
-      parentId: 1,
-      itemCount: 40,
-      children: [
-        AlbumItem(id: 4, name: 'Reykjavik', parentId: 2, itemCount: 9),
-      ],
-    ),
-    AlbumItem(id: 3, name: 'Japan', parentId: 1, itemCount: 88),
-  ],
-);
-
-/// Holds the expansion and selection the tile refuses to hold, which is the
-/// point of the example: the gallery is the caller.
-class _AlbumTreeDemo extends StatefulWidget {
-  const _AlbumTreeDemo({required this.log});
-
-  final void Function(String event) log;
-
-  @override
-  State<_AlbumTreeDemo> createState() => _AlbumTreeDemoState();
-}
-
-class _AlbumTreeDemoState extends State<_AlbumTreeDemo> {
-  final Set<int> _expanded = {1};
-  int? _selected = 2;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 280,
-      child: AlbumTreeTile(
-        album: _galleryAlbums,
-        selectedAlbumId: _selected,
-        expandedIds: _expanded,
-        onSelected: (album) {
-          widget.log('AlbumTreeTile.onSelected(${album.name})');
-          setState(() => _selected = album.id);
-        },
-        onToggleExpanded: (id) {
-          widget.log('AlbumTreeTile.onToggleExpanded($id)');
-          setState(() {
-            if (!_expanded.remove(id)) _expanded.add(id);
-          });
-        },
-        onLongPress: (album) =>
-            widget.log('AlbumTreeTile.onLongPress(${album.name})'),
-      ),
-    );
-  }
-}
-
-/// Types into a real field so the bar animates, which a static example cannot
-/// show.
-class _PasswordStrengthDemo extends StatefulWidget {
-  const _PasswordStrengthDemo();
-
-  @override
-  State<_PasswordStrengthDemo> createState() => _PasswordStrengthDemoState();
-}
-
-class _PasswordStrengthDemoState extends State<_PasswordStrengthDemo> {
-  final _controller = TextEditingController(text: 'hunter2');
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 320,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: _controller,
-            decoration: const InputDecoration(labelText: 'Password'),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: 8),
-          PasswordStrengthBar(password: _controller.text),
-        ],
-      ),
-    );
-  }
-}
-
-/// Every token in the current theme, drawn from the theme itself.
-///
-/// This is the gallery's own canary: edit a color in the theme panel and the
-/// matching swatch has to move with it.
-class _TokenSwatches extends StatelessWidget {
-  const _TokenSwatches();
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = QuarkTokens.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Colors', style: Theme.of(context).textTheme.titleSmall),
-        SizedBox(height: tokens.spacingSm),
-        Wrap(
-          spacing: tokens.spacingSm,
-          runSpacing: tokens.spacingSm,
-          children: [
-            for (final field in colorFields)
-              _Swatch(name: field.name, color: field.read(tokens)),
-          ],
-        ),
-        SizedBox(height: tokens.spacingLg),
-        Text('Radii', style: Theme.of(context).textTheme.titleSmall),
-        SizedBox(height: tokens.spacingSm),
-        Wrap(
-          spacing: tokens.spacingSm,
-          runSpacing: tokens.spacingSm,
-          children: [
-            _RadiusSample(name: 'radiusSm', radius: tokens.radiusSm),
-            _RadiusSample(name: 'radiusMd', radius: tokens.radiusMd),
-            _RadiusSample(name: 'radiusLg', radius: tokens.radiusLg),
-          ],
-        ),
-        SizedBox(height: tokens.spacingLg),
-        Text('Spacing', style: Theme.of(context).textTheme.titleSmall),
-        SizedBox(height: tokens.spacingSm),
-        for (final step in [
-          ('spacingXs', tokens.spacingXs),
-          ('spacingSm', tokens.spacingSm),
-          ('spacingMd', tokens.spacingMd),
-          ('spacingLg', tokens.spacingLg),
-          ('spacingXl', tokens.spacingXl),
-        ])
-          Padding(
-            padding: EdgeInsets.only(bottom: tokens.spacingXs),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 96,
-                  child: Text(
-                    step.$1,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                Container(width: step.$2, height: 12, color: tokens.primary),
-                SizedBox(width: tokens.spacingSm),
-                Text(
-                  step.$2.toStringAsFixed(0),
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                    color: tokens.mutedForeground,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _Swatch extends StatelessWidget {
-  const _Swatch({required this.name, required this.color});
-
-  final String name;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = QuarkTokens.of(context);
-
-    return SizedBox(
-      width: 132,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 44,
-            decoration: BoxDecoration(
-              color: color,
-              border: Border.all(color: tokens.border),
-              borderRadius: BorderRadius.circular(tokens.radiusMd),
-            ),
-          ),
-          SizedBox(height: tokens.spacingXs),
-          Text(
-            name,
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            toHex(color),
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 11,
-              color: tokens.mutedForeground,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RadiusSample extends StatelessWidget {
-  const _RadiusSample({required this.name, required this.radius});
-
-  final String name;
-  final double radius;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = QuarkTokens.of(context);
-
-    return SizedBox(
-      width: 132,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 44,
-            decoration: BoxDecoration(
-              color: tokens.card,
-              border: Border.all(color: tokens.primary, width: 2),
-              borderRadius: BorderRadius.circular(radius),
-            ),
-          ),
-          SizedBox(height: tokens.spacingXs),
-          Text(
-            '$name ${radius.toStringAsFixed(0)}',
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-}

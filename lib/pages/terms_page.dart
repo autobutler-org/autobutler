@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
+import 'package:quark/widgets/terms/agree_button.dart';
+import 'package:quark/widgets/terms/terms_section.dart';
 
 /// Terms and Conditions acceptance gate.
 ///
@@ -34,7 +34,7 @@ class TermsPage extends StatelessWidget {
                     style: TextStyle(color: Colors.grey),
                   ),
                   SizedBox(height: 24),
-                  _TermsSection(
+                  TermsSection(
                     title: '1. Personal Use',
                     body:
                         'Quark is designed for personal use to manage '
@@ -42,7 +42,7 @@ class TermsPage extends StatelessWidget {
                         'use the software to store or distribute content that '
                         'violates applicable laws or the rights of others.',
                   ),
-                  _TermsSection(
+                  TermsSection(
                     title: '2. Your Data',
                     body:
                         'You retain full ownership of all data stored through '
@@ -51,7 +51,7 @@ class TermsPage extends StatelessWidget {
                         'explicit action. You are solely responsible for the '
                         'security and backup of your data.',
                   ),
-                  _TermsSection(
+                  TermsSection(
                     title: '3. No Warranty',
                     body:
                         'Quark is provided "as is", without warranty of '
@@ -59,7 +59,7 @@ class TermsPage extends StatelessWidget {
                         'guarantees regarding uptime, data integrity, or '
                         'fitness for a particular purpose. Use at your own risk.',
                   ),
-                  _TermsSection(
+                  TermsSection(
                     title: '4. Acceptable Use',
                     body:
                         'You agree not to use Quark for any unlawful '
@@ -72,7 +72,7 @@ class TermsPage extends StatelessWidget {
                         'us. You are solely responsible for your own '
                         'compliance with applicable laws.',
                   ),
-                  _TermsSection(
+                  TermsSection(
                     title: '5. Limitation of Liability',
                     body:
                         'To the maximum extent permitted by law, the '
@@ -81,7 +81,7 @@ class TermsPage extends StatelessWidget {
                         'damages arising from your use of the software, even '
                         'if advised of the possibility of such damages.',
                   ),
-                  _TermsSection(
+                  TermsSection(
                     title: '6. Changes to These Terms',
                     body:
                         'We may update these Terms from time to time. '
@@ -96,78 +96,9 @@ class TermsPage extends StatelessWidget {
           const SafeArea(
             child: Padding(
               padding: EdgeInsets.all(24),
-              child: SizedBox(width: double.infinity, child: _AgreeButton()),
+              child: SizedBox(width: double.infinity, child: AgreeButton()),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The "I Agree" button.
-///
-/// Stateful only to hold the in-flight state: accepting terms resolves the
-/// next route, which asks the Quark whether it has been set up, and that is a
-/// network round-trip the user should see happening.
-class _AgreeButton extends StatefulWidget {
-  const _AgreeButton();
-
-  @override
-  State<_AgreeButton> createState() => _AgreeButtonState();
-}
-
-class _AgreeButtonState extends State<_AgreeButton> {
-  bool _accepting = false;
-
-  Future<void> _accept() async {
-    setState(() => _accepting = true);
-    await AppSettings.instance.acceptTerms();
-    // Resolved here rather than by going to /files and leaving it to the
-    // router's redirect: that redirect silently did nothing when the status
-    // call failed, stranding the user on a signed-out file browser (#1624).
-    final destination = await destinationAfterAcceptingTerms();
-    if (!mounted) return;
-    context.go(destination);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: _accepting ? null : _accept,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: _accepting
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-              )
-            : const Text('I Agree', style: TextStyle(fontSize: 16)),
-      ),
-    );
-  }
-}
-
-class _TermsSection extends StatelessWidget {
-  final String title;
-  final String body;
-
-  const _TermsSection({required this.title, required this.body});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 6),
-          Text(body, style: const TextStyle(height: 1.5)),
         ],
       ),
     );

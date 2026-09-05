@@ -7,14 +7,14 @@ import 'package:quark/models/file_node.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/content_search_service.dart';
-import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
-import 'package:quark/services/app_settings.dart';
+import 'package:quark/widgets/sheets/sheets_body.dart';
+import 'package:quark/widgets/sheets/sheets_search_bar.dart';
 
 class SheetsPage extends StatefulWidget {
   const SheetsPage({super.key});
@@ -147,8 +147,6 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: QuarkAppBar(
         label: 'Sheets',
@@ -185,240 +183,22 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
       ),
       body: Column(
         children: [
-          _buildSearchBar(colorScheme),
-          Expanded(child: _buildBody(colorScheme)),
+          SheetsSearchBar(controller: _searchController),
+          Expanded(
+            child: SheetsBody(
+              loading: _loading,
+              error: _error,
+              files: _filtered,
+              contentResults: _contentResults,
+              contentSearching: _contentSearching,
+              searchQuery: _searchController.text,
+              onRetry: _load,
+              onCreateNew: _createNewSheet,
+              onOpenSheet: _openSheet,
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSearchBar(ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.secondary,
-        border: Border(bottom: BorderSide(color: colorScheme.outline)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search sheets…',
-          prefixIcon: const Icon(QuarkIcons.search_rounded, size: 20),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(QuarkIcons.clear_rounded, size: 18),
-                  onPressed: () => _searchController.clear(),
-                )
-              : null,
-          isDense: true,
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: colorScheme.outline),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: colorScheme.outline),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody(ColorScheme colorScheme) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    final error = _error;
-    if (error != null) {
-      if (isQuarkUnreachableError(error)) {
-        return QuarkDisconnectedView(
-          hostAddress: AppSettings.instance.activeHost,
-          onRetry: _load,
-          onManageHosts: () => context.go(AppRoutes.settings),
-        );
-      }
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(QuarkIcons.error_outline, size: 40, color: colorScheme.error),
-            const SizedBox(height: 12),
-            Text(
-              Errors.message(error, 'load your sheets'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _load, child: const Text('Retry')),
-          ],
-        ),
-      );
-    }
-    // Content matches are rendered by the list below, so the empty state must
-    // account for them too. Checking only _filtered here would short-circuit
-    // every content-only search — the common case, since a query that matches
-    // a sheet's contents usually does not also match its filename. Both the
-    // guard and the list read the same flag so they cannot disagree about
-    // whether there is anything to show.
-    final hasContentResults =
-        _searchController.text.isNotEmpty && _contentResults.isNotEmpty;
-
-    if (_filtered.isEmpty && !hasContentResults) {
-      final isSearching = _searchController.text.isNotEmpty;
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              QuarkIcons.table_chart_outlined,
-              size: 48,
-              color: colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              isSearching ? 'No sheets match your search.' : 'No sheets yet.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-            if (_contentSearching) ...const [
-              SizedBox(height: 16),
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ],
-            if (!isSearching) ...[
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _createNewSheet,
-                icon: const Icon(Icons.add),
-                label: const Text('Create new sheet'),
-              ),
-            ],
-          ],
-        ),
-      );
-    }
-
-    final totalItems =
-        _filtered.length + (hasContentResults ? _contentResults.length + 1 : 0);
-
-    return ListView.builder(
-      itemCount: totalItems,
-      itemBuilder: (context, i) {
-        if (i < _filtered.length) {
-          return _buildSheetTile(_filtered[i], colorScheme);
-        }
-        final ci = i - _filtered.length;
-        if (ci == 0) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              children: [
-                Icon(
-                  QuarkIcons.search_rounded,
-                  size: 14,
-                  color: colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Content matches',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-        return _buildContentResultTile(_contentResults[ci - 1], colorScheme);
-      },
-    );
-  }
-
-  Widget _buildContentResultTile(
-    ContentSearchResult result,
-    ColorScheme colorScheme,
-  ) {
-    return ListTile(
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: colorScheme.tertiaryContainer,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          QuarkIcons.search_rounded,
-          size: 18,
-          color: colorScheme.onTertiaryContainer,
-        ),
-      ),
-      title: Text(
-        result.filename,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        result.plainSnippet,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: colorScheme.onSurface.withValues(alpha: 0.6),
-          fontSize: 12,
-        ),
-      ),
-      onTap: () => context.push(
-        AppRoutes.sheetFile(result.relPath, serial: result.deviceSerial),
-      ),
-    );
-  }
-
-  Widget _buildSheetTile(FileNode node, ColorScheme colorScheme) {
-    final folder = node.dirPath.contains('/')
-        ? node.dirPath.substring(0, node.dirPath.lastIndexOf('/'))
-        : '';
-    final subtitle = [
-      if (node.deviceName.isNotEmpty) node.deviceName,
-      if (folder.isNotEmpty) folder,
-    ].join(' · ');
-
-    return ListTile(
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(
-          QuarkIcons.table_chart_outlined,
-          size: 18,
-          color: Colors.green.shade600,
-        ),
-      ),
-      title: Text(
-        node.name.replaceAll(RegExp(r'\.qsheet$', caseSensitive: false), ''),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: subtitle.isNotEmpty
-          ? Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurface.withValues(alpha: 0.55),
-              ),
-            )
-          : null,
-      onTap: () => _openSheet(node),
     );
   }
 }

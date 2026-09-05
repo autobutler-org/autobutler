@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:quark/widgets/error_banner.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 
@@ -113,7 +114,7 @@ class _RecoverPageState extends State<RecoverPage> {
                     const SizedBox(height: 24),
 
                     if (_error != null) ...[
-                      _ErrorBanner(message: _error!),
+                      ErrorBanner(message: _error!),
                       const SizedBox(height: 16),
                     ],
 
@@ -224,44 +225,6 @@ class _RecoverPageState extends State<RecoverPage> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  final String message;
-  const _ErrorBanner({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              QuarkIcons.error_outline,
-              color: theme.colorScheme.onErrorContainer,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onErrorContainer,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

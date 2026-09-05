@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quark/models/photo_album.dart';
+import 'package:quark/widgets/photos/album_sidebar/album_list.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -190,64 +191,26 @@ class AlbumSidebarState extends State<AlbumSidebar> {
             ),
           )
         else
-          _buildAlbumList(context, allAlbums),
+          AlbumList(
+            albums: allAlbums,
+            shrinkWrap: widget.shrinkWrap,
+            selectedAlbumId: widget.selectedAlbumId,
+            expandedIds: _expandedIds,
+            onSelected: (item) => widget.onAlbumSelected(_byId(item.id)),
+            onToggleExpanded: (id) => setState(() {
+              if (!_expandedIds.remove(id)) _expandedIds.add(id);
+            }),
+            onLongPress: (item) {
+              final target = _byId(item.id);
+              if (target != null) _showAlbumContextMenu(context, target);
+            },
+          ),
         // ── Footer divider ───────────────────────────────────────────────────
         const SizedBox(height: 8),
         Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.5)),
       ],
     );
   }
-
-  /// The album list, expanding to fill the parent or shrink-wrapping to its
-  /// own height depending on whether the parent bounds it (#1599).
-  Widget _buildAlbumList(BuildContext context, List<PhotoAlbum> albums) {
-    final list = ListView.builder(
-      padding: EdgeInsets.zero,
-      shrinkWrap: widget.shrinkWrap,
-      // Already inside an outer scroll view when shrink-wrapped; a nested
-      // scrollable on the same axis would fight it for drag gestures.
-      physics: widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null,
-      itemCount: albums.length,
-      itemBuilder: (context, index) => _buildAlbumTile(context, albums[index]),
-    );
-    return widget.shrinkWrap ? list : Expanded(child: list);
-  }
-
-  Widget _buildAlbumTile(BuildContext context, PhotoAlbum album) {
-    return AlbumTreeTile(
-      album: _toItem(album),
-      selectedAlbumId: widget.selectedAlbumId,
-      expandedIds: _expandedIds,
-      onSelected: (item) => widget.onAlbumSelected(_byId(item.id)),
-      onToggleExpanded: (id) => setState(() {
-        if (!_expandedIds.remove(id)) _expandedIds.add(id);
-      }),
-      // System albums are the Quark's, not the user's, so they get no rename
-      // or delete menu.
-      onLongPress: album.isSystemAlbum
-          ? null
-          : (item) {
-              final target = _byId(item.id);
-              if (target != null) _showAlbumContextMenu(context, target);
-            },
-      systemIcon: album.isSystemAlbum
-          ? (album.isFavorites
-                ? QuarkIcons.star_rounded
-                : QuarkIcons.pending_actions_outlined)
-          : null,
-    );
-  }
-
-  /// The package's view of [album], with its subtree mapped too.
-  AlbumItem _toItem(PhotoAlbum album) => AlbumItem(
-    id: album.id,
-    name: album.name,
-    parentId: album.parentId,
-    itemCount: album.itemCount,
-    isSystem: album.isSystemAlbum,
-    isFavorites: album.isFavorites,
-    children: album.children.map(_toItem).toList(),
-  );
 
   /// The app album behind an [AlbumItem] a callback handed back, searched
   /// through the whole loaded tree because callbacks arrive from any depth.

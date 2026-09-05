@@ -1,8 +1,8 @@
 import 'package:quark/models/file_node.dart';
 import 'package:quark/services/files_service.dart';
-import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
+import 'package:quark/widgets/file_browser/recent_files_section/recent_file_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 
@@ -108,7 +108,7 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final file = files[index];
-                    return _RecentFileChip(
+                    return RecentFileChip(
                       file: file,
                       onTap: () => _openOrDownload(file),
                       onFolderTap: () =>
@@ -121,100 +121,6 @@ class _RecentFilesSectionState extends State<RecentFilesSection> {
           ),
         );
       },
-    );
-  }
-}
-
-class _RecentFileChip extends StatelessWidget {
-  const _RecentFileChip({
-    required this.file,
-    required this.onTap,
-    required this.onFolderTap,
-  });
-
-  final FileNode file;
-  final VoidCallback onTap;
-  final VoidCallback onFolderTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: Material(
-        color: colorScheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(color: colorScheme.outline),
-          borderRadius: BorderRadius.circular(QuarkColors.radiusMd),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                QuarkFileIcon(
-                  name: file.name,
-                  isDir: file.isDir,
-                  size: 20,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 8),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 140),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        file.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      if (file.deviceName.isNotEmpty)
-                        Text(
-                          file.deviceName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: colorScheme.onSurface.withValues(alpha: 0.4),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                // Folder navigate badge
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Tooltip(
-                    message: 'Go to folder',
-                    child: InkWell(
-                      onTap: onFolderTap,
-                      borderRadius: BorderRadius.circular(4),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          QuarkIcons.folder_open_rounded,
-                          size: 14,
-                          color: colorScheme.onSurface.withValues(alpha: 0.4),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

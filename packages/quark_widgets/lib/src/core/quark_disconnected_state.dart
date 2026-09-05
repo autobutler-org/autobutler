@@ -23,6 +23,7 @@ import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 
 import '../theme/quark_tokens.dart';
+import 'quark_disconnected_state/troubleshooting_list.dart';
 
 /// Headline for both shapes. A plain statement of fact, no error vocabulary.
 const String quarkDisconnectedHeadline = "You're not connected";
@@ -163,7 +164,7 @@ class QuarkDisconnectedView extends StatelessWidget {
                 ),
               ],
               SizedBox(height: tokens.spacingLg),
-              _TroubleshootingList(steps: steps),
+              TroubleshootingList(steps: steps),
               SizedBox(height: tokens.spacingLg),
               Wrap(
                 spacing: tokens.spacingSm + tokens.spacingXs,
@@ -265,7 +266,7 @@ class QuarkDisconnectedBanner extends StatelessWidget {
               ),
             ),
             SizedBox(height: tokens.spacingSm + tokens.spacingXs),
-            _TroubleshootingList(steps: steps),
+            TroubleshootingList(steps: steps),
             if (onRetry != null) ...[
               SizedBox(height: tokens.spacingXs),
               Align(
@@ -281,44 +282,6 @@ class QuarkDisconnectedBanner extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// The bulleted checklist, left-aligned so the lines scan as a list rather
-/// than as more centered prose.
-class _TroubleshootingList extends StatelessWidget {
-  const _TroubleshootingList({required this.steps});
-
-  final List<String> steps;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final tokens = QuarkTokens.of(context);
-    final style = TextStyle(
-      fontSize: 14,
-      height: 1.5,
-      color: colorScheme.onSurface.withValues(alpha: 0.7),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final step in steps)
-          Padding(
-            padding: EdgeInsets.only(bottom: tokens.spacingSm),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Excluded from semantics so a screen reader announces the
-                // step, not a bullet character before every line.
-                ExcludeSemantics(child: Text('•  ', style: style)),
-                Expanded(child: Text(step, style: style)),
-              ],
-            ),
-          ),
-      ],
     );
   }
 }

@@ -31,6 +31,8 @@ Two modes, chosen by the brief:
 3. Rewrite the page: a `StatefulWidget` that owns the controller, keeps `AutoRefreshMixin` with `refresh()` calling the
    controller, and rebuilds with `ListenableBuilder`. It passes data into package widgets and wires callbacks to
    controller methods. Navigation, dialogs, and snackbars stay in the page. Error copy goes through `Errors.message`.
+   No private widget classes and no `_build*` methods remain in the page: every subtree that is not a package widget
+   becomes its own public file under `lib/widgets/<page>/`, and you report each one as a candidate for the package.
 4. Delete the app-side widgets the package now replaces, and update every other caller.
 5. Tests: a controller test with fake service functions covering load, action, and error paths; keep or update the
    page layout tests under `test/pages/` so narrow-viewport coverage does not drop.

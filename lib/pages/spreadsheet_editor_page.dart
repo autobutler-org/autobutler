@@ -12,6 +12,7 @@ import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
+import 'package:quark/widgets/spreadsheet_editor/sheet_tab_view.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/services/app_settings.dart';
@@ -349,21 +350,20 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
         body: multiTab
             ? TabBarView(
                 controller: _tabController,
-                children: _tabs.map(_buildSheetTab).toList(),
+                children: _tabs
+                    .map(
+                      (t) => SheetTabView(
+                        controller: t.controller,
+                        table: t.table,
+                      ),
+                    )
+                    .toList(),
               )
-            : _buildSheetTab(_tabs.first),
+            : SheetTabView(
+                controller: _tabs.first.controller,
+                table: _tabs.first.table,
+              ),
       ),
-    );
-  }
-
-  Widget _buildSheetTab(_SheetTab tab) {
-    return Column(
-      children: [
-        DataSheetControlBar(controller: tab.controller),
-        Expanded(
-          child: DataSheet(controller: tab.controller, table: tab.table),
-        ),
-      ],
     );
   }
 }

@@ -129,6 +129,10 @@ rename lands.
 Each `_build*` method and inline widget from step 1 becomes a
 `StatelessWidget` taking values and handlers.
 
+- One widget class per file, public, named after the class. No private
+  `_Part` classes inside another file and no `_build*` methods; a part of one
+  parent lives in a subdirectory named after the parent. Small files show
+  what can be reused.
 - Constructor takes `super.key`, `final` fields, `const` where possible.
 - Loading, empty, and error are explicit inputs (`isLoading`, `error`), and
   the widget renders each case. It never decides when to load.

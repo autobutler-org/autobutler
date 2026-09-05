@@ -14,10 +14,12 @@ import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/host_manager.dart';
 import 'package:quark_icons/quark_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
-import 'package:quark/utils/clipboard_utils.dart';
+import 'package:quark/widgets/settings/code_block.dart';
+import 'package:quark/widgets/settings/help_support_card.dart';
+import 'package:quark/widgets/settings/info_section_header.dart';
+import 'package:quark/widgets/settings/sbom_expansion_tile.dart';
 
 /// The commit a `make serve/...` or `make watch/frontend` run was built from.
 ///
@@ -881,7 +883,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           if (_remoteAccessStatus?.remoteUrl != null &&
                               _remoteAccessStatus!.remoteUrl!.isNotEmpty) ...[
                             const SizedBox(height: 8),
-                            _CodeBlock(text: _remoteAccessStatus!.remoteUrl!),
+                            CodeBlock(text: _remoteAccessStatus!.remoteUrl!),
                           ],
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
@@ -1172,9 +1174,9 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           const SizedBox(height: 24),
 
-          const _InfoSectionHeader(label: 'Help & Support'),
+          const InfoSectionHeader(label: 'Help & Support'),
           const SizedBox(height: 8),
-          const _HelpSupportCard(),
+          const HelpSupportCard(),
           const SizedBox(height: 16),
           Card(
             child: ListTile(
@@ -1186,7 +1188,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 24),
 
-          const _InfoSectionHeader(label: 'Software Bill of Materials'),
+          const InfoSectionHeader(label: 'Software Bill of Materials'),
           const SizedBox(height: 8),
           if (_isLoadingSbom)
             const Center(
@@ -1205,12 +1207,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
             if (_flutterSbom != null)
-              _SbomExpansionTile(
+              SbomExpansionTile(
                 title: 'Flutter dependencies',
                 subtitle: '${_flutterSbom!.length} packages',
                 items: _flutterSbom!
                     .map(
-                      (p) => _SbomEntry(
+                      (p) => SbomEntry(
                         name: p.name,
                         version: p.version,
                         url: p.url,
@@ -1220,12 +1222,12 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             const SizedBox(height: 8),
             if (_goSbom != null)
-              _SbomExpansionTile(
+              SbomExpansionTile(
                 title: 'Go dependencies',
                 subtitle:
                     '${_goSbom!.dependencies.length} packages · ${_goSbom!.goVersion}',
                 items: _goSbom!.dependencies
-                    .map((d) => _SbomEntry(name: d.path, version: d.version))
+                    .map((d) => SbomEntry(name: d.path, version: d.version))
                     .toList(),
               ),
             if (_goSbom == null && _flutterSbom == null)
@@ -1266,156 +1268,5 @@ class _SettingsPageState extends State<SettingsPage> {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
-  }
-}
-
-class _SbomEntry {
-  const _SbomEntry({required this.name, required this.version, this.url});
-  final String name;
-  final String version;
-  final String? url;
-}
-
-class _SbomExpansionTile extends StatelessWidget {
-  const _SbomExpansionTile({
-    required this.title,
-    required this.subtitle,
-    required this.items,
-  });
-
-  final String title;
-  final String subtitle;
-  final List<_SbomEntry> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ExpansionTile(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
-        children: items
-            .map(
-              (item) => ListTile(
-                dense: true,
-                title: Text(item.name, style: const TextStyle(fontSize: 13)),
-                trailing: Text(
-                  item.version,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-}
-
-/// Section header for read-only informational sections.
-/// Uses a subtler visual treatment than action-oriented sections to signal
-/// that the content is reference material, not something the user configures.
-class _InfoSectionHeader extends StatelessWidget {
-  const _InfoSectionHeader({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Row(
-      children: [
-        Icon(QuarkIcons.info_outline, size: 16, color: color),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: color,
-            letterSpacing: 0.3,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HelpSupportCard extends StatelessWidget {
-  const _HelpSupportCard();
-
-  static const _supportUrl = 'https://quark.autobutler.org/support';
-  static const _bugUrl =
-      'https://github.com/autobutler-org/quark/issues/new?template=bug.yaml';
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Need help or found a bug?',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => launchUrl(
-                Uri.parse(_supportUrl),
-                mode: LaunchMode.externalApplication,
-              ),
-              icon: const Icon(QuarkIcons.help_outline, size: 16),
-              label: const Text('Visit support page'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () => launchUrl(
-                Uri.parse(_bugUrl),
-                mode: LaunchMode.externalApplication,
-              ),
-              icon: const Icon(QuarkIcons.bug_report_outlined, size: 16),
-              label: const Text('Report an issue'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CodeBlock extends StatelessWidget {
-  const _CodeBlock({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4, right: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: SelectableText(
-              text,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-            ),
-          ),
-          CopyButton(
-            text: text,
-            onCopy: (value) => copyToClipboard(context, value),
-            unavailableReason: clipboardUnavailableReason,
-          ),
-        ],
-      ),
-    );
   }
 }

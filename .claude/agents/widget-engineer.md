@@ -18,7 +18,9 @@ Work in this order and report each step:
    it renders (loading, empty, error, populated, selected). If extracting from existing app code, cite the file and
    line range it replaces. Keep the spec in your final report.
 2. **Implement** in `lib/src/<group>/<name>.dart` and export it from `lib/quark_widgets.dart`. Value types the widget
-   needs go in `lib/src/models/`. Final fields, const constructor.
+   needs go in `lib/src/models/`. Final fields, const constructor. No private widget classes and no `_build*`
+   methods: a part the widget needs goes in `lib/src/<group>/<name>/<part>.dart` as a public class, imported by the
+   widget, not exported until something else needs it.
 3. **Docs.** `///` on the class (purpose, key prefixes, one usage snippet), every constructor parameter, every callback.
 4. **Test.** `test/<group>/<name>_test.dart` with a narrow (360x640) and a wide (1280x800) viewport. Assert every
    rendered state and that every callback fires with the right value.
@@ -31,6 +33,7 @@ Boundaries:
 
 - Do not touch `lib/pages/` or `lib/controllers/` unless the brief says so. Page wiring belongs to `page-decoupler`.
 - Do not add a dependency to the package pubspec without saying why in the report.
+- One widget class per file. If you find yourself writing `class _Something extends`, stop and give it a file.
 - If the brief asks for something the rules forbid (a widget that fetches, a widget that navigates), say so in one
   line, then build the closest thing the rules allow and tell the caller what the parent has to do instead.
 - American spelling in all prose and identifiers.
