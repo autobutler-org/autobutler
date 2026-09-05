@@ -82,6 +82,8 @@ class AppSettings {
 
   final ValueNotifier<ThemeMode> themeMode = ValueNotifier(ThemeMode.system);
 
+  final ValueNotifier<bool> demoMode = ValueNotifier(false);
+
   List<HostEntry> _hosts = [];
   int _activeIndex = -1;
 
@@ -123,6 +125,7 @@ class AppSettings {
   /// token string here instead; [load] migrates that onto the active host.
   static const _sessionTokenKey = 'session_token';
   static const _acceptedTermsHostsKey = 'acceptedTermsHosts';
+  static const _demoModeKey = 'demoMode';
 
   /// Pre-#1623 key: a single app-wide "terms accepted" bool. Read once on
   /// load and migrated into [_acceptedTermsHostsKey] so existing users aren't
@@ -137,6 +140,7 @@ class AppSettings {
         : theme == 'dark'
         ? ThemeMode.dark
         : ThemeMode.system;
+    demoMode.value = _prefs!.getBool(_demoModeKey) ?? false;
 
     final hostsJson = _prefs!.getString('hosts') ?? '[]';
     try {
@@ -395,6 +399,11 @@ class AppSettings {
         ? 'dark'
         : 'system';
     await _prefs?.setString('themeMode', key);
+  }
+
+  Future<void> setDemoMode(bool enabled) async {
+    demoMode.value = enabled;
+    await _prefs?.setBool(_demoModeKey, enabled);
   }
 
   /// Records acceptance of the Terms and Conditions for the current

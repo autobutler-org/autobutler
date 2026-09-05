@@ -7,12 +7,15 @@ import 'package:http/http.dart' as http;
 import 'package:photo_manager/photo_manager.dart';
 import 'package:quark/controllers/photo_bytes_cache.dart';
 import 'package:quark/models/file_node.dart';
+import 'package:quark/models/paginated_photos_response.dart'
+    show PaginatedPhotosResponse;
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/pages/album_page.dart';
 import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/demo_photos_service.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/favorites_service.dart';
 import 'package:quark/services/storage_service.dart';
@@ -251,7 +254,7 @@ class PhotosPageState extends State<PhotosPage>
 
   /// Load the next page of Quark-stored photos via the paginated endpoint.
   Future<void> _loadMoreQuarkPhotos() async {
-    if (_isLoadingMoreQuark) return;
+    if (_isLoadingMoreQuark || DemoPhotosService.isEnabled) return;
     if (_quarkOffset >= _quarkTotal && _quarkInitialLoadDone) return;
 
     setState(() {
@@ -263,23 +266,7 @@ class PhotosPageState extends State<PhotosPage>
         offset: _quarkOffset,
         limit: _pageSize,
       );
-
-      final newPhotos = response.photos
-          .map(
-            (p) => PhotoItem.fromFiles(
-              FileNode(
-                name: p.fileName,
-                size: p.size,
-                isDir: false,
-                deviceName: '',
-                devicePath: '',
-                deviceSerial: p.serial,
-                dirPath: p.relPath,
-              ),
-              hasLiveVideo: p.hasLiveVideo,
-            ),
-          )
-          .toList(growable: false);
+      final newPhotos = _itemsFrom(response);
 
       setState(() {
         _quarkPhotos = [..._quarkPhotos, ...newPhotos];
@@ -299,9 +286,28 @@ class PhotosPageState extends State<PhotosPage>
     }
   }
 
+  List<PhotoItem> _itemsFrom(PaginatedPhotosResponse response) => response
+      .photos
+      .map(
+        (p) => PhotoItem.fromFiles(
+          FileNode(
+            name: p.fileName,
+            size: p.size,
+            isDir: false,
+            deviceName: '',
+            devicePath: '',
+            deviceSerial: p.serial,
+            dirPath: p.relPath,
+          ),
+          hasLiveVideo: p.hasLiveVideo,
+        ),
+      )
+      .toList(growable: false);
+
   /// Initial load of Quark-stored photos (first page).
   Future<List<PhotoItem>> _loadQuarkPhotos() async {
-    if (_noHostSelected) {
+    final demo = DemoPhotosService.isEnabled;
+    if (_noHostSelected && !demo) {
       // No host is a different state with its own UI, so a flag left over
       // from the host that was just removed must not outlive it.
       _quarkUnreachable = false;
@@ -314,27 +320,10 @@ class PhotosPageState extends State<PhotosPage>
     _quarkInitialLoadDone = false;
 
     try {
-      final response = await FilesService.getPhotos(
-        offset: 0,
-        limit: _pageSize,
-      );
-
-      final items = response.photos
-          .map(
-            (p) => PhotoItem.fromFiles(
-              FileNode(
-                name: p.fileName,
-                size: p.size,
-                isDir: false,
-                deviceName: '',
-                devicePath: '',
-                deviceSerial: p.serial,
-                dirPath: p.relPath,
-              ),
-              hasLiveVideo: p.hasLiveVideo,
-            ),
-          )
-          .toList(growable: false);
+      final response = demo
+          ? DemoPhotosService.getPhotos()
+          : await FilesService.getPhotos(offset: 0, limit: _pageSize);
+      final items = _itemsFrom(response);
 
       _quarkPhotos = items;
       _quarkTotal = response.total;
@@ -436,7 +425,11 @@ class PhotosPageState extends State<PhotosPage>
   Future<void> refresh() async {
     _noHostSelected = AppSettings.instance.activeHost == null;
     final futures = <Future<void>>[_primeSources()];
-    if (!_noHostSelected) {
+    if (DemoPhotosService.isEnabled) {
+      _favoriteKeys
+        ..clear()
+        ..addAll(DemoPhotosService.favoriteKeys());
+    } else if (!_noHostSelected) {
       futures.add(
         FavoritesService.listFavoriteKeys()
             .then((keys) {
@@ -669,29 +662,37 @@ class PhotosPageState extends State<PhotosPage>
   Future<void> _toggleFavorite(PhotoItem item) async {
     if (!item.isFiles) return;
     final c = item.quark!;
+    if (DemoPhotosService.isDemoSerial(c.deviceSerial)) {
+      _applyFavorite(item, !_favoriteKeys.contains(item.selectionKey));
+      return;
+    }
     try {
       final nowFav = await FavoritesService.toggle(
         relPath: c.apiPath,
         serial: c.deviceSerial.isNotEmpty ? c.deviceSerial : null,
       );
       if (!mounted) return;
-      setState(() {
-        if (nowFav) {
-          _favoriteKeys.add(item.selectionKey);
-        } else {
-          _favoriteKeys.remove(item.selectionKey);
-        }
-        // Refresh the grid immediately if the favorites tab is active.
-        if (_selectedCategory == PhotoCategory.favorites) {
-          _photosFuture = _photosForCategory(PhotoCategory.favorites);
-        }
-      });
+      _applyFavorite(item, nowFav);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(Errors.message(e, 'update the favorite'))),
       );
     }
+  }
+
+  void _applyFavorite(PhotoItem item, bool isFavorite) {
+    setState(() {
+      if (isFavorite) {
+        _favoriteKeys.add(item.selectionKey);
+      } else {
+        _favoriteKeys.remove(item.selectionKey);
+      }
+      // Refresh the grid immediately if the favorites tab is active.
+      if (_selectedCategory == PhotoCategory.favorites) {
+        _photosFuture = _photosForCategory(PhotoCategory.favorites);
+      }
+    });
   }
 
   Widget _buildStarOverlay(BuildContext context, PhotoItem item) {
@@ -782,20 +783,22 @@ class PhotosPageState extends State<PhotosPage>
 
     if (p.isFiles) {
       final c = p.quark!;
-      final url = FilesService.constructThumbnailUrl(
-        c.apiPath,
-        serial: c.deviceSerial,
-      );
-      Widget thumbnail = Image.network(
-        url.toString(),
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return Container(color: Colors.grey[300]);
-        },
-        errorBuilder: (context, error, stack) =>
-            Container(color: Colors.grey[300]),
-      );
+      final isDemo = DemoPhotosService.isDemoSerial(c.deviceSerial);
+      Widget thumbnail = isDemo
+          ? Image.asset(c.apiPath, fit: BoxFit.cover)
+          : Image.network(
+              FilesService.constructThumbnailUrl(
+                c.apiPath,
+                serial: c.deviceSerial,
+              ).toString(),
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return Container(color: Colors.grey[300]);
+              },
+              errorBuilder: (context, error, stack) =>
+                  Container(color: Colors.grey[300]),
+            );
       if (p.hasLiveVideo) {
         thumbnail = Stack(
           fit: StackFit.expand,
@@ -819,10 +822,7 @@ class PhotosPageState extends State<PhotosPage>
             _isOpeningPhoto = true;
             try {
               final navigator = Navigator.of(context);
-              final bytes = await FilesService.downloadFileBytes(
-                c.apiPath,
-                serial: c.deviceSerial,
-              );
+              final bytes = await _photoBytes(c);
               if (bytes == null) return;
               if (!mounted) return;
               final changed = await navigator.push<bool>(
@@ -832,8 +832,8 @@ class PhotosPageState extends State<PhotosPage>
                     name: c.name,
                     initialIndex: idx,
                     imageCount: photos.length,
-                    relPath: c.apiPath,
-                    serial: c.deviceSerial,
+                    relPath: isDemo ? null : c.apiPath,
+                    serial: isDemo ? null : c.deviceSerial,
                     getImageCount: () async =>
                         (await _photosForCategory(_selectedCategory)).length,
                     onLoadImage: _loadPhotoAt,
@@ -925,6 +925,9 @@ class PhotosPageState extends State<PhotosPage>
       return (await na.originBytes, na.id, null, null);
     }
     final nc = item.quark!;
+    if (DemoPhotosService.isDemoSerial(nc.deviceSerial)) {
+      return (await _quarkPhotoBytes(nc), nc.name, null, null);
+    }
     try {
       final bytes = await _quarkPhotoBytes(nc);
       return (bytes, nc.name, nc.apiPath, nc.deviceSerial);
@@ -951,13 +954,18 @@ class PhotosPageState extends State<PhotosPage>
     await _quarkPhotoBytes(item.quark!);
   }
 
+  Future<Uint8List?> _photoBytes(FileNode photo) =>
+      DemoPhotosService.isDemoSerial(photo.deviceSerial)
+      ? DemoPhotosService.loadBytes(photo.apiPath)
+      : FilesService.downloadFileBytes(
+          photo.apiPath,
+          serial: photo.deviceSerial,
+        );
+
   Future<Uint8List?> _quarkPhotoBytes(FileNode photo) =>
       PhotoBytesCache.instance.fetch(
         PhotoBytesCache.key(photo.apiPath, photo.deviceSerial),
-        () => FilesService.downloadFileBytes(
-          photo.apiPath,
-          serial: photo.deviceSerial,
-        ),
+        () => _photoBytes(photo),
       );
 
   Widget _buildPhotoGrid(List<PhotoItem> photos, int crossAxisCount) {
@@ -1074,7 +1082,8 @@ class PhotosPageState extends State<PhotosPage>
     int skipped = 0;
     int failed = 0;
     for (final item in selected) {
-      if (!item.isFiles) {
+      if (!item.isFiles ||
+          DemoPhotosService.isDemoSerial(item.quark!.deviceSerial)) {
         skipped++;
         continue;
       }
@@ -1098,7 +1107,9 @@ class PhotosPageState extends State<PhotosPage>
 
     String message;
     if (added == 0 && skipped > 0) {
-      message = 'No photos added — device photos cannot be added to albums yet';
+      message = DemoPhotosService.isEnabled
+          ? 'No photos added — sample photos cannot be added to albums'
+          : 'No photos added — device photos cannot be added to albums yet';
     } else if (added > 0) {
       message =
           '$added ${added == 1 ? 'photo' : 'photos'} added to "${album.name}"';

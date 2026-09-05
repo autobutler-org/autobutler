@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/services/album_service.dart';
+import 'package:quark/services/demo_photos_service.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark_icons/quark_icons.dart';
 
@@ -49,7 +50,9 @@ class AlbumSidebarState extends State<AlbumSidebar> {
 
   Future<void> _load() async {
     try {
-      final albums = await AlbumService.listAlbums(tree: true);
+      final albums = DemoPhotosService.isEnabled
+          ? DemoPhotosService.listAlbums()
+          : await AlbumService.listAlbums(tree: true);
       if (!mounted) return;
       setState(() {
         _albums = albums;
@@ -167,7 +170,7 @@ class AlbumSidebarState extends State<AlbumSidebar> {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
                 tooltip: 'New album',
-                onPressed: _createAlbum,
+                onPressed: DemoPhotosService.isEnabled ? null : _createAlbum,
               ),
             ],
           ),
@@ -224,7 +227,7 @@ class AlbumSidebarState extends State<AlbumSidebar> {
       }),
       // System albums are the Quark's, not the user's, so they get no rename
       // or delete menu.
-      onLongPress: album.isSystemAlbum
+      onLongPress: album.isSystemAlbum || DemoPhotosService.isEnabled
           ? null
           : (item) {
               final target = _byId(item.id);

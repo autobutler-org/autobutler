@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/services/album_service.dart';
+import 'package:quark/services/demo_photos_service.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -49,7 +50,9 @@ class _AlbumPickerSheetState extends State<AlbumPickerSheet> {
       _error = null;
     });
     try {
-      final albums = await AlbumService.listAlbums(tree: true);
+      final albums = DemoPhotosService.isEnabled
+          ? DemoPhotosService.listAlbums()
+          : await AlbumService.listAlbums(tree: true);
       if (!mounted) return;
       setState(() {
         _albums = albums;
