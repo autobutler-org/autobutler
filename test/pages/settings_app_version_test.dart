@@ -125,6 +125,49 @@ void main() {
     });
   });
 
+  // #1756: a tagged build has release notes on GitHub; a dev build has no tag
+  // and so no page to send the reader to.
+  group('releaseNotesUrl', () {
+    test('points a tagged build at its release', () {
+      // The app strips the `v` out of --build-name, the Quark keeps it.
+      expect(
+        releaseNotesUrl('0.31.1'),
+        'https://github.com/autobutler-org/quark/releases/tag/v0.31.1',
+      );
+      expect(
+        releaseNotesUrl('v0.31.1'),
+        'https://github.com/autobutler-org/quark/releases/tag/v0.31.1',
+      );
+    });
+
+    test('has nowhere to send a dev build', () {
+      expect(releaseNotesUrl(''), isNull);
+      expect(releaseNotesUrl('   '), isNull);
+      // What an untagged Quark answers with.
+      expect(releaseNotesUrl('NOSEMVER'), isNull);
+    });
+  });
+
+  testWidgets('links the app version at its release notes', (tester) async {
+    PackageInfo.setMockInitialValues(
+      appName: 'Quark',
+      packageName: 'org.autobutler.quark',
+      version: '0.31.1',
+      buildNumber: '42',
+      buildSignature: '',
+    );
+
+    await pumpSettings(tester);
+
+    final link = tester.widget<InkWell>(
+      find.ancestor(
+        of: find.text('App version 0.31.1 (42)'),
+        matching: find.byType(InkWell),
+      ),
+    );
+    expect(link.onTap, isNotNull);
+  });
+
   // The Quark's version renders through the same label as the app's, so the
   // two cannot describe one situation two ways. It used to read "dev
   // (untagged)" where the app read "Development build".

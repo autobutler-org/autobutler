@@ -15,6 +15,7 @@ import 'package:quark/utils/error_text.dart';
 import 'package:quark/widgets/host_manager.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/settings/code_block.dart';
 import 'package:quark/widgets/settings/help_support_card.dart';
@@ -80,6 +81,20 @@ String appVersionLabel({
   return version.isEmpty ? label : 'App version $label';
 }
 
+/// The GitHub release a tagged build was cut from, or null when there is no
+/// release to link to (#1756).
+///
+/// A dev build is untagged on purpose, so no release page exists for it: the
+/// app says so by stamping no version at all and the Quark by answering with
+/// its `NOSEMVER` sentinel. Tags carry the `v` prefix that the Makefile strips
+/// out of `--build-name`, so it goes back on whichever form arrives.
+String? releaseNotesUrl(String version) {
+  final tag = version.trim();
+  if (tag.isEmpty || tag == 'NOSEMVER') return null;
+  return 'https://github.com/autobutler-org/quark/releases/tag/'
+      '${tag.startsWith('v') ? tag : 'v$tag'}';
+}
+
 /// The Quark reports a full commit, and the `NOCOMMIT` sentinel when its build
 /// carried none. Seven characters is what the rest of the tooling shows.
 String shortGitSha(String commit) => (commit.isEmpty || commit == 'NOCOMMIT')
@@ -104,7 +119,13 @@ class _SettingsPageState extends State<SettingsPage> {
   /// which case the row simply doesn't render.
   String? _appVersion;
 
+  /// Where [_appVersion]'s release notes live, or null for a dev build.
+  String? _appReleaseUrl;
+
   String? _installedVersion;
+
+  /// Where [_installedVersion]'s release notes live, or null for a dev build.
+  String? _installedReleaseUrl;
   List<String> _availableVersions = [];
   String? _selectedUpdateVersion;
   bool _isLoadingVersionInfo = false;
@@ -190,6 +211,7 @@ class _SettingsPageState extends State<SettingsPage> {
           version: info.version,
           buildNumber: info.buildNumber,
         );
+        _appReleaseUrl = releaseNotesUrl(info.version);
       });
     } catch (_) {
       // Nothing to report and nothing to retry: without a bundle to read there
@@ -495,6 +517,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (AppSettings.instance.activeHost == null) {
       setState(() {
         _installedVersion = null;
+        _installedReleaseUrl = null;
         _availableVersions = const [];
         _selectedUpdateVersion = null;
         _versionLoadError = null;
@@ -533,6 +556,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       setState(() {
         _installedVersion = installedVersion;
+        _installedReleaseUrl = releaseNotesUrl(semver ?? '');
         _availableVersions = availableVersions;
         _selectedUpdateVersion = selectedVersion;
         _isLoadingVersionInfo = false;
@@ -543,10 +567,15 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       setState(() {
         _versionLoadError = Errors.message(e, 'load version info');
+        _installedReleaseUrl = null;
         _isLoadingVersionInfo = false;
       });
       _noteReachability(e);
     }
+  }
+
+  Future<void> _openReleaseNotes(String url) {
+    return launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   Future<void> _performUpdate() async {
@@ -628,7 +657,28 @@ class _SettingsPageState extends State<SettingsPage> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           if (_appVersion != null)
-            Text(_appVersion!, style: Theme.of(context).textTheme.bodySmall),
+            // Tapping the version is the whole affordance here: a button under
+            // a one-line header would outweigh the line it annotates (#1756).
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                onTap: _appReleaseUrl == null
+                    ? null
+                    : () => _openReleaseNotes(_appReleaseUrl!),
+                child: Text(
+                  _appVersion!,
+                  style: _appReleaseUrl == null
+                      ? Theme.of(context).textTheme.bodySmall
+                      : Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                        ),
+                ),
+              ),
+            ),
           const SizedBox(height: 8),
           // Sign out — only show if there's an active session
           if (AppSettings.instance.sessionToken != null) ...[
@@ -682,6 +732,17 @@ class _SettingsPageState extends State<SettingsPage> {
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  if (_installedReleaseUrl != null && !_isLoadingVersionInfo)
+                    TextButton.icon(
+                      onPressed: () => _openReleaseNotes(_installedReleaseUrl!),
+                      icon: const Icon(QuarkIcons.open_in_new, size: 16),
+                      label: const Text("What's in this release"),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
                   const SizedBox(height: 16),
