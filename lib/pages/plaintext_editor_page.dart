@@ -5,12 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
-import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
-import 'package:quark_widgets/quark_widgets.dart';
-import 'package:quark/services/app_settings.dart';
+import 'package:quark/widgets/plaintext_editor/plaintext_editor_body.dart';
 
 /// A simple plaintext editor for text-like files (txt, md, json, yaml, etc.)
 class PlaintextEditorPage extends StatefulWidget {
@@ -164,56 +162,11 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
           const AppThemeToggle(),
         ],
       ),
-      body: _buildBody(context),
-    );
-  }
-
-  Widget _buildBody(BuildContext context) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    final error = _error;
-    if (error != null) {
-      if (isQuarkUnreachableError(error)) {
-        return QuarkDisconnectedView(
-          hostAddress: AppSettings.instance.activeHost,
-          onRetry: _loadFile,
-        );
-      }
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              Errors.message(error, 'load the file'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _loadFile, child: const Text('Retry')),
-          ],
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
+      body: PlaintextEditorBody(
+        loading: _loading,
+        error: _error,
+        onRetry: _loadFile,
         controller: _textController,
-        maxLines: null,
-        keyboardType: TextInputType.multiline,
-        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          hintText: 'Empty file',
-          isCollapsed: true,
-        ),
       ),
     );
   }

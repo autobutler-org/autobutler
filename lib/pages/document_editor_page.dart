@@ -11,97 +11,14 @@ import 'package:http/http.dart' as http;
 import 'package:printing/printing.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
-import 'package:quark_widgets/quark_widgets.dart';
-import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
+import 'package:quark/widgets/document_editor/document_editor_body.dart';
+import 'package:quark/widgets/document_editor/highlight_picker_dialog.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:quark/services/app_settings.dart';
-
-// ── Quill styles ──────────────────────────────────────────────────────────────
-
-DefaultStyles _quillStyles(ColorScheme cs) {
-  final fg = cs.onSurface;
-  final muted = cs.onSurface.withValues(alpha: 0.5);
-  final codeBg = cs.surfaceContainerHighest;
-  final codeColor = cs.secondary;
-  final outline = cs.outline;
-
-  TextStyle base([double size = 14]) =>
-      TextStyle(color: fg, fontSize: size, height: 1.7);
-
-  return DefaultStyles(
-    paragraph: DefaultTextBlockStyle(
-      base(),
-      HorizontalSpacing.zero,
-      VerticalSpacing.zero,
-      VerticalSpacing.zero,
-      null,
-    ),
-    h1: DefaultTextBlockStyle(
-      base(26).copyWith(fontWeight: FontWeight.w600, color: fg),
-      HorizontalSpacing.zero,
-      const VerticalSpacing(20, 6),
-      VerticalSpacing.zero,
-      null,
-    ),
-    h2: DefaultTextBlockStyle(
-      base(20).copyWith(fontWeight: FontWeight.w600, color: fg),
-      HorizontalSpacing.zero,
-      const VerticalSpacing(16, 4),
-      VerticalSpacing.zero,
-      null,
-    ),
-    h3: DefaultTextBlockStyle(
-      base(16).copyWith(fontWeight: FontWeight.w600, color: fg),
-      HorizontalSpacing.zero,
-      const VerticalSpacing(12, 4),
-      VerticalSpacing.zero,
-      null,
-    ),
-    placeHolder: DefaultTextBlockStyle(
-      base().copyWith(color: muted),
-      HorizontalSpacing.zero,
-      VerticalSpacing.zero,
-      VerticalSpacing.zero,
-      null,
-    ),
-    quote: DefaultTextBlockStyle(
-      base().copyWith(color: muted, fontStyle: FontStyle.italic),
-      const HorizontalSpacing(16, 0),
-      const VerticalSpacing(6, 6),
-      VerticalSpacing.zero,
-      BoxDecoration(
-        border: Border(left: BorderSide(color: cs.primary, width: 3)),
-      ),
-    ),
-    inlineCode: InlineCodeStyle(
-      style: TextStyle(
-        fontFamily: 'monospace',
-        fontSize: 13,
-        color: codeColor,
-        backgroundColor: codeBg,
-      ),
-      backgroundColor: codeBg,
-      radius: const Radius.circular(4),
-    ),
-    code: DefaultTextBlockStyle(
-      TextStyle(fontFamily: 'monospace', fontSize: 13, color: codeColor),
-      const HorizontalSpacing(16, 16),
-      const VerticalSpacing(8, 8),
-      VerticalSpacing.zero,
-      BoxDecoration(
-        color: codeBg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: outline),
-      ),
-    ),
-    color: fg,
-  );
-}
 
 // ── Find shortcut ─────────────────────────────────────────────────────────────
 
@@ -123,110 +40,6 @@ KeyEventResult? quillFindKeyInterceptor(KeyEvent event, VoidCallback onToggle) {
   if (!modified) return null;
   if (event is KeyDownEvent) onToggle();
   return KeyEventResult.handled;
-}
-
-/// Inline find bar for the document editor.
-///
-/// [QuillToolbarSearchDialog] owns the search itself (matching, hit list,
-/// selection), but its default chrome is a [Dialog] whose close button calls
-/// `Navigator.pop()` — which pops the editor route when the widget is rendered
-/// inline instead of in a dialog. `childBuilder` swaps that chrome for this
-/// strip, so closing the bar closes the bar (#1046).
-class DocumentFindBar extends StatefulWidget {
-  final QuillController controller;
-  final VoidCallback onClose;
-
-  const DocumentFindBar({
-    required this.controller,
-    required this.onClose,
-    super.key,
-  });
-
-  @override
-  State<DocumentFindBar> createState() => _DocumentFindBarState();
-}
-
-class _DocumentFindBarState extends State<DocumentFindBar> {
-  final FocusNode _fieldFocus = FocusNode(debugLabel: 'find field');
-
-  @override
-  void initState() {
-    super.initState();
-    // `autofocus` is a no-op when something in the scope already holds focus,
-    // which is the case when the bar is opened with Ctrl/Cmd+F from inside the
-    // editor. Take focus outright once the field is in the tree.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _fieldFocus.requestFocus();
-    });
-  }
-
-  @override
-  void dispose() {
-    _fieldFocus.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      color: cs.surfaceContainer,
-      padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
-      child: QuillToolbarSearchDialog(
-        controller: widget.controller,
-        childBuilder: (options) {
-          final hits = options.offsets?.length ?? 0;
-          final hasHits = hits > 0;
-          return Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: options.textEditingController,
-                  focusNode: _fieldFocus,
-                  autofocus: true,
-                  onChanged: options.onTextChanged,
-                  onEditingComplete: options.onEditingComplete,
-                  style: const TextStyle(fontSize: 13),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: 'Find in document',
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    suffixText: options.text.isEmpty
-                        ? null
-                        : '${hasHits ? options.index + 1 : 0}/$hits',
-                    suffixStyle: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(QuarkIcons.keyboard_arrow_up_rounded),
-                tooltip: 'Previous match',
-                onPressed: hasHits ? options.moveToPrevious : null,
-              ),
-              IconButton(
-                icon: const Icon(QuarkIcons.expand_more_rounded),
-                tooltip: 'Next match',
-                onPressed: hasHits ? options.moveToNext : null,
-              ),
-              IconButton(
-                icon: const Icon(QuarkIcons.close_rounded),
-                tooltip: 'Close find bar (Esc)',
-                onPressed: widget.onClose,
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -667,7 +480,24 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               title: Text(_dirty ? '$_displayName •' : _displayName),
               actions: _buildAppBarActions(context),
             ),
-            body: _buildBody(context),
+            body: DocumentEditorBody(
+              loading: _loading,
+              error: _error,
+              onRetry: _loadDocument,
+              controller: _controller,
+              editorFocus: _editorFocus,
+              scrollController: _scrollController,
+              isReadOnly: _isReadOnly,
+              showFindBar: _showFindBar,
+              onToggleFindBar: _toggleFindBar,
+              onPickBackgroundColor: _pickBackgroundColor,
+              darkPage: _editorDarkPage,
+              onToggleDarkPage: _toggleDarkPage,
+              onEditorTap: _onEditorTappedInReadOnly,
+              onEditorKey: _handleEditorKey,
+              wordCount: _wordCount,
+              dirty: _dirty,
+            ),
           ),
         ),
       ),
@@ -809,274 +639,16 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    final error = _error;
-    if (error != null) {
-      if (isQuarkUnreachableError(error)) {
-        return QuarkDisconnectedView(
-          hostAddress: AppSettings.instance.activeHost,
-          onRetry: _loadDocument,
-        );
-      }
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(QuarkIcons.error_outline, size: 48, color: cs.error),
-            const SizedBox(height: 12),
-            Text(
-              Errors.message(error, 'load the document'),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _loadDocument, child: const Text('Retry')),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        if (!_isReadOnly) _buildToolbar(theme),
-        // Find works in view mode too — the toolbar above is edit-only, the
-        // find bar is not.
-        if (_showFindBar) _buildFindBar(cs),
-        Expanded(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Column(
-                children: [
-                  Expanded(child: _buildPageFrame(cs)),
-                  _buildStatusBar(cs),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   void _toggleFindBar() => setState(() => _showFindBar = !_showFindBar);
+
+  Future<void> _toggleDarkPage() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() => _editorDarkPage = !_editorDarkPage);
+    await prefs.setBool(_prefKeyDarkPage, _editorDarkPage);
+  }
 
   KeyEventResult? _handleEditorKey(KeyEvent event, Node? node) =>
       quillFindKeyInterceptor(event, _toggleFindBar);
-
-  Widget _buildFindBar(ColorScheme cs) =>
-      DocumentFindBar(controller: _controller, onClose: _toggleFindBar);
-
-  Widget _buildToolbar(ThemeData theme) {
-    final cs = theme.colorScheme;
-    final toolbarTheme = theme.copyWith(
-      colorScheme: cs.copyWith(
-        onSurface: cs.onSurface,
-        surface: cs.surfaceContainer,
-        surfaceContainerLow: cs.surfaceContainer,
-        surfaceContainer: cs.surfaceContainer,
-      ),
-      iconTheme: IconThemeData(color: cs.onSurface, size: 16),
-      textTheme: theme.textTheme.apply(
-        bodyColor: cs.onSurface,
-        displayColor: cs.onSurface,
-      ),
-    );
-
-    return Theme(
-      data: toolbarTheme,
-      child: Container(
-        decoration: BoxDecoration(
-          color: cs.surfaceContainer,
-          border: Border(bottom: BorderSide(color: cs.outline)),
-        ),
-        child: QuillSimpleToolbar(
-          controller: _controller,
-          config: QuillSimpleToolbarConfig(
-            toolbarIconAlignment: WrapAlignment.center,
-            buttonOptions: QuillSimpleToolbarButtonOptions(
-              base: QuillToolbarBaseButtonOptions(
-                iconTheme: QuillIconTheme(
-                  iconButtonUnselectedData: IconButtonData(
-                    color: cs.onSurface,
-                    style: IconButton.styleFrom(
-                      backgroundColor: cs.onSurface.withValues(alpha: 0.05),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                  ),
-                  iconButtonSelectedData: IconButtonData(
-                    style: IconButton.styleFrom(
-                      foregroundColor: cs.onPrimary,
-                      backgroundColor: cs.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              selectHeaderStyleDropdownButton:
-                  QuillToolbarSelectHeaderStyleDropdownButtonOptions(
-                    textStyle: TextStyle(color: cs.onSurface, fontSize: 13),
-                  ),
-              backgroundColor: QuillToolbarColorButtonOptions(
-                customOnPressedCallback: _pickBackgroundColor,
-              ),
-            ),
-            showFontFamily: false,
-            showFontSize: false,
-            showInlineCode: true,
-            showCodeBlock: true,
-            showQuote: true,
-            showLink: false,
-            showSearchButton: false,
-            showSubscript: false,
-            showSuperscript: false,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPageFrame(ColorScheme cs) {
-    // When dark page mode is active, use the app's dark theme ColorScheme;
-    // when light, use the app's light theme ColorScheme. This keeps the
-    // editor page consistent with the rest of the app's design language
-    // while allowing the user to choose page brightness independently of
-    // the global theme toggle.
-    final pageCs = _editorDarkPage
-        ? QuarkTheme.dark().colorScheme
-        : QuarkTheme.light().colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: pageCs.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: pageCs.outline),
-        ),
-        padding: const EdgeInsets.fromLTRB(40, 24, 40, 24),
-        child: GestureDetector(
-          onTap: _onEditorTappedInReadOnly,
-          behavior: HitTestBehavior.translucent,
-          child: QuillEditor.basic(
-            controller: _controller,
-            focusNode: _editorFocus,
-            scrollController: _scrollController,
-            config: QuillEditorConfig(
-              autoFocus: false,
-              expands: false,
-              padding: EdgeInsets.zero,
-              placeholder: 'Start writing…',
-              customStyles: _quillStyles(pageCs),
-              // Keeps Quill's built-in search dialog from opening on top of the
-              // inline find bar — see [quillFindKeyInterceptor].
-              // ignore: experimental_member_use
-              onKeyPressed: _handleEditorKey,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBar(ColorScheme cs) {
-    final muted = cs.onSurface.withValues(alpha: 0.5);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Row(
-        children: [
-          // Page brightness toggle (#938) — bottom-left, near the page
-          IconButton(
-            icon: Icon(
-              _editorDarkPage
-                  ? QuarkIcons.light_mode_outlined
-                  : QuarkIcons.dark_mode_outlined,
-              size: 14,
-            ),
-            tooltip: _editorDarkPage
-                ? 'Switch to light page'
-                : 'Switch to dark page',
-            style: IconButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(24, 24),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            color: muted,
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              setState(() => _editorDarkPage = !_editorDarkPage);
-              await prefs.setBool(_prefKeyDarkPage, _editorDarkPage);
-            },
-          ),
-          const SizedBox(width: 8),
-          _statusItem(
-            icon: QuarkIcons.edit_note,
-            label: '$_wordCount words',
-            color: muted,
-          ),
-          const SizedBox(width: 16),
-          _statusItem(
-            icon: QuarkIcons.lock_outline,
-            label: 'Private',
-            color: muted,
-          ),
-          const Spacer(),
-          if (_isReadOnly)
-            _statusItem(
-              icon: QuarkIcons.visibility_outlined,
-              label: 'Read-only',
-              color: muted,
-            )
-          else if (_dirty)
-            _statusItem(
-              icon: QuarkIcons.circle,
-              label: 'Unsaved',
-              color: const Color(0xFFF59E0B),
-            )
-          else
-            _statusItem(
-              icon: QuarkIcons.check_circle_outline,
-              label: 'Saved',
-              color: const Color(0xFF10B981),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statusItem({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-      ],
-    );
-  }
 
   Future<void> _pickBackgroundColor(
     QuillController controller,
@@ -1088,7 +660,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
     final picked = await showDialog<Color?>(
       context: context,
-      builder: (_) => const _HighlightPickerDialog(),
+      builder: (_) => const HighlightPickerDialog(),
     );
 
     if (!mounted) return;
@@ -1137,54 +709,4 @@ String _colorToHex(Color color) {
           '${ch(color.g).toRadixString(16).padLeft(2, '0')}'
           '${ch(color.b).toRadixString(16).padLeft(2, '0')}'
       .toUpperCase();
-}
-
-class _HighlightPickerDialog extends StatelessWidget {
-  const _HighlightPickerDialog();
-
-  static const _colors = <Color>[
-    Color(0xFFFFEB3B), // Yellow
-    Color(0xFF8BC34A), // Green
-    Color(0xFF4FC3F7), // Blue
-    Color(0xFFF48FB1), // Pink
-    Color(0xFFCE93D8), // Lavender
-    Color(0xFFFFCC80), // Orange
-    Color(0xFFEF9A9A), // Red
-    Color(0xFF80DEEA), // Cyan
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Highlight color'),
-      content: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: _colors.map((c) {
-          return GestureDetector(
-            onTap: () => Navigator.of(context).pop(c),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: c,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.black26, width: 1.5),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(Colors.transparent),
-          child: const Text('Clear'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-      ],
-    );
-  }
 }
