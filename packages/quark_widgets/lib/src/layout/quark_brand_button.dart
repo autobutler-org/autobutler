@@ -72,12 +72,19 @@ class QuarkBrandButton extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: tokens.spacingSm + tokens.spacingXs / 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
+                // Flexible, with an ellipsis: the button sits in a bar slot
+                // of a fixed width, so a page name longer than fits has to be
+                // clipped rather than overflow the bar.
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],

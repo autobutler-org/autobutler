@@ -3,7 +3,9 @@ import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 import 'widgets/album_tree_demo.dart';
+import 'widgets/framed_viewport.dart';
 import 'widgets/password_strength_demo.dart';
+import 'widgets/split_view_demo.dart';
 import 'widgets/token_swatches.dart';
 
 /// One widget in the gallery: a live example built from fake data.
@@ -207,6 +209,108 @@ final List<GalleryEntry> registry = [
         onTapVault: () => log('QuarkDrawer.onTapVault'),
         onTapSettings: () => log('QuarkDrawer.onTapSettings'),
       ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkPageScaffold',
+    group: 'Layout',
+    build: (context, log) => FramedViewport(
+      width: 480,
+      height: 420,
+      child: QuarkPageScaffold(
+        title: 'Photos',
+        icon: QuarkIcons.photo_library_outlined,
+        actions: [
+          RefreshIconButton(
+            isRefreshing: false,
+            onPressed: () => log('QuarkPageScaffold refresh'),
+          ),
+        ],
+        drawer: QuarkDrawer(
+          activeSection: QuarkDrawerSection.photos,
+          onTapFiles: () => log('QuarkDrawer.onTapFiles'),
+        ),
+        bottomBar: PhotoSelectionBar(
+          selectedCount: 3,
+          onAddToAlbum: () => log('PhotoSelectionBar.onAddToAlbum'),
+          onCancel: () => log('PhotoSelectionBar.onCancel'),
+        ),
+        body: const Center(child: Text('The page body goes here')),
+      ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkSplitView',
+    group: 'Layout',
+    build: (context, log) => SplitViewDemo(log: log),
+  ),
+  GalleryEntry(
+    name: 'QuarkSection',
+    group: 'Layout',
+    build: (context, log) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        QuarkSection(
+          title: 'Backend hosts',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Add a host',
+              onPressed: () => log('QuarkSection action: add a host'),
+            ),
+          ],
+          child: const Card(
+            child: ListTile(title: Text('https://quark.local')),
+          ),
+        ),
+        const SizedBox(height: 24),
+        const QuarkSection(
+          title: 'Software Bill of Materials',
+          icon: Icons.info_outline,
+          child: Card(child: ListTile(title: Text('142 packages'))),
+        ),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkToolbar',
+    group: 'Layout',
+    build: (context, log) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('wrap: grows taller instead of overflowing'),
+        const SizedBox(height: 8),
+        FramedViewport(
+          width: 360,
+          height: 120,
+          child: QuarkToolbar(
+            actions: [
+              for (final label in const ['Select all', 'Download', 'Delete'])
+                FilledButton(
+                  onPressed: () => log('QuarkToolbar action: $label'),
+                  child: Text(label),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Text('scroll: stays one line tall in a fixed-height bar'),
+        const SizedBox(height: 8),
+        FramedViewport(
+          width: 360,
+          height: 72,
+          child: QuarkToolbar(
+            overflow: QuarkToolbarOverflow.scroll,
+            actions: [
+              for (final label in const ['Select all', 'Download', 'Delete'])
+                FilledButton(
+                  onPressed: () => log('QuarkToolbar action: $label'),
+                  child: Text(label),
+                ),
+            ],
+          ),
+        ),
+      ],
     ),
   ),
   GalleryEntry(
