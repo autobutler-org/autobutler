@@ -12,6 +12,11 @@ import (
 // The query string is passed directly to FTS5's MATCH operator — callers
 // should sanitize it for user-facing inputs (e.g. quote terms to avoid FTS5
 // syntax errors).
+//
+// This is the one statement in this package that stays raw rather than going
+// through sqlc. MATCH, the rank ordering it implies, and snippet() are FTS5
+// extensions that sqlc's SQLite parser does not accept; the writes next door
+// in searchutil.go are ordinary SQL and are generated.
 func Search(ctx context.Context, db *sql.DB, query string, limit int) ([]SearchResult, error) {
 	if limit <= 0 {
 		limit = DefaultLimit

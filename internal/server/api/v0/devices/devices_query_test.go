@@ -2,40 +2,16 @@ package v0_devices
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	_ "modernc.org/sqlite"
 )
 
-const deviceSchema = `
-CREATE TABLE IF NOT EXISTS connected_devices (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ip_address TEXT NOT NULL,
-    user_agent TEXT NOT NULL DEFAULT '',
-    first_seen_at DATETIME NOT NULL DEFAULT (datetime('now')),
-    last_seen_at DATETIME NOT NULL DEFAULT (datetime('now')),
-    request_count INTEGER NOT NULL DEFAULT 1,
-    UNIQUE (ip_address, user_agent)
-);
-`
-
 func newDeviceDB(t *testing.T) *db.Queries {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	if _, err := sqlDB.Exec(deviceSchema); err != nil {
-		t.Fatalf("schema: %v", err)
-	}
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("conn: %v", err)
-	}
-	return db.New(conn)
+	return dbtest.NewDB(t).Queries
 }
 
 func upsert(t *testing.T, q *db.Queries, ip, ua string) db.ConnectedDevice {

@@ -10,6 +10,3 @@ VALUES (?, ?, datetime('now'))
 ON CONFLICT(device_serial) DO UPDATE SET
     display_name = excluded.display_name,
     updated_at = datetime('now');
-
--- name: DeleteDeviceName :exec
-DELETE FROM device_names WHERE device_serial = ?;

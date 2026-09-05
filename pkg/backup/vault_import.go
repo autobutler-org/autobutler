@@ -20,7 +20,9 @@ func ImportVault(ctx context.Context, liveTx *db.Queries, liveKey []byte, recove
 		return nil, fmt.Errorf("vault_backup.db not found on device: %w", err)
 	}
 
-	backupDB, err := sql.Open("sqlite", dbPath+"?mode=ro")
+	// db.DSN so the read side agrees with the write side about how timestamps
+	// are formatted, even though nothing read below is one.
+	backupDB, err := sql.Open("sqlite", db.DSN(dbPath+"?mode=ro"))
 	if err != nil {
 		return nil, fmt.Errorf("open backup vault: %w", err)
 	}

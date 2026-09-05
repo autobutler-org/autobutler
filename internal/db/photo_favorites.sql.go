@@ -32,7 +32,7 @@ INSERT INTO
     photo_albums (name, smart_type)
 VALUES
     ('Favorites', 'favorites')
-RETURNING id, name, parent_id, created_at, updated_at, smart_type, retention_days
+RETURNING id, name, parent_id, created_at, updated_at, smart_type
 `
 
 func (q *Queries) CreateFavoritesAlbum(ctx context.Context) (PhotoAlbum, error) {
@@ -45,14 +45,13 @@ func (q *Queries) CreateFavoritesAlbum(ctx context.Context) (PhotoAlbum, error) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.SmartType,
-		&i.RetentionDays,
 	)
 	return i, err
 }
 
 const getFavoritesAlbum = `-- name: GetFavoritesAlbum :one
 SELECT
-    id, name, parent_id, created_at, updated_at, smart_type, retention_days
+    id, name, parent_id, created_at, updated_at, smart_type
 FROM
     photo_albums
 WHERE
@@ -71,7 +70,6 @@ func (q *Queries) GetFavoritesAlbum(ctx context.Context) (PhotoAlbum, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.SmartType,
-		&i.RetentionDays,
 	)
 	return i, err
 }

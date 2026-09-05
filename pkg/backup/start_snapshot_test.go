@@ -2,41 +2,21 @@ package backup
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	_ "modernc.org/sqlite"
 )
 
-// newRolesQueries returns queries over an in-memory device_roles table, which
-// is all StartSnapshotBackup reads before it decides whether to go on.
+// newRolesQueries returns queries over the real schema. StartSnapshotBackup
+// reads device_roles and nothing else before it decides whether to go on.
 func newRolesQueries(t *testing.T) *db.Queries {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("open in-memory db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-
-	if _, err := sqlDB.Exec(`
-		CREATE TABLE device_roles (
-			device_serial TEXT PRIMARY KEY,
-			role TEXT NOT NULL DEFAULT 'unassigned',
-			updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-	`); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
-
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("open connection: %v", err)
-	}
-	return db.New(conn)
+	return dbtest.NewDB(t).Queries
 }
 
 func TestStartSnapshotBackup_RejectsDeviceWithoutRole(t *testing.T) {

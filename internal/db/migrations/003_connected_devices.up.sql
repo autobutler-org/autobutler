@@ -1,7 +1,6 @@
-DROP TABLE IF EXISTS calendar_events;
-
-DROP TABLE IF EXISTS calendars;
-
+-- One row per client that has talked to this appliance, used by the
+-- connected-devices view. Not storage: these are HTTP peers, keyed by the
+-- address and user agent they present.
 CREATE TABLE
     IF NOT EXISTS connected_devices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

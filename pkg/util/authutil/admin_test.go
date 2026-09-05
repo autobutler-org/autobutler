@@ -33,7 +33,7 @@ func mkUser(t *testing.T, q *db.Queries, name string, admin bool) {
 }
 
 func TestIsAdmin(t *testing.T) {
-	q := newTOTPTestDB(t)
+	q := newTestDB(t)
 	ctx := context.Background()
 	mkUser(t, q, "boss", true)
 	mkUser(t, q, "peon", false)
@@ -65,7 +65,7 @@ func TestIsAdmin(t *testing.T) {
 // error as "not admin" — but the documented contract is wrong. This test
 // records reality so a future change to either side is deliberate.
 func TestIsAdmin_UnknownUser(t *testing.T) {
-	q := newTOTPTestDB(t)
+	q := newTestDB(t)
 	got, err := authutil.IsAdmin(context.Background(), q, "ghost")
 	if got {
 		t.Error("unknown user must never be reported as admin")
@@ -79,7 +79,7 @@ func TestIsAdmin_UnknownUser(t *testing.T) {
 }
 
 func TestPromoteToAdmin_Idempotent(t *testing.T) {
-	q := newTOTPTestDB(t)
+	q := newTestDB(t)
 	ctx := context.Background()
 	mkUser(t, q, "u", false)
 
@@ -102,7 +102,7 @@ func TestPromoteToAdmin_Idempotent(t *testing.T) {
 }
 
 func TestDemoteFromAdmin_RefusesLastAdmin(t *testing.T) {
-	q := newTOTPTestDB(t)
+	q := newTestDB(t)
 	ctx := context.Background()
 	mkUser(t, q, "only", true)
 
@@ -121,7 +121,7 @@ func TestDemoteFromAdmin_RefusesLastAdmin(t *testing.T) {
 }
 
 func TestDemoteFromAdmin_AllowsWhenAnotherAdminExists(t *testing.T) {
-	q := newTOTPTestDB(t)
+	q := newTestDB(t)
 	ctx := context.Background()
 	mkUser(t, q, "a", true)
 	mkUser(t, q, "b", true)
@@ -156,7 +156,7 @@ func TestDemoteFromAdmin_AllowsWhenAnotherAdminExists(t *testing.T) {
 // The guard should compare against the target's own admin status, e.g. refuse
 // only when the target is an admin AND the count is 1.
 func TestDemoteFromAdmin_NonAdminTargetBlockedByGuard(t *testing.T) {
-	q := newTOTPTestDB(t)
+	q := newTestDB(t)
 	ctx := context.Background()
 	mkUser(t, q, "boss", true)
 	mkUser(t, q, "peon", false)
@@ -185,7 +185,7 @@ func TestDemoteFromAdmin_NonAdminTargetBlockedByGuard(t *testing.T) {
 // username with no row reports success. Callers get 200 for a user that does
 // not exist, which is misleading for an admin UI.
 func TestDemoteFromAdmin_UnknownUserSucceedsSilently(t *testing.T) {
-	q := newTOTPTestDB(t)
+	q := newTestDB(t)
 	ctx := context.Background()
 	mkUser(t, q, "boss", true)
 	mkUser(t, q, "second", true)

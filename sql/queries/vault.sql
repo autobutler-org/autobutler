@@ -7,9 +7,6 @@ INSERT INTO vault_config (
 -- name: GetVaultConfig :one
 SELECT * FROM vault_config WHERE id = 1;
 
--- name: UpdateAutoLockSeconds :exec
-UPDATE vault_config SET auto_lock_seconds = ? WHERE id = 1;
-
 -- name: CreateVaultFolder :one
 INSERT INTO vault_folders (name, parent_id, sort_order)
 VALUES (?, ?, ?)

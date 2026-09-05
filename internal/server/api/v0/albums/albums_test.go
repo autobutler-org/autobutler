@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	_ "modernc.org/sqlite"
 )
 
@@ -97,45 +98,9 @@ func TestBuildTree_OrphanDropped(t *testing.T) {
 
 // --- Album SQL query layer ---
 
-const albumSchema = `
-CREATE TABLE IF NOT EXISTS photo_albums (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    parent_id INTEGER,
-    smart_type TEXT,
-    retention_days INTEGER,
-    created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-    updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
-);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_photo_albums_smart_type
-    ON photo_albums (smart_type) WHERE smart_type IS NOT NULL;
-
-CREATE TABLE IF NOT EXISTS photo_album_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    album_id INTEGER NOT NULL,
-    device_serial TEXT NOT NULL DEFAULT '',
-    rel_path TEXT NOT NULL,
-    added_at DATETIME NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (album_id) REFERENCES photo_albums (id) ON DELETE CASCADE,
-    UNIQUE (album_id, device_serial, rel_path)
-);
-`
-
 func newAlbumDB(t *testing.T) *db.Queries {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:?_foreign_keys=on")
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	if _, err := sqlDB.Exec(albumSchema); err != nil {
-		t.Fatalf("schema: %v", err)
-	}
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("conn: %v", err)
-	}
-	return db.New(conn)
+	return dbtest.NewDB(t).Queries
 }
 
 func TestCreateAndListAlbums(t *testing.T) {

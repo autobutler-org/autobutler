@@ -2,7 +2,6 @@ package v0_favorites_test
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	v0_favorites "github.com/autobutler-org/quark/internal/server/api/v0/favorites"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
@@ -18,52 +18,10 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const favoritesSchema = `
-CREATE TABLE IF NOT EXISTS photo_albums (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	name TEXT NOT NULL,
-	parent_id INTEGER,
-	smart_type TEXT,
-	retention_days INTEGER,
-	created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-	updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
-	FOREIGN KEY (parent_id) REFERENCES photo_albums (id) ON DELETE CASCADE
-);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_photo_albums_smart_type
-	ON photo_albums (smart_type) WHERE smart_type IS NOT NULL;
-CREATE TABLE IF NOT EXISTS photo_album_items (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	album_id INTEGER NOT NULL,
-	device_serial TEXT NOT NULL,
-	rel_path TEXT NOT NULL,
-	added_at DATETIME NOT NULL DEFAULT (datetime('now')),
-	FOREIGN KEY (album_id) REFERENCES photo_albums (id) ON DELETE CASCADE,
-	UNIQUE (album_id, device_serial, rel_path)
-);
-CREATE TABLE IF NOT EXISTS photo_favorites (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	device_serial TEXT NOT NULL DEFAULT '',
-	rel_path TEXT NOT NULL,
-	created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-	UNIQUE (device_serial, rel_path)
-);
-`
-
 func newFavoritesTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	if _, err := sqlDB.Exec(favoritesSchema); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("get conn: %v", err)
-	}
-	return sqlDB, db.New(conn)
+	database := dbtest.NewDB(t)
+	return database.Db, database.Queries
 }
 
 func newFavoritesEngine(t *testing.T, sqlDB *sql.DB, queries *db.Queries) *gin.Engine {

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	v0_devices "github.com/autobutler-org/quark/internal/server/api/v0/devices"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
@@ -20,29 +21,8 @@ import (
 
 func newDevicesTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	if _, err := sqlDB.Exec(`
-		CREATE TABLE IF NOT EXISTS connected_devices (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			ip_address TEXT NOT NULL,
-			user_agent TEXT NOT NULL DEFAULT '',
-			first_seen_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			last_seen_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			request_count INTEGER NOT NULL DEFAULT 1,
-			UNIQUE (ip_address, user_agent)
-		);
-	`); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("get conn: %v", err)
-	}
-	return sqlDB, db.New(conn)
+	database := dbtest.NewDB(t)
+	return database.Db, database.Queries
 }
 
 func newDevicesEngine(t *testing.T, sqlDB *sql.DB, queries *db.Queries) *gin.Engine {
