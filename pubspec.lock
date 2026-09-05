@@ -338,10 +338,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_file_dialog
-      sha256: ec904d15e7da3691bb60442a762b0a09afa37ded7265b9fc2088ec202b7d844f
+      sha256: "2bb0ac16fe5a390eae8f718e80cc0807fcf3ae2b4c3b9ab1e1c2a130bf904d4f"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.3"
+    version: "3.3.2"
   flutter_keyboard_visibility_linux:
     dependency: transitive
     description:
