@@ -126,7 +126,6 @@ provisioning
 assets/sbom_flutter.json
 .beads/
 .codex/
-CLAUDE.md
 .agents/
 
 # Test plugin binary (built by plugin subprocess host tests)

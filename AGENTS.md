@@ -1,5 +1,97 @@
 # `AGENTS.md`
 
+## Purpose
+
+These instructions tell coding agents how to work in this repository.
+[`CLAUDE.md`](CLAUDE.md) imports this file, so this is the one place to edit — never write a second copy of a
+rule somewhere else.
+
+Quark is a self-hosted personal cloud: a Go/Gin backend serving a Flutter client (web, iOS, Android) from a
+device in the user's home, with SQLite holding the little state that cannot live on disk. Both halves live in
+this repository.
+
+### Repo map
+
+```text
+cmd/quark/                    entrypoint: install, serve, version
+internal/db/                  sqlc-generated queries and golang-migrate migrations
+internal/server/routes.go     where every router is mounted
+internal/server/api/v0/<x>/   HTTP handlers, one directory per URL segment
+internal/server/middleware/   gin middleware (auth, admin)
+internal/server/public/       the embedded web build (//go:embed), generated
+pkg/util/<x>util/             the business logic the handlers call
+pkg/vfs/                      the virtual filesystem every file access goes through
+pkg/backup/, pkg/calendar/    standalone services
+sql/queries/                  sqlc query sources
+lib/                          the Flutter app
+packages/                     independent Dart/Flutter packages (see Packages Directory)
+test/                         Flutter tests; Go tests sit beside the code they cover
+docs/                         contributor documentation
+scripts/                      CI and layout-check scripts
+datalinks/                    symlinks to system directories, an in-repo view of app data
+```
+
+### Where to read next
+
+- [`docs/dev-onboarding.md`](docs/dev-onboarding.md) — running it locally, the two backend modes, `AS_ROOT=1`.
+- [`docs/user-journeys/`](docs/user-journeys/README.md) — nine files of stable `JN-XXX` journeys. This is the
+  feature inventory; check it before claiming Quark does something.
+- [`lib/widgets/README.md`](lib/widgets/README.md) — which app widgets are still service-coupled, and why.
+- [`packages/quark_widgets/README.md`](packages/quark_widgets/README.md) — the widget API reference.
+- `packages/quark_widgets/skills/` — task guides for decoupling a page and for writing a widget test.
+
+## Working in this repository
+
+### Use Makefile targets (always)
+
+Use the existing targets to build, run, test, and check the codebase rather than crafting your own shell
+commands. If an action needs to be templatized for general usage, add a target rather than running raw
+commands. `make help` lists everything; these are the ones that matter day to day.
+
+| Target                          | What it does                                                                |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| `make setup`                    | gotools, golangci-lint, probe, air, sqlc, swag, flutter, skills, git hooks   |
+| `make check`                    | the whole gate: `check/backend`, `check/frontend`, `check/spelling`          |
+| `make fix`                      | `dart format`, `go mod tidy`, `gofmt -s -w`                                  |
+| `make generate`                 | sqlc and swagger, plus frontend icons, SBOM, and widget docs                 |
+| `make test`                     | unit tests only — **not** the API integration tests                          |
+| `make test/unit/backend`        | Go unit tests: everything except `internal/server/api/v0/…`                  |
+| `make test/integration/backend` | the API handler tests (real filesystem, real gin engine)                     |
+| `make test/unit/frontend`       | root `flutter test`, then `make -C packages/<pkg> test/unit` for each package |
+| `make watch/backend`            | backend with hot reload, plain HTTP on `:8080`                               |
+| `make watch/backend/secure`     | backend with hot reload, HTTPS on `:443`, self-signed                        |
+| `make serve/frontend`           | Flutter web dev server                                                       |
+
+GNU make is required. On macOS the system `make` is BSD make and cannot read this Makefile — use `gmake`, which
+is what `git/hooks/pre-commit` does.
+
+### What the checks enforce
+
+`make check` is installed as a pre-commit hook (`make setup/hooks`), and `.github/workflows/check.yml` runs the
+same targets, so nothing here is advisory.
+
+- **Formatting and lint** — `gofmt`, golangci-lint, `scripts/check-go-structure.bash`, `sqlc vet`,
+  `dart format --set-exit-if-changed`, and `flutter analyze`.
+- **Generated code is committed.** CI runs `make generate/backend` and `make generate/frontend` and then fails
+  on `git diff --exit-code`. The same goes for `make tidy/go` and `make tidy/flutter`: an untidy `go.mod` or
+  workspace resolution is a red build.
+- **Spelling** — `make check/spelling` runs cspell against `.vscode/cspell.json`, which carries an allowlist of
+  a few hundred words. A new proper noun — a package, a vendor, an acronym — fails the build until it is added
+  there. This is the most common way a docs-only change goes red.
+- **Vulnerabilities** — `govulncheck ./...` on every pull request.
+- **Cross-compilation** — the backend is built for `darwin/arm64` and `linux/arm64` as well as the host, so
+  platform-specific code needs build tags. `pkg/util/storageutil/partition_linux.go` is the pattern.
+
+Markdown is not linted here — `.markdownlint.yaml` exists for the wiki, and `make check` will not reflow your
+prose. cspell does read Markdown, though.
+
+### Generated code (never hand-edit)
+
+`internal/db/*.sql.go` (sqlc), `docs/swagger/` (swag), `internal/server/public/` (the embedded web build),
+`assets/sbom_*.json`, `packages/quark_widgets/examples/widget_gallery/lib/docs.g.dart`, build outputs, and
+generated plugin registrants are all produced by a target. Regenerate them and commit the result; do not edit
+them by hand.
+
 ## Golang Backend
 
 ### Key rule (always)
@@ -40,19 +132,25 @@ See #1705: `io.ReadAll` on a 4 GiB zip asked for ~12 GiB of heap and returned a
 - Prefer native file edits or other non-database mechanisms whenever possible.
 - Only use the database for data that genuinely cannot be managed reliably on disk or in files.
 
+When a change genuinely needs the database:
+
+1. Add the migration pair in `internal/db/migrations/` — `NNN_description.up.sql` and
+   `NNN_description.down.sql` (golang-migrate).
+2. Add or edit the query in `sql/queries/`.
+3. Run `make generate/backend/sqlc` and commit the regenerated `internal/db/*.sql.go`.
+
+`sqlc.yaml` points at `internal/db/migrations` for its schema, so the migrations *are* the schema — the two
+cannot drift, and a query that does not match one fails `sqlc vet`.
+
 ### Backend development assumptions
 
 - Assume the developer is running the backend via `make watch` and that it will auto-reload on code changes.
-- Never run the `make generate` target. Just assume the code is generated automatically as a part of `make watch`.
+- Do not run `make generate` to pick up your own Go edits — `make watch` regenerates as it reloads. Do run it,
+  and commit what it produces, whenever you change `sql/queries/`, `internal/db/migrations/`, or a swagger
+  annotation: CI regenerates and fails on any diff. (`make check` runs `generate/backend` too, so those files
+  move whether you asked for them to or not.)
 - Never attempt to start, stop, or restart the backend server yourself.
 - Focus on code changes only; the running server will pick them up automatically.
-
-### Use Makefile Targets
-
-- Agents should use existing Makefile targets to `run`, `test`, and `lint` the codebase rather than crafting their own shell
-  commands.
-- Do **not** run ad hoc commands for these standard flows — use `make test`, `make lint`, etc.
-- If an action needs to be templatized for general usage, add a new Makefile target for it rather than running raw commands.
 
 ### API endpoint architecture
 
@@ -99,6 +197,52 @@ its URL without grepping.
   single handler stays in that handler's file.
 - Neither `types.go` nor `helpers.go` may hold a route.
 
+### Writing a handler
+
+The layout rules above say where files go. These say what goes in them.
+
+- **The package is named `v0_<directory>`**, not `<directory>`: `package v0_albums` in
+  `internal/server/api/v0/albums/`. `routes.go` imports it under a matching alias.
+- **A router is dead until it is mounted.** Add `v0_<x>.NewRouter()` to `setupRouters` in
+  `internal/server/routes.go` — to `apiRouters`, or to the `adminGroup` block for admin-only routes.
+- **Handlers return `*serverutil.Response`; they do not write to gin.** `serverutil.Ok().WithContentType(...)`
+  `.WithData(...)`, `serverutil.InternalServerError(err)`, and friends. Returning `nil` means "this handler
+  wrote the response itself" — the escape hatch streaming endpoints need, not a shortcut for anything else.
+- **Dependencies come out of the request context**, never out of a package global:
+  `deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")`.
+- **Every handler carries its swagger godoc** (`@Summary`, `@Tags`, `@Success`, `@Router`, and so on). A
+  missing or stale annotation produces a `docs/swagger/` diff, which is a red build.
+
+### Dependencies, not globals
+
+`deputil.Dependencies` is the server's dependency graph: the database, the storage service, the VFS registry,
+the event bus, the rate limiters, the upload session store, the worker. Package-level mutable state was moved
+onto it deliberately (#1674), so a new store, cache, or limiter goes on `Dependencies` behind a `With…` builder
+rather than into a package `var`. Those builders are also how a test injects a fake: start from an empty graph
+and chain `WithDatabase(...)`, `WithStorageService(...)`, and the rest.
+
+### Filesystem access goes through `pkg/vfs`
+
+`pkg/vfs` is the file layer: one `VFS` interface over the local disk, in-memory, database-backed and
+storage-service namespaces, a registry mapping a namespace to an implementation, and per-path metadata. Reach
+for it rather than `os` directly, and take the reader it hands back when you need random access — see
+Streaming and memory above.
+
+### Mutations publish events
+
+`pkg/util/eventbus` feeds the `/api/v0/events` SSE stream that the Flutter client subscribes to. Anything that
+changes the file tree — upload, move, delete, new folder, conversion, restore — publishes through
+`deps.EventBus()`. A mutating endpoint that does not publish leaves every open client showing stale content.
+
+### Go tests
+
+- Tests live beside the code they cover. The top-level `test/` directory belongs to the Flutter app.
+- **Handler tests are integration tests.** `make test/unit/backend` excludes `internal/server/api/v0/…`; those
+  packages run under `make test/integration/backend`, against a real gin engine and a real filesystem. The
+  house pattern is `gin.SetMode(gin.TestMode)`, `gin.New()`,
+  `serverutil.RegisterRouterWithGroup(group, v0_x.NewRouter())`, and a `deputil` graph built from fakes.
+- Coverage skips the packages listed in `scripts/coverage-excluded-packages.txt`.
+
 ### Go linting
 
 `make check/lint/go` is the whole Go check, and CI runs the same target — nothing is advisory.
@@ -124,17 +268,14 @@ its URL without grepping.
 
 ## Flutter Development
 
-### Purpose
-
-These instructions tell GitHub Copilot how to handle programming in this repository.
-
 ### Key rule (always)
 
 - Respect the linting and formatting conventions of the various linting and formatting configurations and tools being used.
 
 ### Project type
 
-- This repository is a Flutter mobile app (Dart), with platform folders under `android/` and `ios/` and app code under `lib/`.
+- The client is a Flutter app (Dart) shipping to web, iOS and Android, with platform folders under `android/`
+  and `ios/` and app code under `lib/`.
 - Prefer Dart/Flutter implementations for app logic. Do not introduce web-only patterns or frameworks unless explicitly
   requested.
 
@@ -146,6 +287,25 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - Other Flutter developers can adopt these packages independently; keep them decoupled from app-specific logic to maximize
   reusability.
 
+| Package         | What it is                                                                          |
+| --------------- | ----------------------------------------------------------------------------------- |
+| `quark_widgets` | every reusable visual component, the theme tokens, and the widget gallery example    |
+| `data_table`    | the headless spreadsheet engine behind the sheets editor                            |
+| `quark_formula` | spreadsheet formula parsing and evaluation                                           |
+| `quark_icons`   | the icon font, regenerated from `svgs/` by `make generate/frontend/quark-icons`      |
+
+Each package carries its own `Makefile` and `analysis_options.yaml` and can be checked on its own
+(`make -C packages/quark_widgets check`).
+
+**The repo is a Dart pub workspace.** One resolution at the root covers the app, every package, and every
+example app, so `flutter pub get` at the root is the whole story — never resolve a package on its own.
+
+**Packages ship skills.** `make setup/skills` reads every workspace member's `skills/` directory and installs
+what it finds into `.claude/skills` and `.agents/skills`, both gitignored. If you are decoupling a page or
+writing a widget test and those directories are empty, read the sources directly:
+`packages/quark_widgets/skills/quark-widgets-decouple/SKILL.md` and
+`packages/quark_widgets/skills/quark-widgets-widget-tests/SKILL.md`.
+
 ### Current app structure (follow this)
 
 - `lib/main.dart`: app entrypoint and root wiring.
@@ -155,6 +315,25 @@ These instructions tell GitHub Copilot how to handle programming in this reposit
 - `lib/services/`: API/network and external integration logic.
 - `lib/models/`: typed data models.
 - `lib/utils/`: small, focused helpers.
+
+### Platform-specific code
+
+Anything touching `dart:io` or the browser is split behind a conditional import: `foo.dart` declares the API
+and conditionally exports `foo_io.dart` or `foo_web.dart`, with a `foo_stub.dart` where a fallback is needed.
+`lib/utils/clipboard_utils.dart` and `lib/services/upload_chunk_source.dart` are the pattern. A `dart:io` call
+dropped into a shared file compiles fine right up until `make build/frontend/web`, which is where CI finds it.
+
+### App widgets vs. package widgets
+
+Presentational widgets belong in `packages/quark_widgets` — see Widget package rules below. What stays in
+`lib/widgets/` is what is still coupled to the app: it calls a service, pushes a route, shows a snack bar, or
+reads `AppSettings`. Each one is waiting on its page's decoupling issue (#1600), and
+[`lib/widgets/README.md`](lib/widgets/README.md) is the live inventory — keep it current when a widget moves.
+The shape to aim for is a package widget for the visuals wrapped by a thin app widget that supplies the data;
+`lib/widgets/layout/theme_toggle_button.dart` is the smallest example.
+
+The migration is early — three controllers against twenty-odd pages — so a fat page is code that has not been migrated
+yet rather than a rule violation. Decouple it with the `page-decoupler` agent instead of patching around it.
 
 ### Code organization rules
 
@@ -284,6 +463,12 @@ The package is a separate pub package with no dependency on the app, so it canno
   (purpose, key prefixes, one usage snippet), every constructor parameter, and every callback; one test file
   `test/<group>/<name>_test.dart`; one entry in `examples/widget_gallery/lib/registry.dart` with fake data and callbacks
   that log to the gallery's event panel. A gallery test fails when a barrel export has no registry entry.
+- **The gallery and its docs are test-enforced.** `packages/quark_widgets/test/gallery_registry_test.dart`
+  fails when an exported widget has no `registry.dart` entry, and again when `docs.g.dart` is stale — run
+  `make generate/frontend/widget-docs` after editing a `///` class comment and commit the result.
+- **Tests pump through the shared helper.** `packages/quark_widgets/test/support/pump.dart` gives you `pumpAt`,
+  `narrowViewport` (360x640) and `wideViewport` (1280x800), so a layout that only survives one of them fails
+  the same way in every file.
 - **One widget per file, no private widgets.** Every widget class is public and lives in a file named after it, even
   when it has one caller. No `class _Part extends StatelessWidget` inside another widget's file, and no
   `Widget _buildPart()` method that returns a subtree. In the package, a part of one parent lives in
@@ -312,7 +497,9 @@ widgets and reads in one screen.
 
 ### Testing and validation
 
-- Prefer adding or updating focused tests under `test/` for non-trivial logic changes.
+- Prefer adding or updating focused tests under `test/` for non-trivial logic changes. The directory mirrors
+  `lib/` (`test/pages/`, `test/services/`, `test/utils/`, `test/widgets/`); a package's tests live under that
+  package's own `test/`. `make test/unit/frontend` runs both.
 - Use `flutter analyze` and relevant tests to validate changes when possible.
 - Keep changes minimal, targeted, and consistent with existing patterns in the repository.
 
@@ -327,8 +514,13 @@ widgets and reads in one screen.
   - `test:` — adding or fixing tests
   - `perf:` — performance improvement
 - The description should be lowercase, imperative mood: `fix: add null check` not `Fix: Added null check`
-- Include the issue number in the PR body (`Closes #N`), not the title
+- Include the issue number in the PR body (`Closes #N`), not the title. Some history also carries it as a
+  scope — `fix(1710): …` — which is accepted, but the body still needs `Closes #N`
 - Branch names should reflect the issue: `fix/123-short-description`, `feat/456-short-description`
+- Fill out [the PR template](.github/pull_request_template.md): what changed, which surfaces it touches, and
+  how it was tested
+- One focused commit per PR — this repository keeps a linear history — and commits are signed
+- Run `make check` before pushing; the pre-commit hook runs it too, once `make setup/hooks` has
 
 ### Platform and generated code
 
@@ -339,21 +531,6 @@ widgets and reads in one screen.
 ## Relynce
 
 This project uses Relynce for reliability risk analysis. The following skills are available:
-
-### Risk Detection
-
-- `/rely:detect-risks` — Scan code for reliability risks and submit findings
-- `/rely:risk-guidance` — Get detailed guidance for a specific risk
-
-### Risk Remediation
-
-- `/rely:remediate-risks` — Auto-implement fixes for detected risks
-
-### Quick Reference
-
-- Run `rely risk list` to see current risks
-- Run `rely risk show <code>` for risk details with mapped controls
-- Run `rely control show <code>` for control implementation guidance
 
 ### Risk Detection
 
