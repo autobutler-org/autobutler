@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/controllers/file_type_listing_cache.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
@@ -24,6 +25,8 @@ class SheetsPage extends StatefulWidget {
 }
 
 class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
+  static const _fileType = 'qsheet';
+
   List<FileNode> _files = [];
   List<FileNode> _filtered = [];
   List<ContentSearchResult> _contentResults = [];
@@ -39,6 +42,12 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
   @override
   void initState() {
     super.initState();
+    final cached = FileTypeListingCache.instance.get(_fileType);
+    if (cached != null) {
+      _files = cached;
+      _filtered = List.of(cached);
+      _loading = false;
+    }
     _searchController.addListener(_onSearchChanged);
     _load();
   }
@@ -51,12 +60,14 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
   }
 
   Future<void> _load() async {
+    final cached = FileTypeListingCache.instance.get(_fileType);
     setStateSafely(() {
-      _loading = true;
+      _loading = cached == null && _files.isEmpty;
       _error = null;
     });
     try {
-      final files = await FilesService.getFilesByType('qsheet');
+      final files = await FilesService.getFilesByType(_fileType);
+      FileTypeListingCache.instance.put(_fileType, files);
       setStateSafely(() {
         _files = files;
         _applyFilter();
@@ -64,9 +75,14 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
       });
     } catch (e) {
       setStateSafely(() {
-        _error = e;
+        if (_files.isEmpty) _error = e;
         _loading = false;
       });
+      if (_files.isNotEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'refresh your sheets'))),
+        );
+      }
     }
   }
 
@@ -77,6 +93,14 @@ class _SheetsPageState extends State<SheetsPage> with SafeSetStateMixin {
     if (q.isEmpty) {
       setStateSafely(() {
         _contentResults = [];
+        _contentSearching = false;
+      });
+      return;
+    }
+    final recent = ContentSearchService.recent(q);
+    if (recent != null) {
+      setStateSafely(() {
+        _contentResults = recent;
         _contentSearching = false;
       });
       return;
