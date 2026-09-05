@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/thumbnail_cache_manager.dart';
 import 'package:quark/widgets/file_browser/file_browser_view/file_node_display.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:shimmer/shimmer.dart';
@@ -30,6 +31,11 @@ class FileGridPreview extends StatelessWidget {
                 item.apiPath,
                 serial: item.deviceSerial,
               ).toString(),
+              cacheKey: FilesService.thumbnailCacheKey(
+                item.apiPath,
+                serial: item.deviceSerial,
+              ),
+              cacheManager: ThumbnailCacheManager.instance,
               imageBuilder: (context, imageProvider) =>
                   Image(image: imageProvider, fit: BoxFit.cover),
               placeholder: (context, url) => Shimmer.fromColors(

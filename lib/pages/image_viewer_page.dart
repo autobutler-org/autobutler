@@ -9,6 +9,7 @@ import 'package:quark/models/photo_metadata.dart';
 import 'package:quark/pages/album_page.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/thumbnail_cache_manager.dart';
 import 'package:quark/services/favorites_service.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/image_viewer_config.dart';
@@ -488,16 +489,14 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         serial: _currentSerial,
         rotationQuarters: newQuarters,
       );
-      // Evict the old decoded image from Flutter's Dart-level image cache so
-      // the next Image.network load actually hits the network rather than
-      // being served from memory. Combined with Cache-Control: no-cache on
-      // the server, the revalidation request picks up the new ETag
-      // (rotation-aware) and gets the updated thumbnail bytes.
-      final thumbUrl = FilesService.constructThumbnailUrl(
+      // Evict the old thumbnail from disk and from Flutter's in-memory image
+      // cache so the next load actually hits the network rather than being
+      // served locally. The cache key is path and serial, neither of which a
+      // rotation changes, so the stale bytes would otherwise survive (#1777).
+      await ThumbnailCacheManager.evict(
         _currentRelPath!,
         serial: _currentSerial,
-      ).toString();
-      await NetworkImage(thumbUrl).evict();
+      );
       // Same reason, for the full-resolution bytes: the cache is keyed by path
       // and serial, neither of which a rotation changes (#1710).
       PhotoBytesCache.instance.evict(

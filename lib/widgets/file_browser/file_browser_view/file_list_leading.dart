@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/thumbnail_cache_manager.dart';
 import 'package:quark/widgets/file_browser/file_browser_view/file_node_display.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:shimmer/shimmer.dart';
@@ -32,6 +33,12 @@ class FileListLeading extends StatelessWidget {
                 serial: item.deviceSerial,
                 size: 'sm',
               ).toString(),
+              cacheKey: FilesService.thumbnailCacheKey(
+                item.apiPath,
+                serial: item.deviceSerial,
+                size: 'sm',
+              ),
+              cacheManager: ThumbnailCacheManager.instance,
               // Only the decoded thumbnail replaces the icon; the placeholder
               // and error states fall back to it so nothing shifts.
               imageBuilder: (context, imageProvider) => ClipRRect(

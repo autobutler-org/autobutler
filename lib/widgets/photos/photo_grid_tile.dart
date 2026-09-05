@@ -1,9 +1,12 @@
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/thumbnail_cache_manager.dart';
+import 'package:quark/utils/thumbnail_cache_config.dart';
 import 'package:quark/widgets/photos/photo_selection_overlay.dart';
 import 'package:quark/widgets/photos/photo_star_overlay.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -66,14 +69,17 @@ class PhotoGridTile extends StatelessWidget {
         c.apiPath,
         serial: c.deviceSerial,
       );
-      Widget thumbnail = Image.network(
-        url.toString(),
+      Widget thumbnail = CachedNetworkImage(
+        imageUrl: url.toString(),
+        cacheKey: FilesService.thumbnailCacheKey(
+          c.apiPath,
+          serial: c.deviceSerial,
+        ),
+        cacheManager: ThumbnailCacheManager.instance,
+        memCacheWidth: ThumbnailCacheConfig.gridTileDecodeWidth,
         fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return Container(color: Colors.grey[300]);
-        },
-        errorBuilder: (context, error, stack) =>
+        placeholder: (context, url) => Container(color: Colors.grey[300]),
+        errorWidget: (context, url, error) =>
             Container(color: Colors.grey[300]),
       );
       if (p.hasLiveVideo) {
