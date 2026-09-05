@@ -40,6 +40,32 @@ func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {
 	return &deps, ok
 }
 
+// externalDeviceDataDirs returns the Quark data directory on each attached
+// device that is not the appliance itself.
+//
+// Only the quark-owned subtree of a drive is returned, never its mount point: a
+// factory reset erases what Quark put on a drive, not the rest of the user's
+// drive. A device that is not attached is not listed, and so keeps its data.
+func externalDeviceDataDirs(deps deputil.Dependencies) ([]string, error) {
+	storage := deps.StorageService()
+	if storage == nil {
+		return nil, nil
+	}
+	devices, err := storage.GetManagedDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	dataDirs := make([]string, 0, len(devices))
+	for _, device := range devices {
+		if device.IsInternal {
+			continue
+		}
+		dataDirs = append(dataDirs, device.DataDir)
+	}
+	return dataDirs, nil
+}
+
 // queryBool reads an optional boolean query parameter. An absent parameter is
 // false; a present but unparseable one is rejected rather than silently
 // defaulting, so a typo on a destructive endpoint cannot read as "no".

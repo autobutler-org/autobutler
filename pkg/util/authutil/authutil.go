@@ -383,25 +383,33 @@ func DemoteFromAdmin(ctx context.Context, queries *db.Queries, username string) 
 	return nil
 }
 
-// DeleteAccountParams selects what a delete-account request wipes. Both
-// aspects are opt-in: a request that selects neither is rejected rather than
+// DeleteAccountParams selects what a delete-account request wipes. All three
+// aspects are opt-in: a request that selects none is rejected rather than
 // treated as "everything", so a truncated or mis-serialized call fails closed.
 type DeleteAccountParams struct {
-	Database *db.DatabaseSqlc
-	Queries  *db.Queries
-	// DataDir is the root the files directory hangs off. Production passes
+	Database       *db.DatabaseSqlc
+	Queries        *db.Queries
+	HealthDatabase *db.DatabaseRaw
+	// DataDir is the appliance's own data directory. Production passes
 	// storageutil.GetDataDir(); tests pass a temporary directory.
-	DataDir        string
+	DataDir string
+	// DeviceDataDirs are the quark data directories on attached external
+	// devices — each one a <mount>/quark/data. Only the quark-owned subtree
+	// belongs here, never a whole mount point: a factory reset erases what
+	// Quark put on a drive, not the rest of the user's drive.
+	DeviceDataDirs []string
 	Username       string
 	UserID         int64
 	DeleteDatabase bool
 	DeleteFiles    bool
+	DeleteDevices  bool
 }
 
 // DeleteAccountResult reports which aspects were actually wiped.
 type DeleteAccountResult struct {
 	DatabaseDeleted bool
 	FilesDeleted    bool
+	DevicesDeleted  bool
 }
 
 // DeleteAccount wipes the selected aspects of the appliance and revokes every
@@ -412,19 +420,31 @@ type DeleteAccountResult struct {
 // vault_location is a CHECK (id = 1) singleton — so "delete this user's rows"
 // is not expressible against it (#1759).
 //
-// Order is deliberate. Sessions go first so no client keeps operating against a
-// half-erased appliance. Files go before the database because a database reset
-// that fails after the files are gone leaves the user a working database and a
-// retry path, whereas the reverse leaves orphaned files behind a fresh database
-// with no session to retry from.
+// The three aspects map onto disk as:
 //
-// Both deletions are idempotent: removing a files directory that is already
-// gone and re-migrating an already-empty database both succeed.
+//   - DeleteDatabase: the appliance's databases, quark.db and quark.health.db.
+//     An internal vault lives in quark.db itself (migration 007), so it goes
+//     with them; a separate vault.db file exists only on an external device.
+//   - DeleteFiles: the file trees the appliance owns, <dataDir>/files and the
+//     mount-point scaffolding under <dataDir>/mounts.
+//   - DeleteDevices: the quark data directory on each attached external
+//     device, which is what carries an off-appliance vault.
+//
+// Order is deliberate. Sessions go first so no client keeps operating against a
+// half-erased appliance. The databases go last because a database reset that
+// fails after the files are gone leaves the user a working database and a retry
+// path, whereas the reverse leaves orphaned files behind a fresh database with
+// no session to retry from, and because the audit trail should outlive
+// everything it describes.
+//
+// Every step is idempotent: removing a directory that is already gone,
+// re-migrating an already-empty database, and dropping objects from an already
+// empty one all succeed.
 func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccountResult, error) {
 	var result DeleteAccountResult
 
-	if !params.DeleteDatabase && !params.DeleteFiles {
-		return result, errors.New("no aspect selected: pass database=true, files=true, or both")
+	if !params.DeleteDatabase && !params.DeleteFiles && !params.DeleteDevices {
+		return result, errors.New("no aspect selected: pass database=true, files=true, devices=true, or any combination")
 	}
 	if params.Database == nil || params.Queries == nil {
 		return result, errors.New("database not initialized")
@@ -437,6 +457,7 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 		"username", params.Username,
 		"database", params.DeleteDatabase,
 		"files", params.DeleteFiles,
+		"devices", params.DeleteDevices,
 	)
 
 	if err := RevokeAllSessions(ctx, params.Queries, params.UserID); err != nil {
@@ -447,10 +468,27 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 		if err := os.RemoveAll(storageutil.ConstructFilesDir(params.DataDir)); err != nil {
 			return result, fmt.Errorf("failed to delete files: %w", err)
 		}
+		if err := pruneMountPoints(params.DataDir); err != nil {
+			return result, err
+		}
 		result.FilesDeleted = true
 	}
 
+	if params.DeleteDevices {
+		for _, deviceDataDir := range params.DeviceDataDirs {
+			if err := os.RemoveAll(deviceDataDir); err != nil {
+				return result, fmt.Errorf("failed to delete device data at %s: %w", deviceDataDir, err)
+			}
+		}
+		result.DevicesDeleted = true
+	}
+
 	if params.DeleteDatabase {
+		if params.HealthDatabase != nil {
+			if err := db.ResetRawDatabase(params.HealthDatabase); err != nil {
+				return result, fmt.Errorf("failed to reset health database: %w", err)
+			}
+		}
 		if err := db.ResetDatabase(params.Database); err != nil {
 			return result, fmt.Errorf("failed to reset database: %w", err)
 		}
@@ -461,6 +499,7 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 		"username", params.Username,
 		"databaseDeleted", result.DatabaseDeleted,
 		"filesDeleted", result.FilesDeleted,
+		"devicesDeleted", result.DevicesDeleted,
 	)
 	return result, nil
 }

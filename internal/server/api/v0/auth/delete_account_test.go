@@ -90,18 +90,19 @@ func deleteAccountRequest(engine *gin.Engine, query string) *httptest.ResponseRe
 }
 
 // decodeDeleted reads the {"deleted": {...}} envelope a successful call returns.
-func decodeDeleted(t *testing.T, w *httptest.ResponseRecorder) (bool, bool) {
+func decodeDeleted(t *testing.T, w *httptest.ResponseRecorder) (bool, bool, bool) {
 	t.Helper()
 	var body struct {
 		Deleted struct {
 			Database bool `json:"database"`
 			Files    bool `json:"files"`
+			Devices  bool `json:"devices"`
 		} `json:"deleted"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("unmarshal: %v\nbody: %s", err, w.Body.String())
 	}
-	return body.Deleted.Database, body.Deleted.Files
+	return body.Deleted.Database, body.Deleted.Files, body.Deleted.Devices
 }
 
 func userCount(t *testing.T, sqlDB *sql.DB) int {
@@ -121,6 +122,7 @@ func TestDeleteAccount_NoAspectSelected(t *testing.T) {
 	for _, query := range []string{
 		"confirm=" + deleteAccountUser,
 		"database=false&files=false&confirm=" + deleteAccountUser,
+		"database=false&files=false&devices=false&confirm=" + deleteAccountUser,
 	} {
 		w := deleteAccountRequest(engine, query)
 		if w.Code != http.StatusBadRequest {
@@ -181,6 +183,42 @@ func TestDeleteAccount_RejectsNonBoolean(t *testing.T) {
 	}
 }
 
+// TestDeleteAccount_RejectsNonBooleanDevices verifies the new aspect is
+// validated like the other two rather than falling through as false.
+func TestDeleteAccount_RejectsNonBooleanDevices(t *testing.T) {
+	engine, _, _ := newDeleteAccountEngine(t)
+
+	w := deleteAccountRequest(engine, "devices=sure&confirm="+deleteAccountUser)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// TestDeleteAccount_DevicesOnlyIsAValidSelection verifies devices=true on its
+// own satisfies the "select something" guard and leaves the appliance's own
+// data alone. No drive is attached in the test environment, so this covers the
+// plumbing; the path behavior is covered in authutil's own tests.
+func TestDeleteAccount_DevicesOnlyIsAValidSelection(t *testing.T) {
+	engine, sqlDB, filesDir := newDeleteAccountEngine(t)
+
+	w := deleteAccountRequest(engine, "devices=true&confirm="+deleteAccountUser)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	databaseDeleted, filesDeleted, devicesDeleted := decodeDeleted(t, w)
+	if databaseDeleted || filesDeleted || !devicesDeleted {
+		t.Errorf("expected database=false files=false devices=true, got database=%v files=%v devices=%v",
+			databaseDeleted, filesDeleted, devicesDeleted)
+	}
+
+	if _, err := os.Stat(filepath.Join(filesDir, "keep.txt")); err != nil {
+		t.Errorf("local files must survive a devices-only reset: %v", err)
+	}
+	if userCount(t, sqlDB) != 1 {
+		t.Error("database must survive a devices-only reset")
+	}
+}
+
 // TestDeleteAccount_FilesOnly verifies files=true removes the files directory
 // and leaves the database intact.
 func TestDeleteAccount_FilesOnly(t *testing.T) {
@@ -190,9 +228,10 @@ func TestDeleteAccount_FilesOnly(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
-	databaseDeleted, filesDeleted := decodeDeleted(t, w)
-	if databaseDeleted || !filesDeleted {
-		t.Errorf("expected database=false files=true, got database=%v files=%v", databaseDeleted, filesDeleted)
+	databaseDeleted, filesDeleted, devicesDeleted := decodeDeleted(t, w)
+	if databaseDeleted || !filesDeleted || devicesDeleted {
+		t.Errorf("expected database=false files=true devices=false, got database=%v files=%v devices=%v",
+			databaseDeleted, filesDeleted, devicesDeleted)
 	}
 
 	if _, err := os.Stat(filesDir); !os.IsNotExist(err) {
@@ -212,9 +251,10 @@ func TestDeleteAccount_DatabaseOnly(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
-	databaseDeleted, filesDeleted := decodeDeleted(t, w)
-	if !databaseDeleted || filesDeleted {
-		t.Errorf("expected database=true files=false, got database=%v files=%v", databaseDeleted, filesDeleted)
+	databaseDeleted, filesDeleted, devicesDeleted := decodeDeleted(t, w)
+	if !databaseDeleted || filesDeleted || devicesDeleted {
+		t.Errorf("expected database=true files=false devices=false, got database=%v files=%v devices=%v",
+			databaseDeleted, filesDeleted, devicesDeleted)
 	}
 
 	if userCount(t, sqlDB) != 0 {
@@ -238,9 +278,12 @@ func TestDeleteAccount_Both(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
-	databaseDeleted, filesDeleted := decodeDeleted(t, w)
+	databaseDeleted, filesDeleted, devicesDeleted := decodeDeleted(t, w)
 	if !databaseDeleted || !filesDeleted {
 		t.Errorf("expected both true, got database=%v files=%v", databaseDeleted, filesDeleted)
+	}
+	if devicesDeleted {
+		t.Error("devices must stay false when it was not requested")
 	}
 
 	if userCount(t, sqlDB) != 0 {

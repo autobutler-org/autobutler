@@ -984,19 +984,24 @@ paths:
   /auth/account:
     delete:
       description: Wipes the selected aspects of the appliance and logs the caller
-        out everywhere. Both aspects are opt-in and a request selecting neither is
-        rejected, so a truncated call cannot destroy anything. The confirm parameter
-        must equal the authenticated username. The database is dropped and re-migrated
-        in place, so no restart is required. Repeat calls are idempotent. Does not
-        touch the health database, mount points, or external devices.
+        out everywhere. All three aspects are opt-in and a request selecting none
+        is rejected, so a truncated call cannot destroy anything. The confirm parameter
+        must equal the authenticated username. Databases are dropped and re-migrated
+        in place, so no restart is required. Repeat calls are idempotent. External
+        device data is reached only when devices=true; a drive that is not attached
+        at reset time keeps its data.
       parameters:
-      - description: Delete the Quark database
+      - description: Delete the appliance databases (quark.db, quark.health.db)
         in: query
         name: database
         type: boolean
-      - description: Delete stored files
+      - description: Delete stored files under the data directory
         in: query
         name: files
+        type: boolean
+      - description: Delete the Quark data directory on attached external devices
+        in: query
+        name: devices
         type: boolean
       - description: Must equal the authenticated username
         in: query
@@ -1013,6 +1018,8 @@ paths:
               deleted:
                 properties:
                   database:
+                    type: boolean
+                  devices:
                     type: boolean
                   files:
                     type: boolean

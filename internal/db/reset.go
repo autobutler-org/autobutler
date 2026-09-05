@@ -33,6 +33,24 @@ func ResetDatabase(database *DatabaseSqlc) error {
 	return nil
 }
 
+// ResetRawDatabase empties a database that carries no migration set — the
+// health database, whose tables are created by whatever writes to it rather
+// than by migrations. There is nothing to re-run afterwards, so this drops the
+// objects and stops.
+//
+// Like ResetDatabase it works through the caller's live handle instead of
+// unlinking the file, for the same reason: the process holds the descriptor
+// open for its lifetime.
+func ResetRawDatabase(database *DatabaseRaw) error {
+	if database == nil || database.Db == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	if err := dropAllObjects(database.Db); err != nil {
+		return fmt.Errorf("failed to drop health database objects: %w", err)
+	}
+	return nil
+}
+
 // dropAllObjects removes every table and view outside SQLite's own sqlite_%
 // namespace. Triggers and indexes go with the tables that own them, and
 // dropping an FTS5 virtual table takes its shadow tables with it — which is why

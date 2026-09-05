@@ -578,7 +578,7 @@
         },
         "/auth/account": {
             "delete": {
-                "description": "Wipes the selected aspects of the appliance and logs the caller out everywhere. Both aspects are opt-in and a request selecting neither is rejected, so a truncated call cannot destroy anything. The confirm parameter must equal the authenticated username. The database is dropped and re-migrated in place, so no restart is required. Repeat calls are idempotent. Does not touch the health database, mount points, or external devices.",
+                "description": "Wipes the selected aspects of the appliance and logs the caller out everywhere. All three aspects are opt-in and a request selecting none is rejected, so a truncated call cannot destroy anything. The confirm parameter must equal the authenticated username. Databases are dropped and re-migrated in place, so no restart is required. Repeat calls are idempotent. External device data is reached only when devices=true; a drive that is not attached at reset time keeps its data.",
                 "produces": [
                     "application/json"
                 ],
@@ -589,14 +589,20 @@
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "Delete the Quark database",
+                        "description": "Delete the appliance databases (quark.db, quark.health.db)",
                         "name": "database",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "Delete stored files",
+                        "description": "Delete stored files under the data directory",
                         "name": "files",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Delete the Quark data directory on attached external devices",
+                        "name": "devices",
                         "in": "query"
                     },
                     {
@@ -617,6 +623,9 @@
                                     "type": "object",
                                     "properties": {
                                         "database": {
+                                            "type": "boolean"
+                                        },
+                                        "devices": {
                                             "type": "boolean"
                                         },
                                         "files": {
