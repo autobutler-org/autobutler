@@ -24,3 +24,10 @@ Looking for setup instructions? Start with the [README](../README.md).
 
 - [API (Swagger)](./swagger/index.html) — Auto-generated API docs (start the backend first)
 - [ePub Viewer](./epub/index.md) — Notes on the epub.js integration
+
+## Architecture
+
+- [Codebase Organization Review](./architecture/codebase-organization-review.md) — a one-time audit
+  for "AI drift": renames that never finished, safety checks reimplemented instead of reused,
+  duplicated UI states, and other places where individually-fine PRs added up to something messier
+  than any one of them
