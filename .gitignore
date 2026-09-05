@@ -95,7 +95,6 @@ flutter.zip
 
 # AI slop
 ## Playwright / test artifacts
-app/
 playwright-report/
 test-results/performance/*
 !test-results/performance/.gitkeep
@@ -119,7 +118,6 @@ sable/
 exokomodo/
 linux/flutter/ephemeral/
 deploy/azure/headscale.rendered.parameters.json
-provisioning
 
 # SBOM generated at build time from pubspec.lock
 assets/sbom_flutter.json
@@ -128,7 +126,7 @@ assets/sbom_flutter.json
 .agents/
 
 # Test plugin binary (built by plugin subprocess host tests)
-testplugin
+/testplugin
 
 # Generated on CI runners by scripts/ios-ci-signing.bash
 ios/ExportOptions.ci.plist
