@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
+import 'package:quark/controllers/app_caches.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/local_trust.dart';
 import 'package:quark/utils/error_text.dart';
@@ -78,6 +79,7 @@ mixin AuthenticatedService {
   void checkUnauthorized(http.Response response) {
     if (response.statusCode == 401) {
       AppSettings.instance.setSessionToken(null);
+      AppCaches.clearAll();
       throw const UnauthorizedException();
     }
   }
