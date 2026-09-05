@@ -74,6 +74,22 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   String? _pendingFileOpen;
 
   bool _handlingPendingFile = false;
+
+  /// Whether `_currentPath` is a deep link still being resolved, or one whose
+  /// viewer is on screen — either way, not a directory to list.
+  ///
+  /// All three are exact state, never a guess about the name: a folder called
+  /// `My.Folder` is listed normally, and `isLikelyFilePath` is deliberately
+  /// not consulted here for that reason. They cover consecutive windows and
+  /// all three are needed. `_pendingFileOpen` holds from mount until the open
+  /// is dispatched; `_handlingPendingFile` spans the `statFile` await, where
+  /// the path's type is genuinely unknown and the other two are both false;
+  /// `isFileOpen` covers a viewer reached without a pending open.
+  bool get _currentPathIsOpenFile =>
+      _pendingFileOpen != null ||
+      _handlingPendingFile ||
+      FileBrowserCache.instance.isFileOpen(_currentPath);
+
   _FilesRouteFailure? _routeFailure;
   bool _isGridView = false;
 
@@ -340,6 +356,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
       _filesFuture = Future.value(const <FileNode>[]);
+      return;
+    }
+
+    // Deep-linking to a file used to list the file itself as a directory —
+    // `GET /files?rootDir=sheet.qsheet` — which 404s. Not once, either: this
+    // page stays mounted under the pushed editor with `_currentPath` still on
+    // the file, and AutoRefreshMixin's timer reissued the doomed request every
+    // refresh interval for as long as the sheet was open. Leave the listing to
+    // `_openPendingFileInner`, which stats the path and knows what it is.
+    if (_currentPathIsOpenFile) {
       return;
     }
 
@@ -1826,7 +1852,18 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (!mounted) return;
 
     if (isDir) {
-      _setPath(filePath);
+      // The "things.qdoc is really a folder" case this stat exists to catch.
+      // Resolution is over, so drop the in-flight flag first — it is what
+      // suppresses listings while the type is unknown, and this path needs one.
+      // _setPath no-ops when the route already points here — which for a deep
+      // link it does — and the listing was skipped on the way in, so load it
+      // directly rather than leaving the folder rendered permanently empty.
+      _handlingPendingFile = false;
+      if (normalizePath(filePath) == _currentPath) {
+        setState(_reloadFiles);
+      } else {
+        _setPath(filePath);
+      }
       return;
     }
 

@@ -13,6 +13,26 @@ void main() {
       expect(isLikelyFilePath('/Documents/report.qdoc'), isTrue);
       expect(isLikelyFilePath('/Documents/archive.zip'), isTrue);
     });
+
+    test('recognizes a deep-linked sheet at the root', () {
+      // Used for display and navigation decisions, not for suppressing the
+      // directory listing on a file route — that guard reads exact open-file
+      // state instead, because this is a heuristic (see the case below).
+      // Root-level and non-ASCII names take the same branch as any other.
+      expect(isLikelyFilePath('/budget.qsheet'), isTrue);
+      expect(
+        isLikelyFilePath('/\u{1F3CB}\uFE0F_Strength Training.qsheet'),
+        isTrue,
+      );
+    });
+
+    test('cannot tell a dotted folder from a file', () {
+      // Deliberate: a name heuristic, not a fact about the backend. This is
+      // why the file browser never gates a network request on it — a real
+      // folder called `things.qdoc` would stop listing entirely — and stats
+      // the path instead.
+      expect(isLikelyFilePath('/Documents/things.qdoc'), isTrue);
+    });
   });
 
   group('filesRouteDisplayPath', () {
