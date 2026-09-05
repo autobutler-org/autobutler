@@ -184,30 +184,13 @@ func hmacEqual(a, b []byte) bool {
 	return diff == 0
 }
 
-func backupSelf() (string, error) {
-	execPath, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("failed to get executable path: %w", err)
+func isStaleBackupName(name string) bool {
+	for _, prefix := range staleBackupPrefixes {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
 	}
-	tmpFile, err := os.CreateTemp("", backupName)
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer tmpFile.Close()
-
-	src, err := os.Open(execPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to open current binary: %w", err)
-	}
-	defer src.Close()
-
-	if _, err := src.Seek(0, 0); err != nil {
-		return "", fmt.Errorf("failed to seek in current binary: %w", err)
-	}
-	if _, err := tmpFile.ReadFrom(src); err != nil {
-		return "", fmt.Errorf("failed to copy binary to temp: %w", err)
-	}
-	return tmpFile.Name(), nil
+	return false
 }
 
 // replaceSelf streams the update archive from body onto disk and, once verify
