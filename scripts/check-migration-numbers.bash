@@ -16,6 +16,8 @@ Checks the migrations under internal/db/migrations/ against BASE_REF
   2. No two migrations share a number.
   3. Every migration has both an .up.sql and a .down.sql file, named
      NNN_snake_case.up.sql / NNN_snake_case.down.sql.
+  4. The numbers run contiguously from 000 with no gaps, so the order a
+     migration merged in is the order it is numbered in.
 
 Untracked files count, so a local run catches a new migration before it is
 committed. Exits 0 when clean, 1 with one line per violation otherwise.
@@ -52,6 +54,7 @@ done < <(git ls-tree -r --name-only "${BASE_REF}" -- "${MIGRATIONS_DIR}")
 declare -A number_owner=()
 declare -A stems=()
 declare -A directions=()
+max_number=-1
 violations=0
 
 report() {
@@ -81,6 +84,7 @@ for path in "${existing[@]}" "${added[@]}"; do
     direction="${BASH_REMATCH[3]}"
     stems["${stem}"]=1
     directions["${stem}.${direction}"]=1
+    (( number > max_number )) && max_number=${number}
 
     if [[ -z "${base_names[${name}]:-}" ]] && (( number <= base_max )); then
         printf -v padded '%03d' "${base_max}"
@@ -98,6 +102,13 @@ done
 for stem in "${!stems[@]}"; do
     [[ -n "${directions[${stem}.up]:-}" ]] || report "${MIGRATIONS_DIR}/${stem}.up.sql: missing (found only the .down.sql)"
     [[ -n "${directions[${stem}.down]:-}" ]] || report "${MIGRATIONS_DIR}/${stem}.down.sql: missing (found only the .up.sql)"
+done
+
+for (( number = 0; number <= max_number; number++ )); do
+    if [[ -z "${number_owner[${number}]:-}" ]]; then
+        printf -v padded '%03d' "${number}"
+        report "${MIGRATIONS_DIR}: no migration numbered ${padded} (numbering must be contiguous from 000)"
+    fi
 done
 
 if (( violations > 0 )); then
