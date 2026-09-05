@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/services/auth_service.dart';
-import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/services/shared_http_client.dart';
 import 'package:quark/utils/connection_error.dart';
 
 /// A Quark that accepts the connection and then says nothing — the case the
@@ -20,7 +20,7 @@ void main() {
     tester,
   ) async {
     authHttpClientFactory = () => _SilentClient();
-    addTearDown(() => authHttpClientFactory = buildLocalTrustHttpClient);
+    addTearDown(() => authHttpClientFactory = () => sharedHttpClient);
 
     Object? error;
     unawaited(

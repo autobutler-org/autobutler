@@ -22,6 +22,7 @@ import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/upload_manager.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/events_service.dart';
+import 'package:quark/services/shared_http_client.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
@@ -715,7 +716,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return null;
       }
 
-      final fallbackResponse = await http.get(Uri.parse(path));
+      final fallbackResponse = await sharedHttpClient.get(Uri.parse(path));
       if (fallbackResponse.statusCode >= 200 &&
           fallbackResponse.statusCode < 300) {
         return fallbackResponse.bodyBytes;
