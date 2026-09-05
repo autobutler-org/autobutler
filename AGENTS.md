@@ -271,6 +271,12 @@ changes the file tree — upload, move, delete, new folder, conversion, restore 
   interface file and declares nothing private in it, no `v<N>_` filename prefix disagrees with the version
   directory it sits in, and no handler package imports the low-level packages (`os/exec`, `syscall`,
   `golang.org/x/sys/unix`, database drivers) that belong in `pkg/util/` or `internal/db/`.
+- **`scripts/check-migration-numbers.bash`** (`make check/migrations`, its own CI job) fails when a migration
+  under `internal/db/migrations/` is numbered at or below the base branch's highest, when two migrations share
+  a number, or when an `.up.sql` has no `.down.sql` or vice versa. golang-migrate records one integer per
+  database and applies only what sits above it, so a migration merged below `main`'s highest is silently
+  skipped on every device that has already upgraded (#1537). Number a new migration above `main`'s highest,
+  and renumber it again if `main` moves past it before the PR merges.
 - **The interface file is public in `pkg/` too, not just under `internal/server/api/`.** A package under
   `pkg/` puts its exported types and functions in `<pkg>.go` and keeps every private one out: private types
   go to that package's `types.go`, private functions to its `helpers.go`. Unlike a handler package, `pkg/`

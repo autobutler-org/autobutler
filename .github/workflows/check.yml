@@ -82,6 +82,21 @@ jobs:
         run: |
           make check/spelling
 
+  check-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # The check compares against the base branch, which a shallow
+          # checkout of the merge commit does not carry.
+          fetch-depth: 0
+      # Fails when a migration is numbered at or below the base branch's
+      # highest, which golang-migrate would silently skip on upgraded devices.
+      - name: Check migration numbering
+        run: |
+          make check/migrations MIGRATION_BASE_REF=origin/${{ github.base_ref || 'main' }}
+
   security-backend:
     runs-on: ubuntu-latest
     steps:
