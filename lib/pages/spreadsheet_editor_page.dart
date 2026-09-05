@@ -10,6 +10,7 @@ import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -79,10 +80,8 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage>
   static const _autoSaveDelay = Duration(seconds: 2);
   Timer? _autoSaveTimer;
 
-  String get _displayName {
-    final name = widget.filePath.split('/').last;
-    return name.endsWith('.qsheet') ? name.substring(0, name.length - 8) : name;
-  }
+  String get _displayName =>
+      fileNameWithoutExtension(widget.filePath, '.qsheet');
 
   /// The live location, canonicalized. go_router always reports it
   /// percent-encoded while `overlayTargetRoute` is built from the raw path, so

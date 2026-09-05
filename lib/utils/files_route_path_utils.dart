@@ -49,3 +49,16 @@ bool usesGenericFileViewer(String fileType) {
   final normalized = fileType.trim().toLowerCase();
   return normalized.isEmpty || noInAppViewer.contains(normalized);
 }
+
+/// The last path segment with [extension] removed, when it carries it.
+///
+/// Both editors derive the name they save back under this way. They each used
+/// to count the extension by hand — `.qsheet` as 8 characters and `.qdoc` as 6,
+/// one too many each — so every save cut a letter off the name and wrote to a
+/// new file: `budget.qsheet` was saved as `budge.qsheet`.
+String fileNameWithoutExtension(String path, String extension) {
+  final name = path.split('/').last;
+  return name.endsWith(extension)
+      ? name.substring(0, name.length - extension.length)
+      : name;
+}

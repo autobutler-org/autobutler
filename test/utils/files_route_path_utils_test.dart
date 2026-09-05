@@ -78,4 +78,33 @@ void main() {
       }
     });
   });
+
+  group('fileNameWithoutExtension', () {
+    test('keeps every letter of the name', () {
+      // Both editors save under this name. Counting the extension by hand cut
+      // a letter off each save, so the sheet was written to a new file every
+      // time: budget.qsheet -> budge.qsheet.
+      expect(
+        fileNameWithoutExtension('/files/data/budget.qsheet', '.qsheet'),
+        'budget',
+      );
+      expect(fileNameWithoutExtension('/files/notes.qdoc', '.qdoc'), 'notes');
+    });
+
+    test('leaves a name without the extension alone', () {
+      expect(fileNameWithoutExtension('/files/budget', '.qsheet'), 'budget');
+      expect(
+        fileNameWithoutExtension('/files/budget.csv', '.qsheet'),
+        'budget.csv',
+      );
+    });
+
+    test('strips only the trailing extension', () {
+      expect(
+        fileNameWithoutExtension('/files/q3.qsheet.qsheet', '.qsheet'),
+        'q3.qsheet',
+      );
+      expect(fileNameWithoutExtension('/a.qsheet/b.qsheet', '.qsheet'), 'b');
+    });
+  });
 }
