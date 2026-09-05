@@ -16,8 +16,8 @@ Checks the migrations under internal/db/migrations/ against BASE_REF
   2. No two migrations share a number.
   3. Every migration has both an .up.sql and a .down.sql file, named
      NNN_snake_case.up.sql / NNN_snake_case.down.sql.
-  4. The numbers run contiguously from 000 with no gaps, so the order a
-     migration merged in is the order it is numbered in.
+  4. The numbers run contiguously with no gaps, starting at 000 or 001, so
+     the order a migration merged in is the order it is numbered in.
 
 Untracked files count, so a local run catches a new migration before it is
 committed. Exits 0 when clean, 1 with one line per violation otherwise.
@@ -55,6 +55,7 @@ declare -A number_owner=()
 declare -A stems=()
 declare -A directions=()
 max_number=-1
+min_number=-1
 violations=0
 
 report() {
@@ -85,6 +86,7 @@ for path in "${existing[@]}" "${added[@]}"; do
     stems["${stem}"]=1
     directions["${stem}.${direction}"]=1
     (( number > max_number )) && max_number=${number}
+    (( min_number < 0 || number < min_number )) && min_number=${number}
 
     if [[ -z "${base_names[${name}]:-}" ]] && (( number <= base_max )); then
         printf -v padded '%03d' "${base_max}"
@@ -104,10 +106,21 @@ for stem in "${!stems[@]}"; do
     [[ -n "${directions[${stem}.down]:-}" ]] || report "${MIGRATIONS_DIR}/${stem}.down.sql: missing (found only the .up.sql)"
 done
 
-for (( number = 0; number <= max_number; number++ )); do
+# Contiguity is anchored at the lowest number present rather than hard-coded to
+# 000, because whether a set starts at 000 or 001 is a convention, not a
+# correctness property -- golang-migrate only cares that versions increase. The
+# floor is still pinned to 000 or 001 so the anchor cannot drift upward: without
+# it, deleting the first few migrations would leave a set that is contiguous
+# from wherever it now begins and passes silently.
+if (( min_number > 1 )); then
+    printf -v padded '%03d' "${min_number}"
+    report "${MIGRATIONS_DIR}: lowest migration is ${padded}; numbering must start at 000 or 001"
+fi
+
+for (( number = min_number; number <= max_number; number++ )); do
     if [[ -z "${number_owner[${number}]:-}" ]]; then
         printf -v padded '%03d' "${number}"
-        report "${MIGRATIONS_DIR}: no migration numbered ${padded} (numbering must be contiguous from 000)"
+        report "${MIGRATIONS_DIR}: no migration numbered ${padded} (numbering must be contiguous, with no gaps)"
     fi
 done
 

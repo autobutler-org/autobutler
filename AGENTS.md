@@ -273,7 +273,7 @@ changes the file tree — upload, move, delete, new folder, conversion, restore 
   `golang.org/x/sys/unix`, database drivers) that belong in `pkg/util/` or `internal/db/`.
 - **`scripts/check-migration-numbers.bash`** (`make check/migrations`, its own CI job) fails when a migration
   under `internal/db/migrations/` is numbered at or below the base branch's highest, when two migrations share
-  a number, when the numbers are not contiguous from `000`, or when an `.up.sql` has no `.down.sql` or vice
+  a number, when the numbers have a gap in them, or when an `.up.sql` has no `.down.sql` or vice
   versa. golang-migrate records one integer per database and applies only what sits above it, so a migration
   merged below `main`'s highest is silently skipped on every device that has already upgraded (#1537). Number
   a new migration above `main`'s highest, and renumber it again if `main` moves past it before the PR merges.
