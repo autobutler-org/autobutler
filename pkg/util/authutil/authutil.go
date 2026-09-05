@@ -9,10 +9,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -378,4 +381,86 @@ func DemoteFromAdmin(ctx context.Context, queries *db.Queries, username string) 
 		return fmt.Errorf("demote %q: %w", username, err)
 	}
 	return nil
+}
+
+// DeleteAccountParams selects what a delete-account request wipes. Both
+// aspects are opt-in: a request that selects neither is rejected rather than
+// treated as "everything", so a truncated or mis-serialized call fails closed.
+type DeleteAccountParams struct {
+	Database *db.DatabaseSqlc
+	Queries  *db.Queries
+	// DataDir is the root the files directory hangs off. Production passes
+	// storageutil.GetDataDir(); tests pass a temporary directory.
+	DataDir        string
+	Username       string
+	UserID         int64
+	DeleteDatabase bool
+	DeleteFiles    bool
+}
+
+// DeleteAccountResult reports which aspects were actually wiped.
+type DeleteAccountResult struct {
+	DatabaseDeleted bool
+	FilesDeleted    bool
+}
+
+// DeleteAccount wipes the selected aspects of the appliance and revokes every
+// session, leaving the caller logged out.
+//
+// This is a factory reset, not a per-user delete. Most of the schema is not
+// user-scoped — calendars and calendar_events carry no user_id and
+// vault_location is a CHECK (id = 1) singleton — so "delete this user's rows"
+// is not expressible against it (#1759).
+//
+// Order is deliberate. Sessions go first so no client keeps operating against a
+// half-erased appliance. Files go before the database because a database reset
+// that fails after the files are gone leaves the user a working database and a
+// retry path, whereas the reverse leaves orphaned files behind a fresh database
+// with no session to retry from.
+//
+// Both deletions are idempotent: removing a files directory that is already
+// gone and re-migrating an already-empty database both succeed.
+func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccountResult, error) {
+	var result DeleteAccountResult
+
+	if !params.DeleteDatabase && !params.DeleteFiles {
+		return result, errors.New("no aspect selected: pass database=true, files=true, or both")
+	}
+	if params.Database == nil || params.Queries == nil {
+		return result, errors.New("database not initialized")
+	}
+
+	// Audited before anything is touched, and to the log rather than a table:
+	// a record of the wipe stored in the database being wiped is gone at
+	// exactly the moment it becomes useful (#1759).
+	slog.Warn("delete account requested",
+		"username", params.Username,
+		"database", params.DeleteDatabase,
+		"files", params.DeleteFiles,
+	)
+
+	if err := RevokeAllSessions(ctx, params.Queries, params.UserID); err != nil {
+		return result, err
+	}
+
+	if params.DeleteFiles {
+		if err := os.RemoveAll(storageutil.ConstructFilesDir(params.DataDir)); err != nil {
+			return result, fmt.Errorf("failed to delete files: %w", err)
+		}
+		result.FilesDeleted = true
+	}
+
+	if params.DeleteDatabase {
+		if err := db.ResetDatabase(params.Database); err != nil {
+			return result, fmt.Errorf("failed to reset database: %w", err)
+		}
+		result.DatabaseDeleted = true
+	}
+
+	slog.Warn("delete account completed",
+		"username", params.Username,
+		"databaseDeleted", result.DatabaseDeleted,
+		"filesDeleted", result.FilesDeleted,
+	)
+	return result, nil
 }

@@ -2,6 +2,7 @@ package v0_auth
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
@@ -37,4 +38,19 @@ func clearSessionCookie(c *gin.Context) {
 func getQueries(c *gin.Context) (*deputil.Dependencies, bool) {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	return &deps, ok
+}
+
+// queryBool reads an optional boolean query parameter. An absent parameter is
+// false; a present but unparseable one is rejected rather than silently
+// defaulting, so a typo on a destructive endpoint cannot read as "no".
+func queryBool(c *gin.Context, name string) (bool, bool) {
+	raw, present := c.GetQuery(name)
+	if !present || raw == "" {
+		return false, true
+	}
+	value, err := strconv.ParseBool(raw)
+	if err != nil {
+		return false, false
+	}
+	return value, true
 }

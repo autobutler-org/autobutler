@@ -587,6 +587,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/account": {
+            "delete": {
+                "description": "Wipes the selected aspects of the appliance and logs the caller out everywhere. Both aspects are opt-in and a request selecting neither is rejected, so a truncated call cannot destroy anything. The confirm parameter must equal the authenticated username. The database is dropped and re-migrated in place, so no restart is required. Repeat calls are idempotent. Does not touch the health database, mount points, or external devices.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Delete account data (factory reset)",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Delete the Quark database",
+                        "name": "database",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Delete stored files",
+                        "name": "files",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Must equal the authenticated username",
+                        "name": "confirm",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "deleted": {
+                                    "type": "object",
+                                    "properties": {
+                                        "database": {
+                                            "type": "boolean"
+                                        },
+                                        "files": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Authenticates with username and password, returns a session token",
