@@ -110,6 +110,7 @@ test-results/performance/*
 .claude/*
 !.claude/agents/
 !.claude/skills/
+.claude/skills/dart-*
 
 ## Sable's personal dev context (AI co-developer workspace)
 sable/
