@@ -229,10 +229,10 @@ packages:
     dependency: "direct main"
     description:
       name: desktop_drop
-      sha256: c65d1f959ccf4bb6803f984303d03e1e0dd4c0f73a3a2eca2d1b46d48ea16999
+      sha256: "47ded09c85909edfed644fd4cbb5051b040d0aed5c79e7e062ea4b3b7156dbe4"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.2"
+    version: "0.8.4"
   diff_match_patch:
     dependency: transitive
     description:
