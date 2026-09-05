@@ -30,6 +30,6 @@ CREATE TABLE
         -- (#1647). Without it expires_at was stamped once at login and never
         -- written again, so a user who opened the app daily was still forced
         -- back to the login screen on day 31.
-        last_used_at DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
+        last_used_at DATETIME NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     );

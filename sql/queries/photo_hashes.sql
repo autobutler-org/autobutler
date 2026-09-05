@@ -7,11 +7,6 @@ DO UPDATE SET
     content_hash = excluded.content_hash,
     computed_at  = datetime('now');
 
--- name: GetPhotoHash :one
-SELECT * FROM photo_hashes
-WHERE device_serial = ? AND rel_path = ?
-LIMIT 1;
-
 -- name: ListExactDuplicates :many
 SELECT content_hash, device_serial, rel_path
 FROM photo_hashes
@@ -28,9 +23,3 @@ SELECT dhash, device_serial, rel_path
 FROM photo_hashes
 WHERE dhash IS NOT NULL
 ORDER BY dhash;
-
--- name: DeletePhotoHash :exec
-DELETE FROM photo_hashes WHERE device_serial = ? AND rel_path = ?;
-
--- name: CountPhotoHashes :one
-SELECT COUNT(*) FROM photo_hashes;

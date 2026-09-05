@@ -108,18 +108,6 @@ FROM
 WHERE
     album_id = ?;
 
--- name: GetAlbumCoverItem :one
-SELECT
-    *
-FROM
-    photo_album_items
-WHERE
-    album_id = ?
-ORDER BY
-    added_at DESC
-LIMIT
-    1;
-
 -- name: ListAlbumsContainingPhoto :many
 SELECT
     pa.*

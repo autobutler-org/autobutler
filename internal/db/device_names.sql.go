@@ -9,15 +9,6 @@ import (
 	"context"
 )
 
-const deleteDeviceName = `-- name: DeleteDeviceName :exec
-DELETE FROM device_names WHERE device_serial = ?
-`
-
-func (q *Queries) DeleteDeviceName(ctx context.Context, deviceSerial string) error {
-	_, err := q.db.ExecContext(ctx, deleteDeviceName, deviceSerial)
-	return err
-}
-
 const getAllDeviceNames = `-- name: GetAllDeviceNames :many
 SELECT device_serial, display_name FROM device_names
 `

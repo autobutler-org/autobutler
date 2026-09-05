@@ -28,7 +28,6 @@ func newTestDB(t *testing.T) *db.Queries {
 			name TEXT NOT NULL,
 			parent_id INTEGER,
 			smart_type TEXT,
-			retention_days INTEGER,
 			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
 			updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
 			FOREIGN KEY (parent_id) REFERENCES photo_albums (id) ON DELETE CASCADE

@@ -103,7 +103,6 @@ CREATE TABLE IF NOT EXISTS photo_albums (
     name TEXT NOT NULL,
     parent_id INTEGER,
     smart_type TEXT,
-    retention_days INTEGER,
     created_at DATETIME NOT NULL DEFAULT (datetime('now')),
     updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
 );

@@ -289,15 +289,6 @@ func (q *Queries) ListVaultFolders(ctx context.Context) ([]VaultFolder, error) {
 	return items, nil
 }
 
-const updateAutoLockSeconds = `-- name: UpdateAutoLockSeconds :exec
-UPDATE vault_config SET auto_lock_seconds = ? WHERE id = 1
-`
-
-func (q *Queries) UpdateAutoLockSeconds(ctx context.Context, autoLockSeconds int64) error {
-	_, err := q.db.ExecContext(ctx, updateAutoLockSeconds, autoLockSeconds)
-	return err
-}
-
 const updateVaultConfigPassword = `-- name: UpdateVaultConfigPassword :exec
 UPDATE vault_config
 SET salt = ?, verification_blob = ?, verification_nonce = ?

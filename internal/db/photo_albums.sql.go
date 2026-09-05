@@ -61,7 +61,7 @@ INSERT INTO
     photo_albums (name, parent_id)
 VALUES
     (?, ?)
-RETURNING id, name, parent_id, created_at, updated_at, smart_type, retention_days
+RETURNING id, name, parent_id, created_at, updated_at, smart_type
 `
 
 type CreateAlbumParams struct {
@@ -79,7 +79,6 @@ func (q *Queries) CreateAlbum(ctx context.Context, arg CreateAlbumParams) (Photo
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.SmartType,
-		&i.RetentionDays,
 	)
 	return i, err
 }
@@ -114,7 +113,7 @@ func (q *Queries) DeletePhotoFromAllAlbums(ctx context.Context, arg DeletePhotoF
 
 const getAlbum = `-- name: GetAlbum :one
 SELECT
-    id, name, parent_id, created_at, updated_at, smart_type, retention_days
+    id, name, parent_id, created_at, updated_at, smart_type
 FROM
     photo_albums
 WHERE
@@ -133,33 +132,6 @@ func (q *Queries) GetAlbum(ctx context.Context, id int64) (PhotoAlbum, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.SmartType,
-		&i.RetentionDays,
-	)
-	return i, err
-}
-
-const getAlbumCoverItem = `-- name: GetAlbumCoverItem :one
-SELECT
-    id, album_id, device_serial, rel_path, added_at
-FROM
-    photo_album_items
-WHERE
-    album_id = ?
-ORDER BY
-    added_at DESC
-LIMIT
-    1
-`
-
-func (q *Queries) GetAlbumCoverItem(ctx context.Context, albumID int64) (PhotoAlbumItem, error) {
-	row := q.db.QueryRowContext(ctx, getAlbumCoverItem, albumID)
-	var i PhotoAlbumItem
-	err := row.Scan(
-		&i.ID,
-		&i.AlbumID,
-		&i.DeviceSerial,
-		&i.RelPath,
-		&i.AddedAt,
 	)
 	return i, err
 }
@@ -206,7 +178,7 @@ func (q *Queries) ListAlbumItems(ctx context.Context, albumID int64) ([]PhotoAlb
 
 const listAlbums = `-- name: ListAlbums :many
 SELECT
-    id, name, parent_id, created_at, updated_at, smart_type, retention_days
+    id, name, parent_id, created_at, updated_at, smart_type
 FROM
     photo_albums
 ORDER BY
@@ -230,7 +202,6 @@ func (q *Queries) ListAlbums(ctx context.Context) ([]PhotoAlbum, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.SmartType,
-			&i.RetentionDays,
 		); err != nil {
 			return nil, err
 		}
@@ -247,7 +218,7 @@ func (q *Queries) ListAlbums(ctx context.Context) ([]PhotoAlbum, error) {
 
 const listAlbumsContainingPhoto = `-- name: ListAlbumsContainingPhoto :many
 SELECT
-    pa.id, pa.name, pa.parent_id, pa.created_at, pa.updated_at, pa.smart_type, pa.retention_days
+    pa.id, pa.name, pa.parent_id, pa.created_at, pa.updated_at, pa.smart_type
 FROM
     photo_albums pa
     JOIN photo_album_items pai ON pa.id = pai.album_id
@@ -279,7 +250,6 @@ func (q *Queries) ListAlbumsContainingPhoto(ctx context.Context, arg ListAlbumsC
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.SmartType,
-			&i.RetentionDays,
 		); err != nil {
 			return nil, err
 		}
@@ -296,7 +266,7 @@ func (q *Queries) ListAlbumsContainingPhoto(ctx context.Context, arg ListAlbumsC
 
 const listChildAlbums = `-- name: ListChildAlbums :many
 SELECT
-    id, name, parent_id, created_at, updated_at, smart_type, retention_days
+    id, name, parent_id, created_at, updated_at, smart_type
 FROM
     photo_albums
 WHERE
@@ -321,7 +291,6 @@ func (q *Queries) ListChildAlbums(ctx context.Context, parentID sql.NullInt64) (
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.SmartType,
-			&i.RetentionDays,
 		); err != nil {
 			return nil, err
 		}
@@ -338,7 +307,7 @@ func (q *Queries) ListChildAlbums(ctx context.Context, parentID sql.NullInt64) (
 
 const listRootAlbums = `-- name: ListRootAlbums :many
 SELECT
-    id, name, parent_id, created_at, updated_at, smart_type, retention_days
+    id, name, parent_id, created_at, updated_at, smart_type
 FROM
     photo_albums
 WHERE
@@ -363,7 +332,6 @@ func (q *Queries) ListRootAlbums(ctx context.Context) ([]PhotoAlbum, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.SmartType,
-			&i.RetentionDays,
 		); err != nil {
 			return nil, err
 		}
@@ -385,7 +353,7 @@ SET
     updated_at = datetime('now')
 WHERE
     id = ?
-RETURNING id, name, parent_id, created_at, updated_at, smart_type, retention_days
+RETURNING id, name, parent_id, created_at, updated_at, smart_type
 `
 
 type MoveAlbumParams struct {
@@ -403,7 +371,6 @@ func (q *Queries) MoveAlbum(ctx context.Context, arg MoveAlbumParams) (PhotoAlbu
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.SmartType,
-		&i.RetentionDays,
 	)
 	return i, err
 }
@@ -434,7 +401,7 @@ SET
     updated_at = datetime('now')
 WHERE
     id = ?
-RETURNING id, name, parent_id, created_at, updated_at, smart_type, retention_days
+RETURNING id, name, parent_id, created_at, updated_at, smart_type
 `
 
 type RenameAlbumParams struct {
@@ -452,7 +419,6 @@ func (q *Queries) RenameAlbum(ctx context.Context, arg RenameAlbumParams) (Photo
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.SmartType,
-		&i.RetentionDays,
 	)
 	return i, err
 }

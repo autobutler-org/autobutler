@@ -43,13 +43,12 @@ type FileContentFt struct {
 }
 
 type PhotoAlbum struct {
-	ID            int64
-	Name          string
-	ParentID      sql.NullInt64
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	SmartType     sql.NullString
-	RetentionDays sql.NullInt64
+	ID        int64
+	Name      string
+	ParentID  sql.NullInt64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	SmartType sql.NullString
 }
 
 type PhotoAlbumItem struct {

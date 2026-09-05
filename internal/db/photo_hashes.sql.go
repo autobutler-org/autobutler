@@ -10,56 +10,6 @@ import (
 	"database/sql"
 )
 
-const countPhotoHashes = `-- name: CountPhotoHashes :one
-SELECT COUNT(*) FROM photo_hashes
-`
-
-func (q *Queries) CountPhotoHashes(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countPhotoHashes)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const deletePhotoHash = `-- name: DeletePhotoHash :exec
-DELETE FROM photo_hashes WHERE device_serial = ? AND rel_path = ?
-`
-
-type DeletePhotoHashParams struct {
-	DeviceSerial string
-	RelPath      string
-}
-
-func (q *Queries) DeletePhotoHash(ctx context.Context, arg DeletePhotoHashParams) error {
-	_, err := q.db.ExecContext(ctx, deletePhotoHash, arg.DeviceSerial, arg.RelPath)
-	return err
-}
-
-const getPhotoHash = `-- name: GetPhotoHash :one
-SELECT id, device_serial, rel_path, dhash, content_hash, computed_at FROM photo_hashes
-WHERE device_serial = ? AND rel_path = ?
-LIMIT 1
-`
-
-type GetPhotoHashParams struct {
-	DeviceSerial string
-	RelPath      string
-}
-
-func (q *Queries) GetPhotoHash(ctx context.Context, arg GetPhotoHashParams) (PhotoHash, error) {
-	row := q.db.QueryRowContext(ctx, getPhotoHash, arg.DeviceSerial, arg.RelPath)
-	var i PhotoHash
-	err := row.Scan(
-		&i.ID,
-		&i.DeviceSerial,
-		&i.RelPath,
-		&i.Dhash,
-		&i.ContentHash,
-		&i.ComputedAt,
-	)
-	return i, err
-}
-
 const listExactDuplicates = `-- name: ListExactDuplicates :many
 SELECT content_hash, device_serial, rel_path
 FROM photo_hashes

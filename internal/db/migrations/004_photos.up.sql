@@ -13,7 +13,6 @@ CREATE TABLE
         updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
         -- Marks a system album (favorites, inbox) rather than a user one.
         smart_type TEXT,
-        retention_days INTEGER,
         FOREIGN KEY (parent_id) REFERENCES photo_albums (id) ON DELETE CASCADE
     );
 
