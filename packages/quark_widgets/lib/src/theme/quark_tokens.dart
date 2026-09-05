@@ -88,6 +88,10 @@ class QuarkTokens extends ThemeExtension<QuarkTokens> {
   final Color error;
 
   /// Text and icons drawn on top of [error].
+  ///
+  /// This sits on the error fill, so it has to contrast with [error] rather
+  /// than tint toward it: a lighter shade of the same red reads as a disabled
+  /// label on a destructive button (#1789).
   final Color errorForeground;
 
   /// The warning accent for non-blocking problems.
@@ -134,7 +138,7 @@ class QuarkTokens extends ThemeExtension<QuarkTokens> {
     primary: Color(0xFF0EA5E9),
     primaryForeground: Color(0xFFFFFFFF),
     error: Color(0xFFEF4444),
-    errorForeground: Color(0xFFFCA5A5),
+    errorForeground: Color(0xFFFFFFFF),
     warning: Color(0xFFF59E0B),
     success: Color(0xFF10B981),
     radiusSm: 4,
