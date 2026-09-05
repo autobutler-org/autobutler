@@ -34,11 +34,16 @@ import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
+import 'package:quark/widgets/file_browser/archive_text_preview.dart';
+import 'package:quark/widgets/file_browser/file_browser_create_fab.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
+import 'package:quark/widgets/file_browser/file_route_error_state.dart';
 import 'package:quark/widgets/file_browser/file_storage_footer.dart';
 import 'package:quark/widgets/file_browser/file_top_bar.dart';
+import 'package:quark/widgets/file_browser/folder_route_error_state.dart';
 import 'package:quark/widgets/file_browser/new_file_dialog.dart';
 import 'package:quark/widgets/file_browser/recent_files_section.dart';
+import 'package:quark/widgets/file_browser/route_resolution_loading_shell.dart';
 import 'package:quark/widgets/quark_connect_form.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -1365,7 +1370,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         final text = utf8.decode(bytes, allowMalformed: true);
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => _ArchiveTextPreview(name: node.name, text: text),
+            builder: (_) => ArchiveTextPreview(name: node.name, text: text),
           ),
         );
         return;
@@ -1539,40 +1544,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _setPath('');
   }
 
-  Widget _buildRouteResolutionLoadingShell(BuildContext context) {
-    final routeLabel = filesRouteDisplayPath(_currentPath);
-    final isFileRoute = isLikelyFilePath(_currentPath);
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(QuarkIcons.folder_open, size: 48),
-              const SizedBox(height: 16),
-              Text(
-                isFileRoute ? 'Opening file' : 'Opening folder',
-                style: Theme.of(context).textTheme.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                routeLabel,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              const LinearProgressIndicator(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _retryRouteFailure(_FilesRouteFailure failure) async {
     if (!mounted) {
       return;
@@ -1588,110 +1559,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     await _refreshFileState();
-  }
-
-  Widget _buildFolderRouteErrorState(BuildContext context, Object error) {
-    // A Quark the app never reached is not a folder problem, and "Go to
-    // parent" cannot fix it — say what is actually wrong instead (#1637).
-    if (isQuarkUnreachableError(error)) {
-      return QuarkDisconnectedView(
-        hostAddress: AppSettings.instance.activeHost,
-        onRetry: _refreshFileState,
-        onManageHosts: () => context.go(AppRoutes.settings),
-      );
-    }
-    final requestError = error is FilesRequestException ? error : null;
-    final isMissingFolder = requestError?.statusCode == 404;
-    final isUnauthorized =
-        requestError?.statusCode == 401 || requestError?.statusCode == 403;
-    final normalizedPath = normalizePath(_currentPath);
-    final routeLabel = normalizedPath.isEmpty
-        ? AppRoutes.files
-        : AppRoutes.filesPath(normalizedPath);
-    final parent = parentPath(normalizedPath);
-
-    return EmptyStateWidget(
-      icon: isUnauthorized
-          ? QuarkIcons.lock_outline
-          : isMissingFolder
-          ? QuarkIcons.folder_off_outlined
-          : QuarkIcons.error_outline,
-      headline: isUnauthorized
-          ? 'Access denied'
-          : isMissingFolder
-          ? 'Folder not found'
-          : 'Unable to open folder',
-      subtext: isUnauthorized
-          ? 'You do not have access to $routeLabel. Retry, move up a level, or return to /files.'
-          : isMissingFolder
-          ? 'The folder at $routeLabel is unavailable. Retry, move up a level, or return to /files.'
-          : 'Files could not load $routeLabel. Retry, move up a level, or return to /files.',
-      action: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          FilledButton(
-            onPressed: _refreshFileState,
-            child: const Text('Retry'),
-          ),
-          if (parent.isNotEmpty)
-            OutlinedButton(
-              onPressed: () => _setPath(parent),
-              child: const Text('Go to parent'),
-            ),
-          OutlinedButton(onPressed: _goHome, child: const Text('Go to /files')),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFileRouteErrorState(
-    BuildContext context,
-    _FilesRouteFailure failure,
-  ) {
-    if (failure.isUnreachable) {
-      return QuarkDisconnectedView(
-        hostAddress: AppSettings.instance.activeHost,
-        onRetry: () => _retryRouteFailure(failure),
-        onManageHosts: () => context.go(AppRoutes.settings),
-      );
-    }
-    final routeLabel = filesRouteDisplayPath(failure.requestedPath);
-    final parent = parentPath(failure.requestedPath);
-
-    return EmptyStateWidget(
-      icon: failure.isUnsupported
-          ? QuarkIcons.description_outlined
-          : QuarkIcons.error_outline,
-      headline: failure.isUnsupported
-          ? 'No supported editor'
-          : failure.isUnauthorized
-          ? 'File access denied'
-          : 'File not found',
-      subtext: failure.isUnsupported
-          ? 'No supported editor is available for $routeLabel. Retry, open the containing folder, or return to /files.'
-          : failure.isUnauthorized
-          ? 'You do not have access to $routeLabel. Retry, open the containing folder, or return to /files.'
-          : 'The file at $routeLabel is unavailable. Retry, open the containing folder, or return to /files.',
-      action: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          FilledButton(
-            onPressed: () => _retryRouteFailure(failure),
-            child: const Text('Retry'),
-          ),
-          if (parent.isNotEmpty)
-            OutlinedButton(
-              onPressed: () => _setPath(parent),
-              child: const Text('Open containing folder'),
-            ),
-          OutlinedButton(onPressed: _goHome, child: const Text('Go to /files')),
-        ],
-      ),
-    );
   }
 
   /// Push a file editor overlay and sync the canonical file route when needed.
@@ -2020,23 +1887,6 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
-  Widget _buildCreateFab(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: _fabVisible ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeInOut,
-      child: IgnorePointer(
-        ignoring: !_fabVisible,
-        child: FloatingActionButton(
-          heroTag: 'create_fab',
-          onPressed: _showCreateBottomSheet,
-          tooltip: 'Create',
-          child: const Icon(QuarkIcons.add_rounded),
-        ),
-      ),
-    );
-  }
-
   void _showCreateBottomSheet() {
     showModalBottomSheet<void>(
       context: context,
@@ -2111,6 +1961,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// Builds the horizontal device filter chip row for issue #801.
   @override
   Widget build(BuildContext context) {
+    final routeFailure = _routeFailure;
     return Scaffold(
       drawer: QuarkDrawer(
         activeSection: QuarkDrawerSection.files,
@@ -2264,8 +2115,17 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                       ),
                     ),
                   )
-                : _routeFailure != null
-                ? _buildFileRouteErrorState(context, _routeFailure!)
+                : routeFailure != null
+                ? FileRouteErrorState(
+                    requestedPath: routeFailure.requestedPath,
+                    isUnreachable: routeFailure.isUnreachable,
+                    isUnsupported: routeFailure.isUnsupported,
+                    isUnauthorized: routeFailure.isUnauthorized,
+                    onRetry: () => _retryRouteFailure(routeFailure),
+                    onManageHosts: () => context.go(AppRoutes.settings),
+                    onOpenPath: _setPath,
+                    onGoHome: _goHome,
+                  )
                 : DropTarget(
                     key: _dropRegionKey,
                     enable: kIsWeb && !_isSearchMode && !_isUploading,
@@ -2319,9 +2179,20 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           isSearchMode: _isSearchMode,
                           onNavigateToFolder: _navigateToFolder,
                           currentPath: _currentPath,
-                          errorBuilder: _buildFolderRouteErrorState,
+                          errorBuilder: (context, error) =>
+                              FolderRouteErrorState(
+                                error: error,
+                                currentPath: _currentPath,
+                                onRetry: _refreshFileState,
+                                onManageHosts: () =>
+                                    context.go(AppRoutes.settings),
+                                onOpenPath: _setPath,
+                                onGoHome: _goHome,
+                              ),
                           loadingBuilder: _currentPath.isNotEmpty
-                              ? _buildRouteResolutionLoadingShell
+                              ? (context) => RouteResolutionLoadingShell(
+                                  path: _currentPath,
+                                )
                               : null,
                           onDropToFolder: _handleDropToFolder,
                           onFolderDragEnter: _handleFolderDragEnter,
@@ -2355,7 +2226,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                           Positioned(
                             right: 16,
                             bottom: 16,
-                            child: _buildCreateFab(context),
+                            child: FileBrowserCreateFab(
+                              visible: _fabVisible,
+                              onPressed: _showCreateBottomSheet,
+                            ),
                           ),
                       ],
                     ),
@@ -2407,24 +2281,4 @@ class _ArchiveContext {
 
   /// Device serial of the device that holds the archive.
   final String archiveSerial;
-}
-
-class _ArchiveTextPreview extends StatelessWidget {
-  const _ArchiveTextPreview({required this.name, required this.text});
-  final String name;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(name)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: SelectableText(
-          text,
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-        ),
-      ),
-    );
-  }
 }

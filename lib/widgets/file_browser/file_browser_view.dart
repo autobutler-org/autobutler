@@ -1,14 +1,14 @@
 import 'package:quark/models/file_node.dart';
-import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/utils/file_browser_path_utils.dart';
-import 'package:quark/utils/safe_set_state_mixin.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:quark/widgets/file_browser/file_browser_view/file_browser_list_tile.dart';
+import 'package:quark/widgets/file_browser/file_browser_view/file_grid_preview.dart';
+import 'package:quark/widgets/file_browser/file_browser_view/file_grid_sort_header.dart';
+import 'package:quark/widgets/file_browser/file_browser_view/file_node_display.dart';
+import 'package:quark/widgets/file_browser/file_browser_view/file_sort_header.dart';
+import 'package:quark/widgets/file_browser/file_browser_view/folder_drop_wrapper.dart';
 import 'package:desktop_drop/desktop_drop.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 enum FileMenuAction {
@@ -141,22 +141,6 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     return sorted;
   }
 
-  Widget _buildFolderDropWrapper({
-    required FileNode item,
-    required Widget child,
-  }) {
-    if (!kIsWeb || widget.onDropToFolder == null || !item.isDir) {
-      return child;
-    }
-    return _FolderDropTarget(
-      targetPath: normalizePath(joinPath(widget.currentPath, item.name)),
-      onDropToFolder: widget.onDropToFolder!,
-      onFolderDragEnter: widget.onFolderDragEnter,
-      onFolderDragExit: widget.onFolderDragExit,
-      child: child,
-    );
-  }
-
   void _dispatchMenuAction(
     BuildContext context,
     FileNode item,
@@ -176,221 +160,6 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         await widget.onFileMenuAction(item, action);
       }
     });
-  }
-
-  // ── Sort header ──────────────────────────────────────────────────────────
-
-  Widget _buildSortHeader() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      color: colorScheme.secondary,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          // Leading icon placeholder
-          const SizedBox(width: 40),
-          _headerCell('Name', SortColumn.name, flex: 5),
-          _headerCell('Device', SortColumn.device, flex: 2),
-          if (widget.showFileSizeAndMenu)
-            _headerCell('Size', SortColumn.size, flex: 2),
-          // Trailing menu placeholder
-          if (widget.showFileSizeAndMenu) const SizedBox(width: 48),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGridSortHeader() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      color: colorScheme.secondary,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          _headerCell('Name', SortColumn.name),
-          _headerCell('Type', SortColumn.type),
-          _headerCell('Size', SortColumn.size),
-          _headerCell('Device', SortColumn.device),
-        ],
-      ),
-    );
-  }
-
-  Widget _headerCell(String label, SortColumn column, {int flex = 1}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isActive = _sortColumn == column;
-    return Expanded(
-      flex: flex,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: () => _toggleSort(column),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isActive
-                      ? colorScheme.onSurface
-                      : colorScheme.onSurfaceVariant,
-                ),
-              ),
-              if (isActive) ...[
-                const SizedBox(width: 4),
-                Icon(
-                  _sortDirection == SortDirection.asc
-                      ? QuarkIcons.arrow_upward_rounded
-                      : QuarkIcons.arrow_downward_rounded,
-                  size: 12,
-                  color: colorScheme.onSurface,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── List tile ─────────────────────────────────────────────────────────────
-
-  Widget _buildListTile(BuildContext context, FileNode item) {
-    final colors = Theme.of(context).colorScheme;
-    final isSelected = widget.selectedPaths.contains(item.apiPath);
-    return Material(
-      color: isSelected
-          ? colors.primaryContainer.withValues(alpha: 0.35)
-          : Colors.transparent,
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: widget.selectionMode
-            ? Checkbox(
-                value: isSelected,
-                onChanged: (_) => widget.onSelectionChanged?.call(
-                  item,
-                  enterSelectionMode: false,
-                ),
-              )
-            : _buildListLeading(item),
-        title: Row(
-          children: [
-            Expanded(
-              flex: 5,
-              child: Text(
-                item.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Text(
-                item.deviceName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: colors.onSurfaceVariant),
-              ),
-            ),
-            if (widget.showFileSizeAndMenu)
-              Expanded(
-                flex: 2,
-                child: Text(
-                  _formatSize(
-                    item.size,
-                    item.isDir,
-                    compressedSize: item.compressedSize,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colors.onSurfaceVariant),
-                ),
-              ),
-          ],
-        ),
-        trailing: widget.showFileSizeAndMenu
-            ? PopupMenuButton<FileMenuAction>(
-                icon: const Icon(QuarkIcons.more_vert),
-                itemBuilder: (context) => [
-                  PopupMenuItem<FileMenuAction>(
-                    value: FileMenuAction.download,
-                    onTap: () => _dispatchMenuAction(
-                      context,
-                      item,
-                      FileMenuAction.download,
-                    ),
-                    child: const Text('Download'),
-                  ),
-                  if (!widget.inArchive)
-                    PopupMenuItem<FileMenuAction>(
-                      value: FileMenuAction.moveRename,
-                      onTap: () => _dispatchMenuAction(
-                        context,
-                        item,
-                        FileMenuAction.moveRename,
-                      ),
-                      child: const Text('Move/Rename'),
-                    ),
-                  if (!widget.inArchive)
-                    PopupMenuItem<FileMenuAction>(
-                      value: FileMenuAction.delete,
-                      onTap: () => _dispatchMenuAction(
-                        context,
-                        item,
-                        FileMenuAction.delete,
-                      ),
-                      child: const Text('Delete'),
-                    ),
-                  if (!widget.inArchive && _isArchive(item))
-                    PopupMenuItem<FileMenuAction>(
-                      value: FileMenuAction.extractHere,
-                      enabled: !_extractingPaths.contains(item.apiPath),
-                      onTap: () => _dispatchMenuAction(
-                        context,
-                        item,
-                        FileMenuAction.extractHere,
-                      ),
-                      child: _extractingPaths.contains(item.apiPath)
-                          ? const Row(
-                              children: [
-                                SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Text('Extracting...'),
-                              ],
-                            )
-                          : const Text('Extract here'),
-                    ),
-                  if (widget.isSearchMode && widget.onNavigateToFolder != null)
-                    PopupMenuItem<FileMenuAction>(
-                      value: FileMenuAction.navigateToFolder,
-                      onTap: () => widget.onNavigateToFolder!(item),
-                      child: const Text('Navigate to folder'),
-                    ),
-                ],
-              )
-            : null,
-        onTap: widget.selectionMode
-            ? () => widget.onSelectionChanged?.call(
-                item,
-                enterSelectionMode: false,
-              )
-            : () => widget.onOpenDirectory(item),
-        onLongPress: widget.inArchive || widget.selectionMode
-            ? null
-            : () => widget.onSelectionChanged?.call(
-                item,
-                enterSelectionMode: true,
-              ),
-      ),
-    );
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -448,7 +217,12 @@ class _FileBrowserViewState extends State<FileBrowserView> {
           }
           return Column(
             children: [
-              _buildSortHeader(),
+              FileSortHeader(
+                sortColumn: _sortColumn,
+                sortDirection: _sortDirection,
+                onToggleSort: _toggleSort,
+                showFileSizeAndMenu: widget.showFileSizeAndMenu,
+              ),
               Expanded(
                 child: ListView(
                   controller: widget.scrollController,
@@ -464,9 +238,27 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                         ),
                         children: [
                           for (final item in entry.value)
-                            _buildFolderDropWrapper(
+                            FolderDropWrapper(
                               item: item,
-                              child: _buildListTile(context, item),
+                              currentPath: widget.currentPath,
+                              onDropToFolder: widget.onDropToFolder,
+                              onFolderDragEnter: widget.onFolderDragEnter,
+                              onFolderDragExit: widget.onFolderDragExit,
+                              child: FileBrowserListTile(
+                                item: item,
+                                isSelected: widget.selectedPaths.contains(
+                                  item.apiPath,
+                                ),
+                                extractingPaths: _extractingPaths,
+                                showFileSizeAndMenu: widget.showFileSizeAndMenu,
+                                inArchive: widget.inArchive,
+                                isSearchMode: widget.isSearchMode,
+                                selectionMode: widget.selectionMode,
+                                onDispatchMenuAction: _dispatchMenuAction,
+                                onOpenDirectory: widget.onOpenDirectory,
+                                onNavigateToFolder: widget.onNavigateToFolder,
+                                onSelectionChanged: widget.onSelectionChanged,
+                              ),
                             ),
                         ],
                       ),
@@ -492,7 +284,11 @@ class _FileBrowserViewState extends State<FileBrowserView> {
 
           return Column(
             children: [
-              _buildGridSortHeader(),
+              FileGridSortHeader(
+                sortColumn: _sortColumn,
+                sortDirection: _sortDirection,
+                onToggleSort: _toggleSort,
+              ),
               Expanded(
                 child: GridView.builder(
                   controller: widget.scrollController,
@@ -509,8 +305,12 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                     final isSelected = widget.selectedPaths.contains(
                       item.apiPath,
                     );
-                    return _buildFolderDropWrapper(
+                    return FolderDropWrapper(
                       item: item,
+                      currentPath: widget.currentPath,
+                      onDropToFolder: widget.onDropToFolder,
+                      onFolderDragEnter: widget.onFolderDragEnter,
+                      onFolderDragExit: widget.onFolderDragExit,
                       child: Card(
                         clipBehavior: Clip.hardEdge,
                         color: isSelected
@@ -537,7 +337,9 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(child: _buildGridPreview(item)),
+                                    Expanded(
+                                      child: FileGridPreview(item: item),
+                                    ),
                                     const SizedBox(height: 8),
                                     Flexible(
                                       child: Text(
@@ -554,7 +356,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                         if (widget.showFileSizeAndMenu)
                                           Flexible(
                                             child: Text(
-                                              _formatSize(
+                                              formatFileSize(
                                                 item.size,
                                                 item.isDir,
                                                 compressedSize:
@@ -607,7 +409,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                                   child: const Text('Delete'),
                                                 ),
                                               if (!widget.inArchive &&
-                                                  _isArchive(item))
+                                                  isArchiveNode(item))
                                                 PopupMenuItem<FileMenuAction>(
                                                   value: FileMenuAction
                                                       .extractHere,
@@ -714,7 +516,12 @@ class _FileBrowserViewState extends State<FileBrowserView> {
         // ── List view ─────────────────────────────────────────────────────
         return Column(
           children: [
-            _buildSortHeader(),
+            FileSortHeader(
+              sortColumn: _sortColumn,
+              sortDirection: _sortDirection,
+              onToggleSort: _toggleSort,
+              showFileSizeAndMenu: widget.showFileSizeAndMenu,
+            ),
             Expanded(
               child: ListView.separated(
                 controller: widget.scrollController,
@@ -725,9 +532,25 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                 ),
                 itemBuilder: (context, index) {
                   final item = files[index];
-                  return _buildFolderDropWrapper(
+                  return FolderDropWrapper(
                     item: item,
-                    child: _buildListTile(context, item),
+                    currentPath: widget.currentPath,
+                    onDropToFolder: widget.onDropToFolder,
+                    onFolderDragEnter: widget.onFolderDragEnter,
+                    onFolderDragExit: widget.onFolderDragExit,
+                    child: FileBrowserListTile(
+                      item: item,
+                      isSelected: widget.selectedPaths.contains(item.apiPath),
+                      extractingPaths: _extractingPaths,
+                      showFileSizeAndMenu: widget.showFileSizeAndMenu,
+                      inArchive: widget.inArchive,
+                      isSearchMode: widget.isSearchMode,
+                      selectionMode: widget.selectionMode,
+                      onDispatchMenuAction: _dispatchMenuAction,
+                      onOpenDirectory: widget.onOpenDirectory,
+                      onNavigateToFolder: widget.onNavigateToFolder,
+                      onSelectionChanged: widget.onSelectionChanged,
+                    ),
                   );
                 },
               ),
@@ -738,213 +561,10 @@ class _FileBrowserViewState extends State<FileBrowserView> {
     );
   }
 
-  static bool _isImageFile(FileNode node) {
-    if (node.isDir) return false;
-    final lower = node.name.toLowerCase();
-    return lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.png') ||
-        lower.endsWith('.gif') ||
-        lower.endsWith('.webp') ||
-        lower.endsWith('.heic') ||
-        lower.endsWith('.heif');
-  }
-
-  /// Extensions the server classifies as a video; kept in sync with
-  /// `storageutil.DetermineFileTypeFromPath` so the two agree on what the
-  /// thumbnail endpoint will accept.
-  static const _videoExtensions = <String>{
-    '.mp4',
-    '.m4v',
-    '.webm',
-    '.ogv',
-    '.avi',
-    '.mov',
-    '.mkv',
-    '.wmv',
-    '.flv',
-    '.3gp',
-    '.3g2',
-    '.mpeg',
-    '.mpg',
-    '.ts',
-  };
-
-  static bool _isVideoFile(FileNode node) {
-    if (node.isDir) return false;
-    if (node.fileType == 'video') return true;
-    final lower = node.name.toLowerCase();
-    final dot = lower.lastIndexOf('.');
-    return dot >= 0 && _videoExtensions.contains(lower.substring(dot));
-  }
-
-  /// Whether the server can render a thumbnail for this node. Videos go
-  /// through ffmpeg frame extraction on the backend and come back as JPEG,
-  /// so they use the same thumbnail URL as images.
-  static bool _hasServerThumbnail(FileNode node) =>
-      _isImageFile(node) || _isVideoFile(node);
-
-  /// Preview slot for a grid tile. Sized by the caller (an [Expanded] that
-  /// hands it whatever the tile has left over) so every tile lines up without
-  /// risking an overflow, with the thumbnail replacing the icon only once it
-  /// decodes.
-  Widget _buildGridPreview(FileNode item) {
-    final icon = Center(
-      child: QuarkFileIcon(name: item.name, isDir: item.isDir, size: 48),
-    );
-
-    return SizedBox(
-      width: double.infinity,
-      child: !_hasServerThumbnail(item)
-          ? icon
-          : CachedNetworkImage(
-              imageUrl: FilesService.constructThumbnailUrl(
-                item.apiPath,
-                serial: item.deviceSerial,
-              ).toString(),
-              imageBuilder: (context, imageProvider) =>
-                  Image(image: imageProvider, fit: BoxFit.cover),
-              placeholder: (context, url) => Shimmer.fromColors(
-                baseColor: Colors.grey[800]!,
-                highlightColor: Colors.grey[700]!,
-                child: Container(color: Colors.grey[800]),
-              ),
-              errorWidget: (context, url, error) => icon,
-            ),
-    );
-  }
-
-  /// Every row reserves the same leading slot so titles line up whether the
-  /// row ends up showing a thumbnail or a file-type icon.
-  static const double _listLeadingSize = 40;
-
-  Widget _buildListLeading(FileNode item) {
-    final icon = Center(
-      child: QuarkFileIcon(name: item.name, isDir: item.isDir),
-    );
-
-    return SizedBox(
-      width: _listLeadingSize,
-      height: _listLeadingSize,
-      child: !_hasServerThumbnail(item)
-          ? icon
-          : CachedNetworkImage(
-              imageUrl: FilesService.constructThumbnailUrl(
-                item.apiPath,
-                serial: item.deviceSerial,
-                size: 'sm',
-              ).toString(),
-              // Only the decoded thumbnail replaces the icon; the placeholder
-              // and error states fall back to it so nothing shifts.
-              imageBuilder: (context, imageProvider) => ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Image(image: imageProvider, fit: BoxFit.cover),
-              ),
-              placeholder: (context, url) => Shimmer.fromColors(
-                baseColor: Colors.grey[800]!,
-                highlightColor: Colors.grey[700]!,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[800],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              errorWidget: (context, url, error) => icon,
-            ),
-    );
-  }
-
-  static bool _isArchive(FileNode node) {
-    if (node.isDir) return false;
-    return node.fileType == 'archive';
-  }
-
   static String _fileType(FileNode node) {
     if (node.isDir) return '';
     final dot = node.name.lastIndexOf('.');
     if (dot < 0) return 'file';
     return node.name.substring(dot + 1).toLowerCase();
-  }
-
-  static String _formatSize(int bytes, bool isDir, {int compressedSize = 0}) {
-    if (isDir) return '--';
-    final sizeStr = _formatBytes(bytes);
-    if (compressedSize > 0 && compressedSize != bytes) {
-      return '${_formatBytes(compressedSize)} → $sizeStr';
-    }
-    return sizeStr;
-  }
-
-  static String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
-}
-
-// ── Folder drop target ────────────────────────────────────────────────────────
-
-class _FolderDropTarget extends StatefulWidget {
-  const _FolderDropTarget({
-    required this.targetPath,
-    required this.onDropToFolder,
-    this.onFolderDragEnter,
-    this.onFolderDragExit,
-    required this.child,
-  });
-
-  final String targetPath;
-  final Future<void> Function(List<DropItem> droppedItems, String targetPath)
-  onDropToFolder;
-  final VoidCallback? onFolderDragEnter;
-  final VoidCallback? onFolderDragExit;
-  final Widget child;
-
-  @override
-  State<_FolderDropTarget> createState() => _FolderDropTargetState();
-}
-
-class _FolderDropTargetState extends State<_FolderDropTarget>
-    with SafeSetStateMixin {
-  bool _isDragOver = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return DropTarget(
-      onDragEntered: (_) {
-        if (!mounted) return;
-        setStateSafely(() => _isDragOver = true);
-        widget.onFolderDragEnter?.call();
-      },
-      onDragExited: (_) {
-        if (!mounted) return;
-        setStateSafely(() => _isDragOver = false);
-        widget.onFolderDragExit?.call();
-      },
-      onDragDone: (details) async {
-        if (mounted) setStateSafely(() => _isDragOver = false);
-        widget.onFolderDragExit?.call();
-        await widget.onDropToFolder(details.files, widget.targetPath);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: _isDragOver ? colorScheme.primary : Colors.transparent,
-            width: 1.5,
-          ),
-          color: _isDragOver
-              ? colorScheme.primaryContainer.withValues(alpha: 0.35)
-              : null,
-        ),
-        child: widget.child,
-      ),
-    );
   }
 }
