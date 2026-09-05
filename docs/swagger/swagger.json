@@ -1114,6 +1114,71 @@
                 }
             }
         },
+        "/files/convert/xlsx": {
+            "post": {
+                "description": "Reads an .xlsx or .xlsm workbook and writes it back as a sibling .qsheet, the format the Sheets editor opens. The workbook itself is left untouched. Answers 409 when a .qsheet of that name already exists and overwrite was not asked for.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Convert a spreadsheet to a Quark spreadsheet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Path to the .xlsx or .xlsm file to convert",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Replace an existing .qsheet of the same name",
+                        "name": "overwrite",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_files.ConvertXlsxJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/files/download": {
             "get": {
                 "description": "Downloads a single file or zips a folder and streams it back to the client",
@@ -3304,6 +3369,23 @@
                 "snippet": {
                     "description": "Snippet is a highlighted excerpt around the matched terms.\nMatched terms are enclosed in \u003cb\u003e tags.",
                     "type": "string"
+                }
+            }
+        },
+        "v0_files.ConvertXlsxJSON": {
+            "type": "object",
+            "properties": {
+                "cells": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "rows": {
+                    "type": "integer"
+                },
+                "tabs": {
+                    "type": "integer"
                 }
             }
         },

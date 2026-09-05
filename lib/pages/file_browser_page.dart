@@ -74,6 +74,22 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   String? _pendingFileOpen;
 
   bool _handlingPendingFile = false;
+
+  /// Whether `_currentPath` is a deep link still being resolved, or one whose
+  /// viewer is on screen — either way, not a directory to list.
+  ///
+  /// All three are exact state, never a guess about the name: a folder called
+  /// `My.Folder` is listed normally, and `isLikelyFilePath` is deliberately
+  /// not consulted here for that reason. They cover consecutive windows and
+  /// all three are needed. `_pendingFileOpen` holds from mount until the open
+  /// is dispatched; `_handlingPendingFile` spans the `statFile` await, where
+  /// the path's type is genuinely unknown and the other two are both false;
+  /// `isFileOpen` covers a viewer reached without a pending open.
+  bool get _currentPathIsOpenFile =>
+      _pendingFileOpen != null ||
+      _handlingPendingFile ||
+      FileBrowserCache.instance.isFileOpen(_currentPath);
+
   _FilesRouteFailure? _routeFailure;
   bool _isGridView = false;
 
@@ -340,6 +356,16 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
       _filesFuture = Future.value(const <FileNode>[]);
+      return;
+    }
+
+    // Deep-linking to a file used to list the file itself as a directory —
+    // `GET /files?rootDir=sheet.qsheet` — which 404s. Not once, either: this
+    // page stays mounted under the pushed editor with `_currentPath` still on
+    // the file, and AutoRefreshMixin's timer reissued the doomed request every
+    // refresh interval for as long as the sheet was open. Leave the listing to
+    // `_openPendingFileInner`, which stats the path and knows what it is.
+    if (_currentPathIsOpenFile) {
       return;
     }
 
@@ -1022,7 +1048,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       builder: (ctx) => AlertDialog(
         title: const Text('Convert to .qsheet?'),
         content: Text(
-          'Would you like to convert "${node.name}" to an Quark '
+          'Would you like to convert "${node.name}" to a Quark '
           'spreadsheet (.qsheet)?\n\nThe original CSV file will not be '
           'modified or deleted.',
         ),
@@ -1106,6 +1132,125 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
+  // ── .xlsx → .qsheet conversion (#1741) ────────────────────────────
+
+  /// The name the workbook at [node] converts to.
+  static String _qsheetNameFor(FileNode node) {
+    final stem = node.name.replaceAll(
+      RegExp(r'\.xls[xm]$', caseSensitive: false),
+      '',
+    );
+    return '$stem.qsheet';
+  }
+
+  Future<void> _handleXlsxOpen(FileNode node) async {
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Convert to .qsheet?'),
+        content: Text(
+          'Would you like to convert "${node.name}" to a Quark '
+          'spreadsheet (.qsheet)?\n\nThe original workbook will not be '
+          'modified or deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Convert'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+    await _convertXlsx(node, overwrite: false);
+  }
+
+  /// Converts the workbook on the Quark, which reads it in place rather than
+  /// downloading it here: a workbook is as large as the user made it, and the
+  /// browser has no reason to hold one.
+  Future<void> _convertXlsx(FileNode node, {required bool overwrite}) async {
+    try {
+      final qsheetPath = await FilesService.convertXlsxToQsheet(
+        node.apiPath,
+        serial: serialOrNull(node.deviceSerial),
+        overwrite: overwrite,
+      );
+      if (!mounted) return;
+
+      // Refresh the file list so the new .qsheet appears, then open it through
+      // the canonical files route.
+      _refreshFileState();
+      _openFileViaRoute(qsheetPath);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (e.statusCode == 409 && !overwrite) {
+        await _handleXlsxConflict(node);
+        return;
+      }
+      _showMessage(Errors.message(e, 'convert the file'));
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage(Errors.message(e, 'convert the file'));
+    }
+  }
+
+  /// A .qsheet of that name is already there. Converting again would throw
+  /// away whatever the user has done to it, so they choose.
+  Future<void> _handleXlsxConflict(FileNode node) async {
+    if (!mounted) return;
+    final qsheetName = _qsheetNameFor(node);
+
+    final choice = await showDialog<_XlsxConflictChoice>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Spreadsheet already exists'),
+        content: Text(
+          '"$qsheetName" is already here. Open it, or replace it with a '
+          'fresh conversion of "${node.name}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(_XlsxConflictChoice.cancel),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(_XlsxConflictChoice.replace),
+            child: const Text('Replace'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(ctx).pop(_XlsxConflictChoice.openExisting),
+            child: const Text('Open existing'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    switch (choice) {
+      case _XlsxConflictChoice.replace:
+        await _convertXlsx(node, overwrite: true);
+      case _XlsxConflictChoice.openExisting:
+        _openSiblingQsheet(node, qsheetName);
+      case _XlsxConflictChoice.cancel:
+      case null:
+        break;
+    }
+  }
+
+  /// Opens the .qsheet sitting beside [node]'s workbook.
+  void _openSiblingQsheet(FileNode node, String qsheetName) {
+    final folder = parentPath(node.apiPath);
+    _openFileViaRoute(folder.isEmpty ? qsheetName : '$folder/$qsheetName');
+  }
+
   Future<void> _handleOpenNode(FileNode node) async {
     if (node.isDir) {
       _openDirectory(node);
@@ -1141,6 +1286,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // CSV — offer to convert to .qsheet (#1019).
     if (lowerName.endsWith('.csv')) {
       await _handleCsvOpen(node);
+      return;
+    }
+
+    // Excel workbooks — offer to convert to .qsheet (#1741). The legacy
+    // .xls is deliberately absent: it is a different format the Quark has no
+    // reader for, so it keeps the generic download view below.
+    if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xlsm')) {
+      await _handleXlsxOpen(node);
       return;
     }
 
@@ -1699,7 +1852,18 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     if (!mounted) return;
 
     if (isDir) {
-      _setPath(filePath);
+      // The "things.qdoc is really a folder" case this stat exists to catch.
+      // Resolution is over, so drop the in-flight flag first — it is what
+      // suppresses listings while the type is unknown, and this path needs one.
+      // _setPath no-ops when the route already points here — which for a deep
+      // link it does — and the listing was skipped on the way in, so load it
+      // directly rather than leaving the folder rendered permanently empty.
+      _handlingPendingFile = false;
+      if (normalizePath(filePath) == _currentPath) {
+        setState(_reloadFiles);
+      } else {
+        _setPath(filePath);
+      }
       return;
     }
 
@@ -2203,6 +2367,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     );
   }
 }
+
+/// What the user chose when a conversion would have replaced a .qsheet that
+/// was already there (#1741).
+enum _XlsxConflictChoice { cancel, replace, openExisting }
 
 class _FilesRouteFailure {
   const _FilesRouteFailure({

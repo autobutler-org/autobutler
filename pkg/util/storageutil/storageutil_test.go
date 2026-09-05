@@ -486,6 +486,13 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		{"book.epub", FileTypeEpub},
 		{"document.docx", FileTypeDocx},
 		{"notes.qdoc", FileTypeQdoc},
+		{"budget.qsheet", FileTypeQsheet},
+		{"budget.xlsx", FileTypeXlsx},
+		{"macros.xlsm", FileTypeXlsx},
+		{"BUDGET.XLSX", FileTypeXlsx}, // Test case insensitivity
+		// The legacy binary format is not OOXML, so it stays unclassified
+		// rather than promising a conversion that cannot run (#1741).
+		{"legacy.xls", FileTypeGeneric},
 		{"archive.zip", FileTypeArchive},
 		{"file.txt", FileTypeText},
 		{"photo.cr2", FileTypeImage},

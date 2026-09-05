@@ -329,6 +329,46 @@ class FilesService with AuthenticatedService {
     }
   }
 
+  /// Converts the .xlsx or .xlsm workbook at [filePath] into a sibling
+  /// `.qsheet` and returns the new file's path. The workbook is left in place.
+  ///
+  /// Throws an [ApiException] with status 409 when a `.qsheet` of that name
+  /// already exists and [overwrite] was not set, so the caller can offer to
+  /// replace it rather than silently overwriting the user's own work.
+  static Future<String> convertXlsxToQsheet(
+    String filePath, {
+    String? serial,
+    bool overwrite = false,
+  }) async {
+    final querySegments = <String>[
+      'filePath=${Uri.encodeQueryComponent(filePath)}',
+    ];
+    final serialValue = serial?.trim() ?? '';
+    if (serialValue.isNotEmpty) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    if (overwrite) {
+      querySegments.add('overwrite=true');
+    }
+    final endpointUri = apiBaseUri.resolve('/api/v0/files/convert/xlsx');
+    final uri = endpointUri.replace(query: querySegments.join('&'));
+    final response = await instance.authenticatedPost(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      // The conflict is answered by the caller, not by the message the Quark
+      // sent with it, so the status is what travels.
+      throw ApiException(response.statusCode, 'Failed to convert spreadsheet');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Unexpected convert response format');
+    }
+    final path = decoded['path'] as String? ?? '';
+    if (path.isEmpty) {
+      throw Exception('Convert response carried no path');
+    }
+    return path;
+  }
+
   /// Returns filesystem metadata for [filePath]: whether it is a directory
   /// and its resolved [fileType] string (e.g. "image", "qdoc", "folder").
   /// Throws if the path does not exist or the request fails.

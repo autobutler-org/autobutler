@@ -39,8 +39,26 @@ bool hasSupportedFilesEditorForType(String fileType) {
 /// than falling through to the "No supported editor" dead end. Named document
 /// types are included deliberately: without them a `.pdf` ends up worse off
 /// than an unclassified file, which reaches that page as `generic` (#1184).
+///
+/// `xlsx` is here for the same reason, and only as a fallback: the file
+/// browser offers to convert a workbook to a `.qsheet` before reaching this,
+/// so a raw workbook lands here when it is opened by URL rather than tapped
+/// (#1741). Sheets reads `.qsheet`, never `.xlsx` itself.
 bool usesGenericFileViewer(String fileType) {
-  const noInAppViewer = {'generic', 'pdf', 'docx', 'slideshow', 'epub'};
+  const noInAppViewer = {'generic', 'pdf', 'docx', 'slideshow', 'epub', 'xlsx'};
   final normalized = fileType.trim().toLowerCase();
   return normalized.isEmpty || noInAppViewer.contains(normalized);
+}
+
+/// The last path segment with [extension] removed, when it carries it.
+///
+/// Both editors derive the name they save back under this way. They each used
+/// to count the extension by hand — `.qsheet` as 8 characters and `.qdoc` as 6,
+/// one too many each — so every save cut a letter off the name and wrote to a
+/// new file: `budget.qsheet` was saved as `budge.qsheet`.
+String fileNameWithoutExtension(String path, String extension) {
+  final name = path.split('/').last;
+  return name.endsWith(extension)
+      ? name.substring(0, name.length - extension.length)
+      : name;
 }

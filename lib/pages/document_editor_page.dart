@@ -15,6 +15,7 @@ import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -315,10 +316,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  String _nameFromPath(String path) {
-    final name = path.split('/').last;
-    return name.endsWith('.qdoc') ? name.substring(0, name.length - 6) : name;
-  }
+  String _nameFromPath(String path) => fileNameWithoutExtension(path, '.qdoc');
 
   /// The live location, canonicalized. go_router always reports it
   /// percent-encoded while `overlayTargetRoute` is built from the raw path, so
