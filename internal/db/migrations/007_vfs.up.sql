@@ -1,3 +1,7 @@
+-- Virtual filesystem storage for plugins and extensions: arbitrary metadata
+-- attached to any VFS coordinate, and directory-style entries for namespaces
+-- that live in the database rather than on disk.
+
 -- vfs_metadata: arbitrary JSON key-value pairs attached to any (namespace, path) coordinate.
 -- Keys are namespaced by convention: the writing plugin's namespace ID is the key prefix
 -- (e.g. "photos.rotation", "files.tag"). The host enforces prefix ownership at the API layer.

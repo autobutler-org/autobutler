@@ -1,4 +1,0 @@
--- Rollback 013: nothing to undo structurally.
--- Sessions were cleared on upgrade; they cannot be restored.
--- The schema is unchanged (token column is still TEXT).
--- Users will need to log in again after downgrading.

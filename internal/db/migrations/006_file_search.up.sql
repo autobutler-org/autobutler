@@ -5,9 +5,10 @@
 -- The content table stores the extracted text keyed by device serial +
 -- relative path. The FTS5 virtual table mirrors it for fast full-text queries.
 --
--- content='' makes this a "contentless" FTS5 table: the FTS index only stores
--- the term positions, not the original text. Snippets require the content
--- table lookup. This keeps the index compact and avoids doubling storage.
+-- content=file_content makes this an "external content" FTS5 table: the FTS
+-- index only stores term positions, not the original text. Snippets require
+-- the content table lookup. This keeps the index compact and avoids doubling
+-- storage.
 
 CREATE TABLE IF NOT EXISTS file_content (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
