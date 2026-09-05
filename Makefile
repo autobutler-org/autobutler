@@ -958,7 +958,7 @@ watch/frontend: generate/frontend ## Watch frontend on web
 check: check/backend check/frontend check/spelling ## Check code
 
 .PHONY: check/backend
-check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc ## Check backend code
+check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc check/migrations ## Check backend code
 
 .PHONY: check/frontend
 check/frontend: check/format/flutter check/lint/flutter ## Check frontend code
@@ -1013,6 +1013,12 @@ check/lint/go: internal/server/public/stub.txt check/structure/go ## Check Go co
 .PHONY: check/structure/go
 check/structure/go: ## Check Go package layout conventions (AGENTS.md)
 	./scripts/check-go-structure.bash
+
+MIGRATION_BASE_REF ?= origin/main
+
+.PHONY: check/migrations
+check/migrations: ## Check DB migrations are numbered above the base branch (MIGRATION_BASE_REF=origin/main)
+	./scripts/check-migration-numbers.bash "$(MIGRATION_BASE_REF)"
 
 .PHONY: check/vuln
 check/vuln: check/vuln/backend ## Check for known CVEs
