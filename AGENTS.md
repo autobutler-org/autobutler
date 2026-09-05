@@ -139,8 +139,24 @@ When a change genuinely needs the database:
 2. Add or edit the query in `sql/queries/`.
 3. Run `make generate/backend/sqlc` and commit the regenerated `internal/db/*.sql.go`.
 
-`sqlc.yaml` points at `internal/db/migrations` for its schema, so the migrations *are* the schema — the two
-cannot drift, and a query that does not match one fails `sqlc vet`.
+### SQL goes through sqlc
+
+Every query lives in `sql/queries/*.sql` and reaches Go as generated code in `internal/db`. Raw SQL in a
+`.go` file is the exception, and an exception needs a reason written next to it.
+
+- **Add the query to `sql/queries/<topic>.sql`** with a `-- name:` header, run `make generate/backend/sqlc`,
+  and call the generated method. `sqlc.yaml` points `schema:` at `internal/db/migrations`, so sqlc
+  type-checks the query against the real schema — a wrong column name is a generation failure rather than a
+  runtime one.
+- **A query whose only caller is a test is fine.** A query with no caller at all is dead: sqlc has no linter
+  for that, so check before adding one and check again when you delete the last call site.
+- **Legitimate exceptions, each needing a comment saying which one applies:** SQL sqlc's SQLite parser
+  cannot accept (FTS5 `MATCH`, `rank` and `snippet()` in `pkg/util/searchutil/search.go`), DDL and
+  statements built from `sqlite_master` at runtime (`internal/db/reset.go`), and writes to a database
+  outside the migration set (the external backup vault in `pkg/backup/vault_export.go`, whose schema is
+  `internal/db/vault_schema.go`).
+- `pkg/vfs` still issues its `vfs_metadata` and `vfs_db_entries` statements as raw SQL. That is a conversion
+  nobody has done yet, not an exception — do not cite it as precedent.
 
 ### Backend development assumptions
 

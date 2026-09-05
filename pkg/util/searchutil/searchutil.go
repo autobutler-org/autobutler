@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/autobutler-org/quark/internal/db"
 )
 
 // MaxExtractBytes is the maximum number of bytes read from a file for indexing.
@@ -84,47 +86,41 @@ func IsIndexable(path string) bool {
 // UpsertContent indexes the extracted text for a file. If the file was
 // previously indexed, its entry is updated. Callers should call ExtractText
 // first and skip calling this function when the result is empty.
-func UpsertContent(ctx context.Context, db *sql.DB, serial, relPath, extracted string) error {
-	_, err := db.ExecContext(ctx,
-		`INSERT INTO file_content (serial, rel_path, extracted, updated_at)
-		 VALUES (?, ?, ?, datetime('now'))
-		 ON CONFLICT(serial, rel_path) DO UPDATE SET
-		     extracted  = excluded.extracted,
-		     updated_at = excluded.updated_at`,
-		serial, relPath, extracted)
-	return err
+func UpsertContent(ctx context.Context, sqlDB *sql.DB, serial, relPath, extracted string) error {
+	return db.New(sqlDB).UpsertFileContent(ctx, db.UpsertFileContentParams{
+		Serial:    serial,
+		RelPath:   relPath,
+		Extracted: extracted,
+	})
 }
 
 // DeleteContent removes the index entry for a specific file.
-func DeleteContent(ctx context.Context, db *sql.DB, serial, relPath string) error {
-	_, err := db.ExecContext(ctx,
-		`DELETE FROM file_content WHERE serial = ? AND rel_path = ?`,
-		serial, relPath)
-	return err
+func DeleteContent(ctx context.Context, sqlDB *sql.DB, serial, relPath string) error {
+	return db.New(sqlDB).DeleteFileContent(ctx, db.DeleteFileContentParams{
+		Serial:  serial,
+		RelPath: relPath,
+	})
 }
 
 // DeleteContentBySerial removes all index entries for a storage device.
 // Call this when a device is removed.
-func DeleteContentBySerial(ctx context.Context, db *sql.DB, serial string) error {
-	_, err := db.ExecContext(ctx,
-		`DELETE FROM file_content WHERE serial = ?`,
-		serial)
-	return err
+func DeleteContentBySerial(ctx context.Context, sqlDB *sql.DB, serial string) error {
+	return db.New(sqlDB).DeleteFileContentBySerial(ctx, serial)
 }
 
 // IndexFile extracts text from path and upserts it into the index.
 // If the file is not indexable (non-text format), the call is a no-op.
-func IndexFile(ctx context.Context, db *sql.DB, serial, relPath, absPath string) error {
+func IndexFile(ctx context.Context, sqlDB *sql.DB, serial, relPath, absPath string) error {
 	text := ExtractText(absPath)
 	if text == "" {
 		return nil
 	}
-	return UpsertContent(ctx, db, serial, relPath, text)
+	return UpsertContent(ctx, sqlDB, serial, relPath, text)
 }
 
 // IndexFileWithTimeout is like IndexFile but cancels extraction after d.
-func IndexFileWithTimeout(db *sql.DB, serial, relPath, absPath string, d time.Duration) error {
+func IndexFileWithTimeout(sqlDB *sql.DB, serial, relPath, absPath string, d time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d)
 	defer cancel()
-	return IndexFile(ctx, db, serial, relPath, absPath)
+	return IndexFile(ctx, sqlDB, serial, relPath, absPath)
 }
