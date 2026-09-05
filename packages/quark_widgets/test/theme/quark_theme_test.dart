@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -30,6 +32,17 @@ void main() {
       test('$name: the tokens ride along as a theme extension', () {
         final theme = QuarkTheme.from(tokens, brightness);
         expect(theme.extension<QuarkTokens>(), tokens);
+      });
+
+      // #1789: dark's errorForeground was red-300, a tint of the error fill it
+      // sits on. At 1.98:1 the label on an enabled destructive button read as
+      // the disabled gray it had just stopped being.
+      test('$name: the error foreground contrasts with the error fill', () {
+        final scheme = QuarkTheme.from(tokens, brightness).colorScheme;
+        expect(
+          contrastRatio(scheme.onError, scheme.error),
+          greaterThanOrEqualTo(3.0),
+        );
       });
     }
 
@@ -65,4 +78,11 @@ void main() {
       expect(QuarkTheme.light().extension<QuarkTokens>(), QuarkTokens.light);
     });
   });
+}
+
+/// The WCAG contrast ratio between [a] and [b], from 1.0 to 21.0.
+double contrastRatio(Color a, Color b) {
+  final lighter = math.max(a.computeLuminance(), b.computeLuminance());
+  final darker = math.min(a.computeLuminance(), b.computeLuminance());
+  return (lighter + 0.05) / (darker + 0.05);
 }
