@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 
 import '../theme/quark_tokens.dart';
+import 'new_file_dialog/new_file_type_card.dart';
 
 /// A creatable file type offered by [NewFileDialog].
 @immutable
@@ -149,7 +150,7 @@ class _NewFileDialogState extends State<NewFileDialog> {
                 runSpacing: tokens.spacingSm,
                 children: [
                   for (final type in widget.types)
-                    _TypeCard(
+                    NewFileTypeCard(
                       type: type,
                       isSelected: type == _selected,
                       onTap: () => setState(() => _selected = type),
@@ -193,72 +194,6 @@ class _NewFileDialogState extends State<NewFileDialog> {
           child: const Text('Create'),
         ),
       ],
-    );
-  }
-}
-
-class _TypeCard extends StatelessWidget {
-  const _TypeCard({
-    required this.type,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final NewFileType type;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final tokens = QuarkTokens.of(context);
-    final slug = type.extension.isEmpty
-        ? 'generic'
-        : type.extension.substring(1);
-
-    return GestureDetector(
-      key: ValueKey('new_file_type_$slug'),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: 88,
-        padding: EdgeInsets.symmetric(
-          vertical: tokens.spacingSm + tokens.spacingXs,
-          horizontal: tokens.spacingSm,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest,
-          border: Border.all(
-            color: isSelected ? colorScheme.primary : colorScheme.outline,
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              type.icon,
-              size: 28,
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-            SizedBox(height: tokens.spacingXs + tokens.spacingXs / 2),
-            Text(
-              type.label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
