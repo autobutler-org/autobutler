@@ -713,21 +713,12 @@ class PhotosPageState extends State<PhotosPage>
     if (_isUploading) return;
 
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        allowMultiple: true,
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty || !mounted) return;
+      final picked = await FilePicker.pickFiles(type: FileType.image);
+      if (picked.isEmpty || !mounted) return;
 
       final multipartFiles = <http.MultipartFile>[];
-      for (final f in result.files) {
-        if (kIsWeb) {
-          if (f.bytes == null) continue;
-          multipartFiles.add(
-            http.MultipartFile.fromBytes('files', f.bytes!, filename: f.name),
-          );
-        } else if (f.path != null && f.path!.isNotEmpty) {
+      for (final f in picked) {
+        if (!kIsWeb && f.path != null && f.path!.isNotEmpty) {
           multipartFiles.add(
             await http.MultipartFile.fromPath(
               'files',
@@ -735,9 +726,13 @@ class PhotosPageState extends State<PhotosPage>
               filename: f.name,
             ),
           );
-        } else if (f.bytes != null) {
+        } else {
           multipartFiles.add(
-            http.MultipartFile.fromBytes('files', f.bytes!, filename: f.name),
+            http.MultipartFile.fromBytes(
+              'files',
+              await f.readAsBytes(),
+              filename: f.name,
+            ),
           );
         }
       }

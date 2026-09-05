@@ -324,15 +324,11 @@ class _VaultPageState extends State<VaultPage> {
   }
 
   Future<void> _showImportDialog(BuildContext context) async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['csv', 'json'],
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return;
-
-    final file = result.files.first;
-    if (file.bytes == null) return;
+    if (file == null) return;
 
     if (!mounted) return;
     final format = await QuarkWidget.showDialog<String>(
@@ -360,7 +356,7 @@ class _VaultPageState extends State<VaultPage> {
 
     try {
       final resp = await VaultService.importEntries(
-        fileBytes: file.bytes!,
+        fileBytes: await file.readAsBytes(),
         fileName: file.name,
         format: format,
       );

@@ -101,22 +101,20 @@ String _basename(String relativePath) {
 
 /// Plain file selection.
 ///
-/// `withData: false` because every native picker hands back a real path, and
-/// reading the bytes as well would put the whole file in memory for nothing —
-/// the same waste #1629 removed from the web side. A picker that somehow
-/// returns no path still works: that file falls back to its bytes and takes
-/// the single-request path.
+/// Nothing here reads a file at pick time: every native picker hands back a
+/// real path, and pulling the bytes as well would put the whole file in memory
+/// for nothing — the same waste #1629 removed from the web side. A picker that
+/// somehow returns no path still works: that file falls back to the picker's
+/// own byte stream, which is read lazily at upload time and takes the
+/// single-request path.
 Future<List<PendingUpload>> pickFileUploadsPlatform() async {
-  final result = await FilePicker.pickFiles(
-    withData: false,
-    allowMultiple: true,
-  );
-  if (result == null || result.files.isEmpty) {
+  final result = await FilePicker.pickFiles();
+  if (result.isEmpty) {
     return const [];
   }
 
   final uploads = <PendingUpload>[];
-  for (final picked in result.files) {
+  for (final picked in result) {
     final name = picked.name.trim();
     if (name.isEmpty) {
       continue;
@@ -124,16 +122,16 @@ Future<List<PendingUpload>> pickFileUploadsPlatform() async {
 
     final path = picked.path;
     if (path == null || path.isEmpty) {
-      final bytes = picked.bytes;
-      if (bytes == null) {
-        continue;
-      }
       uploads.add(
         PendingUpload(
           relativeDir: '',
           name: name,
-          build: () async =>
-              http.MultipartFile.fromBytes('files', bytes, filename: name),
+          build: () async => http.MultipartFile(
+            'files',
+            picked.readAsByteStream(),
+            await picked.length(),
+            filename: name,
+          ),
         ),
       );
       continue;
