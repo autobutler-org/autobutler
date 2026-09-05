@@ -2,44 +2,16 @@ package deviceutil
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	_ "modernc.org/sqlite"
 )
 
 func newTestDBWithRoles(t *testing.T) *db.Queries {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("failed to open in-memory db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-
-	schema := `
-		CREATE TABLE IF NOT EXISTS device_roles (
-			device_serial TEXT PRIMARY KEY,
-			role TEXT NOT NULL DEFAULT 'unassigned' CHECK (role IN ('default-storage', 'snapshot-backup', 'unassigned')),
-			updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-		CREATE UNIQUE INDEX IF NOT EXISTS idx_device_roles_one_default_storage
-			ON device_roles(role) WHERE role = 'default-storage';
-		CREATE TABLE IF NOT EXISTS device_names (
-			device_serial TEXT PRIMARY KEY,
-			display_name TEXT NOT NULL,
-			updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-	`
-	if _, err := sqlDB.Exec(schema); err != nil {
-		t.Fatalf("failed to create schema: %v", err)
-	}
-
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("failed to get connection: %v", err)
-	}
-	return db.New(conn)
+	return dbtest.NewDB(t).Queries
 }
 
 func TestUpsertAndGetDeviceRole(t *testing.T) {

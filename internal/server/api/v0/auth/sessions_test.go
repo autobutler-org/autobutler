@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	v0_auth "github.com/autobutler-org/quark/internal/server/api/v0/auth"
 	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
@@ -19,41 +20,11 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// newAuthTestDB creates an in-memory SQLite DB with the full auth schema.
+// newAuthTestDB opens a database carrying the real migration set.
 func newAuthTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", db.DSN(":memory:"))
-	if err != nil {
-		t.Fatalf("open in-memory db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-
-	schema := `
-		CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT NOT NULL UNIQUE,
-			password_hash TEXT NOT NULL,
-			recovery_phrase_hash TEXT NOT NULL,
-			is_admin INTEGER NOT NULL DEFAULT 0,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-		CREATE TABLE IF NOT EXISTS sessions (
-			token TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			expires_at DATETIME NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			last_used_at DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-		);
-	`
-	if _, err := sqlDB.Exec(schema); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("get connection: %v", err)
-	}
-	return sqlDB, db.New(conn)
+	database := dbtest.NewDB(t)
+	return database.Db, database.Queries
 }
 
 // newSessionsTestEngine creates a gin engine with auth routes and a test user+session.

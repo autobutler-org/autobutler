@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"path/filepath"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	_ "modernc.org/sqlite"
 )
@@ -29,53 +29,14 @@ func setupLiveAndBackup(t *testing.T) (liveDB *sql.DB, liveQueries *db.Queries, 
 		t.Fatalf("ExportVault: %v", err)
 	}
 
-	// Create a fresh live DB to import into (simulating a new/empty vault).
-	freshDir := t.TempDir()
-	freshPath := filepath.Join(freshDir, "fresh.db")
-	freshDB, err := sql.Open("sqlite", freshPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { freshDB.Close() })
+	// A fresh live vault to import into, simulating a new/empty one.
+	fresh := dbtest.NewDB(t)
+	freshDB := fresh.Db
 
 	params := vaultcrypto.Argon2Params{Memory: 1024, Iterations: 1, Parallelism: 1}
 	salt, _ := vaultcrypto.GenerateSalt()
 	freshKey := vaultcrypto.DeriveKey("new-master", salt, params)
 	verBlob, verNonce, _ := vaultcrypto.MakeVerificationBlob(freshKey)
-
-	_, err = freshDB.Exec(`
-		CREATE TABLE vault_config (
-			id INTEGER PRIMARY KEY CHECK (id = 1),
-			salt BLOB NOT NULL,
-			argon2_memory INTEGER NOT NULL,
-			argon2_iterations INTEGER NOT NULL,
-			argon2_parallelism INTEGER NOT NULL,
-			verification_blob BLOB NOT NULL,
-			verification_nonce BLOB NOT NULL,
-			auto_lock_seconds INTEGER NOT NULL DEFAULT 900,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-		CREATE TABLE vault_folders (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL,
-			parent_id INTEGER REFERENCES vault_folders(id) ON DELETE CASCADE,
-			sort_order INTEGER NOT NULL DEFAULT 0,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-		CREATE TABLE vault_entries (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL,
-			url_host TEXT NOT NULL DEFAULT '',
-			folder_id INTEGER REFERENCES vault_folders(id) ON DELETE SET NULL,
-			ciphertext BLOB NOT NULL,
-			nonce BLOB NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-	`)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	_, err = freshDB.Exec(
 		`INSERT INTO vault_config (id, salt, argon2_memory, argon2_iterations, argon2_parallelism,
@@ -86,7 +47,7 @@ func setupLiveAndBackup(t *testing.T) (liveDB *sql.DB, liveQueries *db.Queries, 
 		t.Fatal(err)
 	}
 
-	return freshDB, db.New(freshDB), freshKey, backupDir
+	return freshDB, fresh.Queries, freshKey, backupDir
 }
 
 func TestImportVault_RoundTrip(t *testing.T) {

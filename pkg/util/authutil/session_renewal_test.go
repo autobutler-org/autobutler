@@ -5,13 +5,12 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/util/authutil"
-	_ "modernc.org/sqlite"
 )
 
 // Sliding session expiry (#1647). expires_at used to be stamped once at login
@@ -32,42 +31,8 @@ import (
 // habit.
 func newRenewalTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 	t.Helper()
-	// A shared-cache memory DB, uniquely named per test: plain ":memory:" gives
-	// every pooled connection its own empty database, and these tests read
-	// through the pool while the code under test holds its own connection.
-	dsn := fmt.Sprintf("file:%s?mode=memory&cache=shared", t.Name())
-	sqlDB, err := sql.Open("sqlite", db.DSN(dsn))
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-
-	const schema = `
-		CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT NOT NULL UNIQUE,
-			password_hash TEXT NOT NULL,
-			recovery_phrase_hash TEXT NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			is_admin INTEGER NOT NULL DEFAULT 0
-		);
-		CREATE TABLE IF NOT EXISTS sessions (
-			token TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			expires_at DATETIME NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			last_used_at DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-		);
-	`
-	if _, err := sqlDB.Exec(schema); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("get connection: %v", err)
-	}
-	return sqlDB, db.New(conn)
+	database := dbtest.NewDB(t)
+	return database.Db, database.Queries
 }
 
 // newSignedInUser sets up the first user and returns their raw session token.

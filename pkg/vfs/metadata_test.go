@@ -8,48 +8,13 @@ import (
 
 	_ "modernc.org/sqlite"
 
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
-const testSchema = `
-CREATE TABLE IF NOT EXISTS vfs_metadata (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    namespace   TEXT NOT NULL,
-    path        TEXT NOT NULL,
-    key         TEXT NOT NULL,
-    value       TEXT NOT NULL,
-    updated_at  DATETIME NOT NULL DEFAULT (datetime('now')),
-    UNIQUE (namespace, path, key)
-);
-CREATE INDEX IF NOT EXISTS idx_vfs_metadata_ns_path ON vfs_metadata (namespace, path);
-CREATE INDEX IF NOT EXISTS idx_vfs_metadata_ns_key  ON vfs_metadata (namespace, key);
-
-CREATE TABLE IF NOT EXISTS vfs_db_entries (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    namespace   TEXT NOT NULL,
-    path        TEXT NOT NULL,
-    is_dir      BOOLEAN NOT NULL DEFAULT 0,
-    size        INTEGER NOT NULL DEFAULT 0,
-    mime_type   TEXT NOT NULL DEFAULT '',
-    content     BLOB,
-    created_at  DATETIME NOT NULL DEFAULT (datetime('now')),
-    updated_at  DATETIME NOT NULL DEFAULT (datetime('now')),
-    UNIQUE (namespace, path)
-);
-CREATE INDEX IF NOT EXISTS idx_vfs_db_entries_ns_path ON vfs_db_entries (namespace, path);
-`
-
 func newTestDB(t *testing.T) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
-	if _, err := db.Exec(testSchema); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
-	t.Cleanup(func() { db.Close() })
-	return db
+	return dbtest.NewDB(t).Db
 }
 
 func jsonVal(t *testing.T, v any) json.RawMessage {

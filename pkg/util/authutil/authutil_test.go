@@ -2,52 +2,11 @@ package authutil_test
 
 import (
 	"context"
-	"database/sql"
 	"strings"
 	"testing"
 
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/authutil"
-	_ "modernc.org/sqlite"
 )
-
-// newTestDB creates an in-memory SQLite database with the auth schema applied.
-func newTestDB(t *testing.T) *db.Queries {
-	t.Helper()
-	sqlDB, err := sql.Open("sqlite", db.DSN(":memory:"))
-	if err != nil {
-		t.Fatalf("failed to open in-memory db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-
-	schema := `
-		CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT NOT NULL UNIQUE,
-			password_hash TEXT NOT NULL,
-			recovery_phrase_hash TEXT NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			is_admin INTEGER NOT NULL DEFAULT 0
-		);
-		CREATE TABLE IF NOT EXISTS sessions (
-			token TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			expires_at DATETIME NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			last_used_at DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-		);
-	`
-	if _, err := sqlDB.Exec(schema); err != nil {
-		t.Fatalf("failed to create schema: %v", err)
-	}
-
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("failed to get connection: %v", err)
-	}
-	return db.New(conn)
-}
 
 // --- Unit tests ---
 

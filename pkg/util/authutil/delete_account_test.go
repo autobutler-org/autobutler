@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/util/authutil"
 	_ "modernc.org/sqlite"
 )
@@ -49,21 +50,7 @@ func newDeleteAccountFixture(t *testing.T) deleteAccountFixture {
 		}
 	}
 
-	sqlDB, err := sql.Open("sqlite", db.DSN(filepath.Join(root, "quark.db")))
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-
-	database := &db.DatabaseSqlc{Db: sqlDB}
-	if err := db.ResetDatabase(database); err != nil {
-		t.Fatalf("build schema: %v", err)
-	}
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("get conn: %v", err)
-	}
-	database.Queries = db.New(conn)
+	database := dbtest.NewDB(t)
 
 	if _, err := authutil.Setup(context.Background(), database.Queries, authutil.SetupParams{
 		Username: "testuser",

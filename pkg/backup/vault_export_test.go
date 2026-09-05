@@ -5,65 +5,25 @@ import (
 	"database/sql"
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	_ "modernc.org/sqlite"
 )
 
 func setupLiveVaultDB(t *testing.T, masterPassword string) (*sql.DB, *db.Queries, []byte) {
 	t.Helper()
-	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "test.db")
-	d, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { d.Close() })
-
-	_, err = d.Exec(`
-		CREATE TABLE vault_config (
-			id INTEGER PRIMARY KEY CHECK (id = 1),
-			salt BLOB NOT NULL,
-			argon2_memory INTEGER NOT NULL DEFAULT 65536,
-			argon2_iterations INTEGER NOT NULL DEFAULT 3,
-			argon2_parallelism INTEGER NOT NULL DEFAULT 4,
-			verification_blob BLOB NOT NULL,
-			verification_nonce BLOB NOT NULL,
-			auto_lock_seconds INTEGER NOT NULL DEFAULT 900,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-		CREATE TABLE vault_folders (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL,
-			parent_id INTEGER REFERENCES vault_folders(id) ON DELETE CASCADE,
-			sort_order INTEGER NOT NULL DEFAULT 0,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-		CREATE TABLE vault_entries (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL,
-			url_host TEXT NOT NULL DEFAULT '',
-			folder_id INTEGER REFERENCES vault_folders(id) ON DELETE SET NULL,
-			ciphertext BLOB NOT NULL,
-			nonce BLOB NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
-		);
-		CREATE INDEX idx_vault_entries_folder ON vault_entries(folder_id);
-	`)
-	if err != nil {
-		t.Fatal(err)
-	}
+	database := dbtest.NewDB(t)
+	d := database.Db
 
 	params := vaultcrypto.Argon2Params{Memory: 1024, Iterations: 1, Parallelism: 1}
 	salt, _ := vaultcrypto.GenerateSalt()
 	key := vaultcrypto.DeriveKey(masterPassword, salt, params)
 	verBlob, verNonce, _ := vaultcrypto.MakeVerificationBlob(key)
 
-	_, err = d.Exec(
+	_, err := d.Exec(
 		`INSERT INTO vault_config (id, salt, argon2_memory, argon2_iterations, argon2_parallelism,
 			verification_blob, verification_nonce, auto_lock_seconds)
 		VALUES (1, ?, ?, ?, ?, ?, ?, 900)`,
@@ -73,8 +33,7 @@ func setupLiveVaultDB(t *testing.T, masterPassword string) (*sql.DB, *db.Queries
 		t.Fatal(err)
 	}
 
-	queries := db.New(d)
-	return d, queries, key
+	return d, database.Queries, key
 }
 
 func addTestEntry(t *testing.T, d *sql.DB, key []byte, name, username, password string) {

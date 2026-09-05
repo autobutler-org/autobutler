@@ -8,52 +8,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	_ "modernc.org/sqlite"
 )
 
 // --- schema setup ---
 
-const testSchema = `
-CREATE TABLE IF NOT EXISTS file_content (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    serial     TEXT    NOT NULL,
-    rel_path   TEXT    NOT NULL,
-    extracted  TEXT    NOT NULL DEFAULT '',
-    updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(serial, rel_path)
-);
-CREATE VIRTUAL TABLE IF NOT EXISTS file_content_fts USING fts5(
-    extracted,
-    content=file_content,
-    content_rowid=id,
-    tokenize='porter unicode61'
-);
-CREATE TRIGGER IF NOT EXISTS file_content_ai
-AFTER INSERT ON file_content BEGIN
-    INSERT INTO file_content_fts(rowid, extracted) VALUES (new.id, new.extracted);
-END;
-CREATE TRIGGER IF NOT EXISTS file_content_ad
-AFTER DELETE ON file_content BEGIN
-    INSERT INTO file_content_fts(file_content_fts, rowid, extracted) VALUES ('delete', old.id, old.extracted);
-END;
-CREATE TRIGGER IF NOT EXISTS file_content_au
-AFTER UPDATE ON file_content BEGIN
-    INSERT INTO file_content_fts(file_content_fts, rowid, extracted) VALUES ('delete', old.id, old.extracted);
-    INSERT INTO file_content_fts(rowid, extracted) VALUES (new.id, new.extracted);
-END;
-`
-
 func newTestDB(t *testing.T) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("open sqlite3: %v", err)
-	}
-	if _, err := db.Exec(testSchema); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
-	t.Cleanup(func() { db.Close() })
-	return db
+	return dbtest.NewDB(t).Db
 }
 
 // --- IsIndexable ---

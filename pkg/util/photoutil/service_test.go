@@ -10,6 +10,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/autobutler-org/quark/internal/db"
+	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
@@ -134,30 +135,7 @@ func TestListPhotos_VFS_OffsetBeyondTotal(t *testing.T) {
 
 func newRotationDB(t *testing.T) *db.Queries {
 	t.Helper()
-	sqlDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("open in-memory db: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-
-	const schema = `
-		CREATE TABLE IF NOT EXISTS photo_rotations (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			device_serial TEXT NOT NULL DEFAULT '',
-			rel_path TEXT NOT NULL,
-			rotation_quarters INTEGER NOT NULL DEFAULT 0,
-			updated_at DATETIME NOT NULL DEFAULT (datetime('now')),
-			UNIQUE (device_serial, rel_path)
-		);
-	`
-	if _, err := sqlDB.Exec(schema); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
-	conn, err := sqlDB.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("get connection: %v", err)
-	}
-	return db.New(conn)
+	return dbtest.NewDB(t).Queries
 }
 
 func TestSaveRotation_NormalizesAndDeletes(t *testing.T) {
