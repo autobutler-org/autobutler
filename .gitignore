@@ -95,17 +95,12 @@ flutter.zip
 
 # AI slop
 ## Playwright / test artifacts
-app/
 playwright-report/
 test-results/performance/*
 !test-results/performance/.gitkeep
 
 # Ralph loops
 .ralph/
-## Skills
-.agents/skills
-.claude/skills
-.github/skills
 ## `dart run skills@ get` writes install timestamps and hashes here. Per
 ## developer, and per agent they chose, so it is not shared state.
 .config/dart_skills/
@@ -113,6 +108,9 @@ test-results/performance/*
 ## Claude Code workspace (agents are shared; everything else is per-developer)
 .claude/*
 !.claude/agents/
+!.claude/skills/
+.claude/skills/dart-*
+.claude/skills/flutter-*
 
 ## Sable's personal dev context (AI co-developer workspace)
 sable/
@@ -120,7 +118,6 @@ sable/
 exokomodo/
 linux/flutter/ephemeral/
 deploy/azure/headscale.rendered.parameters.json
-provisioning
 
 # SBOM generated at build time from pubspec.lock
 assets/sbom_flutter.json
@@ -129,7 +126,7 @@ assets/sbom_flutter.json
 .agents/
 
 # Test plugin binary (built by plugin subprocess host tests)
-testplugin
+/testplugin
 
 # Generated on CI runners by scripts/ios-ci-signing.bash
 ios/ExportOptions.ci.plist
