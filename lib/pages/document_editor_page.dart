@@ -13,6 +13,7 @@ import 'package:quark/router.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/utils/connection_error.dart';
+import 'package:quark/utils/editor_shortcuts.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
@@ -978,6 +979,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
               padding: EdgeInsets.zero,
               placeholder: 'Start writing…',
               customStyles: _quillStyles(pageCs),
+              customShortcuts: editorNavigationShortcuts(),
               // Keeps Quill's built-in search dialog from opening on top of the
               // inline find bar — see [quillFindKeyInterceptor].
               // ignore: experimental_member_use
