@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"slices"
@@ -281,15 +283,10 @@ func Update(source *UpdateSource, version string) error {
 		return errors.New("version cannot be empty")
 	}
 
-	// Before the backup copy and the download, not after: both are wasted work
-	// if the binary cannot be replaced at the end of it (#1609).
+	// Before the download, not after: it is wasted work if the binary cannot
+	// be replaced at the end of it (#1609).
 	if err := CanSelfUpdate(); err != nil {
 		return err
-	}
-
-	_, err := backupSelf()
-	if err != nil {
-		return fmt.Errorf("failed to copy current binary: %w", err)
 	}
 
 	baseUrl := source.UpdateUrl()
@@ -366,8 +363,42 @@ var allowedUpdateHosts = []string{
 
 const binaryName = "quark"
 
-var backupName = fmt.Sprintf("%s_backup", binaryName)
 var extractedName = fmt.Sprintf("%s_extracted", binaryName)
+
+var staleBackupPrefixes = []string{"autobutler_backup", "quark_backup"}
+
+type RemoveStaleBackupsParams struct {
+	Dir string
+}
+
+type RemoveStaleBackupsResult struct {
+	Removed []string
+}
+
+func RemoveStaleBackups(params RemoveStaleBackupsParams) (RemoveStaleBackupsResult, error) {
+	dir := params.Dir
+	if dir == "" {
+		dir = os.TempDir()
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return RemoveStaleBackupsResult{}, fmt.Errorf("failed to read %s: %w", dir, err)
+	}
+	result := RemoveStaleBackupsResult{}
+	var errs []error
+	for _, entry := range entries {
+		if !entry.Type().IsRegular() || !isStaleBackupName(entry.Name()) {
+			continue
+		}
+		path := filepath.Join(dir, entry.Name())
+		if err := os.Remove(path); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		result.Removed = append(result.Removed, path)
+	}
+	return result, errors.Join(errs...)
+}
 
 // ── Self-update preflight (#1609) ───────────────────────────────────────────
 

@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -73,28 +74,76 @@ func TestUpdate_404Response(t *testing.T) {
 	}
 }
 
-func TestBackupSelf(t *testing.T) {
-	backupPath, err := backupSelf()
+func TestUpdate_LeavesNothingInTempDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("TMPDIR", tmpDir)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	t.Setenv("QUARK_UPDATE_URL", server.URL)
+
+	if err := Update(defaultUpdateSource, "v1.0.0"); err == nil {
+		t.Fatal("Expected error for 404 response")
+	}
+
+	entries, err := os.ReadDir(tmpDir)
 	if err != nil {
-		t.Fatalf("backupSelf failed: %v", err)
+		t.Fatalf("Failed to read temp dir: %v", err)
 	}
-	defer os.Remove(backupPath)
+	for _, entry := range entries {
+		t.Errorf("Update left %q behind in the temp dir", entry.Name())
+	}
+}
 
-	if backupPath == "" {
-		t.Error("Expected non-empty backup path")
+func TestRemoveStaleBackups(t *testing.T) {
+	dir := t.TempDir()
+	stale := []string{"autobutler_backup123456", "quark_backup789"}
+	keep := []string{"quark_update_123", "quark_extracted456", "unrelated.txt"}
+	for _, name := range append(append([]string{}, stale...), keep...) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("binary"), 0o644); err != nil {
+			t.Fatalf("Failed to write %s: %v", name, err)
+		}
+	}
+	if err := os.Mkdir(filepath.Join(dir, "quark_backup_dir"), 0o755); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
 	}
 
-	if _, err := os.Stat(backupPath); os.IsNotExist(err) {
-		t.Error("Backup file was not created")
-	}
-
-	info, err := os.Stat(backupPath)
+	result, err := RemoveStaleBackups(RemoveStaleBackupsParams{Dir: dir})
 	if err != nil {
-		t.Fatalf("Failed to stat backup: %v", err)
+		t.Fatalf("RemoveStaleBackups failed: %v", err)
 	}
 
-	if info.Size() == 0 {
-		t.Error("Backup file is empty")
+	if len(result.Removed) != len(stale) {
+		t.Errorf("Expected %d removed, got %d: %v", len(stale), len(result.Removed), result.Removed)
+	}
+	for _, name := range stale {
+		if _, err := os.Stat(filepath.Join(dir, name)); !os.IsNotExist(err) {
+			t.Errorf("Expected %s to be removed", name)
+		}
+	}
+	for _, name := range append(keep, "quark_backup_dir") {
+		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+			t.Errorf("Expected %s to be left alone: %v", name, err)
+		}
+	}
+}
+
+func TestRemoveStaleBackups_NothingToDo(t *testing.T) {
+	result, err := RemoveStaleBackups(RemoveStaleBackupsParams{Dir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("RemoveStaleBackups failed: %v", err)
+	}
+	if len(result.Removed) != 0 {
+		t.Errorf("Expected nothing removed, got %v", result.Removed)
+	}
+}
+
+func TestRemoveStaleBackups_MissingDir(t *testing.T) {
+	_, err := RemoveStaleBackups(RemoveStaleBackupsParams{Dir: filepath.Join(t.TempDir(), "missing")})
+	if err == nil {
+		t.Error("Expected error for a directory that does not exist")
 	}
 }
 
@@ -197,11 +246,6 @@ func TestReplaceSelf_VerifyRejectsBeforeExtracting(t *testing.T) {
 func TestConstants(t *testing.T) {
 	if binaryName != "quark" {
 		t.Errorf("Expected binaryName to be 'quark', got '%s'", binaryName)
-	}
-
-	expectedBackupName := "quark_backup"
-	if backupName != expectedBackupName {
-		t.Errorf("Expected backupName to be '%s', got '%s'", expectedBackupName, backupName)
 	}
 
 	expectedExtractedName := "quark_extracted"

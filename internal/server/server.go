@@ -26,6 +26,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/util/tlsutil"
+	"github.com/autobutler-org/quark/pkg/util/updateutil"
 	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/util/workerutil"
 
@@ -242,6 +243,12 @@ type StartOptions struct {
 }
 
 func StartServer(deps deputil.Dependencies, opts StartOptions) error {
+	if result, err := updateutil.RemoveStaleBackups(updateutil.RemoveStaleBackupsParams{}); err != nil {
+		log.Printf("[update] failed to remove stale binary backups: %v", err)
+	} else if len(result.Removed) > 0 {
+		log.Printf("[update] removed %d stale binary backup(s) from %s", len(result.Removed), os.TempDir())
+	}
+
 	systemCollector, err := healthutil.Register()
 	if err != nil {
 		return fmt.Errorf("failed to initialize system collector: %w", err)
