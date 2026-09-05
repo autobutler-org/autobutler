@@ -53,3 +53,8 @@ SELECT token, user_id, expires_at, created_at
 FROM sessions
 WHERE user_id = ? AND expires_at > datetime('now')
 ORDER BY created_at DESC;
+
+-- Deletes one user. sessions.user_id is ON DELETE CASCADE (002_auth), so the
+-- user's sessions go with the row.
+-- name: DeleteUser :exec
+DELETE FROM users WHERE id = ?;

@@ -587,6 +587,99 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/account": {
+            "delete": {
+                "description": "Deletes the selected aspects and logs the caller out everywhere. Pass account=true to delete only the caller's own account, which is what App Store Guideline 5.1.1(v) requires; the other aspects are a factory reset of the appliance. All four are opt-in and a request selecting none is rejected, so a truncated call cannot destroy anything. The confirm parameter must equal the authenticated username. Databases are dropped and re-migrated in place, so no restart is required. Repeat calls are idempotent. External device data is reached only when devices=true; a drive that is not attached at reset time keeps its data. Deleting the last account returns the appliance to first-boot setup by design. Aspects are independent: deleting the account or the database does NOT delete stored files, and files left behind are readable by whoever sets the appliance up next — the response reports filesRetained=true whenever that happens, so pass files=true as well to erase the data itself.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Delete account data (factory reset)",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Delete the caller's own account (users row). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next.",
+                        "name": "account",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Delete the appliance databases (quark.db, quark.health.db). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next.",
+                        "name": "database",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Delete stored files under the data directory",
+                        "name": "files",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Delete the Quark data directory on attached external devices",
+                        "name": "devices",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Must equal the authenticated username",
+                        "name": "confirm",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "deleted": {
+                                    "type": "object",
+                                    "properties": {
+                                        "account": {
+                                            "type": "boolean"
+                                        },
+                                        "database": {
+                                            "type": "boolean"
+                                        },
+                                        "devices": {
+                                            "type": "boolean"
+                                        },
+                                        "files": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                },
+                                "filesRetained": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Authenticates with username and password, returns a session token",

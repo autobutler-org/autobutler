@@ -14,6 +14,7 @@ func (r *router) Routes() []*serverutil.Route {
 		loginUserRoute,
 		logoutUserRoute,
 		recoverAccountRoute,
+		deleteAccountRoute,
 		// Session management
 		listSessionsRoute,
 		revokeSessionRoute,
