@@ -964,8 +964,17 @@ check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc ##
 check/frontend: check/format/flutter check/lint/flutter ## Check frontend code
 
 .PHONY: check/spelling
-check/spelling: ## Check spelling in code and docs
+check/spelling: node_modules ## Check spelling in code and docs
 	npm run check:spelling
+
+# The npm scripts run binaries from node_modules/.bin, which a fresh checkout
+# does not have — CI installs them in its setup-node step, so only local runs
+# hit the bare `cspell: command not found`. Depending on the directory installs
+# it on demand and reinstalls whenever the lockfile moves; touch keeps make from
+# repeating the install on every target that needs it.
+node_modules: package-lock.json
+	npm ci
+	@touch node_modules
 
 .PHONY: check/go
 check/go: check/format/go check/lint/go ## Check Go code
