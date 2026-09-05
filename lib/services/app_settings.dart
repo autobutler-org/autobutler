@@ -93,6 +93,14 @@ class AppSettings {
   /// itself — a 401 clears the token — but an unreachable one never answers at
   /// all, so the stale token stood and every page failed instead (#1645).
   Map<String, String> _sessionTokens = {};
+
+  /// The username signed in on each Quark, keyed by [_hostKey].
+  ///
+  /// Not a secret, so it sits in plain preferences rather than secure storage
+  /// alongside the token. Recorded so the account-deletion confirmation can
+  /// name the account it is about to delete and check what the user typed
+  /// before the request goes out (#1762).
+  Map<String, String> _usernames = {};
   SharedPreferences? _prefs;
 
   /// Notifies listeners whenever the session token changes.
@@ -123,6 +131,10 @@ class AppSettings {
   /// token string here instead; [load] migrates that onto the active host.
   static const _sessionTokenKey = 'session_token';
   static const _acceptedTermsHostsKey = 'acceptedTermsHosts';
+
+  /// Holds a JSON object of host key -> username. Absent for a session that
+  /// predates it, and for one recovered by phrase, which never names a user.
+  static const _usernamesKey = 'usernames';
 
   /// Pre-#1623 key: a single app-wide "terms accepted" bool. Read once on
   /// load and migrated into [_acceptedTermsHostsKey] so existing users aren't
@@ -169,6 +181,8 @@ class AppSettings {
 
     final storedTermsHosts = _prefs!.getStringList(_acceptedTermsHostsKey);
     _acceptedTermsHosts = storedTermsHosts?.toSet() ?? {};
+
+    _usernames = _decodeUsernames(_prefs!.getString(_usernamesKey));
 
     // If no hosts configured and running in debug (local development), add a local loopback
     // host appropriate for the running platform so developers can quickly connect.
@@ -255,6 +269,38 @@ class AppSettings {
       await _persistSessionTokens();
     }
     sessionTokenNotifier.value = sessionToken;
+  }
+
+  /// The username signed in on the current [activeHost], or null when this
+  /// Quark's session predates the app recording it (or was recovered by
+  /// phrase, which never names a user).
+  String? get username => usernameFor(activeHost);
+
+  /// The username stored for [hostAddress], if any.
+  String? usernameFor(String? hostAddress) =>
+      hostAddress == null ? null : _usernames[_hostKey(hostAddress)];
+
+  /// Stores [name] against the current [activeHost], or forgets it when null.
+  Future<void> setUsername(String? name) async {
+    final host = activeHost;
+    if (host == null || name == username) return;
+    if (name != null) {
+      _usernames[_hostKey(host)] = name;
+    } else {
+      _usernames.remove(_hostKey(host));
+    }
+    await _prefs?.setString(_usernamesKey, jsonEncode(_usernames));
+  }
+
+  Map<String, String> _decodeUsernames(String? stored) {
+    if (stored == null || stored.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(stored);
+      if (decoded is Map) return decoded.map((k, v) => MapEntry('$k', '$v'));
+    } catch (_) {
+      debugPrint('[app_settings.dart] Unreadable username store');
+    }
+    return {};
   }
 
   /// Reads [stored] into [_sessionTokens].
@@ -368,6 +414,9 @@ class AppSettings {
       // drag the secure-storage plugin into the call.
       if (_sessionTokens.remove(_hostKey(_hosts[idx].hostAddress)) != null) {
         await _persistSessionTokens();
+      }
+      if (_usernames.remove(_hostKey(_hosts[idx].hostAddress)) != null) {
+        await _prefs?.setString(_usernamesKey, jsonEncode(_usernames));
       }
       _hosts.removeAt(idx);
       if (_activeIndex >= _hosts.length) {
