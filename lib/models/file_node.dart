@@ -69,4 +69,16 @@ class FileNode {
       fileType: parseString(json['fileType'] ?? json['file_type']),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'size': size,
+    'compressedSize': compressedSize,
+    'isDir': isDir,
+    'deviceName': deviceName,
+    'devicePath': devicePath,
+    'deviceSerial': deviceSerial,
+    'dirPath': dirPath,
+    'fileType': fileType,
+  };
 }

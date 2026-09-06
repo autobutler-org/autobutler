@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -40,7 +41,7 @@ mixin AuthenticatedService {
   void checkUnauthorized(http.Response response) {
     if (response.statusCode == 401) {
       AppSettings.instance.setSessionToken(null);
-      AppCaches.clearAll();
+      unawaited(AppCaches.endSession(AppSettings.instance.activeHostKey));
       throw const UnauthorizedException();
     }
   }

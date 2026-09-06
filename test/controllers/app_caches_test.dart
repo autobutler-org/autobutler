@@ -59,6 +59,12 @@ void main() {
     expectEveryCacheEmpty();
   });
 
+  test('endSession clears every cache too', () async {
+    fillEveryCache();
+    await AppCaches.endSession(null);
+    expectEveryCacheEmpty();
+  });
+
   test('clearAll is safe to call when nothing is cached', () {
     AppCaches.clearAll();
     expect(AppCaches.clearAll, returnsNormally);

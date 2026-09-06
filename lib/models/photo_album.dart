@@ -39,6 +39,17 @@ class PhotoAlbum {
           [],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'parentId': parentId,
+    'smartType': smartType,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'itemCount': itemCount,
+    'children': children.map((c) => c.toJson()).toList(),
+  };
 }
 
 class PhotoAlbumItem {
