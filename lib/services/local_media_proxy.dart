@@ -3,7 +3,7 @@
 ///
 /// `video_player` hands playback to AVPlayer on iOS and ExoPlayer on Android.
 /// Both do their own TLS validation inside the platform networking stack, so
-/// neither sees [buildLocalTrustHttpClient] or the [LocalTrustHttpOverrides]
+/// neither sees [sharedHttpClient] or the [LocalTrustHttpOverrides]
 /// installed at startup — the app's self-signed exception simply does not
 /// apply to them, and the handshake failure comes back as an opaque
 /// `PlatformException(VideoError, ...)`.

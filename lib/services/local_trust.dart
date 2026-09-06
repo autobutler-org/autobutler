@@ -3,7 +3,7 @@
 /// A quark on the local network serves a self-signed certificate, so the
 /// client must opt out of chain verification for those hosts — and only those.
 /// This is the single source of truth for that decision; both the HTTP client
-/// ([buildLocalTrustHttpClient]) and the WebSocket connector
+/// ([sharedHttpClient]) and the WebSocket connector
 /// ([connectLocalTrustWs]) call it so the two can never drift apart.
 ///
 /// Deliberately pure Dart (no `dart:io`, no Flutter) so it can be imported from

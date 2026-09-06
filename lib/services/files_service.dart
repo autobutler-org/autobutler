@@ -522,7 +522,8 @@ class FilesService with AuthenticatedService {
     request.fields['folderName'] = folderName;
     request.headers.addAll(_authHeaders);
 
-    final response = await request.send();
+    final response = await instance.httpClient.send(request);
+    await response.stream.drain<void>();
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to create folder');
     }
@@ -550,7 +551,8 @@ class FilesService with AuthenticatedService {
     request.files.addAll(formDataFiles);
     request.headers.addAll(_authHeaders);
 
-    final response = await request.send();
+    final response = await instance.httpClient.send(request);
+    await response.stream.drain<void>();
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to upload files');
     }

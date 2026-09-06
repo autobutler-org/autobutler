@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/services/shared_http_client.dart';
 import 'package:quark/services/upload_chunk_source.dart';
 
 /// A file on disk, read one range at a time.
@@ -49,12 +49,7 @@ class FileUploadChunkSource implements UploadChunkSource {
     // Bounded by the chunk size, not the file size: openRead's range is the
     // whole point of this class.
     final bytes = await _readRange(start, end);
-    final client = buildLocalTrustHttpClient();
-    try {
-      return await client.put(uri, headers: headers, body: bytes);
-    } finally {
-      client.close();
-    }
+    return sharedHttpClient.put(uri, headers: headers, body: bytes);
   }
 
   Future<Uint8List> _readRange(int start, int end) async {

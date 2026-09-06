@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/services/shared_http_client.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -84,7 +85,7 @@ void main() {
     await settings.setActiveIndex(0);
   });
 
-  tearDown(() => authHttpClientFactory = buildLocalTrustHttpClient);
+  tearDown(() => authHttpClientFactory = () => sharedHttpClient);
 
   _RecordingClient serve({int statusCode = 200, String body = '{}'}) {
     final client = _RecordingClient(statusCode: statusCode, body: body);

@@ -12,7 +12,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 /// as a `Authorization: Bearer` header, which the web build cannot do.
 ///
 /// Decision is made on [uri.host] **before** the TLS handshake — the same
-/// approach used by [buildLocalTrustHttpClient] for HTTP. This avoids the iOS
+/// approach used by [sharedHttpClient] for HTTP. This avoids the iOS
 /// bug where [HttpClient.badCertificateCallback] receives a hostname that
 /// doesn't match the IP stored in AppSettings (e.g. mDNS resolution or SNI
 /// mismatch), causing the callback to return false and the handshake to fail.
@@ -23,7 +23,7 @@ WebSocketChannel connectLocalTrustWs(Uri uri, {Map<String, dynamic>? headers}) {
   }
 
   // Local host: trust the self-signed cert unconditionally, consistent with
-  // buildLocalTrustHttpClient() in authenticated_service.dart.
+  // sharedHttpClient in shared_http_client.dart.
   final httpClient = HttpClient()
     ..badCertificateCallback = (cert, host, port) => true;
   return IOWebSocketChannel.connect(

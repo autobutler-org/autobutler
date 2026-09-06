@@ -7,10 +7,8 @@ import 'package:quark/services/local_trust.dart';
 
 /// Applies [isLocalTrustHost] to every [HttpClient] created in this isolate.
 ///
-/// [buildLocalTrustHttpClient] only covers services that go through the
-/// [AuthenticatedService] mixin. Several services call the top-level
-/// `http.get`/`http.post` helpers, and widgets like `Image.network` create
-/// their own clients — all of which would otherwise reject the quark's
+/// [sharedHttpClient] only covers the services. Widgets like `Image.network`
+/// create their own clients, which would otherwise reject the quark's
 /// self-signed certificate. Installing an override catches them all in one
 /// place.
 class LocalTrustHttpOverrides extends HttpOverrides {

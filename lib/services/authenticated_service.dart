@@ -1,11 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
 import 'package:quark/controllers/app_caches.dart';
 import 'package:quark/services/app_settings.dart';
-import 'package:quark/services/local_trust.dart';
+import 'package:quark/services/shared_http_client.dart';
 import 'package:quark/utils/error_text.dart';
 
 /// Thrown when an API call returns 401 — session expired or invalid.
@@ -13,43 +11,6 @@ class UnauthorizedException implements Exception {
   const UnauthorizedException();
   @override
   String toString() => 'Session expired. Please log in again.';
-}
-
-/// How long to wait for a TCP connection before giving up on the Quark.
-///
-/// Bounds only the connect phase, so it is safe on requests with a large body
-/// (chunked uploads) — those are bounded separately by the upload manager's
-/// own per-attempt timeout.
-/// A host that is silent rather than actively refusing otherwise hangs for
-/// however long the OS feels like waiting.
-const Duration kConnectTimeout = Duration(seconds: 5);
-
-/// Returns an [http.Client] that trusts self-signed certificates when the
-/// active host is a local/LAN address (see [isLocalTrustHost]).
-///
-/// On web, the browser manages TLS trust natively and imposes its own connect
-/// deadline, so the default client is returned unchanged.
-http.Client buildLocalTrustHttpClient() {
-  if (kIsWeb) return http.Client();
-
-  final host = _extractHost(AppSettings.instance.activeHost);
-
-  final inner = HttpClient()..connectionTimeout = kConnectTimeout;
-  if (isLocalTrustHost(host)) {
-    inner.badCertificateCallback = (cert, host, port) => true;
-  }
-  return IOClient(inner);
-}
-
-/// Extracts the hostname portion from a URL string (or returns the raw string
-/// when it cannot be parsed as a URI).
-String _extractHost(String? url) {
-  if (url == null || url.isEmpty) return '';
-  try {
-    return Uri.parse(url).host;
-  } catch (_) {
-    return url;
-  }
 }
 
 /// Mixin providing a shared auth header helper for services that talk to the quark API.
@@ -72,7 +33,7 @@ mixin AuthenticatedService {
   ///
   /// Call this after every authenticated API response:
   /// ```dart
-  /// final response = await http.get(uri, headers: _authHeaders);
+  /// final response = await httpClient.get(uri, headers: _authHeaders);
   /// checkUnauthorized(response);
   /// if (response.statusCode != 200) throw Exception('...');
   /// ```
@@ -84,27 +45,21 @@ mixin AuthenticatedService {
     }
   }
 
-  /// Returns an HTTP client that trusts self-signed certs when the active host
-  /// is a local/LAN address. Safe to call on every request; the returned client
-  /// must be closed by the caller when no longer needed.
-  http.Client get httpClient => buildLocalTrustHttpClient();
+  /// The shared client for the active host (see [sharedHttpClient]). It keeps
+  /// its connections open across calls and must not be closed by the caller.
+  http.Client get httpClient => sharedHttpClient;
 
   /// Authenticated GET — injects auth headers and checks for 401 automatically.
   Future<http.Response> authenticatedGet(
     Uri uri, {
     Map<String, String>? headers,
   }) async {
-    final client = httpClient;
-    try {
-      final response = await client.get(
-        uri,
-        headers: {...authHeaders, ...?headers},
-      );
-      checkUnauthorized(response);
-      return response;
-    } finally {
-      client.close();
-    }
+    final response = await httpClient.get(
+      uri,
+      headers: {...authHeaders, ...?headers},
+    );
+    checkUnauthorized(response);
+    return response;
   }
 
   /// Authenticated GET streamed straight onto disk, returning where it landed.
@@ -119,32 +74,29 @@ mixin AuthenticatedService {
     Uri uri, {
     Map<String, String>? headers,
   }) async {
-    final client = httpClient;
-    try {
-      final request = http.Request('GET', uri)
-        ..headers.addAll({...authHeaders, ...?headers});
-      final response = await client.send(request);
+    final request = http.Request('GET', uri)
+      ..headers.addAll({...authHeaders, ...?headers});
+    final response = await httpClient.send(request);
 
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Drain the body so the pooled connection is handed back to the client.
+      await response.stream.drain<void>();
       if (response.statusCode == 401) {
         AppSettings.instance.setSessionToken(null);
         throw const UnauthorizedException();
       }
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw ApiException(response.statusCode, 'Failed to download file');
-      }
-
-      final dir = await Directory.systemTemp.createTemp('quark_download_');
-      final file = File('${dir.path}/download');
-      final sink = file.openWrite();
-      try {
-        await response.stream.pipe(sink);
-      } finally {
-        await sink.close();
-      }
-      return DownloadedFile._(dir, file.path, response.headers);
-    } finally {
-      client.close();
+      throw ApiException(response.statusCode, 'Failed to download file');
     }
+
+    final dir = await Directory.systemTemp.createTemp('quark_download_');
+    final file = File('${dir.path}/download');
+    final sink = file.openWrite();
+    try {
+      await response.stream.pipe(sink);
+    } finally {
+      await sink.close();
+    }
+    return DownloadedFile._(dir, file.path, response.headers);
   }
 
   /// Authenticated POST — injects auth headers and checks for 401 automatically.
@@ -153,18 +105,13 @@ mixin AuthenticatedService {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    final client = httpClient;
-    try {
-      final response = await client.post(
-        uri,
-        headers: {...authHeaders, ...?headers},
-        body: body,
-      );
-      checkUnauthorized(response);
-      return response;
-    } finally {
-      client.close();
-    }
+    final response = await httpClient.post(
+      uri,
+      headers: {...authHeaders, ...?headers},
+      body: body,
+    );
+    checkUnauthorized(response);
+    return response;
   }
 
   /// Authenticated PATCH — injects auth headers and checks for 401 automatically.
@@ -173,18 +120,13 @@ mixin AuthenticatedService {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    final client = httpClient;
-    try {
-      final response = await client.patch(
-        uri,
-        headers: {...authHeaders, ...?headers},
-        body: body,
-      );
-      checkUnauthorized(response);
-      return response;
-    } finally {
-      client.close();
-    }
+    final response = await httpClient.patch(
+      uri,
+      headers: {...authHeaders, ...?headers},
+      body: body,
+    );
+    checkUnauthorized(response);
+    return response;
   }
 
   /// Authenticated DELETE — injects auth headers and checks for 401 automatically.
@@ -193,18 +135,13 @@ mixin AuthenticatedService {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    final client = httpClient;
-    try {
-      final response = await client.delete(
-        uri,
-        headers: {...authHeaders, ...?headers},
-        body: body,
-      );
-      checkUnauthorized(response);
-      return response;
-    } finally {
-      client.close();
-    }
+    final response = await httpClient.delete(
+      uri,
+      headers: {...authHeaders, ...?headers},
+      body: body,
+    );
+    checkUnauthorized(response);
+    return response;
   }
 
   /// Authenticated PUT — injects auth headers and checks for 401 automatically.
@@ -213,18 +150,13 @@ mixin AuthenticatedService {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    final client = httpClient;
-    try {
-      final response = await client.put(
-        uri,
-        headers: {...authHeaders, ...?headers},
-        body: body,
-      );
-      checkUnauthorized(response);
-      return response;
-    } finally {
-      client.close();
-    }
+    final response = await httpClient.put(
+      uri,
+      headers: {...authHeaders, ...?headers},
+      body: body,
+    );
+    checkUnauthorized(response);
+    return response;
   }
 }
 
