@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quark/controllers/albums_cache.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/widgets/photos/album_sidebar/album_list.dart';
 import 'package:quark/utils/error_text.dart';
@@ -41,6 +42,11 @@ class AlbumSidebarState extends State<AlbumSidebar> {
   @override
   void initState() {
     super.initState();
+    final cached = AlbumsCache.instance.albums;
+    if (cached != null) {
+      _albums = cached;
+      _loading = false;
+    }
     _load();
   }
 

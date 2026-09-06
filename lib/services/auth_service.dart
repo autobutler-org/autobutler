@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/controllers/app_caches.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/utils/error_text.dart';
@@ -181,6 +182,7 @@ class AuthService {
   static Future<void> logout() async {
     final token = AppSettings.instance.sessionToken;
     await AppSettings.instance.setSessionToken(null);
+    AppCaches.clearAll();
     if (token == null) return;
     try {
       final uri = _baseUri.resolve('/api/v0/auth/logout');
@@ -309,6 +311,7 @@ class AuthService {
   static Future<void> _forgetLocalSession() async {
     await AppSettings.instance.setUsername(null);
     await AppSettings.instance.setSessionToken(null);
+    AppCaches.clearAll();
   }
 
   static String? _tryDecodeError(String body) {

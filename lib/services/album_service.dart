@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:quark/controllers/albums_cache.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
@@ -21,9 +22,11 @@ class AlbumService with AuthenticatedService {
       throw ApiException(response.statusCode, 'Failed to load albums');
     }
     final List<dynamic> data = json.decode(response.body) as List<dynamic>;
-    return data
+    final albums = data
         .map((e) => PhotoAlbum.fromJson(e as Map<String, dynamic>))
         .toList();
+    if (tree) AlbumsCache.instance.putAlbums(albums);
+    return albums;
   }
 
   static Future<PhotoAlbum> getAlbum(int id) async {
@@ -47,6 +50,7 @@ class AlbumService with AuthenticatedService {
     if (response.statusCode != 201) {
       throw ApiException(response.statusCode, 'Failed to create album');
     }
+    AlbumsCache.instance.evictAlbums();
     return PhotoAlbum.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
     );
@@ -61,6 +65,7 @@ class AlbumService with AuthenticatedService {
     if (response.statusCode != 200) {
       throw ApiException(response.statusCode, 'Failed to rename album');
     }
+    AlbumsCache.instance.evictAlbums();
     return PhotoAlbum.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
     );
@@ -75,6 +80,7 @@ class AlbumService with AuthenticatedService {
     if (response.statusCode != 200) {
       throw ApiException(response.statusCode, 'Failed to move album');
     }
+    AlbumsCache.instance.evictAlbums();
     return PhotoAlbum.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
     );
@@ -85,6 +91,9 @@ class AlbumService with AuthenticatedService {
     if (response.statusCode != 204) {
       throw ApiException(response.statusCode, 'Failed to delete album');
     }
+    AlbumsCache.instance
+      ..evictAlbums()
+      ..evictItems(id);
   }
 
   static Future<List<PhotoAlbumItem>> listAlbumItems(int albumId) async {
@@ -95,9 +104,11 @@ class AlbumService with AuthenticatedService {
       throw ApiException(response.statusCode, 'Failed to load album items');
     }
     final List<dynamic> data = json.decode(response.body) as List<dynamic>;
-    return data
+    final items = data
         .map((e) => PhotoAlbumItem.fromJson(e as Map<String, dynamic>))
         .toList();
+    AlbumsCache.instance.putItems(albumId, items);
+    return items;
   }
 
   static Future<PhotoAlbumItem> addPhotoToAlbum(
@@ -113,6 +124,7 @@ class AlbumService with AuthenticatedService {
     if (response.statusCode != 201) {
       throw ApiException(response.statusCode, 'Failed to add photo to album');
     }
+    AlbumsCache.instance.evictItems(albumId);
     return PhotoAlbumItem.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
     );
@@ -134,5 +146,6 @@ class AlbumService with AuthenticatedService {
         'Failed to remove photo from album',
       );
     }
+    AlbumsCache.instance.evictItems(albumId);
   }
 }

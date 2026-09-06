@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quark/controllers/albums_cache.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/pages/photos_page.dart';
@@ -38,8 +39,10 @@ class _AlbumPageState extends State<AlbumPage> {
   }
 
   Future<void> _load() async {
+    final cached = AlbumsCache.instance.items(widget.album.id);
     setState(() {
-      _loading = true;
+      if (cached != null) _items = cached;
+      _loading = cached == null && _items.isEmpty;
       _error = null;
     });
     try {
@@ -51,6 +54,12 @@ class _AlbumPageState extends State<AlbumPage> {
       });
     } catch (e) {
       if (!mounted) return;
+      if (_items.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'load the album'))),
+        );
+        return;
+      }
       setState(() {
         _error = e;
         _loading = false;

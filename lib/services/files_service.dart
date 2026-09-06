@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/controllers/albums_cache.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/models/paginated_photos_response.dart';
 import 'package:quark/models/photo_metadata.dart';
@@ -427,6 +428,7 @@ class FilesService with AuthenticatedService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to delete file');
     }
+    AlbumsCache.instance.clearItems();
   }
 
   /// Deletes multiple files/folders in a single request.
@@ -459,6 +461,7 @@ class FilesService with AuthenticatedService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to delete files');
     }
+    AlbumsCache.instance.clearItems();
   }
 
   static Future<void> moveFile(

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 // flutter_secure_storage requires a secure context (HTTPS) on web.
 // We only use it on native platforms; on web we fall back to in-memory only.
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:quark/controllers/file_browser_cache.dart';
+import 'package:quark/controllers/app_caches.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Matches an explicit URI scheme prefix (`https://`, `http://`, `ws://`, ...).
@@ -430,7 +430,7 @@ class AppSettings {
     if (idx >= 0 && idx < _hosts.length) {
       _activeIndex = idx;
       // Clear cached file listings — they belong to the previous host.
-      FileBrowserCache.instance.clear();
+      AppCaches.clearAll();
       await _prefs?.setInt('activeHostIndex', _activeIndex);
       _publishActiveHost();
     }
