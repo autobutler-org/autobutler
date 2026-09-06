@@ -161,7 +161,7 @@ class AuthService {
   static Future<void> logout() async {
     final token = AppSettings.instance.sessionToken;
     await AppSettings.instance.setSessionToken(null);
-    AppCaches.clearAll();
+    unawaited(AppCaches.endSession(AppSettings.instance.activeHostKey));
     if (token == null) return;
     try {
       final uri = _baseUri.resolve('/api/v0/auth/logout');
@@ -279,7 +279,7 @@ class AuthService {
   static Future<void> _forgetLocalSession() async {
     await AppSettings.instance.setUsername(null);
     await AppSettings.instance.setSessionToken(null);
-    AppCaches.clearAll();
+    unawaited(AppCaches.endSession(AppSettings.instance.activeHostKey));
   }
 
   static String? _tryDecodeError(String body) {

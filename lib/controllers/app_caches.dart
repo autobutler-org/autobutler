@@ -2,6 +2,7 @@ import 'package:quark/controllers/albums_cache.dart';
 import 'package:quark/controllers/file_browser_cache.dart';
 import 'package:quark/controllers/file_type_listing_cache.dart';
 import 'package:quark/controllers/photos_list_cache.dart';
+import 'package:quark/utils/listing_snapshot_store.dart';
 
 /// Every process-wide listing cache, cleared together.
 ///
@@ -24,5 +25,19 @@ abstract final class AppCaches {
     AlbumsCache.instance.clear();
     PhotosListCache.instance.clear();
     FileTypeListingCache.instance.clear();
+  }
+
+  /// Everything [clearAll] drops, plus the on-disk snapshot for [hostKey].
+  ///
+  /// This is the clear for a session ending. [clearAll] is the clear for a
+  /// host switch, and the difference is deliberate: a snapshot is per host and
+  /// is meant to survive a switch, so switching away must not delete it, while
+  /// a session ending must — otherwise the listings outlive the session on
+  /// disk and are hydrated back on the next launch.
+  static Future<void> endSession(String? hostKey) async {
+    clearAll();
+    if (hostKey != null) {
+      await ListingSnapshots.instance.removeHost(hostKey);
+    }
   }
 }

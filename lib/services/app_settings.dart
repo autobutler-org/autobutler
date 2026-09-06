@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,8 @@ import 'package:flutter/material.dart';
 // We only use it on native platforms; on web we fall back to in-memory only.
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quark/controllers/app_caches.dart';
+import 'package:quark/controllers/listing_snapshot_hydration.dart';
+import 'package:quark/utils/listing_snapshot_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Matches an explicit URI scheme prefix (`https://`, `http://`, `ws://`, ...).
@@ -85,7 +88,7 @@ class AppSettings {
   List<HostEntry> _hosts = [];
   int _activeIndex = -1;
 
-  /// Session tokens per Quark, keyed by [_hostKey].
+  /// Session tokens per Quark, keyed by [hostKey].
   ///
   /// Per-host, not app-wide: a single token meant switching Quarks carried the
   /// old one along, so the router's gate believed you were signed in to a
@@ -94,7 +97,7 @@ class AppSettings {
   /// all, so the stale token stood and every page failed instead (#1645).
   Map<String, String> _sessionTokens = {};
 
-  /// The username signed in on each Quark, keyed by [_hostKey].
+  /// The username signed in on each Quark, keyed by [hostKey].
   ///
   /// Not a secret, so it sits in plain preferences rather than secure storage
   /// alongside the token. Recorded so the account-deletion confirmation can
@@ -115,7 +118,7 @@ class AppSettings {
   /// a Quark the user hasn't accepted terms for yet.
   final ValueNotifier<bool> hasAcceptedTerms = ValueNotifier(false);
 
-  /// Hosts the user has accepted the terms for, keyed by [_hostKey].
+  /// Hosts the user has accepted the terms for, keyed by [hostKey].
   Set<String> _acceptedTermsHosts = {};
 
   /// Notifies listeners whenever [activeHost] changes — a host added, edited,
@@ -217,7 +220,7 @@ class AppSettings {
     // terms bool below does.
     final legacyToken = _decodeSessionTokens(storedTokens);
     if (legacyToken != null && activeHost != null) {
-      _sessionTokens[_hostKey(activeHost!)] = legacyToken;
+      _sessionTokens[hostKey(activeHost!)] = legacyToken;
       await _persistSessionTokens();
     }
 
@@ -228,7 +231,7 @@ class AppSettings {
         (_prefs!.getBool(_legacyAcceptedTermsKey) ?? false)) {
       final host = activeHost;
       if (host != null) {
-        _acceptedTermsHosts.add(_hostKey(host));
+        _acceptedTermsHosts.add(hostKey(host));
         await _persistAcceptedTermsHosts();
         await _prefs!.remove(_legacyAcceptedTermsKey);
       }
@@ -251,7 +254,7 @@ class AppSettings {
 
   /// Session token stored for [hostAddress], if any.
   String? sessionTokenFor(String? hostAddress) =>
-      hostAddress == null ? null : _sessionTokens[_hostKey(hostAddress)];
+      hostAddress == null ? null : _sessionTokens[hostKey(hostAddress)];
 
   /// Stores [token] against the current [activeHost], or clears it when null.
   ///
@@ -262,9 +265,9 @@ class AppSettings {
     final host = activeHost;
     if (host != null && token != sessionToken) {
       if (token != null) {
-        _sessionTokens[_hostKey(host)] = token;
+        _sessionTokens[hostKey(host)] = token;
       } else {
-        _sessionTokens.remove(_hostKey(host));
+        _sessionTokens.remove(hostKey(host));
       }
       await _persistSessionTokens();
     }
@@ -278,16 +281,16 @@ class AppSettings {
 
   /// The username stored for [hostAddress], if any.
   String? usernameFor(String? hostAddress) =>
-      hostAddress == null ? null : _usernames[_hostKey(hostAddress)];
+      hostAddress == null ? null : _usernames[hostKey(hostAddress)];
 
   /// Stores [name] against the current [activeHost], or forgets it when null.
   Future<void> setUsername(String? name) async {
     final host = activeHost;
     if (host == null || name == username) return;
     if (name != null) {
-      _usernames[_hostKey(host)] = name;
+      _usernames[hostKey(host)] = name;
     } else {
-      _usernames.remove(_hostKey(host));
+      _usernames.remove(hostKey(host));
     }
     await _prefs?.setString(_usernamesKey, jsonEncode(_usernames));
   }
@@ -350,17 +353,25 @@ class AppSettings {
   void _publishActiveHost() {
     final host = activeHost;
     hasAcceptedTerms.value =
-        host != null && _acceptedTermsHosts.contains(_hostKey(host));
+        host != null && _acceptedTermsHosts.contains(hostKey(host));
     // Tokens are per-host, so switching Quarks changes what [sessionToken]
     // reports; republish so no listener is left holding the old host's.
     sessionTokenNotifier.value = sessionToken;
+    ListingSnapshots.instance.setHost(host == null ? null : hostKey(host));
     activeHostNotifier.value = host;
   }
 
   /// Normalized lookup key for a host address, so `https://Quark.local` and
   /// `https://quark.local/` count as the same Quark. Keys both the accepted
-  /// terms and the session tokens.
-  static String _hostKey(String hostAddress) {
+  /// terms, the session tokens and the listing snapshots on disk.
+  /// The [hostKey] of the Quark the app is pointed at, or null when there is
+  /// none. Session-end paths need it to drop that Quark's snapshot.
+  String? get activeHostKey {
+    final host = activeHost;
+    return host == null ? null : hostKey(host);
+  }
+
+  static String hostKey(String hostAddress) {
     final trimmed = hostAddress.trim().toLowerCase();
     final withoutTrailingSlashes = trimmed.replaceAll(RegExp(r'/+$'), '');
     return withoutTrailingSlashes.isEmpty ? trimmed : withoutTrailingSlashes;
@@ -375,7 +386,7 @@ class AppSettings {
 
   /// Whether the terms have been accepted for [hostAddress].
   bool hasAcceptedTermsFor(String hostAddress) =>
-      _acceptedTermsHosts.contains(_hostKey(hostAddress));
+      _acceptedTermsHosts.contains(hostKey(hostAddress));
 
   Future<void> _saveHosts() async {
     await _prefs?.setString(
@@ -412,12 +423,15 @@ class AppSettings {
       // Forgetting a Quark forgets the session with it. Only touches storage
       // when there was actually a token — a host nobody signed into must not
       // drag the secure-storage plugin into the call.
-      if (_sessionTokens.remove(_hostKey(_hosts[idx].hostAddress)) != null) {
+      if (_sessionTokens.remove(hostKey(_hosts[idx].hostAddress)) != null) {
         await _persistSessionTokens();
       }
-      if (_usernames.remove(_hostKey(_hosts[idx].hostAddress)) != null) {
+      if (_usernames.remove(hostKey(_hosts[idx].hostAddress)) != null) {
         await _prefs?.setString(_usernamesKey, jsonEncode(_usernames));
       }
+      unawaited(
+        ListingSnapshots.instance.removeHost(hostKey(_hosts[idx].hostAddress)),
+      );
       _hosts.removeAt(idx);
       if (_activeIndex >= _hosts.length) {
         _activeIndex = _hosts.length - 1;
@@ -433,6 +447,7 @@ class AppSettings {
       AppCaches.clearAll();
       await _prefs?.setInt('activeHostIndex', _activeIndex);
       _publishActiveHost();
+      unawaited(hydrateListingSnapshots());
     }
   }
 
@@ -456,7 +471,7 @@ class AppSettings {
   Future<void> acceptTerms() async {
     final host = activeHost;
     if (host == null) return;
-    _acceptedTermsHosts.add(_hostKey(host));
+    _acceptedTermsHosts.add(hostKey(host));
     await _persistAcceptedTermsHosts();
     _publishActiveHost();
   }

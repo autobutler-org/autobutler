@@ -1,5 +1,8 @@
 import 'package:quark/models/file_node.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
+import 'package:quark/utils/listing_snapshot.dart';
+import 'package:quark/utils/listing_snapshot_config.dart';
+import 'package:quark/utils/listing_snapshot_store.dart';
 
 /// In-memory cache of file listings keyed by folder path.
 ///
@@ -16,11 +19,50 @@ class FileBrowserCache {
 
   final Map<String, List<FileNode>> _cache = {};
 
+  /// The key the root folder is cached under: what [normalizePath] returns
+  /// for `/`. Only this listing is written to disk (#1781).
+  static const String rootKey = '';
+
   List<FileNode>? get(String path) => _cache[path];
 
   void put(String path, List<FileNode> files) {
     _cache[path] = List.unmodifiable(files);
+    if (path == rootKey) {
+      ListingSnapshots.instance.schedule(
+        ListingSnapshotNames.rootFiles,
+        () => _encodeRoot(files),
+      );
+    }
   }
+
+  /// Fills the root listing from the active host's snapshot when nothing has
+  /// been fetched yet. A snapshot that cannot be decoded is discarded.
+  Future<void> hydrate() async {
+    if (_cache.containsKey(rootKey)) return;
+    final json = await ListingSnapshots.instance.read(
+      ListingSnapshotNames.rootFiles,
+    );
+    if (json == null || _cache.containsKey(rootKey)) return;
+    try {
+      if (json['version'] != _snapshotVersion) throw const FormatException();
+      final files = (json['files'] as List)
+          .map((e) => FileNode.fromJson(e as Map<String, dynamic>))
+          .toList();
+      _cache[rootKey] = List.unmodifiable(files);
+    } catch (_) {
+      await ListingSnapshots.instance.discard(ListingSnapshotNames.rootFiles);
+    }
+  }
+
+  static const int _snapshotVersion = 1;
+
+  static Map<String, dynamic> _encodeRoot(List<FileNode> files) => {
+    'version': _snapshotVersion,
+    'files': files
+        .take(ListingSnapshotConfig.maxRootFiles)
+        .map((f) => f.toJson())
+        .toList(),
+  };
 
   void evict(String path) => _cache.remove(path);
 

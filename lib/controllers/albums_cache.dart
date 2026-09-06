@@ -1,4 +1,7 @@
 import 'package:quark/models/photo_album.dart';
+import 'package:quark/utils/listing_snapshot.dart';
+import 'package:quark/utils/listing_snapshot_config.dart';
+import 'package:quark/utils/listing_snapshot_store.dart';
 
 /// In-memory cache of the album tree and each album's items.
 ///
@@ -17,7 +20,40 @@ class AlbumsCache {
 
   void putAlbums(List<PhotoAlbum> albums) {
     _albums = List.unmodifiable(albums);
+    ListingSnapshots.instance.schedule(
+      ListingSnapshotNames.albums,
+      () => _encode(albums),
+    );
   }
+
+  /// Fills the album list from the active host's snapshot when nothing has
+  /// been fetched yet. A snapshot that cannot be decoded is discarded.
+  Future<void> hydrate() async {
+    if (_albums != null) return;
+    final json = await ListingSnapshots.instance.read(
+      ListingSnapshotNames.albums,
+    );
+    if (json == null || _albums != null) return;
+    try {
+      if (json['version'] != _snapshotVersion) throw const FormatException();
+      final albums = (json['albums'] as List)
+          .map((e) => PhotoAlbum.fromJson(e as Map<String, dynamic>))
+          .toList();
+      _albums = List.unmodifiable(albums);
+    } catch (_) {
+      await ListingSnapshots.instance.discard(ListingSnapshotNames.albums);
+    }
+  }
+
+  static const int _snapshotVersion = 1;
+
+  static Map<String, dynamic> _encode(List<PhotoAlbum> albums) => {
+    'version': _snapshotVersion,
+    'albums': albums
+        .take(ListingSnapshotConfig.maxAlbums)
+        .map((a) => a.toJson())
+        .toList(),
+  };
 
   void evictAlbums() => _albums = null;
 
