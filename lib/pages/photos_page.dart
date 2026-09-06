@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:photo_manager/photo_manager.dart';
 import 'package:quark/controllers/photo_bytes_cache.dart';
+import 'package:quark/controllers/photos_list_cache.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/pages/album_page.dart';
@@ -70,7 +71,26 @@ class PhotosPageState extends State<PhotosPage>
     with WidgetsBindingObserver, AutoRefreshMixin {
   static const int _pageSize = 50;
 
+  /// Seeds the Quark list and favorites from [PhotosListCache] before the
+  /// mixin's first `refresh()`, so a page the reader comes back to renders its
+  /// last grid on frame one instead of a spinner while the fetch is in flight.
+  PhotosPageState() {
+    final cached = PhotosListCache.instance.list;
+    if (cached != null) {
+      _quarkPhotos = cached.photos;
+      _quarkTotal = cached.total;
+      _quarkOffset = cached.offset;
+      _quarkInitialLoadDone = true;
+      _photosFuture = Future.value(cached.photos);
+    }
+    _favoriteKeys.addAll(PhotosListCache.instance.favoriteKeys);
+  }
+
   Future<List<PhotoItem>> _photosFuture = Future.value(const <PhotoItem>[]);
+
+  /// What the grid shows until the first fetch answers: the cached Quark list,
+  /// or nothing.
+  final List<PhotoItem>? _cachedPhotos = PhotosListCache.instance.list?.photos;
 
   // Quark-device pagination state
   List<PhotoItem> _quarkPhotos = <PhotoItem>[];
@@ -288,6 +308,11 @@ class PhotosPageState extends State<PhotosPage>
         _quarkOffset += newPhotos.length;
         _quarkInitialLoadDone = true;
         _isLoadingMoreQuark = false;
+        PhotosListCache.instance.put(
+          _quarkPhotos,
+          total: _quarkTotal,
+          offset: _quarkOffset,
+        );
         // Rebuild the future so FutureBuilder picks up the new list
         _photosFuture = _photosForCategory(_selectedCategory);
       });
@@ -308,11 +333,6 @@ class PhotosPageState extends State<PhotosPage>
       _quarkUnreachable = false;
       return const <PhotoItem>[];
     }
-
-    _quarkPhotos = <PhotoItem>[];
-    _quarkOffset = 0;
-    _quarkTotal = 0;
-    _quarkInitialLoadDone = false;
 
     try {
       final response = await FilesService.getPhotos(
@@ -342,6 +362,11 @@ class PhotosPageState extends State<PhotosPage>
       _quarkOffset = items.length;
       _quarkInitialLoadDone = true;
       _quarkUnreachable = false;
+      PhotosListCache.instance.put(
+        items,
+        total: response.total,
+        offset: items.length,
+      );
       return items;
     } catch (e) {
       debugPrint(
@@ -349,7 +374,10 @@ class PhotosPageState extends State<PhotosPage>
       );
       _quarkInitialLoadDone = true;
       _quarkUnreachable = isQuarkUnreachableError(e);
-      return const <PhotoItem>[];
+      // A failed fetch leaves whatever was already on screen — the cached
+      // list a returning reader is looking at, or nothing — rather than
+      // replacing it with an empty grid.
+      return _quarkPhotos;
     }
   }
 
@@ -441,6 +469,7 @@ class PhotosPageState extends State<PhotosPage>
       futures.add(
         FavoritesService.listFavoriteKeys()
             .then((keys) {
+              PhotosListCache.instance.setFavoriteKeys(keys);
               if (mounted) {
                 setState(() {
                   _favoriteKeys
@@ -469,6 +498,7 @@ class PhotosPageState extends State<PhotosPage>
         relPath: c.apiPath,
         serial: c.deviceSerial.isNotEmpty ? c.deviceSerial : null,
       );
+      PhotosListCache.instance.setFavorite(item.selectionKey, nowFav);
       if (!mounted) return;
       setState(() {
         if (nowFav) {
@@ -821,6 +851,7 @@ class PhotosPageState extends State<PhotosPage>
         autofocus: true,
         child: FutureBuilder<List<PhotoItem>>(
           future: _photosFuture,
+          initialData: _cachedPhotos,
           builder: (context, snapshot) {
             final photos = snapshot.data ?? const <PhotoItem>[];
             final isWaiting =

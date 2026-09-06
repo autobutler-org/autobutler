@@ -1,5 +1,6 @@
 import 'package:quark/controllers/albums_cache.dart';
 import 'package:quark/controllers/file_browser_cache.dart';
+import 'package:quark/controllers/photos_list_cache.dart';
 
 /// Every process-wide listing cache, cleared together.
 ///
@@ -20,5 +21,6 @@ abstract final class AppCaches {
   static void clearAll() {
     FileBrowserCache.instance.clear();
     AlbumsCache.instance.clear();
+    PhotosListCache.instance.clear();
   }
 }

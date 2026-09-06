@@ -21,6 +21,9 @@ class PhotoGridConfig {
   /// come down.
   static const double minTileWidth = 80;
 
+  /// The most Quark-stored photos `PhotosListCache` keeps between visits.
+  static const int maxCachedPhotos = 500;
+
   /// The column bounds at [availableWidth]: the scale limits, further clamped
   /// so a tile never has to shrink below [minTileWidth].
   static ({int min, int max}) columnBounds(double availableWidth) {
