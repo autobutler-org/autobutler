@@ -67,6 +67,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   cached_network_image: ^4.0.0
+  flutter_cache_manager: ^3.4.2
   shimmer: ^3.0.0
   flutter_quill_to_pdf: ^2.3.9
   printing: ^5.15.0

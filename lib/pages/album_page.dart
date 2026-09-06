@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:quark/controllers/albums_cache.dart';
 import 'package:quark/models/photo_album.dart';
@@ -5,6 +6,8 @@ import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/pages/photos_page.dart';
 import 'package:quark/services/album_service.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/thumbnail_cache_manager.dart';
+import 'package:quark/utils/thumbnail_cache_config.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
@@ -250,16 +253,20 @@ class _AlbumPageState extends State<AlbumPage> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(
-                          url.toString(),
+                        CachedNetworkImage(
+                          imageUrl: url.toString(),
+                          cacheKey: FilesService.thumbnailCacheKey(
+                            item.relPath,
+                            serial: item.deviceSerial,
+                          ),
+                          cacheManager: ThumbnailCacheManager.instance,
+                          memCacheWidth:
+                              ThumbnailCacheConfig.gridTileDecodeWidth,
                           fit: BoxFit.cover,
-                          loadingBuilder: (_, child, progress) {
-                            if (progress == null) return child;
-                            return Container(
-                              color: colorScheme.surfaceContainerHighest,
-                            );
-                          },
-                          errorBuilder: (context, error, stack) => Container(
+                          placeholder: (_, url) => Container(
+                            color: colorScheme.surfaceContainerHighest,
+                          ),
+                          errorWidget: (context, url, error) => Container(
                             color: colorScheme.surfaceContainerHighest,
                             child: Icon(
                               QuarkIcons.broken_image_outlined,

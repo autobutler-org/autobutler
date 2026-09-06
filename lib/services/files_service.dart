@@ -78,12 +78,9 @@ class FilesService with AuthenticatedService {
     String? serial,
     String? size,
   }) {
-    final trimmed = filePath.trim();
-    final normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
-    final encodedPath = normalized
-        .split('/')
-        .map((s) => Uri.encodeComponent(s))
-        .join('/');
+    final encodedPath = _thumbnailPath(
+      filePath,
+    ).split('/').map((s) => Uri.encodeComponent(s)).join('/');
     final endpointUri = apiBaseUri.resolve('/api/v0/thumbnails/$encodedPath');
 
     // Build query params — include token when set so Image.network() (which
@@ -98,6 +95,21 @@ class FilesService with AuthenticatedService {
     return params.isEmpty
         ? endpointUri
         : endpointUri.replace(queryParameters: params);
+  }
+
+  /// Disk cache key for the thumbnail [constructThumbnailUrl] points at.
+  ///
+  /// Built from the host and what identifies the image on it, never the
+  /// session token, so a re-login keeps every thumbnail already on disk and
+  /// two Quarks holding the same path never share an entry (#1777).
+  static String thumbnailCacheKey(
+    String filePath, {
+    String? serial,
+    String? size,
+  }) {
+    final serialValue = serial?.trim() ?? '';
+    final host = AppSettings.instance.activeHost ?? '';
+    return 'thumbnail:$host:$serialValue:${size ?? ''}:${_thumbnailPath(filePath)}';
   }
 
   /// Fetches a paginated list of photos from the dedicated photos endpoint.
@@ -821,6 +833,11 @@ class FilesService with AuthenticatedService {
     }
 
     return null;
+  }
+
+  static String _thumbnailPath(String filePath) {
+    final trimmed = filePath.trim();
+    return trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
   }
 
   static String _normalizePath(String path) {
