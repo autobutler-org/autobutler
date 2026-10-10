@@ -403,6 +403,10 @@ class PhotosController extends ChangeNotifier {
   bool _albumsFetched = false;
   final Set<int> _expandedAlbumIds = {};
 
+  /// Whether the sidebar's whole Albums section is open (#3112). Lives for
+  /// as long as the page does, so a reload leaves it alone.
+  bool _albumsSectionExpanded = true;
+
   /// The album the grid was asked to show, or null for the library.
   int? _albumId;
 
@@ -604,6 +608,10 @@ class PhotosController extends ChangeNotifier {
 
   /// The ids of every expanded album.
   Set<int> get expandedAlbumIds => Set.unmodifiable(_expandedAlbumIds);
+
+  /// Whether the sidebar's whole Albums section is open, as opposed to
+  /// folded down to its header.
+  bool get albumsSectionExpanded => _albumsSectionExpanded;
 
   /// The id of the album the grid shows, or null for All photos.
   int? get selectedAlbumId => _showsAlbum ? _albumId : null;
@@ -1377,6 +1385,13 @@ class PhotosController extends ChangeNotifier {
   /// Expands the album [id], or folds it.
   void toggleAlbumExpanded(int id) {
     if (!_expandedAlbumIds.remove(id)) _expandedAlbumIds.add(id);
+    notifyListeners();
+  }
+
+  /// Opens the sidebar's whole Albums section, or folds it to its header.
+  /// The selection, the sort and [expandedAlbumIds] are untouched.
+  void toggleAlbumsSectionExpanded() {
+    _albumsSectionExpanded = !_albumsSectionExpanded;
     notifyListeners();
   }
 

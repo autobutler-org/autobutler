@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -27,6 +28,8 @@ void main() {
     bool withAllPhotos = false,
     bool withSort = false,
     AlbumSort sort = AlbumSort.nameAsc,
+    bool isSectionExpanded = true,
+    bool withSectionToggle = false,
     List<String>? events,
   }) {
     void record(String e) => events?.add(e);
@@ -44,6 +47,8 @@ void main() {
       onAllPhotosSelected: withAllPhotos ? () => record('all') : null,
       sort: sort,
       onSortChanged: withSort ? (s) => record('sort:${s.id}') : null,
+      isSectionExpanded: isSectionExpanded,
+      onToggleSection: withSectionToggle ? () => record('section') : null,
     );
   }
 
@@ -330,5 +335,191 @@ void main() {
       expect(tester.getSize(find.byKey(ValueKey(key))), const Size.square(48));
     }
     await expectTapTargetGuidelines(tester);
+  });
+
+  group('whole-section collapse (#3112)', () {
+    const toggle = ValueKey('album_section_toggle');
+
+    testBothViewports('leaves the label plain without its callback', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(tester, bounded(sidebar()), size: size);
+
+      expect(find.byKey(toggle), findsNothing);
+      expect(find.text('Albums'), findsOneWidget);
+    });
+
+    testBothViewports('reports a tap, and Enter from the keyboard', (
+      tester,
+      size,
+    ) async {
+      final events = <String>[];
+      await pumpAt(
+        tester,
+        bounded(sidebar(withSectionToggle: true, events: events)),
+        size: size,
+      );
+
+      expect(find.byTooltip('Collapse albums'), findsOneWidget);
+      await tester.tap(find.byKey(toggle));
+      Focus.of(tester.element(find.text('Albums'))).requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+
+      expect(events, ['section', 'section']);
+    });
+
+    for (final shrinkWrap in [false, true]) {
+      final layout = shrinkWrap ? 'shrink-wrapped' : 'bounded';
+
+      testBothViewports('collapsed and $layout, drops every row from layout, '
+          'focus and semantics, and keeps the header actions', (
+        tester,
+        size,
+      ) async {
+        final handle = tester.ensureSemantics();
+        final events = <String>[];
+        Widget build({required bool expanded}) {
+          final child = sidebar(
+            shrinkWrap: shrinkWrap,
+            isSectionExpanded: expanded,
+            withSectionToggle: true,
+            withAllPhotos: true,
+            withSort: true,
+            events: events,
+          );
+          return shrinkWrap
+              ? SingleChildScrollView(child: child)
+              : bounded(child);
+        }
+
+        await pumpAt(tester, build(expanded: true), size: size);
+        final expandedHeight = tester.getSize(find.byType(AlbumSidebar)).height;
+        expect(
+          tester.getSemantics(find.byKey(toggle)),
+          isSemantics(isButton: true, hasExpandedState: true, isExpanded: true),
+        );
+
+        await pumpAt(tester, build(expanded: false), size: size);
+
+        expect(tester.takeException(), isNull);
+        expect(find.byKey(_allPhotos), findsNothing);
+        expect(find.byType(AlbumTreeTile), findsNothing);
+        expect(find.text('Trips', skipOffstage: false), findsNothing);
+        expect(find.bySemanticsLabel('Trips'), findsNothing);
+        expect(find.byTooltip('Expand albums'), findsOneWidget);
+        expect(
+          tester.getSemantics(find.byKey(toggle)),
+          isSemantics(
+            isButton: true,
+            hasExpandedState: true,
+            isExpanded: false,
+          ),
+        );
+        if (shrinkWrap) {
+          expect(
+            tester.getSize(find.byType(AlbumSidebar)).height,
+            lessThan(expandedHeight),
+          );
+        }
+
+        // Tab walks the header and nothing else.
+        final focused = <Key?>{};
+        for (var i = 0; i < 6; i++) {
+          await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+          await tester.pump();
+          final context = primaryFocus?.context;
+          if (context == null) continue;
+          focused.add(
+            context.findAncestorWidgetOfExactType<AlbumTreeTile>()?.key ??
+                context.findAncestorWidgetOfExactType<InkWell>()?.key ??
+                context.findAncestorWidgetOfExactType<IconButton>()?.key,
+          );
+        }
+        expect(focused, {
+          toggle,
+          const ValueKey('album_sort'),
+          const ValueKey('album_create'),
+        });
+
+        await tester.tap(find.byKey(const ValueKey('album_create')));
+        await tester.tap(find.byKey(const ValueKey('album_sort')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('album_sort_option_name_desc')),
+        );
+        await tester.pumpAndSettle();
+        expect(events, ['create', 'sort:name_desc']);
+        handle.dispose();
+      });
+    }
+
+    testBothViewports('collapsed, hides the loader, the error and the empty '
+        'hint too', (tester, size) async {
+      for (final collapsed in [
+        sidebar(isSectionExpanded: false, isLoading: true),
+        sidebar(isSectionExpanded: false, error: 'Nope'),
+        sidebar(isSectionExpanded: false, albums: const []),
+      ]) {
+        await pumpAt(tester, bounded(collapsed), size: size);
+        expect(find.byType(QuarkLoader), findsNothing);
+        expect(find.text('Nope'), findsNothing);
+        expect(find.text('No albums yet'), findsNothing);
+      }
+    });
+
+    testBothViewports('turns the chevron, and snaps it under reduced motion', (
+      tester,
+      size,
+    ) async {
+      Duration duration() => tester
+          .widget<AnimatedRotation>(find.byType(AnimatedRotation))
+          .duration;
+
+      await pumpAt(
+        tester,
+        bounded(sidebar(withSectionToggle: true)),
+        size: size,
+      );
+      expect(duration(), greaterThan(Duration.zero));
+
+      reduceMotion(tester);
+      await pumpAt(
+        tester,
+        bounded(sidebar(withSectionToggle: true, isSectionExpanded: false)),
+        size: size,
+      );
+      expect(duration(), Duration.zero);
+
+      await pumpAt(
+        tester,
+        MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: bounded(sidebar(withSectionToggle: true)),
+        ),
+        size: size,
+      );
+      expect(duration(), Duration.zero);
+    });
+
+    testBothViewports(
+      'keeps a 48dp, labeled header a screen reader can press',
+      (tester, size) async {
+        await pumpAt(
+          tester,
+          Center(
+            child: SizedBox(
+              width: 280,
+              height: 300,
+              child: sidebar(withSectionToggle: true, isSectionExpanded: false),
+            ),
+          ),
+          size: size,
+        );
+        await expectTapTargetGuidelines(tester);
+      },
+    );
   });
 }
