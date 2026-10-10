@@ -38,6 +38,7 @@ var authRateLimitedPaths = map[string]bool{
 	"/api/v0/auth/recover/keys":    true,
 	"/api/v0/auth/request-account": true,
 	"/api/v0/auth/recovery-key":    true,
+	"/api/v0/auth/password":        true,
 	"/api/v0/storage/devices/role": true,
 }
 

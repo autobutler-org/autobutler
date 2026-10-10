@@ -173,6 +173,15 @@ for an account that has no recovery key. An account that has one refuses every r
   identity re-wrapped under the new phrase, stored in the same transaction, as `/auth/recover` takes it. The login
   response carries `legacyRecovery: true` for an account with no recovery key, which tells the app to do this.
 
+### Changing a password
+
+`PUT /api/v0/auth/password` with a session, body `{password, newAuthKey, chatKeys?}`, answers 204. `password` carries
+the auth key of the password the account has now, so a stolen session cannot change it; a wrong or missing one is a
+403, a raw password a 426, and nothing is written. `newAuthKey` is derived from the new password and the salt
+`GET /auth/salt` returns, which the account keeps. `chatKeys` is the chat identity re-wrapped under the new password,
+stored in the same transaction, as `/auth/recover` takes it. The account's sessions stay signed in, and the route
+shares the sign-in rate limit (#3022).
+
 ## Check setup status
 
 ```bash

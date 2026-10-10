@@ -113,6 +113,8 @@ missing.
   reset's transaction.
 - `PUT /api/v0/auth/recovery-key`: with a session and the `authKey` re-confirmed, stores a new `recoveryKey`, clears
   the Quark-made phrase, and stores the re-wrapped row in one transaction.
+- `PUT /api/v0/auth/password`: with a session and the current `authKey` re-confirmed, stores the new password's
+  `authKey` and the row re-wrapped under it in one transaction.
 
 ## Channel keys
 

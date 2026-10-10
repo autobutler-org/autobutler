@@ -18,6 +18,7 @@ func (r *router) Routes() []*serverutil.Route {
 		recoverAccountRoute,
 		recoverChatKeysRoute,
 		setRecoveryKeyRoute,
+		changePasswordRoute,
 		requestAccountRoute,
 		deleteAccountRoute,
 		// Session management
@@ -141,5 +142,20 @@ type setRecoveryKeyBody struct {
 	// ChatKeys is the account's chat identity re-wrapped under the new
 	// phrase, stored in the same transaction. Absent leaves the stored keys as
 	// they are.
+	ChatKeys *chatutil.Keys `json:"chatKeys,omitempty"`
+}
+
+// changePasswordBody is what PUT /auth/password reads.
+type changePasswordBody struct {
+	// Password re-confirms the caller with the auth key of the password it has
+	// now, so a session alone cannot change the password, as delete-account
+	// takes it. A raw password is refused with 426 (#2430).
+	Password string `json:"password"`
+	// NewAuthKey is the standard base64 of the 32-byte key the client derived
+	// from the new password and the salt GET /auth/salt returned.
+	NewAuthKey string `json:"newAuthKey" binding:"required"`
+	// ChatKeys is the account's chat identity re-wrapped under the new
+	// password, stored in the same transaction. Absent leaves the stored keys
+	// as they are.
 	ChatKeys *chatutil.Keys `json:"chatKeys,omitempty"`
 }

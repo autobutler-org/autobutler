@@ -39,8 +39,8 @@ func accountRefusalResponse(err error) *serverutil.Response {
 
 // storeChatKeys validates chat keys a credential change carries and returns
 // the step that stores them inside that change's transaction, nil when the
-// body carried none. Recovery and a recovery-key rotation both hand the
-// account's chat identity back re-wrapped (#2416, #2430).
+// body carried none. Recovery, a recovery-key rotation and a password change
+// all hand the account's chat identity back re-wrapped (#2416, #2430, #3022).
 func storeChatKeys(ctx context.Context, keys *chatutil.Keys) (func(*db.Queries, int64) error, error) {
 	if keys == nil {
 		return nil, nil

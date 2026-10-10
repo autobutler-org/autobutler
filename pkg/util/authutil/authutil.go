@@ -454,6 +454,26 @@ type SetRecoveryKeyParams struct {
 // SetRecoveryKeyResult is empty; a stored key has nothing to report.
 type SetRecoveryKeyResult struct{}
 
+// ChangePasswordParams replaces the signed-in account's auth key with the one
+// of a new password.
+type ChangePasswordParams struct {
+	UserID int64
+	// CurrentAuthKey is the auth key of the password the account has now. It
+	// is checked before anything is written.
+	CurrentAuthKey string
+	// NewAuthKey is the standard base64 of the 32-byte key the client derived
+	// from the new password and the account's auth salt.
+	NewAuthKey string
+	// AfterChange, when set, runs in the transaction that stores the key, with
+	// that transaction's queries and the account's id. An error rolls the key
+	// back. Chat uses it to store the identity re-wrapped under the new
+	// password.
+	AfterChange func(queries *db.Queries, userID int64) error
+}
+
+// ChangePasswordResult is empty; a stored key has nothing to report.
+type ChangePasswordResult struct{}
+
 // GetAuthStatusParams contains parameters for GetAuthStatus.
 type GetAuthStatusParams struct {
 	// SessionToken is the caller's session token, empty for an anonymous caller.
@@ -1164,6 +1184,57 @@ func SetRecoveryKey(ctx context.Context, database *db.DatabaseSqlc, params SetRe
 		return nil
 	})
 	return SetRecoveryKeyResult{}, err
+}
+
+// ChangePassword replaces the signed-in account's auth key with the one of a
+// new password, once CurrentAuthKey has been checked, so a session on its own
+// cannot change the password (#3022). The new key and params.AfterChange
+// commit together or not at all. The account keeps its salt, which is the one
+// the client derived the new key with, and its sessions: the others are not
+// signed out.
+//
+// It returns ErrAppTooOld for a current key not shaped like an auth key, which
+// is a raw password, ErrInvalidAuthKey for a malformed new key, ErrUserNotFound
+// when the account is gone, and ErrIncorrectPassword for a wrong or empty
+// current key. An account with no auth key yet gets ErrIncorrectPassword too:
+// it moves to one by signing in.
+func ChangePassword(ctx context.Context, database *db.DatabaseSqlc, params ChangePasswordParams) (ChangePasswordResult, error) {
+	if isRawSecret(params.CurrentAuthKey) {
+		return ChangePasswordResult{}, ErrAppTooOld
+	}
+	if err := validateAuthKey(params.NewAuthKey); err != nil {
+		return ChangePasswordResult{}, err
+	}
+	hash, err := HashKey(params.NewAuthKey)
+	if err != nil {
+		return ChangePasswordResult{}, err
+	}
+	// Read before the transaction, not in it, for the reason SetRecoveryKey
+	// gives.
+	user, err := database.Queries.GetUserByID(ctx, params.UserID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ChangePasswordResult{}, ErrUserNotFound
+	}
+	if err != nil {
+		return ChangePasswordResult{}, fmt.Errorf("look up the account: %w", err)
+	}
+	if !checkAuthKey(ctx, database.Queries, user, params.CurrentAuthKey) {
+		return ChangePasswordResult{}, ErrIncorrectPassword
+	}
+	err = inTx(ctx, database, func(q *db.Queries) error {
+		if err := q.SetUserCredentials(ctx, db.SetUserCredentialsParams{
+			ID:          user.ID,
+			AuthKeyHash: hash,
+			AuthSalt:    user.AuthSalt,
+		}); err != nil {
+			return fmt.Errorf("store the auth key: %w", err)
+		}
+		if params.AfterChange != nil {
+			return params.AfterChange(q, user.ID)
+		}
+		return nil
+	})
+	return ChangePasswordResult{}, err
 }
 
 // Recover resets a user's password using their recovery phrase or recovery

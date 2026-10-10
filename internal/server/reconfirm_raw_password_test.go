@@ -67,6 +67,7 @@ func TestReconfirm_RawPasswordIsUpdateTheApp(t *testing.T) {
 	}{
 		{http.MethodDelete, "/api/v0/auth/account?account=true", map[string]string{"password": raw}},
 		{http.MethodPut, "/api/v0/auth/recovery-key", map[string]string{"password": raw, "recoveryKey": dbtest.AuthKey("phrase")}},
+		{http.MethodPut, "/api/v0/auth/password", map[string]string{"password": raw, "newAuthKey": dbtest.AuthKey("new-password")}},
 		{http.MethodPut, "/api/v0/vault/storage-location", map[string]string{"targetDeviceSerial": "", "username": "admin", "password": raw}},
 		{http.MethodPut, "/api/v0/storage/devices/role", map[string]string{"serial": "", "role": "unassigned", "username": "admin", "password": raw}},
 	} {
@@ -92,6 +93,54 @@ func TestReconfirm_RawPasswordIsUpdateTheApp(t *testing.T) {
 	}
 	if w := basic(dbtest.AuthKey(raw)); w.Code != http.StatusOK {
 		t.Errorf("Basic with the auth key = %d %s, want 200", w.Code, w.Body)
+	}
+}
+
+// TestChangePassword_SharesSignInRateLimit hammers PUT /auth/password from
+// one address until the sign-in limiter answers 429, and checks the attempts
+// that were let through changed nothing (#3022).
+func TestChangePassword_SharesSignInRateLimit(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
+	t.Cleanup(func() { settingsutil.ResetForTesting("") })
+	ctx := context.Background()
+
+	database := dbtest.NewDB(t)
+	setup, err := authutil.Setup(ctx, authutil.SetupParams{Database: database, Files: vfs.NewMemVFS("files"), Username: "admin", AuthKey: dbtest.AuthKey("admin-password"), SaltSecret: dbtest.SaltSecret})
+	if err != nil {
+		t.Fatalf("authutil.Setup: %v", err)
+	}
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	deps := deputil.NewDependencies().WithDatabase(database)
+	middleware.Use(engine, deps)
+	setupRouters(engine, nil, deps)
+
+	body, err := json.Marshal(map[string]string{"password": dbtest.AuthKey("a-guess"), "newAuthKey": dbtest.AuthKey("new-password")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	limited := false
+	// The auth limiter's burst is 10, so one address trips it well inside 50.
+	for range 50 {
+		req := httptest.NewRequest(http.MethodPut, "/api/v0/auth/password", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+setup.SessionToken)
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		if w.Code == http.StatusTooManyRequests {
+			limited = true
+			break
+		}
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("wrong current password = %d %s, want 403 until limited", w.Code, w.Body)
+		}
+	}
+	if !limited {
+		t.Fatal("repeated wrong current passwords never hit 429")
+	}
+	if _, err := authutil.VerifyPassword(ctx, authutil.VerifyPasswordParams{Queries: database.Queries, Username: "admin", Password: dbtest.AuthKey("admin-password")}); err != nil {
+		t.Errorf("the password changed under wrong guesses: %v", err)
 	}
 }
 
