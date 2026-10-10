@@ -165,6 +165,16 @@ Future<WrappedChatKeys> Function({
 })
 chatKeysForRecovery = ChatKeysController.instance.keysForRecovery;
 
+/// Opens the account's chat keys with the current password and re-wraps them
+/// under the new one, for [AuthService.changePassword] to send (#3022). See
+/// [ChatKeysController.keysForPasswordChange]. Overridable in tests.
+Future<WrappedChatKeys?> Function({
+  required String currentPassword,
+  required String newPassword,
+  required Uint8List authSalt,
+})
+chatKeysForPasswordChange = ChatKeysController.instance.keysForPasswordChange;
+
 /// Runs [chatKeysOnSignIn] without holding up the sign-in. Chat is not what
 /// the user signed in for, and chat unlocks later from its own prompt when
 /// this fails. [recovery] is the keys of a phrase the app generated, used for
@@ -767,6 +777,80 @@ class AuthService {
     );
   }
 
+  /// Changes the signed-in account's password from [currentPassword] to
+  /// [newPassword] with `PUT /auth/password` (#3022). The session stays.
+  ///
+  /// The Quark is sent the two passwords' auth keys, never the passwords
+  /// (#2430): the current one's re-confirms the caller, as it does for
+  /// [deleteAccount]. The account's chat keys are opened with
+  /// [currentPassword] first and sent re-wrapped under [newPassword] in the
+  /// same request, so chat history survives the change. A current password
+  /// that opens nothing fails here, before anything is sent.
+  ///
+  /// A wrong current password throws [Errors.wrongCurrentPassword], and
+  /// nothing changed.
+  static Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final session = await _sessionAccount();
+    final current = await AuthSecret.resolve(
+      username: session.username,
+      password: currentPassword,
+      use: AuthSecretUse.reconfirm,
+    );
+    // ponytail: asks for the salt a second time rather than teaching
+    // AuthSecret to derive two keys from one answer.
+    final next = await AuthSecret.resolve(
+      username: session.username,
+      password: newPassword,
+      use: AuthSecretUse.newCredential,
+    );
+    final chatKeys = await chatKeysForPasswordChange(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+      authSalt: next.salt,
+    );
+    final response = await authHttpClientFactory()
+        .put(
+          _baseUri.resolve('/api/v0/auth/password'),
+          headers: {
+            'Authorization': 'Bearer ${session.token}',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            // The re-confirmation takes the auth key, never the password.
+            'password': current.authKey,
+            'newAuthKey': next.authKey,
+            'chatKeys': ?chatKeys?.toJson(),
+          }),
+        )
+        .timeout(kAuthRequestTimeout);
+    if (response.statusCode == 401) throw const UnauthorizedException();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = _tryDecodeError(response.body);
+      // ErrIncorrectPassword in authutil, as [_deleteAspects] reads it.
+      if (response.statusCode == 403 && body == 'incorrect password') {
+        throw const MessageException(Errors.wrongCurrentPassword);
+      }
+      // The status alone: the Quark's text for a refused key is not copy.
+      throw ApiException(response.statusCode, 'Password change failed');
+    }
+  }
+
+  /// The stored session and the account it is for, which a request that
+  /// re-confirms the password needs. Throws [UnauthorizedException] without
+  /// either.
+  static Future<({String token, String username})> _sessionAccount() async {
+    final token = AppSettings.instance.sessionToken;
+    if (token == null) throw const UnauthorizedException();
+    // A session that predates the app recording its username asks the Quark.
+    final username =
+        AppSettings.instance.username ?? (await checkStatus()).username;
+    if (username == null) throw const UnauthorizedException();
+    return (token: token, username: username);
+  }
+
   /// Logs out — clears the in-memory session token and notifies the server.
   static Future<void> logout() async {
     final token = AppSettings.instance.sessionToken;
@@ -845,12 +929,7 @@ class AuthService {
     required Map<String, String> aspects,
     required String context,
   }) async {
-    final token = AppSettings.instance.sessionToken;
-    if (token == null) throw const UnauthorizedException();
-    // A session that predates the app recording its username asks the Quark.
-    final username =
-        AppSettings.instance.username ?? (await checkStatus()).username;
-    if (username == null) throw const UnauthorizedException();
+    final (:token, :username) = await _sessionAccount();
     final secret = await AuthSecret.resolve(
       username: username,
       password: password,

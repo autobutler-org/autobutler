@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 
-/// The Account tab of Settings (#2350): the [profile] card (#2419), sign
-/// out, the [sessions] card (#1663), who manages accounts (#2474), with an
+/// The Account tab of Settings (#2350): the [profile] card (#2419), a
+/// Change password row (#3022), sign out, the [sessions] card (#1663), who manages accounts (#2474), with an
 /// Account and data row at the bottom that leads to Delete account and, for an admin, Reset
 /// this Quark (#2346).
 ///
@@ -16,7 +16,10 @@ import 'package:quark_icons/quark_icons.dart';
 /// rather than left to wonder where account management went, and an admin
 /// gets a row to the Users page where it happens (#2474).
 ///
-/// Keys: `settings_account_users`, `settings_account_admin_note` and
+/// Changing the password is for members and admins alike: it is the one
+/// change to an account its owner makes without an admin.
+///
+/// Keys: `settings_account_change_password`, `settings_account_users`, `settings_account_admin_note` and
 /// `settings_account_and_data`.
 class SettingsAccountTab extends StatelessWidget {
   /// Creates the tab.
@@ -24,6 +27,7 @@ class SettingsAccountTab extends StatelessWidget {
     required this.signedIn,
     required this.isAdmin,
     required this.onSignOut,
+    required this.onChangePassword,
     required this.onOpenAccountAndData,
     required this.onOpenUsers,
     this.header,
@@ -42,6 +46,9 @@ class SettingsAccountTab extends StatelessWidget {
 
   /// Called when the user taps Sign out.
   final VoidCallback onSignOut;
+
+  /// Called when the user taps Change password.
+  final VoidCallback onChangePassword;
 
   /// Called when the user taps Account and data.
   final VoidCallback onOpenAccountAndData;
@@ -69,6 +76,19 @@ class SettingsAccountTab extends StatelessWidget {
           const Text('Not signed in')
         else ...[
           if (profile != null) ...[profile!, const SizedBox(height: 16)],
+          Card(
+            child: Tooltip(
+              message: 'Change the password you sign in with',
+              child: ListTile(
+                key: const ValueKey('settings_account_change_password'),
+                leading: const Icon(QuarkIcons.lock_outline),
+                title: const Text('Change password'),
+                trailing: const Icon(QuarkIcons.chevron_right),
+                onTap: onChangePassword,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           Card(
             child: ListTile(
               leading: const Icon(QuarkIcons.logout),

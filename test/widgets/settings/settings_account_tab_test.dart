@@ -12,10 +12,14 @@ void main() {
 
   final usersRow = find.byKey(const ValueKey('settings_account_users'));
   final adminNote = find.byKey(const ValueKey('settings_account_admin_note'));
+  final changePasswordRow = find.byKey(
+    const ValueKey('settings_account_change_password'),
+  );
 
   Future<List<String>> pumpTab(
     WidgetTester tester, {
     required bool isAdmin,
+    bool signedIn = true,
     Size size = wideViewport,
   }) async {
     tester.view.physicalSize = size;
@@ -26,9 +30,10 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: SettingsAccountTab(
-            signedIn: true,
+            signedIn: signedIn,
             isAdmin: isAdmin,
             onSignOut: () => calls.add('sign out'),
+            onChangePassword: () => calls.add('change password'),
             onOpenAccountAndData: () => calls.add('account and data'),
             onOpenUsers: () => calls.add('users'),
           ),
@@ -59,5 +64,32 @@ void main() {
       await tester.tap(usersRow);
       expect(calls, ['users']);
     });
+
+    // #3022: changing a password is the account owner's to do, so the row is
+    // there for a member as much as for an admin.
+    for (final isAdmin in [false, true]) {
+      testWidgets('${isAdmin ? 'an admin' : 'a member'} gets a Change '
+          'password row at $size', (tester) async {
+        final calls = await pumpTab(tester, isAdmin: isAdmin, size: size);
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Change password'), findsOneWidget);
+        expect(
+          find.ancestor(of: changePasswordRow, matching: find.byType(Tooltip)),
+          findsWidgets,
+        );
+        await tester.ensureVisible(changePasswordRow);
+        await tester.tap(changePasswordRow);
+        expect(calls, ['change password']);
+      });
+    }
   }
+
+  testWidgets('nobody signed in has no password to change', (tester) async {
+    await pumpTab(tester, isAdmin: false, signedIn: false);
+
+    expect(tester.takeException(), isNull);
+    expect(changePasswordRow, findsNothing);
+    expect(find.text('Not signed in'), findsOneWidget);
+  });
 }

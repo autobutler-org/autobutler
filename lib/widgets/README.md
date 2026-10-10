@@ -106,6 +106,14 @@ lib/widgets/
     add_to_album_sheet.dart     AddToAlbumSheet host for a photo in an album
                                 view: calls AlbumService, shows snack bars
   settings/
+    change_password/
+      change_password_dialog.dart
+                                the current password and the new one twice;
+                                data in, callbacks out, app-side for now
+                                because its checks read Errors
+      change_password_field.dart
+                                one of that dialog's password fields, with
+                                its show and hide toggle
     hostname_field.dart         the device name field and its Rename button;
                                 data in, callbacks out, app-side for now
                                 because it checks names with hostname_rules

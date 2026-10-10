@@ -320,6 +320,27 @@ abstract final class Errors {
   static const String incorrectPassword =
       "That password isn't right. Nothing was deleted.";
 
+  /// Changing the password with a current password that isn't the account's
+  /// (#3022): it doesn't open what the account stores, or the Quark answered
+  /// 403 with `incorrect password`.
+  static const String wrongCurrentPassword =
+      "Your current password isn't right. Your password wasn't changed.";
+
+  /// The two entries of a new password differ.
+  static const String passwordsDontMatch = "The new passwords don't match.";
+
+  /// A new password shorter than [minPasswordLength] characters.
+  static const String passwordTooShort =
+      'Use at least $minPasswordLength characters.';
+
+  /// The shortest password the change-password dialog accepts, the length
+  /// account recovery asks for.
+  static const int minPasswordLength = 8;
+
+  /// A new password that is the current one again.
+  static const String passwordUnchanged =
+      'Choose a password different from your current one.';
+
   /// A Quark with no `GET /auth/salt`, or one that does not report
   /// `legacyRecovery`: it predates auth keys and recovery keys, and this app
   /// never sends the raw password or phrase it would want (#2430).
