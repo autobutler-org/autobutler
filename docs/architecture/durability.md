@@ -26,6 +26,11 @@ commits alone, and a connection that finds the database locked retries for `busy
 The journal mode stayed as it was on purpose. WAL was measured and bought no throughput once requests stopped
 writing, and it would put a `-wal` file beside every database, the vault on a removable drive included.
 
+A schema migration is one transaction too, so a power cut during one leaves the schema as it was. What it can
+leave behind is golang-migrate's dirty flag, which is written before the migration and cleared after it. Quark
+does not start on a dirty database and does not empty it (#3127): it exits with the statements that clear the
+flag. [Data](data.md#main-schema) has the full list of what startup does with a version it cannot carry forward.
+
 | Write                                  | Commit point                                                       |
 | -------------------------------------- | ------------------------------------------------------------------ |
 | Vault setup                            | one `INSERT` of the config row (salt, verification blob)           |

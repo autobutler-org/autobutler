@@ -76,7 +76,9 @@ The web frontend is `//go:embed`ed into the binary, so the UI you get is whateve
 with your fresh backend.
 
 This is a released image running an unreleased binary. If your working tree carries a migration the
-release does not, it runs against whatever is in the mounted volume and does not roll back.
+release does not, it runs against whatever is in the mounted volume and does not roll back. A binary
+without that migration then refuses to start on the volume: the container exits, and its log names the
+database file and what to do with it.
 
 ## Updating
 
@@ -186,7 +188,8 @@ nothing on screen to explain why — so the target rejects it up front.
 
 An empty directory is fine; the server creates `data/` inside it on first boot. Pointing it at an
 **existing** Quark directory means the container reads and writes your real photos and database with
-whatever binary version the image carries, and migrations run on start and do not roll back.
+whatever binary version the image carries, and migrations run on start and do not roll back. An image
+older than the database it is pointed at exits without touching it, and says so in its log.
 
 ### Why the user is named `quark`
 

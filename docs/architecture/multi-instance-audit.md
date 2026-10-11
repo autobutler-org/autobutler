@@ -6,16 +6,15 @@ one database and one file store). It is the multi-instance counterpart of [capac
 
 The question asked of every row: **if a different instance served the next request, what would go wrong?**
 
-**Short version.** Quark assumes it is the only process in four places that destroy data, and those come before
-anything else:
+**Short version.** Quark assumes it is the only process in three places that destroy data, and those come
+before anything else. A fourth is fixed: startup used to reset the database when the recorded schema version was
+dirty or unknown to the binary (D1, D2), and since #3127 it refuses to start instead.
 
-1. Startup resets the database when the recorded schema version is dirty or unknown to the binary (D1, D2). A
-   second instance booting mid-migration, or an older binary during a rollout or rollback, drops every table.
-2. Startup and shutdown empty `<data dir>/tmp` (F1), which holds every instance's in-flight uploads and
+1. Startup and shutdown empty `<data dir>/tmp` (F1), which holds every instance's in-flight uploads and
    transcodes.
-3. File version history serializes its index rewrite with in-process mutexes (S5). Two instances saving one file
+2. File version history serializes its index rewrite with in-process mutexes (S5). Two instances saving one file
    delete each other's snapshot as a stray.
-4. A vault password change re-keys every entry and re-unlocks only the instance that served it (S4). Any other
+3. A vault password change re-keys every entry and re-unlocks only the instance that served it (S4). Any other
    instance keeps writing entries under the old key.
 
 After those, the largest group is state that is simply invisible to the other instance: the event bus and every
@@ -49,9 +48,9 @@ multi-instance work point at #2955.
 
 | ID | Where | What it holds or does | With two instances | Bad | Issue | Direction |
 | --- | --- | --- | --- | --- | --- | --- |
-| D1 | `internal/db/database.go:81-96`, `:183` | `initSchema` calls `staleMigrationState`; a `dirty` row in `schema_migrations` means `ResetDatabase` | golang-migrate marks the version dirty in its own transaction before each migration body. An instance booting while another migrates sees `dirty` and drops every table | data loss | #2970 (raised in its comments) | Never auto-reset on a shared database: a dirty or unknown version refuses to serve |
-| D2 | `internal/db/database.go:187-191` | A recorded version missing from the binary's embedded migrations is "stale" and also resets | Release N starting against a schema migrated by N+1, during a rollout or a rollback, drops every table | data loss | #2970 (raised in its comments) | A version above the binary's highest means stay unready, within a stated skew |
-| D3 | `internal/db/database.go:72-112` | `m.Up()` on every `ConnectToDatabase`. The sqlite driver's `Lock()` is an in-process flag | Two instances starting together both migrate; the loser fails on a non-idempotent statement and leaves `dirty` set, which feeds D1 | data loss | #2970 | Advisory lock around the migration step, or a one-shot `migrate` step before the rollout |
+| D1 | `internal/db/database.go` (`initSchema`); `internal/db/migration_state.go` (`classifyMigrationState`) | A `dirty` row in `schema_migrations`. Fixed in #3127: startup no longer resets on it. It refuses to start, changes nothing, and the error carries the repair | golang-migrate marks the version dirty in its own transaction before each migration body. An instance booting while another migrates sees `dirty` and exits; its supervisor starts it again once the migration is done | failed request | #3127 | Wait out a migration in progress instead of exiting (D3) |
+| D2 | `internal/db/migration_state.go` (`classifyMigrationState`) | A recorded version above the binary's highest. Fixed in #3127: it refuses to start and changes nothing. Only a database stamped under the numbering from before #1758 is replaced, and that one is renamed aside, not emptied | Release N starting against a schema migrated by N+1, during a rollout or a rollback, exits with an error naming the build to install | failed request | #3127 | A version above the binary's highest means stay unready, within a stated skew |
+| D3 | `internal/db/database.go:72-112` | `m.Up()` on every `ConnectToDatabase`. The sqlite driver's `Lock()` is an in-process flag | Two instances starting together both migrate; the loser fails on a non-idempotent statement and leaves `dirty` set, and every later start refuses until it is repaired by hand (D1) | failed request | #2970 | Advisory lock around the migration step, or a one-shot `migrate` step before the rollout |
 | D4 | `internal/db/reset.go` (`ResetDatabase`); caller `authutil.DeleteAccount`; `pkg/util/resetutil` | Factory reset. Fixed in #3085: the drop and the re-migration are one `BEGIN IMMEDIATE` transaction that also issues a new install id (`install` table), a files-only or devices-only reset rotates the id, and every instance polls it (`resetutil.Watch`) and restarts on a change | Other instances wait on the lock or fail busy, then restart within the poll interval. The files directory is still removed outside any lock, so a request on another instance can fail mid-removal | failed request | #3085 | Push the reset over the relay (#2965) instead of polling |
 | D5 | `internal/db/connect.go:15-23` | The main database is the SQLite file `<data dir>/quark.db` | Several hosts opening one SQLite file over a network mount depend on that share's locking | data loss | #2955, #2968 | Multi-instance mode requires PostgreSQL and refuses SQLite |
 | D6 | `internal/db/connect.go:78-104` | `sharedQueries` pins one `*sql.Conn` for every sqlc query and strips cancellation | Not a correctness guard: `BeginTx` callers already use the pool. On PostgreSQL a dropped pinned connection is never replaced, so the instance fails every query until restart | failed request | #2955 | Pool with normal contexts on PostgreSQL; keep the pin for SQLite |
