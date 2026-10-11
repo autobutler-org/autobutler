@@ -85,6 +85,9 @@ lib/widgets/
     connection_sheet_button.dart
                                 ConnectionIndicator that opens ConnectionSheet
                                 and navigates to Settings › Network
+    startup_loader.dart         StartupLoader, the app `main` paints while
+                                the saved settings are slow to load; a whole
+                                MaterialApp, so it stays with `main`
     theme_toggle_button.dart    AppThemeToggle, ThemeToggleButton wired to AppSettings
   login/
     active_host_card.dart       the active Quark from AppSettings, with the

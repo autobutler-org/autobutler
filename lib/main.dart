@@ -20,8 +20,11 @@ import 'package:quark/services/local_trust_overrides_stub.dart'
     if (dart.library.io) 'package:quark/services/local_trust_overrides_io.dart';
 import 'package:quark/utils/app_log.dart';
 import 'package:quark/utils/first_frame_gate.dart';
+import 'package:quark/utils/startup.dart';
+import 'package:quark/utils/startup_config.dart';
 import 'package:quark/widgets/jobs/job_finish_announcer.dart';
 import 'package:quark/widgets/layout/app_bar_trailing_host.dart';
+import 'package:quark/widgets/layout/startup_loader.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/probe_bootstrap.dart';
 
@@ -30,6 +33,9 @@ void main() => AppLog.instance.guard(_run);
 
 /// Loads the saved settings, trusts the local Quark's self-signed certificate, starts the jobs and notifications
 /// watchers, and runs the app, holding its first frame until the router has a page to show.
+///
+/// Neither wait is open-ended (#2066): settings slower than [StartupConfig.settingsGrace] get a [StartupLoader]
+/// painted meanwhile, and the first frame is held for at most [StartupConfig.firstFrameMaxHold].
 Future<void> _run() async {
   AppLog.instance.info('App started');
   usePathUrlStrategy();
@@ -39,7 +45,14 @@ Future<void> _run() async {
   // (#2599). The handle is never disposed: the tree lives as long as the app.
   if (kIsWeb) SemanticsBinding.instance.ensureSemantics();
   await maybeStartProbeAgent();
-  await AppSettings.instance.load();
+  // The native launch screen is blank, and nothing is painted until the
+  // settings are in. A load that stalls, say on the secure-storage read, now
+  // shows a loader instead of that blank screen (#2066).
+  await awaitWithSlowNotice(
+    AppSettings.instance.load(),
+    grace: StartupConfig.settingsGrace,
+    onSlow: () => runApp(const StartupLoader()),
+  );
   // What the last launch left on disk shows while the first listing loads
   // (#1781). Not awaited: a snapshot is not worth holding the first frame.
   unawaited(FileBrowserCache.instance.hydrate());

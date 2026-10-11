@@ -31,6 +31,27 @@ void main() {
     expect(find.text('page'), findsOneWidget);
   });
 
+  // #2066: a redirect that never answers used to hold the launch screen up
+  // for good.
+  testWidgets('releases the first frame after maxHold when the redirect never '
+      'answers', (tester) async {
+    final router = routerWith((_, _) => Completer<String?>().future);
+    addTearDown(router.dispose);
+
+    deferFirstFrameUntilRouted(
+      tester.binding,
+      router.routerDelegate,
+      maxHold: const Duration(seconds: 2),
+    );
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+
+    expect(tester.binding.sendFramesToEngine, isFalse);
+
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(tester.binding.sendFramesToEngine, isTrue);
+  });
+
   testWidgets('lets the first frame through once a sync redirect routes', (
     tester,
   ) async {
