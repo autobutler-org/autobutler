@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +13,8 @@ import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/fake_file_picker_platform.dart';
+
 /// #2696: the control bar exports every tab of the spreadsheet as one Excel
 /// workbook, built by the Quark from the saved sheet and handed to the save
 /// dialog.
@@ -22,7 +24,6 @@ void main() {
   const secureStorage = MethodChannel(
     'plugins.it_nomads.com/flutter_secure_storage',
   );
-  const fileDialog = MethodChannel('flutter_file_dialog');
   const exportButton = ValueKey('data_sheet_export_xlsx');
 
   /// Every request the editor made, as `METHOD path`, in order.
@@ -35,22 +36,16 @@ void main() {
   /// client.
   late http.Client client;
 
-  /// The name and bytes handed to the save dialog, once it is shown.
-  late Completer<(String, List<int>)> saved;
+  /// The desktop save dialog, and the folder its saves land in.
+  late FakeFilePickerPlatform picker;
+  late Directory saveDir;
 
   setUp(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(secureStorage, (_) async => null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(fileDialog, (call) async {
-          final args = call.arguments as Map;
-          final source = args['sourceFilePath'] as String;
-          saved.complete((
-            args['fileName'] as String,
-            File(source).readAsBytesSync(),
-          ));
-          return '/saved/${args['fileName']}';
-        });
+    saveDir = Directory.systemTemp.createTempSync('export_save');
+    picker = FakeFilePickerPlatform(saveDir);
+    FilePickerPlatform.instance = picker;
 
     SharedPreferences.setMockInitialValues({});
     await AppSettings.instance.load();
@@ -60,7 +55,6 @@ void main() {
     await AppSettings.instance.setSessionToken('a-token');
 
     requests = [];
-    saved = Completer();
     exportResponse = () => http.Response.bytes([1, 2, 3], 200);
     final sheet = jsonEncode({
       'tabs': [
@@ -95,8 +89,8 @@ void main() {
     resetSharedHttpClient();
     await AppSettings.instance.setSessionToken(null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      ..setMockMethodCallHandler(secureStorage, null)
-      ..setMockMethodCallHandler(fileDialog, null);
+        .setMockMethodCallHandler(secureStorage, null);
+    saveDir.deleteSync(recursive: true);
   });
 
   for (final (label, size) in const [
@@ -141,7 +135,7 @@ void main() {
     ) async {
       await pumpEditor(tester);
 
-      final (name, bytes) = (await runExport(tester, () => saved.future))!;
+      final (name, bytes) = (await runExport(tester, picker.saved))!;
 
       expect(name, 'budget.xlsx');
       expect(bytes, [1, 2, 3]);
@@ -160,7 +154,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('sheet_tab_add')));
       await tester.pumpAndSettle();
 
-      await runExport(tester, () => saved.future);
+      await runExport(tester, picker.saved);
 
       final upload = requests.indexWhere((r) => r.startsWith('POST'));
       final export = requests.indexOf('GET /api/v0/files/export/xlsx');
@@ -184,7 +178,9 @@ void main() {
         find.text(Errors.message(ApiException(500, ''), 'export the sheet')),
         findsOneWidget,
       );
-      expect(saved.isCompleted, isFalse);
+      // The dialog was answered before the export failed, so the empty file
+      // it left at the chosen path is cleaned up rather than kept.
+      expect(saveDir.listSync(), isEmpty);
     });
   }
 }
