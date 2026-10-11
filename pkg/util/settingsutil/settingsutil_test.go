@@ -12,6 +12,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 )
 
@@ -57,10 +58,11 @@ func TestGetRemoteAccess_PersistsAcrossReset(t *testing.T) {
 	}
 }
 
-// TestLegacyAuthKey_IgnoredAndDropped verifies a settings.json written before
-// #1876, which still carries remoteAccessAuthKey, keeps its other settings on
-// import, and that the stale key is not brought into the database.
-func TestLegacyAuthKey_IgnoredAndDropped(t *testing.T) {
+// TestLegacyKeys_IgnoredAndDropped verifies a settings.json from an older
+// build keeps the settings this build knows on import and brings in none it
+// has retired: remoteAccessAuthKey (#1876), and autoUpdate, the switch
+// nothing read (#2792). A row an earlier import left behind is ignored too.
+func TestLegacyKeys_IgnoredAndDropped(t *testing.T) {
 	path := settingsFile(t)
 	legacy := `{"autoUpdate":true,"remoteAccessEnabled":true,"remoteAccessAuthKey":"hskey-old","devMode":false}`
 	if err := os.WriteFile(path, []byte(legacy), 0600); err != nil {
@@ -68,12 +70,21 @@ func TestLegacyAuthKey_IgnoredAndDropped(t *testing.T) {
 	}
 	settingsutil.ResetForTesting(path)
 
-	if !settingsutil.GetRemoteAccess() || !settingsutil.GetAutoUpdate() {
-		t.Fatal("legacy settings did not parse: want remote access and auto-update on")
+	if !settingsutil.GetRemoteAccess() {
+		t.Fatal("legacy settings did not parse: want remote access on")
 	}
-	_, err := settingsutil.QueriesForTesting().GetSetting(t.Context(), "remoteAccessAuthKey")
-	if !errors.Is(err, sql.ErrNoRows) {
-		t.Errorf("the auth key was imported (err=%v); want no row", err)
+	queries := settingsutil.QueriesForTesting()
+	for _, key := range []string{"remoteAccessAuthKey", "autoUpdate"} {
+		if _, err := queries.GetSetting(t.Context(), key); !errors.Is(err, sql.ErrNoRows) {
+			t.Errorf("%s was imported (err=%v); want no row", key, err)
+		}
+	}
+
+	if err := queries.SetSetting(t.Context(), db.SetSettingParams{Key: "autoUpdate", Value: "true"}); err != nil {
+		t.Fatal(err)
+	}
+	if !settingsutil.GetRemoteAccess() {
+		t.Error("a leftover autoUpdate row broke reading the settings")
 	}
 }
 
@@ -95,7 +106,7 @@ func TestImport_BringsInEverySettingOnce(t *testing.T) {
 
 	off := false
 	want := &settingsutil.Settings{
-		SettingsVersion: 1, AutoUpdate: true, RemoteAccessEnabled: true,
+		SettingsVersion: 1, RemoteAccessEnabled: true,
 		RemoteAccessHousehold: "home", RemoteAccessHouseholdToken: "tok", DevMode: true,
 		ActiveBranch: "dev", DeviceID: "device-1", AccessRequestsEnabled: &off,
 		FeatureFlags: map[string]bool{"chat": false, "slides": true}, ThemeColor: "#aabbcc", AuthSaltSecret: secret,
@@ -137,7 +148,7 @@ func TestSet_OneSettingNeverRevertsAnother(t *testing.T) {
 	path := settingsFile(t)
 	settingsutil.ResetForTesting(path)
 	first := settingsutil.QueriesForTesting()
-	if err := settingsutil.SetAutoUpdate(true); err != nil {
+	if err := settingsutil.SetRemoteAccess(true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -145,7 +156,7 @@ func TestSet_OneSettingNeverRevertsAnother(t *testing.T) {
 	if settingsutil.QueriesForTesting() == first {
 		t.Fatal("the second instance has the first one's handle")
 	}
-	if !settingsutil.GetAutoUpdate() {
+	if !settingsutil.GetRemoteAccess() {
 		t.Error("the second instance does not see the first one's change")
 	}
 	if err := settingsutil.SetThemeColor("ocean"); err != nil {
@@ -157,9 +168,9 @@ func TestSet_OneSettingNeverRevertsAnother(t *testing.T) {
 
 	settingsutil.ResetForTesting(path)
 	chat, set, err := settingsutil.GetFeatureFlag("chat")
-	if !settingsutil.GetAutoUpdate() || settingsutil.GetThemeColor() != "ocean" || !chat || !set || err != nil {
-		t.Errorf("autoUpdate=%v themeColor=%q chat=%v set=%v err=%v; want every change kept",
-			settingsutil.GetAutoUpdate(), settingsutil.GetThemeColor(), chat, set, err)
+	if !settingsutil.GetRemoteAccess() || settingsutil.GetThemeColor() != "ocean" || !chat || !set || err != nil {
+		t.Errorf("remoteAccess=%v themeColor=%q chat=%v set=%v err=%v; want every change kept",
+			settingsutil.GetRemoteAccess(), settingsutil.GetThemeColor(), chat, set, err)
 	}
 }
 
@@ -231,13 +242,13 @@ func TestUnbound(t *testing.T) {
 	if _, err := settingsutil.Load(); !errors.Is(err, settingsutil.ErrNotBound) {
 		t.Errorf("Load unbound: %v; want ErrNotBound", err)
 	}
-	if err := settingsutil.SetAutoUpdate(true); !errors.Is(err, settingsutil.ErrNotBound) {
-		t.Errorf("SetAutoUpdate unbound: %v; want ErrNotBound", err)
+	if err := settingsutil.SetRemoteAccess(true); !errors.Is(err, settingsutil.ErrNotBound) {
+		t.Errorf("SetRemoteAccess unbound: %v; want ErrNotBound", err)
 	}
 	if _, err := settingsutil.AuthSaltSecret(); !errors.Is(err, settingsutil.ErrNotBound) {
 		t.Errorf("AuthSaltSecret unbound: %v; want ErrNotBound", err)
 	}
-	if settingsutil.GetAutoUpdate() || settingsutil.GetAccessRequestsEnabled() {
+	if settingsutil.GetRemoteAccess() || settingsutil.GetAccessRequestsEnabled() {
 		t.Error("an unbound getter answered on")
 	}
 }

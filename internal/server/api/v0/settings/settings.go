@@ -3,8 +3,7 @@
 // Public, no session: GET /settings/public, the Quark's settings that are safe to show on the sign-in page (its
 // theme color).
 //
-// Any signed-in user: reading the Quark's settings (GET /settings), reading remote access (GET
-// /settings/remote-access), pairing a device for remote access (POST /settings/remote-access/devices), listing the
+// Any signed-in user: reading remote access (GET /settings/remote-access), pairing a device for remote access (POST /settings/remote-access/devices), listing the
 // beta feature flags (GET /settings/features), and reading and replacing the caller's own settings (GET and PUT
 // /settings/me), which act only on the session's account.
 //

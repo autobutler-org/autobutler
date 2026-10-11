@@ -87,7 +87,6 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 		{http.MethodPost, "/api/v0/storage/devices/snapshot-backup/verify"},
 		{http.MethodDelete, "/api/v0/devices/1"},
 		{http.MethodPost, "/api/v0/version/update"},
-		{http.MethodPost, "/api/v0/settings"},
 		// No body, so the admin stops at a 400 and the setting is untouched.
 		{http.MethodPut, "/api/v0/settings/access-requests"},
 		{http.MethodPut, "/api/v0/settings/theme-color"},
@@ -159,7 +158,6 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 	}
 
 	open := []struct{ method, path string }{
-		{http.MethodGet, "/api/v0/settings"},
 		{http.MethodGet, "/api/v0/settings/me"},
 		{http.MethodGet, "/api/v0/version"},
 		{http.MethodGet, "/api/v0/version/available"},
@@ -189,7 +187,6 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 		t.Errorf("anonymous GET /api/v0/settings/public = %d, want 200", got)
 	}
 	for _, r := range []struct{ method, path string }{
-		{http.MethodGet, "/api/v0/settings"},
 		{http.MethodGet, "/api/v0/settings/me"},
 		{http.MethodPut, "/api/v0/settings/me"},
 		{http.MethodPut, "/api/v0/settings/theme-color"},
@@ -203,7 +200,7 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 			t.Errorf("anonymous %s %s = 200, want it refused", r.method, r.path)
 		}
 	}
-	for _, path := range []string{"/api/v0/settings", "/api/v0/settings/me", "/api/v0/settings/features"} {
+	for _, path := range []string{"/api/v0/settings/me", "/api/v0/settings/features"} {
 		if got := anonymous(http.MethodGet, path); got != http.StatusUnauthorized {
 			t.Errorf("anonymous GET %s = %d, want 401", path, got)
 		}

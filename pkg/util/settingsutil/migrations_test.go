@@ -19,7 +19,7 @@ func TestMigrate_RunsOnceOnImport(t *testing.T) {
 		return nil
 	})
 	path := settingsFile(t)
-	original := `{"autoUpdate":true}`
+	original := `{"remoteAccessEnabled":true}`
 	if err := os.WriteFile(path, []byte(original), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -29,9 +29,9 @@ func TestMigrate_RunsOnceOnImport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if runs != 1 || s.SettingsVersion != 1 || !s.AutoUpdate || s.ThemeColor != "ocean" {
-		t.Fatalf("after import: runs=%d version=%d autoUpdate=%v themeColor=%q; want 1, 1, true, ocean",
-			runs, s.SettingsVersion, s.AutoUpdate, s.ThemeColor)
+	if runs != 1 || s.SettingsVersion != 1 || !s.RemoteAccessEnabled || s.ThemeColor != "ocean" {
+		t.Fatalf("after import: runs=%d version=%d remoteAccess=%v themeColor=%q; want 1, 1, true, ocean",
+			runs, s.SettingsVersion, s.RemoteAccessEnabled, s.ThemeColor)
 	}
 	if kept, err := os.ReadFile(path + ".imported"); err != nil || string(kept) != original {
 		t.Errorf("settings.json.imported = %q, %v; want the file as it was", kept, err)
@@ -54,12 +54,12 @@ func TestMigrate_UpToDateFileNotMigrated(t *testing.T) {
 		return nil
 	})
 	path := settingsFile(t)
-	if err := os.WriteFile(path, []byte(`{"settingsVersion":1,"autoUpdate":true}`), 0600); err != nil {
+	if err := os.WriteFile(path, []byte(`{"settingsVersion":1,"remoteAccessEnabled":true}`), 0600); err != nil {
 		t.Fatal(err)
 	}
 	settingsutil.ResetForTesting(path)
-	if !settingsutil.GetAutoUpdate() {
-		t.Error("autoUpdate lost")
+	if !settingsutil.GetRemoteAccess() {
+		t.Error("remoteAccessEnabled lost")
 	}
 }
 
@@ -81,12 +81,12 @@ func TestMigrate_MissingFileStartsCurrent(t *testing.T) {
 	if s.SettingsVersion != 1 {
 		t.Errorf("version = %d; want 1", s.SettingsVersion)
 	}
-	if err := settingsutil.SetAutoUpdate(true); err != nil {
+	if err := settingsutil.SetRemoteAccess(true); err != nil {
 		t.Fatal(err)
 	}
 	settingsutil.ResetForTesting(path)
-	if !settingsutil.GetAutoUpdate() {
-		t.Error("autoUpdate lost")
+	if !settingsutil.GetRemoteAccess() {
+		t.Error("remoteAccessEnabled lost")
 	}
 	if runs != 0 {
 		t.Errorf("migration ran %d times with no file to import; want 0", runs)

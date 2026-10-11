@@ -17,7 +17,7 @@ func TestAccessRequests_DefaultOnAndRoundTrip(t *testing.T) {
 		t.Error("requests should be on with no settings file")
 	}
 
-	if err := os.WriteFile(path, []byte(`{"autoUpdate":true}`), 0600); err != nil {
+	if err := os.WriteFile(path, []byte(`{"remoteAccessEnabled":true}`), 0600); err != nil {
 		t.Fatal(err)
 	}
 	settingsutil.ResetForTesting(path)
@@ -32,7 +32,7 @@ func TestAccessRequests_DefaultOnAndRoundTrip(t *testing.T) {
 	if settingsutil.GetAccessRequestsEnabled() {
 		t.Error("requests should stay off after a reload")
 	}
-	if !settingsutil.GetAutoUpdate() {
+	if !settingsutil.GetRemoteAccess() {
 		t.Error("turning requests off lost another setting")
 	}
 

@@ -4,11 +4,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 )
 
-// SettingsJSON is the JSON representation of application settings.
-type SettingsJSON struct {
-	AutoUpdate bool `json:"autoUpdate"`
-}
-
 // RemoteAccessRequest is the optional body of an enable. An empty body, or an
 // empty authKey, means the Quark fetches its own key.
 type RemoteAccessRequest struct {
@@ -53,7 +48,6 @@ type router struct{}
 
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
-		getSettingsRoute,
 		getRemoteAccessRoute,
 		pairDeviceRoute,
 		listFeaturesRoute,
@@ -69,7 +63,6 @@ type adminRouter struct{}
 
 func (r *adminRouter) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
-		postSettingsRoute,
 		enableRemoteAccessRoute,
 		disableRemoteAccessRoute,
 		updateAccessRequestsRoute,

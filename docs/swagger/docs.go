@@ -7006,86 +7006,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/settings": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retrieves application settings",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "settings"
-                ],
-                "summary": "Get settings",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v0_settings.SettingsJSON"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Updates application settings",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "settings"
-                ],
-                "summary": "Update settings",
-                "parameters": [
-                    {
-                        "description": "Settings",
-                        "name": "settings",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v0_settings.SettingsJSON"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v0_settings.SettingsJSON"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/settings/access-requests": {
             "put": {
                 "security": [
@@ -13146,14 +13066,6 @@ const docTemplate = `{
                 "remoteUrl": {
                     "description": "RemoteURL is set only when Connected.",
                     "type": "string"
-                }
-            }
-        },
-        "v0_settings.SettingsJSON": {
-            "type": "object",
-            "properties": {
-                "autoUpdate": {
-                    "type": "boolean"
                 }
             }
         },

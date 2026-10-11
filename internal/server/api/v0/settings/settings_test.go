@@ -32,7 +32,7 @@ func newSettingsEngine(t *testing.T) *gin.Engine {
 }
 
 // newSettingsEngineWithAdmin adds the admin routes, which routes.go mounts
-// behind RequireAdmin, so POST /settings can be exercised directly.
+// behind RequireAdmin, so they can be exercised directly.
 func newSettingsEngineWithAdmin(t *testing.T) *gin.Engine {
 	t.Helper()
 	engine := newSettingsEngine(t)
@@ -56,109 +56,16 @@ func doSettingsReq(engine *gin.Engine, method, path string, body []byte) *httpte
 	return w
 }
 
-// TestGetSettings_DefaultAutoUpdate verifies GET /settings returns autoUpdate=false
-// (the zero-value default) when no settings file exists.
-func TestGetSettings_DefaultAutoUpdate(t *testing.T) {
-	engine := newSettingsEngine(t)
-
-	w := doSettingsReq(engine, http.MethodGet, "/api/v0/settings", nil)
-	if w.Code != http.StatusOK {
-		t.Fatalf("GET /settings returned %d: %s", w.Code, w.Body.String())
-	}
-
-	var s v0_settings.SettingsJSON
-	if err := json.Unmarshal(w.Body.Bytes(), &s); err != nil {
-		t.Fatalf("unmarshal: %v\nbody: %s", err, w.Body.String())
-	}
-	if s.AutoUpdate {
-		t.Error("expected autoUpdate=false (default), got true")
-	}
-}
-
-// TestPostSettings_UpdateAutoUpdate verifies POST /settings persists autoUpdate=true
-// and is reflected in a subsequent GET.
-func TestPostSettings_UpdateAutoUpdate(t *testing.T) {
+// TestSettingsRoot_NotServed pins the removal of the automatic updates
+// setting (#2792): it was the only thing GET and POST /settings carried, and
+// nothing read it, so neither router serves the bare path any more.
+func TestSettingsRoot_NotServed(t *testing.T) {
 	engine := newSettingsEngineWithAdmin(t)
 
-	body, _ := json.Marshal(v0_settings.SettingsJSON{AutoUpdate: true})
-	w := doSettingsReq(engine, http.MethodPost, "/api/v0/settings", body)
-	if w.Code != http.StatusOK {
-		t.Fatalf("POST /settings returned %d: %s", w.Code, w.Body.String())
-	}
-
-	var resp v0_settings.SettingsJSON
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("unmarshal POST response: %v", err)
-	}
-	if !resp.AutoUpdate {
-		t.Error("POST response: expected autoUpdate=true")
-	}
-
-	// Verify persistence via GET.
-	w2 := doSettingsReq(engine, http.MethodGet, "/api/v0/settings", nil)
-	if w2.Code != http.StatusOK {
-		t.Fatalf("GET /settings returned %d: %s", w2.Code, w2.Body.String())
-	}
-	var s v0_settings.SettingsJSON
-	if err := json.Unmarshal(w2.Body.Bytes(), &s); err != nil {
-		t.Fatalf("unmarshal GET response: %v", err)
-	}
-	if !s.AutoUpdate {
-		t.Error("GET after POST: expected autoUpdate=true to persist")
-	}
-}
-
-// TestPostSettings_InvalidBody verifies POST /settings returns 400 for malformed JSON.
-func TestPostSettings_InvalidBody(t *testing.T) {
-	engine := newSettingsEngineWithAdmin(t)
-
-	w := doSettingsReq(engine, http.MethodPost, "/api/v0/settings", []byte("not-json{{{"))
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-// TestPostSettings_DisableAutoUpdate verifies toggling autoUpdate off after it
-// was enabled.
-func TestPostSettings_DisableAutoUpdate(t *testing.T) {
-	engine := newSettingsEngineWithAdmin(t)
-
-	// Enable.
-	body, _ := json.Marshal(v0_settings.SettingsJSON{AutoUpdate: true})
-	doSettingsReq(engine, http.MethodPost, "/api/v0/settings", body)
-
-	// Disable.
-	body, _ = json.Marshal(v0_settings.SettingsJSON{AutoUpdate: false})
-	w := doSettingsReq(engine, http.MethodPost, "/api/v0/settings", body)
-	if w.Code != http.StatusOK {
-		t.Fatalf("POST /settings returned %d: %s", w.Code, w.Body.String())
-	}
-
-	w2 := doSettingsReq(engine, http.MethodGet, "/api/v0/settings", nil)
-	var s v0_settings.SettingsJSON
-	if err := json.Unmarshal(w2.Body.Bytes(), &s); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if s.AutoUpdate {
-		t.Error("expected autoUpdate=false after disabling")
-	}
-}
-
-// TestGetSettings_ResponseShape verifies the response JSON has the expected fields.
-func TestGetSettings_ResponseShape(t *testing.T) {
-	engine := newSettingsEngine(t)
-
-	w := doSettingsReq(engine, http.MethodGet, "/api/v0/settings", nil)
-	if w.Code != http.StatusOK {
-		t.Fatalf("GET /settings returned %d: %s", w.Code, w.Body.String())
-	}
-
-	var raw map[string]any
-	if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
-		t.Fatalf("unmarshal: %v\nbody: %s", err, w.Body.String())
-	}
-	if _, ok := raw["autoUpdate"]; !ok {
-		t.Error("response missing 'autoUpdate' field")
+	for _, method := range []string{http.MethodGet, http.MethodPost} {
+		if w := doSettingsReq(engine, method, "/api/v0/settings", []byte(`{"autoUpdate":true}`)); w.Code != http.StatusNotFound {
+			t.Errorf("%s /settings returned %d; want 404", method, w.Code)
+		}
 	}
 }
 
@@ -201,10 +108,6 @@ func TestRemoteAccessToggle_NotOnPublicRouter(t *testing.T) {
 		if w.Code != http.StatusNotFound {
 			t.Errorf("%s /settings/remote-access on the public router returned %d; want 404", method, w.Code)
 		}
-	}
-	// Changing settings affects every account, so it is admin-only too.
-	if w := doSettingsReq(engine, http.MethodPost, "/api/v0/settings", []byte("{}")); w.Code != http.StatusNotFound {
-		t.Errorf("POST /settings on the public router returned %d; want 404", w.Code)
 	}
 }
 

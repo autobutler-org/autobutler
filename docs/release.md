@@ -4,7 +4,7 @@
 
 Quark releases are distributed via two sources:
 
-- **Azure Blob Storage** — primary source for device auto-updates
+- **Azure Blob Storage** — primary source for device updates
   (`quarkrelease.blob.core.windows.net/releases/quark/<version>/`)
 - **GitHub Releases** — secondary source; also used for manual downloads
 
@@ -23,7 +23,7 @@ GoReleaser handles building, packaging, and uploading to both Azure and GitHub.
 
 Use this when a release ships with a critical bug and must be pulled immediately.
 
-### Azure (primary — blocks auto-update)
+### Azure (primary — takes it off the update list)
 
 Delete the blob directory for the broken version. The version listing is
 blob-presence-driven — once the blob is gone, AB devices stop seeing it.
@@ -61,8 +61,8 @@ gh release delete v0.X.Y --repo autobutler-org/quark
 ### After yanking
 
 1. Ship a patch release (`v0.X.Y+1`) with the fix ASAP
-2. Devices that already installed the bad version need the patch — the auto-update
-   mechanism will pick it up on next check once the patch is `latest`
+2. Devices that already installed the bad version need the patch — a Quark does not
+   update itself (#2792), so an admin installs it from Settings > Updates
 
 ## Blob path convention
 

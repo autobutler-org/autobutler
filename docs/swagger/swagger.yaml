@@ -1833,11 +1833,6 @@ definitions:
         description: RemoteURL is set only when Connected.
         type: string
     type: object
-  v0_settings.SettingsJSON:
-    properties:
-      autoUpdate:
-        type: boolean
-    type: object
   v0_settings.accessRequestsSetting:
     properties:
       enabled:
@@ -7433,56 +7428,6 @@ paths:
       summary: Get software bill of materials
       tags:
       - version
-  /settings:
-    get:
-      description: Retrieves application settings
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v0_settings.SettingsJSON'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Get settings
-      tags:
-      - settings
-    post:
-      consumes:
-      - application/json
-      description: Updates application settings
-      parameters:
-      - description: Settings
-        in: body
-        name: settings
-        required: true
-        schema:
-          $ref: '#/definitions/v0_settings.SettingsJSON'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v0_settings.SettingsJSON'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Update settings
-      tags:
-      - settings
   /settings/access-requests:
     put:
       consumes:

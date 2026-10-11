@@ -309,9 +309,8 @@ build: ## Build web frontend and backend
 	$(MAKE) build/frontend/web
 	$(MAKE) build/backend
 
-# Only the commit, never Semver: NOSEMVER is what makes CompareVersions return 2,
-# which is the guard that stops autoupdate installing over a dev binary. Stamping a
-# version here would arm it (see internal/server/autoupdate.go).
+# Only the commit, never Semver: a dev binary stays NOSEMVER, which CompareVersions
+# answers with 2, its "not a release" result, rather than ordering it against releases.
 #
 # Every way of starting the backend needs this, `go run` most of all: it records no
 # vcs.revision at all, so a `serve/backend` process has nothing to fall back on and
