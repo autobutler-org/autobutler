@@ -10,17 +10,24 @@ name: quark
 
 services:
   postgres:
-    # Pinned to a major so Renovate moves it. pg_trgm ships in this image; the migration
+    # Pinned to a major so Renovate moves it: the default inside ${POSTGRES_IMAGE:-...} is
+    # the pin, and the only place the tag is written. Set POSTGRES_IMAGE (environment, .env
+    # or the make command line) to run another one. pg_trgm ships in this image; the migration
     # that adds filename search enables it, so there is no init script to keep in step.
-    image: postgres:18
+    image: ${POSTGRES_IMAGE:-postgres:18}
     environment:
       POSTGRES_USER: quark
       POSTGRES_PASSWORD: quark
       POSTGRES_DB: quark
+      # Set rather than left to the image, whose default moved in 18. It must not be
+      # /var/lib/postgresql/data: 17 and older declare that path an anonymous volume, which
+      # would shadow the named one, and 18 refuses to start with anything mounted there.
+      PGDATA: /var/lib/postgresql/pgdata
     ports:
-      - "127.0.0.1:5432:5432"
+      # The Makefile exports POSTGRES_PORT, so its URL and check/db follow the same value.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U quark -d quark"]
       interval: 2s
