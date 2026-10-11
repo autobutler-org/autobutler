@@ -1364,8 +1364,8 @@ void main() {
         '/slides/talks/q1.qslide?serial=s1',
       );
       expect(
-        viewFileRedirect('notes/readme.md', null),
-        '/edit/notes/readme.md',
+        viewFileRedirect('notes/readme.txt', null),
+        '/edit/notes/readme.txt',
       );
     });
 

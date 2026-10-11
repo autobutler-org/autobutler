@@ -1,0 +1,288 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:quark/controllers/code_viewer_controller.dart';
+import 'package:quark/controllers/markdown_viewer_controller.dart';
+import 'package:quark/pages/markdown_viewer_page.dart';
+import 'package:quark/router.dart';
+import 'package:quark/utils/error_text.dart';
+import 'package:quark/widgets/markdown_viewer/markdown_viewer_image.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// The Markdown viewer page (#2987): the rendered file, its source toggle,
+/// where links go, and that nothing off the Quark loads unasked.
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  const sample =
+      '# Trip notes\n\n'
+      '- [x] book flights\n'
+      '- [ ] pack\n\n'
+      '| City | Nights |\n| --- | ---: |\n| Lisbon | 3 |\n\n'
+      '```dart\nvoid main() {}\n```\n\n'
+      '<script>alert("pwned")</script>\n\n'
+      '[next](../other/plan.md) and [site](https://example.com/page)\n\n'
+      '![remote cat](https://example.com/cat.png)\n';
+
+  ReadCodeRangeFn readerOver(String content) {
+    final bytes = Uint8List.fromList(utf8.encode(content));
+    return (path, {required start, required length, serial}) async => (
+      bytes: Uint8List.sublistView(
+        bytes,
+        start.clamp(0, bytes.length),
+        (start + length).clamp(0, bytes.length),
+      ),
+      totalSize: bytes.length,
+    );
+  }
+
+  final opened = <Uri>[];
+
+  Future<GoRouter> pumpViewer(
+    WidgetTester tester, {
+    String content = sample,
+    ReadCodeRangeFn? readRange,
+    String filePath = 'notes/trip/readme.md',
+    int maxBytes = 64 * 1024,
+  }) async {
+    opened.clear();
+    final read = readRange ?? readerOver(content);
+    final controller = MarkdownViewerController(
+      path: filePath,
+      readRange: read,
+      maxBytes: maxBytes,
+    );
+    final source = CodeViewerController(path: filePath, readRange: read);
+    addTearDown(controller.dispose);
+    addTearDown(source.dispose);
+    Widget stub(String name, GoRouterState state) =>
+        Scaffold(body: Text('$name:${state.pathParameters['path']}'));
+    final router = GoRouter(
+      initialLocation: AppRoutes.markdownViewerPath(filePath),
+      routes: [
+        for (final (name, prefix) in [
+          ('folder', AppRoutes.files),
+          ('editor', AppRoutes.plaintextEditor),
+          ('view', AppRoutes.viewFile),
+        ])
+          GoRoute(
+            path: '$prefix/:path(.*)',
+            builder: (_, state) => stub(name, state),
+          ),
+        GoRoute(
+          path: '${AppRoutes.markdownViewer}/:path(.*)',
+          builder: (_, state) => MarkdownViewerPage(
+            filePath: state.pathParameters['path'] ?? '',
+            controller: controller,
+            sourceController: source,
+            openExternal: opened.add,
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      MaterialApp.router(
+        theme: QuarkTheme.from(
+          QuarkThemeColor.classic.tokensFor(Brightness.dark),
+          Brightness.dark,
+        ),
+        routerConfig: router,
+      ),
+    );
+    await tester.pumpAndSettle();
+    return router;
+  }
+
+  String location(GoRouter router) =>
+      router.routeInformationProvider.value.uri.toString();
+
+  QuarkMarkdownView view(WidgetTester tester) =>
+      tester.widget<QuarkMarkdownView>(find.byType(QuarkMarkdownView));
+
+  bool editEnabled(WidgetTester tester) =>
+      tester
+          .widget<QuarkBarChip>(
+            find.byKey(const ValueKey('markdown_viewer_edit')),
+          )
+          .onPressed !=
+      null;
+
+  for (final size in const [Size(360, 640), Size(1280, 800)]) {
+    testWidgets('renders the file under its name at ${size.width}', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await pumpViewer(tester);
+
+      expect(find.text('readme.md'), findsOneWidget);
+      expect(find.textContaining('Trip notes'), findsOneWidget);
+      expect(find.textContaining('# Trip notes'), findsNothing);
+      expect(view(tester).statusLabel, isNull);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('raw HTML shows as text', (tester) async {
+    await pumpViewer(tester);
+    await tester.scrollUntilVisible(
+      find.textContaining('<script>alert("pwned")</script>'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.textContaining('<script>alert("pwned")</script>'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the toggle swaps the rendered view for the source and back', (
+    tester,
+  ) async {
+    await pumpViewer(tester);
+    expect(find.byType(QuarkCodeViewer), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey('markdown_viewer_source_toggle')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(QuarkMarkdownView), findsNothing);
+    final source = tester.widget<QuarkCodeViewer>(find.byType(QuarkCodeViewer));
+    expect(source.lines.first, '# Trip notes');
+    expect(find.text('Rendered'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey('markdown_viewer_source_toggle')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(QuarkMarkdownView), findsOneWidget);
+    expect(find.byType(QuarkCodeViewer), findsNothing);
+  });
+
+  testWidgets('a relative link opens the file it points at', (tester) async {
+    final router = await pumpViewer(tester);
+
+    view(tester).onLinkTap!('../other/plan.md');
+    await tester.pumpAndSettle();
+
+    expect(location(router), '/view/notes/other/plan.md');
+    expect(opened, isEmpty);
+  });
+
+  testWidgets('a web link opens outside the app; script links go nowhere', (
+    tester,
+  ) async {
+    final router = await pumpViewer(tester);
+
+    view(tester).onLinkTap!('https://example.com/page');
+    view(tester).onLinkTap!('javascript:alert(1)');
+    view(tester).onLinkTap!('#heading');
+    await tester.pumpAndSettle();
+
+    expect(opened, [Uri.parse('https://example.com/page')]);
+    expect(location(router), '/markdown/notes/trip/readme.md');
+  });
+
+  testWidgets('a remote image is not fetched until the reader asks', (
+    tester,
+  ) async {
+    await pumpViewer(tester, content: '![cat](https://example.com/cat.png)\n');
+
+    final load = find.byKey(
+      const ValueKey('markdown_viewer_load_image_https://example.com/cat.png'),
+    );
+    expect(find.byType(Image), findsNothing);
+    expect(find.text('Load remote image: cat'), findsOneWidget);
+    expect(
+      tester.widget<MarkdownViewerImage>(find.byType(MarkdownViewerImage)),
+      isA<MarkdownViewerImage>().having(
+        (image) => image.remoteAllowed,
+        'remoteAllowed',
+        isFalse,
+      ),
+    );
+
+    await tester.tap(load);
+    await tester.pump();
+
+    expect(load, findsNothing);
+    final image = tester.widget<Image>(find.byType(Image));
+    expect((image.image as NetworkImage).url, 'https://example.com/cat.png');
+    // The test binding answers every request with 400; the alt text stands in.
+    await tester.pumpAndSettle();
+    tester.takeException();
+  });
+
+  testWidgets('a relative image loads from the file\'s folder on the Quark', (
+    tester,
+  ) async {
+    await pumpViewer(tester, content: '![map](img/map.png)\n');
+
+    final image = tester.widget<Image>(find.byType(Image));
+    final url = Uri.parse((image.image as NetworkImage).url);
+    expect(url.path, '/api/v0/files/download');
+    expect(url.queryParameters.values, contains('notes/trip/img/map.png'));
+    await tester.pumpAndSettle();
+    tester.takeException();
+  });
+
+  testWidgets('Edit hands the file to the plaintext editor', (tester) async {
+    final router = await pumpViewer(tester);
+    expect(editEnabled(tester), isTrue);
+
+    await tester.tap(find.byKey(const ValueKey('markdown_viewer_edit')));
+    await tester.pumpAndSettle();
+
+    expect(location(router), '/edit/notes/trip/readme.md');
+  });
+
+  testWidgets('a file past the cap says how much is rendered, and is not '
+      'offered to the editor', (tester) async {
+    await pumpViewer(tester, content: 'word word\n\n' * 500, maxBytes: 2048);
+
+    expect(
+      view(tester).statusLabel,
+      startsWith('Showing the first 2.0 KB of '),
+    );
+    expect(editEnabled(tester), isFalse);
+  });
+
+  testWidgets('a failed read shows a sentence, never the exception', (
+    tester,
+  ) async {
+    await pumpViewer(
+      tester,
+      readRange: (path, {required start, required length, serial}) =>
+          throw const ApiException(500, 'GET /api/v0/files/download boom'),
+    );
+
+    expect(
+      view(tester).error,
+      Errors.message(const ApiException(500, ''), 'load the file'),
+    );
+    expect(find.textContaining('boom'), findsNothing);
+    expect(editEnabled(tester), isFalse);
+  });
+
+  testWidgets('back with nothing underneath lands in the containing folder', (
+    tester,
+  ) async {
+    final router = await pumpViewer(tester);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(location(router), '/files/notes/trip');
+  });
+}

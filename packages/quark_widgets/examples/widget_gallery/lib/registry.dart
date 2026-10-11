@@ -1247,6 +1247,62 @@ final List<GalleryEntry> registry = [
     },
   ),
 
+  // ── Markdown ──────────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'QuarkMarkdownView',
+    group: 'Markdown',
+    build: (context, log) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 16,
+      children: [
+        SizedBox(
+          height: 480,
+          child: QuarkMarkdownView(
+            document: _galleryMarkdown,
+            onLinkTap: (href) => log('QuarkMarkdownView.onLinkTap($href)'),
+            statusLabel: 'Showing the first 1 MB of 5 MB',
+          ),
+        ),
+        const Text('Images from the caller, links inert'),
+        SizedBox(
+          height: 200,
+          child: QuarkMarkdownView(
+            document: _galleryMarkdownImage,
+            imageBuilder: (context, src, alt) {
+              log('QuarkMarkdownView.imageBuilder($src, $alt)');
+              return Tooltip(
+                message: alt,
+                child: const Icon(QuarkIcons.image_outlined, size: 48),
+              );
+            },
+          ),
+        ),
+        const Text('Loading'),
+        const SizedBox(
+          height: 160,
+          child: QuarkMarkdownView(
+            document: QuarkMarkdownDocument.empty(),
+            isLoading: true,
+          ),
+        ),
+        const Text('Failed to load'),
+        SizedBox(
+          height: 260,
+          child: QuarkMarkdownView(
+            document: const QuarkMarkdownDocument.empty(),
+            error: "Couldn't load the file.",
+            onRetry: () => log('QuarkMarkdownView.onRetry'),
+          ),
+        ),
+        const Text('Empty'),
+        const SizedBox(
+          height: 220,
+          child: QuarkMarkdownView(document: QuarkMarkdownDocument.empty()),
+        ),
+      ],
+    ),
+  ),
+
   // ── File browser ──────────────────────────────────────────────────────────
   GalleryEntry(
     name: 'FileBreadcrumbBar',
@@ -2971,6 +3027,47 @@ const List<JobItem> _galleryJobs = [
     elapsed: Duration(hours: 1, minutes: 2, seconds: 3),
   ),
 ];
+
+/// Parsed once, the way a page's controller would, not in a build.
+final QuarkMarkdownDocument _galleryMarkdown = QuarkMarkdownDocument.parse('''
+# Trip notes
+
+Packing for **two weeks** in the *north*, ~~by train~~ by car. See the
+[route](https://example.com/route) and run `make pack` first.
+
+## To do
+
+- [x] Book the cabin
+- [ ] Rent a car
+- Bring:
+  1. Boots
+  2. A map
+
+> Leave early. The pass closes at dusk.
+
+```dart
+void main() {
+  final days = 14; // two weeks
+  print('Leaving in \$days days');
+}
+```
+
+| Day | Stop        | Distance |
+| :-- | :---------: | -------: |
+| 1   | Lake cabin  |   320 km |
+| 2   | Ridge camp  |    85 km |
+
+---
+
+![The cabin at dawn](photos/cabin.jpg)
+
+<script>alert("raw HTML is shown, never run")</script>
+''');
+
+final QuarkMarkdownDocument _galleryMarkdownImage = QuarkMarkdownDocument.parse(
+  'The cabin: ![The cabin at dawn](photos/cabin.jpg), and a '
+  '[link](https://example.com) nobody handles.',
+);
 
 const List<String> _galleryCodeLines = [
   "import 'package:flutter/material.dart';",

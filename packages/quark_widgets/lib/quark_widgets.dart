@@ -93,6 +93,8 @@ export 'src/layout/quark_toolbar_scroller.dart';
 export 'src/layout/refresh_icon_button.dart';
 export 'src/layout/theme_toggle_button.dart';
 export 'src/layout/welcome_card.dart';
+export 'src/markdown/quark_markdown_document.dart' show QuarkMarkdownDocument;
+export 'src/markdown/quark_markdown_view.dart';
 export 'src/models/access_level.dart';
 export 'src/models/album_item.dart';
 export 'src/models/album_sort.dart';
