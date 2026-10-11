@@ -13,7 +13,7 @@ const addFavorite = `-- name: AddFavorite :exec
 INSERT INTO
     photo_favorites (user_id, device_serial, rel_path)
 VALUES
-    (?, ?, ?)
+    (?1, ?2, ?3)
 ON CONFLICT (user_id, device_serial, rel_path) DO NOTHING
 `
 
@@ -32,7 +32,7 @@ const createFavoritesAlbum = `-- name: CreateFavoritesAlbum :one
 INSERT INTO
     photo_albums (name, smart_type, user_id)
 VALUES
-    ('Favorites', 'favorites', CAST(?1 AS INTEGER))
+    ('Favorites', 'favorites', CAST(?1 AS BIGINT))
 RETURNING id, name, parent_id, created_at, updated_at, smart_type, user_id
 `
 
@@ -81,7 +81,7 @@ SELECT
 FROM
     photo_albums
 WHERE
-    user_id = CAST(?1 AS INTEGER)
+    user_id = CAST(?1 AS BIGINT)
     AND smart_type = 'favorites'
 LIMIT
     1
@@ -108,9 +108,9 @@ SELECT
 FROM
     photo_favorites
 WHERE
-    user_id = ?
-    AND device_serial = ?
-    AND rel_path = ?
+    user_id = ?1
+    AND device_serial = ?2
+    AND rel_path = ?3
 `
 
 type IsFavoriteParams struct {
@@ -132,7 +132,7 @@ SELECT
 FROM
     photo_favorites
 WHERE
-    user_id = ?
+    user_id = ?1
 ORDER BY
     created_at DESC
 `
@@ -167,16 +167,26 @@ func (q *Queries) ListFavorites(ctx context.Context, userID int64) ([]PhotoFavor
 }
 
 const moveFavorites = `-- name: MoveFavorites :exec
-UPDATE OR IGNORE photo_favorites
+UPDATE photo_favorites
 SET
     device_serial = ?1,
-    rel_path = ?2 || substr(rel_path, length(CAST(?3 AS TEXT)) + 1)
+    rel_path = ?2 || substr(photo_favorites.rel_path, length(CAST(?3 AS TEXT)) + 1)
 WHERE
-    device_serial = ?4
+    photo_favorites.device_serial = ?4
     AND (
-        rel_path = ?3
-        OR substr(rel_path, 1, length(?3) + 1) = ?3 || '/'
+        photo_favorites.rel_path = ?3
+        OR substr(photo_favorites.rel_path, 1, length(?3) + 1) = ?3 || '/'
     )
+    AND (
+        SELECT
+            COUNT(*)
+        FROM
+            photo_favorites AS held
+        WHERE
+            held.user_id = photo_favorites.user_id
+            AND held.device_serial = ?1
+            AND held.rel_path = ?2 || substr(photo_favorites.rel_path, length(CAST(?3 AS TEXT)) + 1)
+    ) = 0
 `
 
 type MoveFavoritesParams struct {
@@ -187,8 +197,11 @@ type MoveFavoritesParams struct {
 }
 
 // MoveFavorites points favorites at a moved file or folder, for every account.
-// OR IGNORE skips a row whose destination is already that account's favorite;
+// The count guard skips a row whose destination is already that account's favorite;
 // DeleteFavoritesUnder on the old path clears those leftovers.
+// It replaces UPDATE OR IGNORE, which PostgreSQL has no form of. COUNT(*) = 0
+// and not NOT EXISTS: sqlc v1.30.0's SQLite engine leaves a parameter under a
+// NOT unexpanded (sqlc-dev/sqlc#4110; v1.31.1 expands it).
 func (q *Queries) MoveFavorites(ctx context.Context, arg MoveFavoritesParams) error {
 	_, err := q.db.ExecContext(ctx, moveFavorites,
 		arg.NewDeviceSerial,
@@ -202,9 +215,9 @@ func (q *Queries) MoveFavorites(ctx context.Context, arg MoveFavoritesParams) er
 const removeFavorite = `-- name: RemoveFavorite :exec
 DELETE FROM photo_favorites
 WHERE
-    user_id = ?
-    AND device_serial = ?
-    AND rel_path = ?
+    user_id = ?1
+    AND device_serial = ?2
+    AND rel_path = ?3
 `
 
 type RemoveFavoriteParams struct {

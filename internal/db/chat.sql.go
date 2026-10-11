@@ -15,7 +15,7 @@ const createChatChannel = `-- name: CreateChatChannel :one
 INSERT INTO
     chat_channels (server_id, name, topic, created_by)
 VALUES
-    ((SELECT MIN(id) FROM chat_servers), ?, ?, ?) RETURNING id, server_id, kind, name, topic, is_default, created_by, created_at
+    ((SELECT MIN(id) FROM chat_servers), ?1, ?2, ?3) RETURNING id, server_id, kind, name, topic, is_default, created_by, created_at
 `
 
 type CreateChatChannelParams struct {
@@ -42,7 +42,7 @@ func (q *Queries) CreateChatChannel(ctx context.Context, arg CreateChatChannelPa
 }
 
 const deleteChatChannel = `-- name: DeleteChatChannel :execrows
-DELETE FROM chat_channels WHERE id = ? AND is_default = 0
+DELETE FROM chat_channels WHERE id = ?1 AND is_default = 0
 `
 
 // DeleteChatChannel drops a channel and, by ON DELETE CASCADE, its members.
@@ -56,7 +56,7 @@ func (q *Queries) DeleteChatChannel(ctx context.Context, id int64) (int64, error
 }
 
 const deleteChatChannelGroupMember = `-- name: DeleteChatChannelGroupMember :execrows
-DELETE FROM chat_channel_members WHERE channel_id = ? AND group_id = ?
+DELETE FROM chat_channel_members WHERE channel_id = ?1 AND group_id = ?2
 `
 
 type DeleteChatChannelGroupMemberParams struct {
@@ -73,7 +73,7 @@ func (q *Queries) DeleteChatChannelGroupMember(ctx context.Context, arg DeleteCh
 }
 
 const deleteChatChannelUserMember = `-- name: DeleteChatChannelUserMember :execrows
-DELETE FROM chat_channel_members WHERE channel_id = ? AND user_id = ?
+DELETE FROM chat_channel_members WHERE channel_id = ?1 AND user_id = ?2
 `
 
 type DeleteChatChannelUserMemberParams struct {
@@ -90,7 +90,7 @@ func (q *Queries) DeleteChatChannelUserMember(ctx context.Context, arg DeleteCha
 }
 
 const getChatChannel = `-- name: GetChatChannel :one
-SELECT id, server_id, kind, name, topic, is_default, created_by, created_at FROM chat_channels WHERE id = ? LIMIT 1
+SELECT id, server_id, kind, name, topic, is_default, created_by, created_at FROM chat_channels WHERE id = ?1 LIMIT 1
 `
 
 func (q *Queries) GetChatChannel(ctx context.Context, id int64) (ChatChannel, error) {
@@ -119,7 +119,7 @@ SELECT
     chat_channels.is_default,
     chat_channels.created_by,
     chat_channels.created_at,
-    CAST(NOT EXISTS (
+    CAST(CASE WHEN NOT EXISTS (
         SELECT
             1
         FROM
@@ -129,12 +129,12 @@ SELECT
             everyone_rows.channel_id = chat_channels.id
             AND groups.name = 'everyone'
             AND groups.builtin = 1
-    ) AS INTEGER) AS is_private
+    ) THEN 1 ELSE 0 END AS BIGINT) AS is_private
 FROM
     chat_channels
 ORDER BY
     chat_channels.is_default DESC,
-    chat_channels.name COLLATE NOCASE,
+    LOWER(chat_channels.name),
     chat_channels.id
 `
 
@@ -209,9 +209,9 @@ FROM
         )
     )
 WHERE
-    chat_channel_members.channel_id = ?
+    chat_channel_members.channel_id = ?1
 ORDER BY
-    users.username COLLATE NOCASE
+    LOWER(users.username)
 `
 
 type ListChatChannelGroupUsersRow struct {
@@ -270,9 +270,9 @@ FROM
         )
     )
 WHERE
-    chat_channel_members.channel_id = ?
+    chat_channel_members.channel_id = ?1
 ORDER BY
-    users.username COLLATE NOCASE,
+    LOWER(users.username),
     users.id
 `
 
@@ -314,16 +314,16 @@ SELECT
     chat_channel_members.group_id,
     chat_channel_members.permissions,
     CAST(COALESCE(users.username, groups.name) AS TEXT) AS name,
-    CAST(COALESCE(groups.builtin, 0) AS INTEGER) AS builtin
+    CAST(COALESCE(groups.builtin, 0) AS BIGINT) AS builtin
 FROM
     chat_channel_members
     LEFT JOIN users ON users.id = chat_channel_members.user_id
     LEFT JOIN groups ON groups.id = chat_channel_members.group_id
 WHERE
-    chat_channel_members.channel_id = ?
+    chat_channel_members.channel_id = ?1
 ORDER BY
     chat_channel_members.group_id IS NULL,
-    name COLLATE NOCASE
+    LOWER(COALESCE(users.username, groups.name))
 `
 
 type ListChatChannelMembersRow struct {
@@ -435,7 +435,7 @@ SELECT
     chat_channels.created_by,
     chat_channels.created_at,
     chat_channel_members.permissions,
-    CAST(NOT EXISTS (
+    CAST(CASE WHEN NOT EXISTS (
         SELECT
             1
         FROM
@@ -445,7 +445,7 @@ SELECT
             everyone_rows.channel_id = chat_channels.id
             AND groups.name = 'everyone'
             AND groups.builtin = 1
-    ) AS INTEGER) AS is_private
+    ) THEN 1 ELSE 0 END AS BIGINT) AS is_private
 FROM
     chat_channels
     JOIN chat_channel_members ON chat_channel_members.channel_id = chat_channels.id
@@ -470,7 +470,7 @@ WHERE
     )
 ORDER BY
     chat_channels.is_default DESC,
-    chat_channels.name COLLATE NOCASE,
+    LOWER(chat_channels.name),
     chat_channels.id
 `
 
@@ -530,7 +530,7 @@ const setChatChannelGroupMember = `-- name: SetChatChannelGroupMember :exec
 INSERT INTO
     chat_channel_members (channel_id, group_id, permissions)
 VALUES
-    (?, ?, ?) ON CONFLICT (group_id, channel_id)
+    (?1, ?2, ?3) ON CONFLICT (group_id, channel_id)
 WHERE
     group_id IS NOT NULL DO
 UPDATE
@@ -555,7 +555,7 @@ const setChatChannelUserMember = `-- name: SetChatChannelUserMember :exec
 INSERT INTO
     chat_channel_members (channel_id, user_id, permissions)
 VALUES
-    (?, ?, ?) ON CONFLICT (user_id, channel_id)
+    (?1, ?2, ?3) ON CONFLICT (user_id, channel_id)
 WHERE
     user_id IS NOT NULL DO
 UPDATE
@@ -577,7 +577,7 @@ func (q *Queries) SetChatChannelUserMember(ctx context.Context, arg SetChatChann
 }
 
 const updateChatChannel = `-- name: UpdateChatChannel :one
-UPDATE chat_channels SET name = ?, topic = ? WHERE id = ? RETURNING id, server_id, kind, name, topic, is_default, created_by, created_at
+UPDATE chat_channels SET name = ?1, topic = ?2 WHERE id = ?3 RETURNING id, server_id, kind, name, topic, is_default, created_by, created_at
 `
 
 type UpdateChatChannelParams struct {

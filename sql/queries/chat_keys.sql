@@ -6,7 +6,7 @@ SELECT
 FROM
     user_chat_keys
 WHERE
-    user_id = ?;
+    user_id = sqlc.arg(user_id);
 
 -- GetUserChatPublicKeys returns only the public half of an active account's
 -- chat identity, which any signed-in account may read.
@@ -19,7 +19,7 @@ FROM
     user_chat_keys
     JOIN users ON users.id = user_chat_keys.user_id
 WHERE
-    user_chat_keys.user_id = ?
+    user_chat_keys.user_id = sqlc.arg(user_id)
     AND users.status = 'active';
 
 -- UpsertUserChatKeys creates or replaces an account's chat identity row.
@@ -35,7 +35,7 @@ INSERT INTO user_chat_keys (
     salt_rp,
     kdf_params
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?
+    sqlc.arg(user_id), sqlc.arg(box_public_key), sqlc.arg(sign_public_key), sqlc.arg(wrapped_by_password), sqlc.arg(salt_pw), sqlc.arg(wrapped_by_phrase), sqlc.arg(salt_rp), sqlc.arg(kdf_params)
 )
 ON CONFLICT (user_id) DO UPDATE SET
     box_public_key = excluded.box_public_key,
@@ -45,7 +45,7 @@ ON CONFLICT (user_id) DO UPDATE SET
     wrapped_by_phrase = excluded.wrapped_by_phrase,
     salt_rp = excluded.salt_rp,
     kdf_params = excluded.kdf_params,
-    updated_at = datetime('now')
+    updated_at = CURRENT_TIMESTAMP
 RETURNING
     *;
 
@@ -54,4 +54,4 @@ RETURNING
 -- name: DeleteUserChatKeys :exec
 DELETE FROM user_chat_keys
 WHERE
-    user_id = ?;
+    user_id = sqlc.arg(user_id);

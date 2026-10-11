@@ -2,10 +2,10 @@
 INSERT INTO
     connected_devices (ip_address, user_agent, first_seen_at, last_seen_at, request_count)
 VALUES
-    (?, ?, datetime('now'), datetime('now'), 1)
+    (sqlc.arg(ip_address), sqlc.arg(user_agent), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1)
 ON CONFLICT (ip_address, user_agent) DO UPDATE SET
-    last_seen_at = datetime('now'),
-    request_count = request_count + 1
+    last_seen_at = CURRENT_TIMESTAMP,
+    request_count = connected_devices.request_count + 1
 RETURNING *;
 
 -- name: ListConnectedDevices :many
@@ -22,14 +22,14 @@ SELECT
 FROM
     connected_devices
 WHERE
-    id = ?
+    id = sqlc.arg(id)
 LIMIT
     1;
 
 -- name: DeleteConnectedDevice :exec
 DELETE FROM connected_devices
 WHERE
-    id = ?;
+    id = sqlc.arg(id);
 
 -- name: CountConnectedDevices :one
 SELECT
@@ -52,5 +52,5 @@ WHERE
             newest.last_seen_at DESC,
             newest.id DESC
         LIMIT
-            sqlc.arg(keep)
+            CAST(sqlc.arg(keep) AS BIGINT)
     );

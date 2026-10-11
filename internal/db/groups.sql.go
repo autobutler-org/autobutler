@@ -10,7 +10,7 @@ import (
 )
 
 const addGroupMember = `-- name: AddGroupMember :execrows
-INSERT INTO group_members (group_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING
+INSERT INTO group_members (group_id, user_id) VALUES (?1, ?2) ON CONFLICT DO NOTHING
 `
 
 type AddGroupMemberParams struct {
@@ -29,7 +29,7 @@ func (q *Queries) AddGroupMember(ctx context.Context, arg AddGroupMemberParams) 
 }
 
 const createGroup = `-- name: CreateGroup :one
-INSERT INTO groups (name) VALUES (?) RETURNING id, name, builtin
+INSERT INTO groups (name) VALUES (?1) RETURNING id, name, builtin
 `
 
 func (q *Queries) CreateGroup(ctx context.Context, name string) (Group, error) {
@@ -40,7 +40,7 @@ func (q *Queries) CreateGroup(ctx context.Context, name string) (Group, error) {
 }
 
 const deleteGroup = `-- name: DeleteGroup :execrows
-DELETE FROM groups WHERE id = ? AND builtin = 0
+DELETE FROM groups WHERE id = ?1 AND builtin = 0
 `
 
 // DeleteGroup drops a group; ON DELETE CASCADE drops its members and grants.
@@ -53,7 +53,7 @@ func (q *Queries) DeleteGroup(ctx context.Context, id int64) (int64, error) {
 }
 
 const getGroup = `-- name: GetGroup :one
-SELECT id, name, builtin FROM groups WHERE id = ? LIMIT 1
+SELECT id, name, builtin FROM groups WHERE id = ?1 LIMIT 1
 `
 
 func (q *Queries) GetGroup(ctx context.Context, id int64) (Group, error) {
@@ -108,7 +108,7 @@ func (q *Queries) ListGroupMembers(ctx context.Context) ([]ListGroupMembersRow, 
 
 const listGroups = `-- name: ListGroups :many
 
-SELECT id, name, builtin FROM groups ORDER BY builtin DESC, name COLLATE NOCASE, id
+SELECT id, name, builtin FROM groups ORDER BY builtin DESC, LOWER(name), id
 `
 
 // Groups an admin manages (#1910). The built-in everyone group is seeded by
@@ -137,7 +137,7 @@ func (q *Queries) ListGroups(ctx context.Context) ([]Group, error) {
 }
 
 const removeGroupMember = `-- name: RemoveGroupMember :execrows
-DELETE FROM group_members WHERE group_id = ? AND user_id = ?
+DELETE FROM group_members WHERE group_id = ?1 AND user_id = ?2
 `
 
 type RemoveGroupMemberParams struct {
@@ -154,7 +154,7 @@ func (q *Queries) RemoveGroupMember(ctx context.Context, arg RemoveGroupMemberPa
 }
 
 const renameGroup = `-- name: RenameGroup :one
-UPDATE groups SET name = ? WHERE id = ? AND builtin = 0 RETURNING id, name, builtin
+UPDATE groups SET name = ?1 WHERE id = ?2 AND builtin = 0 RETURNING id, name, builtin
 `
 
 type RenameGroupParams struct {

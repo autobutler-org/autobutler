@@ -27,7 +27,7 @@ func (q *Queries) CountConnectedDevices(ctx context.Context) (int64, error) {
 const deleteConnectedDevice = `-- name: DeleteConnectedDevice :exec
 DELETE FROM connected_devices
 WHERE
-    id = ?
+    id = ?1
 `
 
 func (q *Queries) DeleteConnectedDevice(ctx context.Context, id int64) error {
@@ -41,7 +41,7 @@ SELECT
 FROM
     connected_devices
 WHERE
-    id = ?
+    id = ?1
 LIMIT
     1
 `
@@ -112,7 +112,7 @@ WHERE
             newest.last_seen_at DESC,
             newest.id DESC
         LIMIT
-            ?2
+            CAST(?2 AS BIGINT)
     )
 `
 
@@ -135,10 +135,10 @@ const upsertConnectedDevice = `-- name: UpsertConnectedDevice :one
 INSERT INTO
     connected_devices (ip_address, user_agent, first_seen_at, last_seen_at, request_count)
 VALUES
-    (?, ?, datetime('now'), datetime('now'), 1)
+    (?1, ?2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1)
 ON CONFLICT (ip_address, user_agent) DO UPDATE SET
-    last_seen_at = datetime('now'),
-    request_count = request_count + 1
+    last_seen_at = CURRENT_TIMESTAMP,
+    request_count = connected_devices.request_count + 1
 RETURNING id, ip_address, user_agent, first_seen_at, last_seen_at, request_count
 `
 

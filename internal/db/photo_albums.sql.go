@@ -14,10 +14,10 @@ const addPhotoToAlbum = `-- name: AddPhotoToAlbum :one
 INSERT INTO
     photo_album_items (album_id, device_serial, rel_path)
 VALUES
-    (?, ?, ?)
+    (?1, ?2, ?3)
 ON CONFLICT (album_id, device_serial, rel_path) DO UPDATE
 SET
-    added_at = added_at -- no-op; keeps RETURNING from returning nothing
+    added_at = photo_album_items.added_at -- no-op; keeps RETURNING from returning nothing
 RETURNING id, album_id, device_serial, rel_path, added_at
 `
 
@@ -46,7 +46,7 @@ SELECT
 FROM
     photo_album_items
 WHERE
-    album_id = ?
+    album_id = ?1
 `
 
 func (q *Queries) CountAlbumItems(ctx context.Context, albumID int64) (int64, error) {
@@ -63,7 +63,7 @@ VALUES
     (
         ?1,
         ?2,
-        CAST(?3 AS INTEGER)
+        CAST(?3 AS BIGINT)
     )
 RETURNING id, name, parent_id, created_at, updated_at, smart_type, user_id
 `
@@ -93,7 +93,7 @@ const deleteAlbum = `-- name: DeleteAlbum :exec
 DELETE FROM photo_albums
 WHERE
     id = ?1
-    AND user_id = CAST(?2 AS INTEGER)
+    AND user_id = CAST(?2 AS BIGINT)
 `
 
 type DeleteAlbumParams struct {
@@ -136,7 +136,7 @@ FROM
     photo_albums
 WHERE
     id = ?1
-    AND user_id = CAST(?2 AS INTEGER)
+    AND user_id = CAST(?2 AS BIGINT)
 LIMIT
     1
 `
@@ -170,7 +170,7 @@ SELECT
 FROM
     photo_album_items
 WHERE
-    album_id = ?
+    album_id = ?1
 ORDER BY
     added_at DESC
 `
@@ -210,9 +210,9 @@ SELECT
 FROM
     photo_albums
 WHERE
-    user_id = CAST(?1 AS INTEGER)
+    user_id = CAST(?1 AS BIGINT)
 ORDER BY
-    parent_id,
+    parent_id NULLS FIRST,
     name
 `
 
@@ -254,7 +254,7 @@ FROM
     photo_albums pa
     JOIN photo_album_items pai ON pa.id = pai.album_id
 WHERE
-    pa.user_id = CAST(?1 AS INTEGER)
+    pa.user_id = CAST(?1 AS BIGINT)
     AND pai.device_serial = ?2
     AND pai.rel_path = ?3
 ORDER BY
@@ -305,7 +305,7 @@ SELECT
 FROM
     photo_albums
 WHERE
-    parent_id = ?
+    parent_id = ?1
 ORDER BY
     name
 `
@@ -347,7 +347,7 @@ SELECT
 FROM
     photo_albums
 WHERE
-    user_id = CAST(?1 AS INTEGER)
+    user_id = CAST(?1 AS BIGINT)
     AND parent_id IS NULL
 ORDER BY
     name
@@ -388,10 +388,10 @@ const moveAlbum = `-- name: MoveAlbum :one
 UPDATE photo_albums
 SET
     parent_id = ?1,
-    updated_at = datetime('now')
+    updated_at = CURRENT_TIMESTAMP
 WHERE
     id = ?2
-    AND user_id = CAST(?3 AS INTEGER)
+    AND user_id = CAST(?3 AS BIGINT)
 RETURNING id, name, parent_id, created_at, updated_at, smart_type, user_id
 `
 
@@ -417,16 +417,26 @@ func (q *Queries) MoveAlbum(ctx context.Context, arg MoveAlbumParams) (PhotoAlbu
 }
 
 const moveAlbumItems = `-- name: MoveAlbumItems :exec
-UPDATE OR IGNORE photo_album_items
+UPDATE photo_album_items
 SET
     device_serial = ?1,
-    rel_path = ?2 || substr(rel_path, length(CAST(?3 AS TEXT)) + 1)
+    rel_path = ?2 || substr(photo_album_items.rel_path, length(CAST(?3 AS TEXT)) + 1)
 WHERE
-    device_serial = ?4
+    photo_album_items.device_serial = ?4
     AND (
-        rel_path = ?3
-        OR substr(rel_path, 1, length(?3) + 1) = ?3 || '/'
+        photo_album_items.rel_path = ?3
+        OR substr(photo_album_items.rel_path, 1, length(?3) + 1) = ?3 || '/'
     )
+    AND (
+        SELECT
+            COUNT(*)
+        FROM
+            photo_album_items AS held
+        WHERE
+            held.album_id = photo_album_items.album_id
+            AND held.device_serial = ?1
+            AND held.rel_path = ?2 || substr(photo_album_items.rel_path, length(CAST(?3 AS TEXT)) + 1)
+    ) = 0
 `
 
 type MoveAlbumItemsParams struct {
@@ -437,8 +447,11 @@ type MoveAlbumItemsParams struct {
 }
 
 // MoveAlbumItems points album rows at a moved file, or at everything under a
-// moved folder. OR IGNORE skips a row whose destination the album already
+// moved folder. The count guard skips a row whose destination the album already
 // holds; DeletePhotoFromAllAlbums on the old path clears those leftovers.
+// It replaces UPDATE OR IGNORE, which PostgreSQL has no form of. COUNT(*) = 0
+// and not NOT EXISTS: sqlc v1.30.0's SQLite engine leaves a parameter under a
+// NOT unexpanded (sqlc-dev/sqlc#4110; v1.31.1 expands it).
 func (q *Queries) MoveAlbumItems(ctx context.Context, arg MoveAlbumItemsParams) error {
 	_, err := q.db.ExecContext(ctx, moveAlbumItems,
 		arg.NewDeviceSerial,
@@ -452,9 +465,9 @@ func (q *Queries) MoveAlbumItems(ctx context.Context, arg MoveAlbumItemsParams) 
 const removePhotoFromAlbum = `-- name: RemovePhotoFromAlbum :exec
 DELETE FROM photo_album_items
 WHERE
-    album_id = ?
-    AND device_serial = ?
-    AND rel_path = ?
+    album_id = ?1
+    AND device_serial = ?2
+    AND rel_path = ?3
 `
 
 type RemovePhotoFromAlbumParams struct {
@@ -472,10 +485,10 @@ const renameAlbum = `-- name: RenameAlbum :one
 UPDATE photo_albums
 SET
     name = ?1,
-    updated_at = datetime('now')
+    updated_at = CURRENT_TIMESTAMP
 WHERE
     id = ?2
-    AND user_id = CAST(?3 AS INTEGER)
+    AND user_id = CAST(?3 AS BIGINT)
 RETURNING id, name, parent_id, created_at, updated_at, smart_type, user_id
 `
 

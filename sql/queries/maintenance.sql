@@ -4,7 +4,7 @@
 INSERT INTO
     maintenance_runs (name, owner, started_at)
 VALUES
-    (?, '', datetime('now', '-100 years'))
+    (sqlc.arg(name), '', '1970-01-01 00:00:00')
 ON CONFLICT (name) DO NOTHING;
 
 -- Takes a periodic task's turn (#2966): the row is written only when the task
@@ -16,7 +16,7 @@ ON CONFLICT (name) DO NOTHING;
 UPDATE maintenance_runs
 SET
     owner = sqlc.arg(owner),
-    started_at = datetime('now')
+    started_at = CURRENT_TIMESTAMP
 WHERE
     name = sqlc.arg(name)
-    AND started_at <= datetime('now', '-' || CAST(sqlc.arg(interval_seconds) AS INTEGER) || ' seconds');
+    AND started_at <= datetime('now', '-' || CAST(sqlc.arg(interval_seconds) AS BIGINT) || ' seconds');

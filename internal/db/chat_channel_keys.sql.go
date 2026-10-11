@@ -11,7 +11,7 @@ import (
 )
 
 const createChatChannelEvent = `-- name: CreateChatChannelEvent :one
-INSERT INTO chat_channel_events (channel_id, kind, actor_id, payload) VALUES (?, ?, ?, ?) RETURNING id, channel_id, kind, actor_id, payload, signature, signer_sign_key, created_at
+INSERT INTO chat_channel_events (channel_id, kind, actor_id, payload) VALUES (?1, ?2, ?3, ?4) RETURNING id, channel_id, kind, actor_id, payload, signature, signer_sign_key, created_at
 `
 
 type CreateChatChannelEventParams struct {
@@ -43,7 +43,7 @@ func (q *Queries) CreateChatChannelEvent(ctx context.Context, arg CreateChatChan
 }
 
 const createChatChannelKey = `-- name: CreateChatChannelKey :one
-INSERT INTO chat_channel_keys (channel_id, version, created_by) VALUES (?, ?, ?) RETURNING channel_id, version, created_by, created_at
+INSERT INTO chat_channel_keys (channel_id, version, created_by) VALUES (?1, ?2, ?3) RETURNING channel_id, version, created_by, created_at
 `
 
 type CreateChatChannelKeyParams struct {
@@ -65,7 +65,7 @@ func (q *Queries) CreateChatChannelKey(ctx context.Context, arg CreateChatChanne
 }
 
 const deleteChatKeyGrant = `-- name: DeleteChatKeyGrant :execrows
-DELETE FROM chat_key_grants WHERE channel_id = ? AND version = ? AND user_id = ?
+DELETE FROM chat_key_grants WHERE channel_id = ?1 AND version = ?2 AND user_id = ?3
 `
 
 type DeleteChatKeyGrantParams struct {
@@ -85,7 +85,7 @@ func (q *Queries) DeleteChatKeyGrant(ctx context.Context, arg DeleteChatKeyGrant
 }
 
 const deleteUserChatKeyGrants = `-- name: DeleteUserChatKeyGrants :exec
-DELETE FROM chat_key_grants WHERE user_id = ?
+DELETE FROM chat_key_grants WHERE user_id = ?1
 `
 
 // DeleteUserChatKeyGrants drops every grant sealed to an account, for when its
@@ -96,7 +96,7 @@ func (q *Queries) DeleteUserChatKeyGrants(ctx context.Context, userID sql.NullIn
 }
 
 const getChatChannelEvent = `-- name: GetChatChannelEvent :one
-SELECT id, channel_id, kind, actor_id, payload, signature, signer_sign_key, created_at FROM chat_channel_events WHERE id = ? AND channel_id = ?
+SELECT id, channel_id, kind, actor_id, payload, signature, signer_sign_key, created_at FROM chat_channel_events WHERE id = ?1 AND channel_id = ?2
 `
 
 type GetChatChannelEventParams struct {
@@ -121,7 +121,7 @@ func (q *Queries) GetChatChannelEvent(ctx context.Context, arg GetChatChannelEve
 }
 
 const getChatKeyGrant = `-- name: GetChatKeyGrant :one
-SELECT id, channel_id, version, user_id, sealed_key, granted_by, granter_sign_key, signature, created_at FROM chat_key_grants WHERE channel_id = ? AND version = ? AND user_id = ?
+SELECT id, channel_id, version, user_id, sealed_key, granted_by, granter_sign_key, signature, created_at FROM chat_key_grants WHERE channel_id = ?1 AND version = ?2 AND user_id = ?3
 `
 
 type GetChatKeyGrantParams struct {
@@ -151,7 +151,7 @@ const insertChatKeyGrant = `-- name: InsertChatKeyGrant :exec
 INSERT INTO chat_key_grants (
     channel_id, version, user_id, sealed_key, granted_by, granter_sign_key, signature
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?
+    ?1, ?2, ?3, ?4, ?5, ?6, ?7
 ) ON CONFLICT (channel_id, version, user_id) DO NOTHING
 `
 
@@ -223,7 +223,7 @@ func (q *Queries) ListActiveUserChatPublicKeys(ctx context.Context) ([]ListActiv
 }
 
 const listChatChannelEvents = `-- name: ListChatChannelEvents :many
-SELECT id, channel_id, kind, actor_id, payload, signature, signer_sign_key, created_at FROM chat_channel_events WHERE channel_id = ? AND id > ? ORDER BY id LIMIT ?
+SELECT id, channel_id, kind, actor_id, payload, signature, signer_sign_key, created_at FROM chat_channel_events WHERE channel_id = ?1 AND id > ?2 ORDER BY id LIMIT CAST(?3 AS BIGINT)
 `
 
 type ListChatChannelEventsParams struct {
@@ -296,7 +296,7 @@ func (q *Queries) ListChatChannelIDs(ctx context.Context) ([]int64, error) {
 }
 
 const listChatChannelKeys = `-- name: ListChatChannelKeys :many
-SELECT channel_id, version, created_by, created_at FROM chat_channel_keys WHERE channel_id = ? ORDER BY version
+SELECT channel_id, version, created_by, created_at FROM chat_channel_keys WHERE channel_id = ?1 ORDER BY version
 `
 
 func (q *Queries) ListChatChannelKeys(ctx context.Context, channelID int64) ([]ChatChannelKey, error) {
@@ -328,7 +328,7 @@ func (q *Queries) ListChatChannelKeys(ctx context.Context, channelID int64) ([]C
 }
 
 const listChatKeyGrantRecipients = `-- name: ListChatKeyGrantRecipients :many
-SELECT version, user_id FROM chat_key_grants WHERE channel_id = ? ORDER BY version, user_id
+SELECT version, user_id FROM chat_key_grants WHERE channel_id = ?1 ORDER BY version, user_id NULLS FIRST
 `
 
 type ListChatKeyGrantRecipientsRow struct {
@@ -362,7 +362,7 @@ func (q *Queries) ListChatKeyGrantRecipients(ctx context.Context, channelID int6
 }
 
 const listChatKeyGrantsForUser = `-- name: ListChatKeyGrantsForUser :many
-SELECT id, channel_id, version, user_id, sealed_key, granted_by, granter_sign_key, signature, created_at FROM chat_key_grants WHERE channel_id = ? AND user_id = ? ORDER BY version
+SELECT id, channel_id, version, user_id, sealed_key, granted_by, granter_sign_key, signature, created_at FROM chat_key_grants WHERE channel_id = ?1 AND user_id = ?2 ORDER BY version
 `
 
 type ListChatKeyGrantsForUserParams struct {
@@ -407,12 +407,12 @@ func (q *Queries) ListChatKeyGrantsForUser(ctx context.Context, arg ListChatKeyG
 const signChatChannelEvent = `-- name: SignChatChannelEvent :execrows
 UPDATE chat_channel_events
 SET
-    signature = ?,
-    signer_sign_key = ?
+    signature = ?1,
+    signer_sign_key = ?2
 WHERE
-    id = ?
-    AND channel_id = ?
-    AND actor_id = ?
+    id = ?3
+    AND channel_id = ?4
+    AND actor_id = ?5
     AND signature IS NULL
 `
 

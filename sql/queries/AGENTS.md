@@ -8,9 +8,10 @@ Quark runs on SQLite and is gaining PostgreSQL as a second backend (#2955). sqlc
 both engines, so every file in this directory is written in the subset of SQL the two share. SQLite is the
 reference: a rule here never changes what a query does on SQLite.
 
-> **Status.** `sqlc.yaml` generates the SQLite package only, and nothing checks these rules yet. The existing
-> queries predate them. #2957 brings the queries into line, then adds the PostgreSQL generation and the check
-> that prepares every statement on both engines. Write new queries to the rules now.
+> **Status.** Every query here follows the rules, and `internal/db/prepare_test.go` prepares each generated
+> statement on SQLite. `sqlc.yaml` still generates the SQLite package only, so nothing yet rejects a query
+> PostgreSQL would refuse: #2957 adds the PostgreSQL generation and the check that prepares every statement
+> there too.
 
 ## Shared by default
 

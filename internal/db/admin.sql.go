@@ -23,7 +23,7 @@ func (q *Queries) CountActiveAdmins(ctx context.Context) (int64, error) {
 }
 
 const countOtherAccounts = `-- name: CountOtherAccounts :one
-SELECT COUNT(*) FROM users WHERE id != ? AND status != 'pending'
+SELECT COUNT(*) FROM users WHERE id != ?1 AND status != 'pending'
 `
 
 // CountOtherAccounts counts the active and disabled accounts other than one.
@@ -36,7 +36,7 @@ func (q *Queries) CountOtherAccounts(ctx context.Context, id int64) (int64, erro
 }
 
 const countOtherActiveAdmins = `-- name: CountOtherActiveAdmins :one
-SELECT COUNT(*) FROM users WHERE is_admin = 1 AND status = 'active' AND id != ?
+SELECT COUNT(*) FROM users WHERE is_admin = 1 AND status = 'active' AND id != ?1
 `
 
 // CountOtherActiveAdmins counts the active admins other than one account, so a
@@ -60,7 +60,7 @@ func (q *Queries) DeletePendingUsers(ctx context.Context) error {
 }
 
 const demoteFromAdmin = `-- name: DemoteFromAdmin :one
-UPDATE users SET is_admin = 0 WHERE username = ? RETURNING id, username, is_admin, created_at
+UPDATE users SET is_admin = 0 WHERE username = ?1 RETURNING id, username, is_admin, created_at
 `
 
 type DemoteFromAdminRow struct {
@@ -84,7 +84,7 @@ func (q *Queries) DemoteFromAdmin(ctx context.Context, username string) (DemoteF
 
 const getOldestActiveAdmin = `-- name: GetOldestActiveAdmin :one
 SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin, status, auth_salt, auth_key_hash, recovery_key_hash FROM users
-WHERE is_admin = 1 AND status = 'active' AND id != ?
+WHERE is_admin = 1 AND status = 'active' AND id != ?1
 ORDER BY created_at, id
 LIMIT 1
 `
@@ -110,7 +110,7 @@ func (q *Queries) GetOldestActiveAdmin(ctx context.Context, id int64) (User, err
 }
 
 const isUserAdmin = `-- name: IsUserAdmin :one
-SELECT is_admin FROM users WHERE username = ?
+SELECT is_admin FROM users WHERE username = ?1
 `
 
 func (q *Queries) IsUserAdmin(ctx context.Context, username string) (int64, error) {
@@ -162,7 +162,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
 }
 
 const promoteToAdmin = `-- name: PromoteToAdmin :one
-UPDATE users SET is_admin = 1 WHERE username = ? AND status = 'active' RETURNING id, username, is_admin, created_at
+UPDATE users SET is_admin = 1 WHERE username = ?1 AND status = 'active' RETURNING id, username, is_admin, created_at
 `
 
 type PromoteToAdminRow struct {
@@ -186,7 +186,7 @@ func (q *Queries) PromoteToAdmin(ctx context.Context, username string) (PromoteT
 }
 
 const setUserAdmin = `-- name: SetUserAdmin :exec
-UPDATE users SET is_admin = ? WHERE username = ?
+UPDATE users SET is_admin = ?1 WHERE username = ?2
 `
 
 type SetUserAdminParams struct {

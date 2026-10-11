@@ -96,7 +96,7 @@ SET
     reminder_minutes = sqlc.arg(reminder_minutes),
     color_index = sqlc.arg(color_index),
     repeat_until = sqlc.arg(repeat_until),
-    updated_at = datetime('now')
+    updated_at = CURRENT_TIMESTAMP
 WHERE
     id = sqlc.arg(id)
 RETURNING *;

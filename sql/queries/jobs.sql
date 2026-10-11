@@ -2,7 +2,7 @@
 INSERT INTO
     jobs (kind, name, params, lane, user_id)
 VALUES
-    (?, ?, ?, ?, ?)
+    (sqlc.arg(kind), sqlc.arg(name), sqlc.arg(params), sqlc.arg(lane), sqlc.arg(user_id))
 RETURNING *;
 
 -- name: GetJob :one
@@ -11,7 +11,7 @@ SELECT
 FROM
     jobs
 WHERE
-    id = ?
+    id = sqlc.arg(id)
 LIMIT
     1;
 
@@ -27,6 +27,9 @@ ORDER BY
 
 -- ListJobs for one account, so a non-admin's listing never loads every other
 -- account's jobs (#2756).
+-- user_id stays ahead of the slice: SQLite numbers the slice's bare
+-- placeholders from the highest number before them, so a named parameter
+-- written after it would bind a kind (sqlc-dev/sqlc#2452).
 -- name: ListUserJobs :many
 SELECT
     *
@@ -62,9 +65,9 @@ UPDATE jobs
 SET
     status = 'running',
     attempts = attempts + 1,
-    started_at = datetime('now'),
+    started_at = CURRENT_TIMESTAMP,
     owner = sqlc.arg(owner),
-    heartbeat_at = datetime('now')
+    heartbeat_at = CURRENT_TIMESTAMP
 WHERE
     jobs.id = sqlc.arg(id)
     AND jobs.status = 'pending'
@@ -77,7 +80,7 @@ WHERE
             busy.status = 'running'
             AND busy.kind = jobs.kind
             AND busy.lane = jobs.lane
-    ) < CAST(sqlc.arg(lane_limit) AS INTEGER)
+    ) < CAST(sqlc.arg(lane_limit) AS BIGINT)
 RETURNING *;
 
 -- The owner guard keeps an instance whose job was reclaimed from writing to a
@@ -85,11 +88,11 @@ RETURNING *;
 -- name: UpdateJobProgress :execrows
 UPDATE jobs
 SET
-    progress = ?
+    progress = sqlc.arg(progress)
 WHERE
-    id = ?
+    id = sqlc.arg(id)
     AND status = 'running'
-    AND owner = ?;
+    AND owner = sqlc.arg(owner);
 
 -- Only a running job is finished here, so a job canceled while its handler
 -- was still unwinding keeps the canceled status Cancel gave it, and only by
@@ -97,14 +100,14 @@ WHERE
 -- name: FinishJob :one
 UPDATE jobs
 SET
-    status = ?,
-    error = ?,
-    progress = ?,
-    finished_at = datetime('now')
+    status = sqlc.arg(status),
+    error = sqlc.arg(error),
+    progress = sqlc.arg(progress),
+    finished_at = CURRENT_TIMESTAMP
 WHERE
-    id = ?
+    id = sqlc.arg(id)
     AND status = 'running'
-    AND owner = ?
+    AND owner = sqlc.arg(owner)
 RETURNING *;
 
 -- An instance's heartbeat: every job it is still running, which it compares
@@ -112,9 +115,9 @@ RETURNING *;
 -- name: HeartbeatJobs :many
 UPDATE jobs
 SET
-    heartbeat_at = datetime('now')
+    heartbeat_at = CURRENT_TIMESTAMP
 WHERE
-    owner = ?
+    owner = sqlc.arg(owner)
     AND status = 'running'
 RETURNING id;
 
@@ -129,9 +132,9 @@ SET
     heartbeat_at = NULL,
     started_at = NULL
 WHERE
-    id = ?
+    id = sqlc.arg(id)
     AND status = 'running'
-    AND owner = ?
+    AND owner = sqlc.arg(owner)
 RETURNING *;
 
 -- Resets a failed job so it runs again, in the lane its kind picked again.
@@ -141,13 +144,13 @@ RETURNING *;
 UPDATE jobs
 SET
     status = 'pending',
-    lane = ?,
+    lane = sqlc.arg(lane),
     progress = 0,
     error = '',
     started_at = NULL,
     finished_at = NULL
 WHERE
-    id = ?
+    id = sqlc.arg(id)
     AND status = 'failed'
 RETURNING *;
 
@@ -155,9 +158,9 @@ RETURNING *;
 UPDATE jobs
 SET
     status = 'canceled',
-    finished_at = datetime('now')
+    finished_at = CURRENT_TIMESTAMP
 WHERE
-    id = ?
+    id = sqlc.arg(id)
     AND status IN ('pending', 'running')
 RETURNING *;
 
@@ -171,13 +174,13 @@ UPDATE jobs
 SET
     status = 'failed',
     error = sqlc.arg(reason),
-    finished_at = datetime('now')
+    finished_at = CURRENT_TIMESTAMP
 WHERE
     status = 'running'
     AND attempts >= sqlc.arg(max_attempts)
     AND (
         heartbeat_at IS NULL
-        OR heartbeat_at < datetime('now', '-' || CAST(sqlc.arg(lease_seconds) AS INTEGER) || ' seconds')
+        OR heartbeat_at < datetime('now', '-' || CAST(sqlc.arg(lease_seconds) AS BIGINT) || ' seconds')
     )
 RETURNING *;
 
@@ -195,7 +198,7 @@ WHERE
     status = 'running'
     AND (
         heartbeat_at IS NULL
-        OR heartbeat_at < datetime('now', '-' || CAST(sqlc.arg(lease_seconds) AS INTEGER) || ' seconds')
+        OR heartbeat_at < datetime('now', '-' || CAST(sqlc.arg(lease_seconds) AS BIGINT) || ' seconds')
     )
 RETURNING *;
 
@@ -215,13 +218,19 @@ WHERE
                 jobs AS newer
             WHERE
                 newer.status IN ('completed', 'failed', 'canceled')
-                AND newer.user_id IS jobs.user_id
+                AND (
+                    newer.user_id = jobs.user_id
+                    OR (
+                        newer.user_id IS NULL
+                        AND jobs.user_id IS NULL
+                    )
+                )
             ORDER BY
                 newer.id DESC
             LIMIT
                 1
             OFFSET
-                sqlc.arg(keep)
+                CAST(sqlc.arg(keep) AS BIGINT)
         )
     );
 
@@ -243,7 +252,7 @@ LIMIT
 -- name: UpdateJobDetail :exec
 UPDATE jobs
 SET
-    detail = ?
+    detail = sqlc.arg(detail)
 WHERE
-    id = ?
+    id = sqlc.arg(id)
     AND status = 'running';

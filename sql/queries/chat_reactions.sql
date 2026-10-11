@@ -10,14 +10,14 @@ WHERE chat_messages.id = sqlc.arg(message_id) AND deleted_at IS NULL
 RETURNING *;
 
 -- name: GetChatReaction :one
-SELECT * FROM chat_reactions WHERE id = ?;
+SELECT * FROM chat_reactions WHERE id = sqlc.arg(id);
 
 -- name: DeleteChatReaction :exec
-DELETE FROM chat_reactions WHERE id = ?;
+DELETE FROM chat_reactions WHERE id = sqlc.arg(id);
 
 -- CountUserChatReactions is how many reactions one account has on a message.
 -- name: CountUserChatReactions :one
-SELECT COUNT(*) FROM chat_reactions WHERE message_id = ? AND user_id = ?;
+SELECT COUNT(*) FROM chat_reactions WHERE message_id = sqlc.arg(message_id) AND user_id = sqlc.arg(user_id);
 
 -- ListChatReactionsBetween is the reactions on a channel's messages whose ids
 -- fall in [first_id, last_id], one page of ListChatMessages*.

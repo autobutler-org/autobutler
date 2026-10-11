@@ -4,13 +4,13 @@
 -- backward: it changes no row when the marker is already at or past the id.
 -- name: SetChatReadMarker :execrows
 INSERT INTO chat_read_markers (user_id, channel_id, last_read_message_id)
-VALUES (?, ?, ?)
+VALUES (sqlc.arg(user_id), sqlc.arg(channel_id), sqlc.arg(last_read_message_id))
 ON CONFLICT (user_id, channel_id) DO UPDATE
 SET last_read_message_id = excluded.last_read_message_id
 WHERE excluded.last_read_message_id > chat_read_markers.last_read_message_id;
 
 -- name: GetChatReadMarker :one
-SELECT last_read_message_id FROM chat_read_markers WHERE user_id = ? AND channel_id = ?;
+SELECT last_read_message_id FROM chat_read_markers WHERE user_id = sqlc.arg(user_id) AND channel_id = sqlc.arg(channel_id);
 
 -- CountChatUnreadForUser counts, per channel, the messages after an account's
 -- marker that someone else wrote and that are not deleted. A channel with

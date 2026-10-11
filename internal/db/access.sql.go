@@ -13,9 +13,9 @@ import (
 const deleteGroupPathAccess = `-- name: DeleteGroupPathAccess :execrows
 DELETE FROM path_access
 WHERE
-    group_id = ?
-    AND device_serial = ?
-    AND rel_path = ?
+    group_id = ?1
+    AND device_serial = ?2
+    AND rel_path = ?3
 `
 
 type DeleteGroupPathAccessParams struct {
@@ -60,9 +60,9 @@ func (q *Queries) DeletePathAccessTree(ctx context.Context, arg DeletePathAccess
 const deleteUserPathAccess = `-- name: DeleteUserPathAccess :execrows
 DELETE FROM path_access
 WHERE
-    user_id = ?
-    AND device_serial = ?
-    AND rel_path = ?
+    user_id = ?1
+    AND device_serial = ?2
+    AND rel_path = ?3
 `
 
 type DeleteUserPathAccessParams struct {
@@ -258,7 +258,7 @@ SELECT
     path_access.user_id,
     path_access.group_id,
     CAST(COALESCE(users.username, groups.name) AS TEXT) AS name,
-    CAST(COALESCE(groups.builtin, 0) AS INTEGER) AS builtin
+    CAST(COALESCE(groups.builtin, 0) AS BIGINT) AS builtin
 FROM
     path_access
     LEFT JOIN users ON users.id = path_access.user_id
@@ -363,7 +363,7 @@ INSERT INTO
 SELECT
     device_serial,
     rel_path,
-    CAST(?1 AS INTEGER),
+    CAST(?1 AS BIGINT),
     'owner'
 FROM
     path_access
@@ -399,7 +399,7 @@ const setGroupPathAccess = `-- name: SetGroupPathAccess :exec
 INSERT INTO
     path_access (device_serial, rel_path, group_id, level)
 VALUES
-    (?, ?, ?, ?) ON CONFLICT (group_id, device_serial, rel_path)
+    (?1, ?2, ?3, ?4) ON CONFLICT (group_id, device_serial, rel_path)
 WHERE
     group_id IS NOT NULL DO
 UPDATE
@@ -430,7 +430,7 @@ const setUserPathAccess = `-- name: SetUserPathAccess :exec
 INSERT INTO
     path_access (device_serial, rel_path, user_id, level)
 VALUES
-    (?, ?, ?, ?) ON CONFLICT (user_id, device_serial, rel_path)
+    (?1, ?2, ?3, ?4) ON CONFLICT (user_id, device_serial, rel_path)
 WHERE
     user_id IS NOT NULL DO
 UPDATE

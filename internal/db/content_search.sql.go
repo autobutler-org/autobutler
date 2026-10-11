@@ -10,7 +10,7 @@ import (
 )
 
 const deleteFileContent = `-- name: DeleteFileContent :exec
-DELETE FROM file_content WHERE serial = ? AND rel_path = ?
+DELETE FROM file_content WHERE serial = ?1 AND rel_path = ?2
 `
 
 type DeleteFileContentParams struct {
@@ -24,7 +24,7 @@ func (q *Queries) DeleteFileContent(ctx context.Context, arg DeleteFileContentPa
 }
 
 const deleteFileContentBySerial = `-- name: DeleteFileContentBySerial :exec
-DELETE FROM file_content WHERE serial = ?
+DELETE FROM file_content WHERE serial = ?1
 `
 
 func (q *Queries) DeleteFileContentBySerial(ctx context.Context, serial string) error {
@@ -35,7 +35,7 @@ func (q *Queries) DeleteFileContentBySerial(ctx context.Context, serial string) 
 const getFileContent = `-- name: GetFileContent :one
 SELECT id, serial, rel_path, extracted, updated_at
 FROM file_content
-WHERE serial = ? AND rel_path = ?
+WHERE serial = ?1 AND rel_path = ?2
 `
 
 type GetFileContentParams struct {
@@ -58,7 +58,7 @@ func (q *Queries) GetFileContent(ctx context.Context, arg GetFileContentParams) 
 
 const upsertFileContent = `-- name: UpsertFileContent :exec
 INSERT INTO file_content (serial, rel_path, extracted, updated_at)
-VALUES (?, ?, ?, datetime('now'))
+VALUES (?1, ?2, ?3, CURRENT_TIMESTAMP)
 ON CONFLICT(serial, rel_path) DO UPDATE SET
     extracted  = excluded.extracted,
     updated_at = excluded.updated_at

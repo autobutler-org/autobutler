@@ -1,17 +1,17 @@
 -- name: UpsertFileContent :exec
 INSERT INTO file_content (serial, rel_path, extracted, updated_at)
-VALUES (?, ?, ?, datetime('now'))
+VALUES (sqlc.arg(serial), sqlc.arg(rel_path), sqlc.arg(extracted), CURRENT_TIMESTAMP)
 ON CONFLICT(serial, rel_path) DO UPDATE SET
     extracted  = excluded.extracted,
     updated_at = excluded.updated_at;
 
 -- name: DeleteFileContent :exec
-DELETE FROM file_content WHERE serial = ? AND rel_path = ?;
+DELETE FROM file_content WHERE serial = sqlc.arg(serial) AND rel_path = sqlc.arg(rel_path);
 
 -- name: DeleteFileContentBySerial :exec
-DELETE FROM file_content WHERE serial = ?;
+DELETE FROM file_content WHERE serial = sqlc.arg(serial);
 
 -- name: GetFileContent :one
 SELECT id, serial, rel_path, extracted, updated_at
 FROM file_content
-WHERE serial = ? AND rel_path = ?;
+WHERE serial = sqlc.arg(serial) AND rel_path = sqlc.arg(rel_path);

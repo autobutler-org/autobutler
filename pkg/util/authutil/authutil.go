@@ -1766,7 +1766,7 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 		// leaves the database standing has to rotate it, or the other
 		// instances keep their file index, caches and vault key for trees
 		// that are gone (#3085).
-		if err := params.Queries.RotateInstallID(ctx); err != nil {
+		if err := params.Queries.RotateInstallID(ctx, db.NewInstallID()); err != nil {
 			return result, fmt.Errorf("failed to issue a new install id: %w", err)
 		}
 	}

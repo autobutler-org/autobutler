@@ -10,7 +10,7 @@ import (
 )
 
 const clearDefaultStorageRole = `-- name: ClearDefaultStorageRole :exec
-UPDATE device_roles SET role = 'unassigned', updated_at = datetime('now')
+UPDATE device_roles SET role = 'unassigned', updated_at = CURRENT_TIMESTAMP
 WHERE role = 'default-storage'
 `
 
@@ -20,7 +20,7 @@ func (q *Queries) ClearDefaultStorageRole(ctx context.Context) error {
 }
 
 const deleteDeviceRole = `-- name: DeleteDeviceRole :exec
-DELETE FROM device_roles WHERE device_serial = ?
+DELETE FROM device_roles WHERE device_serial = ?1
 `
 
 func (q *Queries) DeleteDeviceRole(ctx context.Context, deviceSerial string) error {
@@ -61,7 +61,7 @@ func (q *Queries) GetAllDeviceRoles(ctx context.Context) ([]GetAllDeviceRolesRow
 }
 
 const getDeviceRole = `-- name: GetDeviceRole :one
-SELECT role FROM device_roles WHERE device_serial = ? LIMIT 1
+SELECT role FROM device_roles WHERE device_serial = ?1 LIMIT 1
 `
 
 func (q *Queries) GetDeviceRole(ctx context.Context, deviceSerial string) (string, error) {
@@ -73,10 +73,10 @@ func (q *Queries) GetDeviceRole(ctx context.Context, deviceSerial string) (strin
 
 const upsertDeviceRole = `-- name: UpsertDeviceRole :exec
 INSERT INTO device_roles (device_serial, role, updated_at)
-VALUES (?, ?, datetime('now'))
+VALUES (?1, ?2, CURRENT_TIMESTAMP)
 ON CONFLICT(device_serial) DO UPDATE SET
     role = excluded.role,
-    updated_at = datetime('now')
+    updated_at = CURRENT_TIMESTAMP
 `
 
 type UpsertDeviceRoleParams struct {

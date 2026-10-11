@@ -15,7 +15,7 @@ const createVaultConfig = `-- name: CreateVaultConfig :exec
 INSERT INTO vault_config (
     id, salt, argon2_memory, argon2_iterations, argon2_parallelism,
     verification_blob, verification_nonce, auto_lock_seconds
-) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6, ?7)
 `
 
 type CreateVaultConfigParams struct {
@@ -43,7 +43,7 @@ func (q *Queries) CreateVaultConfig(ctx context.Context, arg CreateVaultConfigPa
 
 const createVaultEntry = `-- name: CreateVaultEntry :one
 INSERT INTO vault_entries (name, url_host, folder_id, ciphertext, nonce)
-VALUES (?, ?, ?, ?, ?)
+VALUES (?1, ?2, ?3, ?4, ?5)
 RETURNING id, name, url_host, folder_id, ciphertext, nonce, created_at, updated_at
 `
 
@@ -79,7 +79,7 @@ func (q *Queries) CreateVaultEntry(ctx context.Context, arg CreateVaultEntryPara
 
 const createVaultFolder = `-- name: CreateVaultFolder :one
 INSERT INTO vault_folders (name, parent_id, sort_order)
-VALUES (?, ?, ?)
+VALUES (?1, ?2, ?3)
 RETURNING id, name, parent_id, sort_order, created_at
 `
 
@@ -103,7 +103,7 @@ func (q *Queries) CreateVaultFolder(ctx context.Context, arg CreateVaultFolderPa
 }
 
 const deleteVaultEntry = `-- name: DeleteVaultEntry :exec
-DELETE FROM vault_entries WHERE id = ?
+DELETE FROM vault_entries WHERE id = ?1
 `
 
 func (q *Queries) DeleteVaultEntry(ctx context.Context, id int64) error {
@@ -112,7 +112,7 @@ func (q *Queries) DeleteVaultEntry(ctx context.Context, id int64) error {
 }
 
 const deleteVaultFolder = `-- name: DeleteVaultFolder :exec
-DELETE FROM vault_folders WHERE id = ?
+DELETE FROM vault_folders WHERE id = ?1
 `
 
 func (q *Queries) DeleteVaultFolder(ctx context.Context, id int64) error {
@@ -142,7 +142,7 @@ func (q *Queries) GetVaultConfig(ctx context.Context) (VaultConfig, error) {
 }
 
 const getVaultEntry = `-- name: GetVaultEntry :one
-SELECT id, name, url_host, folder_id, ciphertext, nonce, created_at, updated_at FROM vault_entries WHERE id = ?
+SELECT id, name, url_host, folder_id, ciphertext, nonce, created_at, updated_at FROM vault_entries WHERE id = ?1
 `
 
 func (q *Queries) GetVaultEntry(ctx context.Context, id int64) (VaultEntry, error) {
@@ -162,7 +162,7 @@ func (q *Queries) GetVaultEntry(ctx context.Context, id int64) (VaultEntry, erro
 }
 
 const getVaultFolder = `-- name: GetVaultFolder :one
-SELECT id, name, parent_id, sort_order, created_at FROM vault_folders WHERE id = ?
+SELECT id, name, parent_id, sort_order, created_at FROM vault_folders WHERE id = ?1
 `
 
 func (q *Queries) GetVaultFolder(ctx context.Context, id int64) (VaultFolder, error) {
@@ -324,7 +324,7 @@ func (q *Queries) ListVaultFolders(ctx context.Context) ([]VaultFolder, error) {
 
 const updateVaultConfigPassword = `-- name: UpdateVaultConfigPassword :exec
 UPDATE vault_config
-SET salt = ?, verification_blob = ?, verification_nonce = ?
+SET salt = ?1, verification_blob = ?2, verification_nonce = ?3
 WHERE id = 1
 `
 
@@ -341,9 +341,9 @@ func (q *Queries) UpdateVaultConfigPassword(ctx context.Context, arg UpdateVault
 
 const updateVaultEntry = `-- name: UpdateVaultEntry :exec
 UPDATE vault_entries
-SET name = ?, url_host = ?, folder_id = ?, ciphertext = ?, nonce = ?,
-    updated_at = datetime('now')
-WHERE id = ?
+SET name = ?1, url_host = ?2, folder_id = ?3, ciphertext = ?4, nonce = ?5,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = ?6
 `
 
 type UpdateVaultEntryParams struct {
@@ -369,8 +369,8 @@ func (q *Queries) UpdateVaultEntry(ctx context.Context, arg UpdateVaultEntryPara
 
 const updateVaultEntryCiphertext = `-- name: UpdateVaultEntryCiphertext :exec
 UPDATE vault_entries
-SET ciphertext = ?, nonce = ?, updated_at = datetime('now')
-WHERE id = ?
+SET ciphertext = ?1, nonce = ?2, updated_at = CURRENT_TIMESTAMP
+WHERE id = ?3
 `
 
 type UpdateVaultEntryCiphertextParams struct {
@@ -385,7 +385,7 @@ func (q *Queries) UpdateVaultEntryCiphertext(ctx context.Context, arg UpdateVaul
 }
 
 const updateVaultEntryHost = `-- name: UpdateVaultEntryHost :exec
-UPDATE vault_entries SET url_host = ? WHERE id = ?
+UPDATE vault_entries SET url_host = ?1 WHERE id = ?2
 `
 
 type UpdateVaultEntryHostParams struct {
@@ -400,8 +400,8 @@ func (q *Queries) UpdateVaultEntryHost(ctx context.Context, arg UpdateVaultEntry
 
 const updateVaultFolder = `-- name: UpdateVaultFolder :exec
 UPDATE vault_folders
-SET name = ?, parent_id = ?, sort_order = ?
-WHERE id = ?
+SET name = ?1, parent_id = ?2, sort_order = ?3
+WHERE id = ?4
 `
 
 type UpdateVaultFolderParams struct {

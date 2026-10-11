@@ -34,7 +34,7 @@ WHERE
 INSERT INTO
     path_access (device_serial, rel_path, user_id, level)
 VALUES
-    (?, ?, ?, ?) ON CONFLICT (user_id, device_serial, rel_path)
+    (sqlc.arg(device_serial), sqlc.arg(rel_path), sqlc.arg(user_id), sqlc.arg(level)) ON CONFLICT (user_id, device_serial, rel_path)
 WHERE
     user_id IS NOT NULL DO
 UPDATE
@@ -52,7 +52,7 @@ INSERT INTO
 SELECT
     device_serial,
     rel_path,
-    CAST(sqlc.arg(to_user_id) AS INTEGER),
+    CAST(sqlc.arg(to_user_id) AS BIGINT),
     'owner'
 FROM
     path_access
@@ -154,7 +154,7 @@ SELECT
     path_access.user_id,
     path_access.group_id,
     CAST(COALESCE(users.username, groups.name) AS TEXT) AS name,
-    CAST(COALESCE(groups.builtin, 0) AS INTEGER) AS builtin
+    CAST(COALESCE(groups.builtin, 0) AS BIGINT) AS builtin
 FROM
     path_access
     LEFT JOIN users ON users.id = path_access.user_id
@@ -173,7 +173,7 @@ WHERE
 INSERT INTO
     path_access (device_serial, rel_path, group_id, level)
 VALUES
-    (?, ?, ?, ?) ON CONFLICT (group_id, device_serial, rel_path)
+    (sqlc.arg(device_serial), sqlc.arg(rel_path), sqlc.arg(group_id), sqlc.arg(level)) ON CONFLICT (group_id, device_serial, rel_path)
 WHERE
     group_id IS NOT NULL DO
 UPDATE
@@ -185,14 +185,14 @@ SET
 -- name: DeleteUserPathAccess :execrows
 DELETE FROM path_access
 WHERE
-    user_id = ?
-    AND device_serial = ?
-    AND rel_path = ?;
+    user_id = sqlc.arg(user_id)
+    AND device_serial = sqlc.arg(device_serial)
+    AND rel_path = sqlc.arg(rel_path);
 
 -- DeleteGroupPathAccess drops a group's row on exactly one path.
 -- name: DeleteGroupPathAccess :execrows
 DELETE FROM path_access
 WHERE
-    group_id = ?
-    AND device_serial = ?
-    AND rel_path = ?;
+    group_id = sqlc.arg(group_id)
+    AND device_serial = sqlc.arg(device_serial)
+    AND rel_path = sqlc.arg(rel_path);

@@ -280,7 +280,7 @@ SET
     reminder_minutes = ?9,
     color_index = ?10,
     repeat_until = ?11,
-    updated_at = datetime('now')
+    updated_at = CURRENT_TIMESTAMP
 WHERE
     id = ?12
 RETURNING id, calendar_id, title, notes, location, starts_at, ends_at, all_day, time_zone, repeat, reminder_minutes, color_index, created_at, updated_at, created_by, repeat_until

@@ -13,7 +13,7 @@ import (
 const createChatMessage = `-- name: CreateChatMessage :one
 
 INSERT INTO chat_messages (channel_id, author_id, key_version, ciphertext, nonce)
-VALUES (?, ?, ?, ?, ?)
+VALUES (?1, ?2, ?3, ?4, ?5)
 RETURNING id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce
 `
 
@@ -52,7 +52,7 @@ func (q *Queries) CreateChatMessage(ctx context.Context, arg CreateChatMessagePa
 }
 
 const getChatMessage = `-- name: GetChatMessage :one
-SELECT id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce FROM chat_messages WHERE id = ?
+SELECT id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce FROM chat_messages WHERE id = ?1
 `
 
 func (q *Queries) GetChatMessage(ctx context.Context, id int64) (ChatMessage, error) {
@@ -73,7 +73,7 @@ func (q *Queries) GetChatMessage(ctx context.Context, id int64) (ChatMessage, er
 }
 
 const getChatMessageByNonce = `-- name: GetChatMessageByNonce :one
-SELECT id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce FROM chat_messages WHERE channel_id = ? AND key_version = ? AND nonce = ?
+SELECT id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce FROM chat_messages WHERE channel_id = ?1 AND key_version = ?2 AND nonce = ?3
 `
 
 type GetChatMessageByNonceParams struct {
@@ -101,7 +101,7 @@ func (q *Queries) GetChatMessageByNonce(ctx context.Context, arg GetChatMessageB
 }
 
 const listChatMessagesAfter = `-- name: ListChatMessagesAfter :many
-SELECT id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce FROM chat_messages WHERE channel_id = ? AND id > ? ORDER BY id LIMIT ?
+SELECT id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce FROM chat_messages WHERE channel_id = ?1 AND id > ?2 ORDER BY id LIMIT CAST(?3 AS BIGINT)
 `
 
 type ListChatMessagesAfterParams struct {
@@ -145,7 +145,7 @@ func (q *Queries) ListChatMessagesAfter(ctx context.Context, arg ListChatMessage
 }
 
 const listChatMessagesBefore = `-- name: ListChatMessagesBefore :many
-SELECT id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce FROM chat_messages WHERE channel_id = ? AND id < ? ORDER BY id DESC LIMIT ?
+SELECT id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce FROM chat_messages WHERE channel_id = ?1 AND id < ?2 ORDER BY id DESC LIMIT CAST(?3 AS BIGINT)
 `
 
 type ListChatMessagesBeforeParams struct {
@@ -190,8 +190,8 @@ func (q *Queries) ListChatMessagesBefore(ctx context.Context, arg ListChatMessag
 
 const tombstoneChatMessage = `-- name: TombstoneChatMessage :one
 UPDATE chat_messages
-SET ciphertext = NULL, deleted_at = COALESCE(deleted_at, datetime('now'))
-WHERE id = ?
+SET ciphertext = NULL, deleted_at = COALESCE(deleted_at, CURRENT_TIMESTAMP)
+WHERE id = ?1
 RETURNING id, channel_id, author_id, key_version, ciphertext, created_at, edited_at, deleted_at, nonce
 `
 

@@ -77,7 +77,7 @@ func TestWatch_FiresWhenAnotherInstanceRotatesTheInstallID(t *testing.T) {
 	resetting, watching := twoInstances(t)
 	reset := watch(t, watching)
 
-	if err := resetting.Queries.RotateInstallID(t.Context()); err != nil {
+	if err := resetting.Queries.RotateInstallID(t.Context(), db.NewInstallID()); err != nil {
 		t.Fatalf("rotate: %v", err)
 	}
 	select {
