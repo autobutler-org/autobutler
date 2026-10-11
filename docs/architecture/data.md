@@ -91,6 +91,24 @@ join. `path_access.level` is `read`, `write` or `owner`, and each row names exac
 Migrations are numbered, gap-free and paired; `make check/migrations` fails a PR whose number is at or below
 `main`'s highest, because golang-migrate would silently skip it on upgraded devices.
 
+The migrations run up on every start, and startup never empties a database to get there (#3127).
+`classifyMigrationState` reads the version recorded in `schema_migrations` and `initSchema` acts on what it finds:
+
+| Recorded state                                             | What startup does                                         |
+| ---------------------------------------------------------- | --------------------------------------------------------- |
+| Nothing, or a version of this set on this set's schema     | Runs the migrations up                                    |
+| A version above this build's highest (a downgrade)         | Refuses to start; the database is not touched             |
+| The dirty flag (a migration was interrupted or failed)     | Refuses to start; the database is not touched             |
+| A version from the numbering before #1758                  | Renames `quark.db` to `quark.db.stale-<UTC time>` and starts on a fresh database, at first-run setup |
+| Anything else                                              | Refuses to start; the database is not touched             |
+
+A refusal exits non-zero with an error that names the database file, the recorded version and this build's
+highest, and says what to do: which build to install, or the `sqlite3` statements that clear a dirty flag, and
+the `mv` that sets the database aside by hand for a fresh start. Under systemd (`Restart=always`) or
+`docker run --restart` the process is started again into the same error, which is in the journal
+(`journalctl -u quark`) or the container log; systemd stops retrying if its start limit is reached. Emptying a
+database is left to the reset an admin asks for (JN-ST-027).
+
 ## Access control
 
 `accessutil` answers "may this principal reach this path?". Grants are keyed by `(device serial, canonical
