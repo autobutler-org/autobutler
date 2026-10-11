@@ -773,9 +773,6 @@ check/db: ## Check that the DB_BACKEND database is reachable (sqlite needs nothi
 		exit 0
 	fi
 	if (exec 3<>/dev/tcp/127.0.0.1/$(POSTGRES_PORT)) 2>/dev/null; then
-		# Nothing in the server reads QUARK_DB_BACKEND until #2957 lands; say so rather
-		# than let a SQLite run pass for a PostgreSQL one. Remove this with that change.
-		echo "Note: DB_BACKEND=postgres is passed to the server, which does not read it yet (#2957)." >&2
 		exit 0
 	fi
 	echo "Error: DB_BACKEND=postgres, and no PostgreSQL is listening on 127.0.0.1:$(POSTGRES_PORT)."
@@ -1432,17 +1429,27 @@ test/structure/go: ## Prove check-go-structure.bash fails on a planted violation
 test/db-backend: ## Prove the DB_BACKEND switch rejects a bad value and reaches the server recipes
 	./scripts/check-db-backend-test.bash "$(MAKE)"
 
-# The PostgreSQL half of the database layer's check: every generated statement prepared on a
-# real server with the schema applied, the two schemas compared, the queries run through
-# db.Querier, and the connection and migration path the server starts on. It names the backend
-# itself, so it needs no DB_BACKEND; the same tests also run under
+# What is checked on a real PostgreSQL. POSTGRES_TEST_PACKAGES are the packages holding a test
+# that dbtest.PostgresURL selects: one that skips by name on the default backend. A new one
+# goes on this list, or CI's test-postgres job never runs it. Running every backend test once
+# per backend is #2960.
+#   internal/db/...     every generated statement prepared with the schema applied, the two
+#                       schemas compared, the queries run through db.Querier, and connecting,
+#                       migrating, refusing and resetting
+#   internal/server     Quark started on an empty database and driven over HTTP, against the
+#                       same journey on SQLite
+#   pkg/util/sqlutil    a unique violation recognized from each engine's driver
+#   pkg/util/searchutil, pkg/backup
+#                       what is SQLite-only refused by name, and the rest working
+# It names the backend itself, so it needs no DB_BACKEND; the same tests also run under
 # `make test/unit/backend DB_BACKEND=postgres`. With no database reachable the tests fail and
 # say to run `make serve/postgres`. -count=1 because the database is not an input go's test
 # cache can see.
+POSTGRES_TEST_PACKAGES := ./internal/db/... ./internal/server ./pkg/util/sqlutil ./pkg/util/searchutil ./pkg/backup
 .PHONY: test/db/postgres
-test/db/postgres: ## Check the queries, schema and connection on PostgreSQL (start it with make serve/postgres)
+test/db/postgres: internal/server/public/stub.txt ## Check the database layer and a first run of the server on PostgreSQL (start it with make serve/postgres)
 	QUARK_DB_BACKEND=postgres QUARK_DATABASE_URL='$(call POSTGRES_URL,127.0.0.1)' \
-		$(GO) test -count=1 ./internal/db/...
+		$(GO) test -count=1 $(POSTGRES_TEST_PACKAGES)
 
 MIGRATION_BASE_REF ?= origin/main
 

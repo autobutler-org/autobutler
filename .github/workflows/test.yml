@@ -73,10 +73,10 @@ jobs:
       - name: Run integration tests
         run: |
           make test/integration/backend
-  # The PostgreSQL half of the database layer's check (sql/queries/AGENTS.md): every generated
-  # statement prepared on a real server, the two schemas compared, the queries run through
-  # db.Querier, and the connection and migration path the server starts on. Only this;
-  # running the whole backend suite per backend is #2960.
+  # What is checked on a real PostgreSQL (the Makefile lists it beside test/db/postgres): the
+  # query and schema layer, connecting and migrating, a first run of the server driven over
+  # HTTP against the same journey on SQLite, and what is refused by name. Only this; running
+  # the whole backend suite per backend is #2960.
   test-postgres:
     needs: changes
     if: needs.changes.outputs.postgres != 'false'
@@ -105,7 +105,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - name: Check the queries and schema on PostgreSQL
+      - name: Check the database layer and a first run of the server on PostgreSQL
         run: |
           make test/db/postgres
   api-chaos:

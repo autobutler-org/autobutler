@@ -9,10 +9,21 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
+// ConnectToDatabase opens the database the server runs on: the one
+// ConfigFromEnv names, which is SQLite's quark.db in the data directory unless
+// the environment asks for PostgreSQL.
 func ConnectToDatabase() (*DatabaseSqlc, error) {
+	config, err := ConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	if config.Backend == Postgres {
+		return ConnectToPostgres(config.PostgresURL)
+	}
+
 	var database DatabaseSqlc
 	dataDir := storageutil.GetDataDir()
-	err := os.MkdirAll(dataDir, 0755)
+	err = os.MkdirAll(dataDir, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create data directory: %v", err)
 	}

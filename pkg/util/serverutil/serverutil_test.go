@@ -438,3 +438,28 @@ func TestRegisterRouterWithGroup(t *testing.T) {
 		t.Errorf("expected status 200 for GET /api/users, got %d", w.Code)
 	}
 }
+
+// statusNamingError is an error that names its own status without being an
+// HttpError, as db.UnsupportedError does.
+type statusNamingError struct{}
+
+func (statusNamingError) Error() string   { return "not supported on this backend yet" }
+func (statusNamingError) HTTPStatus() int { return http.StatusNotImplemented }
+
+// An error that names a status is answered with it from any handler that
+// returns it, whatever status the handler picked and however it was wrapped.
+func TestWrapApiRoute_ErrorNamingItsStatus(t *testing.T) {
+	wrapped := serverutil.WrapApiRoute(func(c *gin.Context) *serverutil.Response {
+		return serverutil.InternalServerError(fmt.Errorf("search: %w", statusNamingError{}))
+	})
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	wrapped(c)
+
+	if w.Code != http.StatusNotImplemented {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusNotImplemented)
+	}
+	if want := `{"error":"search: not supported on this backend yet"}`; w.Body.String() != want {
+		t.Errorf("body = %s, want %s", w.Body.String(), want)
+	}
+}

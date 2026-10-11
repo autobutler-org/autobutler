@@ -36,6 +36,9 @@ func ResetDatabase(database *DatabaseSqlc) error {
 	if database == nil || database.Db == nil {
 		return fmt.Errorf("database not initialized")
 	}
+	if database.Backend() == Postgres {
+		return resetPostgres(database.Db)
+	}
 	return exclusively(database.Db, func(ctx context.Context, conn *sql.Conn) error {
 		kept, err := setAsideKeptTables(ctx, conn)
 		if err != nil {

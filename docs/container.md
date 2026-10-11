@@ -165,7 +165,35 @@ spec:
 
 One replica and `strategy: Recreate`, both deliberate: the state is one SQLite database on one
 `ReadWriteOnce` volume, and a second writer would corrupt it. Scaling Quark horizontally is not a
-matter of raising `replicas`.
+matter of raising `replicas`, and pointing it at [PostgreSQL](#postgresql) does not change that.
+
+## PostgreSQL
+
+Quark keeps its database in a SQLite file under the data directory unless it is told otherwise. To use a
+PostgreSQL server instead, give the container two environment variables and an empty database:
+
+```bash
+docker run -d --name quark --restart unless-stopped -p 8080:8080 \
+  -e QUARK_DB_BACKEND=postgres \
+  -e QUARK_DATABASE_URL='postgres://quark:password@db.example:5432/quark?sslmode=require' \
+  -v quark-data:/var/lib/quark ghcr.io/autobutler-org/quark:latest
+```
+
+In Kubernetes, put the URL in a `Secret` and reference it from the Deployment's `env`. It carries the password.
+
+- **The database starts empty.** Quark creates its schema on first start and brings it up to date on every
+  later one. It will not start on a database that already has tables it did not make: give it a database of its
+  own, or a schema of its own with `?search_path=<schema>` on the URL.
+- **Quark never resets or repairs a PostgreSQL database.** If it cannot connect, or finds a schema it cannot
+  carry forward, it exits with a message saying what it found and what to do.
+- **The volume is still needed.** Uploaded files, the tailnet identity, the TLS certificate and an update
+  installed from Settings all live under `/var/lib/quark` whatever the database is.
+- **One replica is still the rule**, and `strategy: Recreate` with it. PostgreSQL removes the database's reason
+  for that and none of the others: the file store on a `ReadWriteOnce` volume, the event bus, running jobs and
+  the tailnet identity each belong to one process. Running several instances is #2964.
+- **Not everything works yet.** Content search, snapshot backup and moving the vault to a drive answer `501`
+  with the issue that tracks them; [the full list](architecture/data.md#what-does-not-work-on-postgresql-yet) is
+  in the data architecture page. There is no tool yet to move an existing SQLite install's data across (#2962).
 
 ## The data directory
 

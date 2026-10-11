@@ -24,6 +24,7 @@ import (
 // @Failure 423 {object} serverutil.Response
 // @Failure 426 {object} serverutil.Response "password is a raw password, not the auth key: the app is too old"
 // @Failure 500 {object} serverutil.Response
+// @Failure 501 {object} serverutil.Response "Moving the vault is not supported on the PostgreSQL backend yet"
 // @Security BearerAuth
 // @Router /vault/storage-location [put]
 func setVaultStorageLocation(c *gin.Context) *serverutil.Response {

@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -74,6 +75,39 @@ func BackendOf(sqlDB *sql.DB) Backend {
 // Backend reports which engine the database is on.
 func (d *DatabaseSqlc) Backend() Backend {
 	return BackendOf(d.Db)
+}
+
+// UnsupportedError reports a feature that does not run on the PostgreSQL
+// backend yet. Such a feature is built on SQL only SQLite accepts, outside
+// what sqlc generates, and RequireSQLite turns it away before any of that SQL
+// is sent: PostgreSQL would answer it with a syntax error, or a missing table,
+// that tells nobody what is wrong.
+type UnsupportedError struct {
+	// Feature names what was asked for, worded to start a sentence.
+	Feature string
+	// Issue is the GitHub issue that tracks making it work.
+	Issue int
+}
+
+func (e *UnsupportedError) Error() string {
+	return fmt.Sprintf("%s is not supported on the PostgreSQL backend yet (#%d)", e.Feature, e.Issue)
+}
+
+// HTTPStatus is the status serverutil answers with when a handler returns
+// this error: the request was understood, and this server cannot do it.
+func (e *UnsupportedError) HTTPStatus() int {
+	return http.StatusNotImplemented
+}
+
+// RequireSQLite returns an *UnsupportedError naming feature and its tracking
+// issue when sqlDB is not a SQLite database, and nil when it is. It is the
+// guard in front of every statement that only SQLite accepts; nothing else
+// outside this package should need to know the engine.
+func RequireSQLite(sqlDB *sql.DB, feature string, issue int) error {
+	if BackendOf(sqlDB) == SQLite {
+		return nil
+	}
+	return &UnsupportedError{Feature: feature, Issue: issue}
 }
 
 // queriesFor returns backend's generated queries bound to conn: a pool, one

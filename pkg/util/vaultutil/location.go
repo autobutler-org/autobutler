@@ -165,6 +165,10 @@ func SetLocation(ctx context.Context, params SetLocationParams) (SetLocationResu
 	if currentSerial == params.TargetSerial {
 		return SetLocationResult{}, ErrVaultAlreadyOnDevice
 	}
+	// Before a vault.db is made on the target for a move that cannot happen.
+	if err := backup.RequireVaultMove(params.MainDB); err != nil {
+		return SetLocationResult{}, err
+	}
 
 	var targetDB *db.DatabaseSqlc
 	if params.TargetSerial == "" {

@@ -301,6 +301,28 @@ func exerciseQuerier(t *testing.T, conn *sql.DB) {
 		t.Fatalf("UpsertDBVFSFile over a directory = %d, %v, want 0 rows", rows, err)
 	}
 
+	// Two owners of one folder come back in the order they were granted, on
+	// both engines: accessutil names the first as the folder's owner. Bob is
+	// granted first and sorts after Ada by name and by id, so neither order
+	// stands in for the one asked for.
+	for _, grant := range []struct {
+		path string
+		id   int64
+	}{{"shared/docs", other.ID}, {"shared/docs", user.ID}, {"shared", user.ID}} {
+		must(q.SetUserPathAccess(ctx, db.SetUserPathAccessParams{
+			RelPath: grant.path, UserID: sql.NullInt64{Int64: grant.id, Valid: true}, Level: "owner",
+		}))
+	}
+	onAncestors, err := q.ListPathAccessOnAncestors(ctx, db.ListPathAccessOnAncestorsParams{RelPath: "shared/docs"})
+	must(err)
+	granted := []string{}
+	for _, row := range onAncestors {
+		granted = append(granted, row.RelPath+":"+row.Name)
+	}
+	if got := strings.Join(granted, " "); got != "shared:Ada shared/docs:Bob shared/docs:Ada" {
+		t.Fatalf("ListPathAccessOnAncestors = %q, want shared:Ada shared/docs:Bob shared/docs:Ada", got)
+	}
+
 	// A transaction gets the same engine's queries as the pool, and an error
 	// from the callback rolls it back.
 	rolledBack := errors.New("roll this back")

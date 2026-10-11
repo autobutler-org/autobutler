@@ -270,6 +270,9 @@ WHERE
         OR path_access.rel_path = ?2
         OR substr(?2, 1, length(path_access.rel_path) + 1) = path_access.rel_path || '/'
     )
+ORDER BY
+    path_access.rel_path,
+    path_access.id
 `
 
 type ListPathAccessOnAncestorsParams struct {
@@ -290,6 +293,9 @@ type ListPathAccessOnAncestorsRow struct {
 // holds it, with the name of the account or group each one was granted to,
 // for the sharing sheet (#1911). substr, not LIKE, for the reason
 // MovePathAccessTree gives. The CASTs give sqlc a type for each COALESCE.
+// Ordered because accessutil.ownerName takes the first owner on the deepest
+// path, so two owners of one folder need an order: the earlier grant comes
+// first. It is the order SQLite already returned, reading idx_path_access_path.
 func (q *Queries) ListPathAccessOnAncestors(ctx context.Context, arg ListPathAccessOnAncestorsParams) ([]ListPathAccessOnAncestorsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listPathAccessOnAncestors, arg.DeviceSerial, arg.RelPath)
 	if err != nil {

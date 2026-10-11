@@ -147,6 +147,9 @@ ORDER BY
 -- holds it, with the name of the account or group each one was granted to,
 -- for the sharing sheet (#1911). substr, not LIKE, for the reason
 -- MovePathAccessTree gives. The CASTs give sqlc a type for each COALESCE.
+-- Ordered because accessutil.ownerName takes the first owner on the deepest
+-- path, so two owners of one folder need an order: the earlier grant comes
+-- first. It is the order SQLite already returned, reading idx_path_access_path.
 -- name: ListPathAccessOnAncestors :many
 SELECT
     path_access.rel_path,
@@ -165,7 +168,10 @@ WHERE
         path_access.rel_path = ''
         OR path_access.rel_path = sqlc.arg(rel_path)
         OR substr(sqlc.arg(rel_path), 1, length(path_access.rel_path) + 1) = path_access.rel_path || '/'
-    );
+    )
+ORDER BY
+    path_access.rel_path,
+    path_access.id;
 
 -- SetGroupPathAccess grants a group a level on a path, replacing the level any
 -- earlier grant to that group on that path carried.

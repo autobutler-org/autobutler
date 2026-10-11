@@ -8,11 +8,29 @@ import (
 	"github.com/autobutler-org/quark/internal/db"
 )
 
+// RequireVaultMove returns a *db.UnsupportedError unless every database given
+// is SQLite. The copy below is raw SQL with SQLite's placeholders that carries
+// ids and timestamps across as it finds them, so it moves a vault between
+// SQLite files only: the main database and a vault.db on a device. A
+// PostgreSQL main database also needs its id sequences moved past the copied
+// rows, which is part of #2963.
+func RequireVaultMove(databases ...*db.DatabaseSqlc) error {
+	for _, database := range databases {
+		if err := db.RequireSQLite(database.Db, "Moving the vault to or from a storage device", 2963); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // MigrateVault copies the vault from source into target in one transaction on
 // target. Whatever target already holds is replaced, not merged: a move cut
 // short after its copy committed leaves one behind, and the retry has to
 // succeed over it rather than fail on its ids (#2517).
 func MigrateVault(ctx context.Context, source, target *db.DatabaseSqlc) error {
+	if err := RequireVaultMove(source, target); err != nil {
+		return err
+	}
 	srcDB := source.Db
 	dstDB := target.Db
 
