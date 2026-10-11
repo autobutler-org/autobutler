@@ -86,7 +86,7 @@ class FilesService with AuthenticatedService {
     }
     // Include token so the browser <video> element (which cannot send custom
     // Authorization headers) can still authenticate against the download endpoint.
-    final token = AppSettings.instance.sessionToken;
+    final token = AppSettings.instance.bearerToken;
     if (token != null && token.isNotEmpty) {
       querySegments.add('token=${Uri.encodeQueryComponent(token)}');
     }
@@ -116,7 +116,7 @@ class FilesService with AuthenticatedService {
     final serialValue = serial?.trim() ?? '';
     if (serialValue.isNotEmpty) params['serial'] = serialValue;
     if (size != null && size.isNotEmpty) params['size'] = size;
-    final token = AppSettings.instance.sessionToken;
+    final token = AppSettings.instance.bearerToken;
     if (token != null && token.isNotEmpty) params['token'] = token;
 
     return params.isEmpty

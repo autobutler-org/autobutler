@@ -193,8 +193,7 @@ class EventsService {
       return;
     }
 
-    final token = AppSettings.instance.sessionToken;
-    if (token == null) {
+    if (AppSettings.instance.sessionToken == null) {
       // Unauthenticated: the server would answer the upgrade with a 401. The
       // router lets us reach this page with no token when the quark is
       // unreachable, so wait for _onTokenChanged rather than hammering it.
@@ -202,11 +201,14 @@ class EventsService {
       return;
     }
 
+    final token = AppSettings.instance.bearerToken;
     try {
       final httpUri = Uri.parse(host).resolve('/api/v0/events');
       final wsUri = httpUri.replace(
         scheme: httpUri.scheme == 'https' ? 'wss' : 'ws',
-        queryParameters: {'token': token},
+        // Null for a cookie session: the browser sends the `session` cookie
+        // with the handshake, so the URL carries no token.
+        queryParameters: token == null ? null : {'token': token},
       );
       // connectLocalTrustWs is resolved at compile time:
       //   - dart.library.io  → ws_connect_io.dart  (native: trusts local self-signed certs)
@@ -215,7 +217,7 @@ class EventsService {
       // Authorization header (ignored on web); requireAuth accepts either.
       final channel = connectChannel(
         wsUri,
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
       _channel = channel;
 

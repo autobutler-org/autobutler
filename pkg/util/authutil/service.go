@@ -24,11 +24,12 @@ const (
 	// is created and every time it is renewed on use.
 	sessionDuration = 30 * 24 * time.Hour // 30 days
 
-	// sessionMaxLifetime caps total session life, measured from creation.
+	// SessionMaxLifetime caps total session life, measured from creation.
 	// Renewal stops here, so a token that leaks dies within this window no
 	// matter how actively it is used — the difference between "stay signed in"
-	// and "signed in forever".
-	sessionMaxLifetime = 90 * 24 * time.Hour // 90 days
+	// and "signed in forever". The session cookie is kept this long, so a
+	// browser does not drop a session that is still being renewed (#2156).
+	SessionMaxLifetime = 90 * 24 * time.Hour // 90 days
 
 	// sessionRenewInterval debounces renewal writes. Renewing on literally
 	// every authenticated request would turn each one into a write against
@@ -44,7 +45,7 @@ var now = time.Now
 // an actively used session does not expire out from under its user (#1647).
 //
 // Two bounds keep that from meaning "signed in forever": writes are debounced
-// by sessionRenewInterval, and the new expiry is clamped to sessionMaxLifetime
+// by sessionRenewInterval, and the new expiry is clamped to SessionMaxLifetime
 // past creation, after which the session stops renewing and dies on schedule.
 //
 // GetSession has already rejected an expired session by the time this runs, so
@@ -60,7 +61,7 @@ func renewSession(ctx context.Context, queries db.Querier, digest string, sessio
 	}
 
 	expiry := t.Add(sessionDuration)
-	if limit := session.CreatedAt.Add(sessionMaxLifetime); expiry.After(limit) {
+	if limit := session.CreatedAt.Add(SessionMaxLifetime); expiry.After(limit) {
 		expiry = limit
 	}
 	// At the cap the expiry stops moving; skip the write rather than rewriting

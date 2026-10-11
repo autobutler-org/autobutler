@@ -78,7 +78,11 @@ func lockoutResponse(c *gin.Context, err error) *serverutil.Response {
 }
 
 const sessionCookieName = "session"
-const sessionCookieMaxAge = int(30 * 24 * time.Hour / time.Second)
+
+// The cookie outlives a session that is never renewed, which costs nothing:
+// the Quark decides when a session ends, and the cookie only has to last as
+// long as the longest one can (#2156).
+const sessionCookieMaxAge = int(authutil.SessionMaxLifetime / time.Second)
 
 // isTLS returns true when the underlying connection or a trusted proxy indicates
 // that the request arrived over HTTPS. Setting the Secure cookie flag on HTTP

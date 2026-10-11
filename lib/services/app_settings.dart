@@ -14,6 +14,7 @@ import 'package:quark/models/file_list_column.dart';
 import 'package:quark/models/photo_sort.dart';
 import 'package:quark/services/local_trust.dart';
 import 'package:quark/utils/emulator_loopback.dart';
+import 'package:quark/utils/session_cookie.dart';
 import 'package:quark_widgets/quark_widgets.dart'
     show AlbumSort, QuarkThemeColor;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -82,6 +83,17 @@ Uri get apiBaseUri {
   }
   return uri;
 }
+
+/// Whether the browser holds the session for the Quark at a host address in
+/// the Quark's HttpOnly `session` cookie, so the app must not hold or persist
+/// the token itself (#2156): the web build talking to the origin that served
+/// it. Everywhere else the app keeps the token and sends it as a Bearer.
+/// Overridable in tests, where `kIsWeb` is always false.
+@visibleForTesting
+bool Function(String hostAddress) usesCookieSession = _usesCookieSession;
+
+bool _usesCookieSession(String hostAddress) =>
+    kIsWeb && isSameOrigin(hostAddress, Uri.base);
 
 /// A saved Quark: its name, the address it answers on at home, and the
 /// remote-access address it reported, if any.
@@ -479,10 +491,11 @@ class AppSettings {
     // attribute it to we leave it for a later launch, exactly as the legacy
     // terms bool below does.
     final legacyToken = _decodeSessionTokens(storedTokens);
-    if (legacyToken != null && activeHost != null) {
-      _sessionTokens[_hostKey(activeHost!)] = legacyToken;
-      await _persistSessionTokens();
-    }
+    final attributed = legacyToken != null && activeHost != null;
+    if (attributed) _sessionTokens[_hostKey(activeHost!)] = legacyToken;
+    // A token an earlier build persisted for a cookie-session host leaves
+    // storage here (#2156). The browser has had the cookie since that login.
+    if (_markCookieSessions() || attributed) await _persistSessionTokens();
 
     // Migrate the legacy app-wide bool now that the active host is settled.
     // Only migrate once there is a host to attribute the acceptance to — with
@@ -510,13 +523,29 @@ class AppSettings {
   /// Null for a Quark the user has never signed into, which is what sends them
   /// to login on switching hosts without waiting on a 401 that an unreachable
   /// Quark would never send (#1645).
+  ///
+  /// It answers "is the user signed in?". For a cookie session (see
+  /// [usesCookieSession]) it is [cookieSessionMarker], not a credential:
+  /// whatever sends the token reads [bearerToken].
   String? get sessionToken => sessionTokenFor(activeHost);
+
+  /// The token to send to the current [activeHost] as a credential, in an
+  /// `Authorization: Bearer` header or a `?token=` query parameter.
+  ///
+  /// Null when signed out, and for a cookie session, where the browser sends
+  /// the `session` cookie itself and the request carries no token (#2156).
+  String? get bearerToken {
+    final token = sessionToken;
+    return token == cookieSessionMarker ? null : token;
+  }
 
   /// Session token stored for [hostAddress], if any.
   String? sessionTokenFor(String? hostAddress) =>
       hostAddress == null ? null : _sessionTokens[_hostKey(hostAddress)];
 
   /// Stores [token] against the current [activeHost], or clears it when null.
+  /// For a cookie session (see [usesCookieSession]) [cookieSessionMarker] is
+  /// stored in its place, so the token itself is neither held nor persisted.
   ///
   /// With no host configured there is nothing to attribute a token to, so
   /// storage is left alone — but the notifier still publishes the null that
@@ -526,6 +555,7 @@ class AppSettings {
     if (host != null && token != sessionToken) {
       if (token != null) {
         _sessionTokens[_hostKey(host)] = token;
+        _markCookieSessions();
       } else {
         _sessionTokens.remove(_hostKey(host));
       }
@@ -667,6 +697,20 @@ class AppSettings {
       // Not JSON at all — a bare token from a pre-#1645 build.
     }
     return stored;
+  }
+
+  /// Replaces the token held for every cookie-session host (see
+  /// [usesCookieSession]) with [cookieSessionMarker], and returns whether
+  /// anything changed.
+  bool _markCookieSessions() {
+    final held = [
+      for (final e in _sessionTokens.entries)
+        if (e.value != cookieSessionMarker && usesCookieSession(e.key)) e.key,
+    ];
+    for (final key in held) {
+      _sessionTokens[key] = cookieSessionMarker;
+    }
+    return held.isNotEmpty;
   }
 
   Future<void> _persistSessionTokens() async {
@@ -924,6 +968,7 @@ class AppSettings {
     // Re-keyed with no await in between, so nothing reads a half-moved host.
     final token = _sessionTokens.remove(oldKey);
     if (token != null) _sessionTokens[newKey] = token;
+    _markCookieSessions();
     final username = _usernames.remove(oldKey);
     if (username != null) _usernames[newKey] = username;
     final themeColor = _themeColors.remove(oldKey);

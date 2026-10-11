@@ -156,7 +156,7 @@ class UsersService with AuthenticatedService {
   /// [setAvatar]'s return), added as `v` so a changed picture is a new URL and
   /// no image cache serves the old one. A user with no picture is a 404.
   static Uri avatarUrl(int userId, {int? version}) {
-    final token = AppSettings.instance.sessionToken;
+    final token = AppSettings.instance.bearerToken;
     return apiBaseUri
         .resolve('/api/v0/users/$userId/avatar')
         .replace(

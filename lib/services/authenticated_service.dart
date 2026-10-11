@@ -112,10 +112,12 @@ void resetSharedHttpClient() {
 /// Use [authHeaders] to inject the session token into every request.
 /// Call [checkUnauthorized] after every response to handle session expiry.
 mixin AuthenticatedService {
-  /// Returns an Authorization header map when a session token is set, empty otherwise.
+  /// Returns an Authorization header map when there is a session token to
+  /// send, empty otherwise: signed out, or a cookie session, which the browser
+  /// authenticates with the `session` cookie ([AppSettings.bearerToken]).
   /// Spread into your http call headers: `headers: authHeaders`.
   Map<String, String> get authHeaders {
-    final token = AppSettings.instance.sessionToken;
+    final token = AppSettings.instance.bearerToken;
     if (token == null) return {};
     return {'Authorization': 'Bearer $token'};
   }
