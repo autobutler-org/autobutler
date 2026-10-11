@@ -9,7 +9,9 @@ import 'package:quark/services/vault_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/widgets/storage_devices/credentials_dialog.dart';
 import 'package:quark/widgets/storage_devices/role_dialog.dart';
+import 'package:quark/widgets/storage_devices/snapshot_backup_dialog.dart';
 import 'package:quark/widgets/storage_devices/storage_devices_body.dart';
 
 /// The System page's Storage tab: the drives the Quark can see, their status
@@ -125,114 +127,28 @@ class _StorageTabState extends State<StorageTab>
     }
   }
 
-  Future<Map<String, String>?> _promptCredentials() async {
-    final usernameCtrl = TextEditingController();
-    final passwordCtrl = TextEditingController();
-    final result = await QuarkWidget.showDialog<Map<String, String>>(
-      context,
-      builder: (ctx) => QuarkWidget.alertDialog(
-        title: const Text('Authenticate'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter your credentials to continue.'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: usernameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(),
-              ),
-              autocorrect: false,
-              autofillHints: const [AutofillHints.username],
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: passwordCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, {
-              'username': usernameCtrl.text,
-              'password': passwordCtrl.text,
-            }),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-    // Not disposed here: the dialog is still animating out, and its fields
-    // would rebuild with a disposed controller (#3102). Neither controller
-    // has a listener or a resource, so the garbage collector takes them.
-    return result;
-  }
+  Future<Map<String, String>?> _promptCredentials() =>
+      QuarkWidget.showDialog<Map<String, String>>(
+        context,
+        builder: (ctx) => const CredentialsDialog(),
+      );
 
   Future<void> _startBackup(StorageDevice target) async {
     final creds = await _promptCredentials();
     if (creds == null || !mounted) return;
 
-    final recoveryCtrl = TextEditingController();
-    final includeVault = await QuarkWidget.showDialog<bool>(
+    final recoveryPassword = await QuarkWidget.showDialog<String>(
       context,
-      builder: (ctx) => QuarkWidget.alertDialog(
-        title: const Text('Snapshot Backup'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Back up all devices to ${target.name.isNotEmpty ? target.name : "this drive"}.',
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Optionally include your vault with a recovery password:',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: recoveryCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Recovery password (optional)',
-                helperText: 'Min 8 characters. Separate from master password.',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Start Backup'),
-          ),
-        ],
-      ),
+      builder: (ctx) => SnapshotBackupDialog(targetName: target.name),
     );
-    if (includeVault != true || !mounted) return;
+    if (recoveryPassword == null || !mounted) return;
 
     try {
       final jobId = await StorageService.startSnapshotBackup(
         targetDeviceSerial: target.serial,
         username: creds['username'],
         password: creds['password'],
-        recoveryPassword: recoveryCtrl.text.isNotEmpty
-            ? recoveryCtrl.text
-            : null,
+        recoveryPassword: recoveryPassword.isNotEmpty ? recoveryPassword : null,
       );
       if (!mounted) return;
       setState(() => _activeBackupJobId = jobId);
