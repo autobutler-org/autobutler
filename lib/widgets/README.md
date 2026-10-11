@@ -43,6 +43,11 @@ lib/widgets/
                                 settings menu
     chat_channel_not_found.dart a link to a channel the account can't open,
                                 in place of the messages; reads Errors
+  code_viewer/
+    code_viewer_body.dart       QuarkCodeViewer fed from a
+                                CodeViewerController; reads AppSettings for
+                                the disconnected state and writes its
+                                sentences with Errors
   file_browser/
     file_browser_view.dart      lists files, calls FilesService; keeps the
                                 caller's snapshot listing (#1781) on screen

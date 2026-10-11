@@ -8,6 +8,7 @@ import 'package:quark/pages/account_and_data_page.dart';
 import 'package:quark/pages/books_page.dart';
 import 'package:quark/pages/calendar_page.dart';
 import 'package:quark/pages/chat_page.dart';
+import 'package:quark/pages/code_viewer_page.dart';
 import 'package:quark/pages/docs_page.dart';
 import 'package:quark/pages/document_editor_page.dart';
 import 'package:quark/pages/file_browser_page.dart';
@@ -33,6 +34,7 @@ import 'package:quark/pages/vault_page.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/feature_flags_service.dart';
+import 'package:quark/utils/code_viewer_files.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/file_kind.dart';
@@ -193,6 +195,9 @@ class AppRoutes {
   static const terms = '/terms';
   static const plaintextEditor = '/edit';
 
+  /// The read-only code viewer, `/code/<path>` (#2991).
+  static const codeViewer = '/code';
+
   /// Percent-encode a file path for use in a URL, keeping `/` as the segment
   /// separator.
   ///
@@ -230,6 +235,12 @@ class AppRoutes {
         ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
         : base;
   }
+
+  /// Build a URL for a source, config or log file in the code viewer.
+  /// e.g. codeViewerPath('app/main.go') → '/code/app/main.go'
+  /// Device serial is passed as a query param when non-empty.
+  static String codeViewerPath(String path, {String? serial}) =>
+      _withSerial('$codeViewer/${encodeFilePath(path)}', serial);
 
   /// Build a deep-link URL that opens [path] in the correct viewer.
   /// e.g. viewFile('photos/beach.jpg') → '/view/photos/beach.jpg'
@@ -851,17 +862,30 @@ final router = GoRouter(
         return PlaintextEditorPage(filePath: filePath, deviceSerial: serial);
       },
     ),
+    GoRoute(
+      // Matches /code/<anything including slashes> — opens the code viewer.
+      path: '${AppRoutes.codeViewer}/:path(.*)',
+      builder: (context, state) => CodeViewerPage(
+        // Keyed by file, so going from one file to another starts a new read.
+        key: ValueKey(state.uri.toString()),
+        filePath: state.pathParameters['path'] ?? '',
+        deviceSerial: state.uri.queryParameters['serial'] ?? '',
+      ),
+    ),
   ],
   errorBuilder: (context, state) =>
       Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
 );
 
 /// Where `/view/[path]` belongs instead, or null when [FileViewerPage] shows
-/// it. Docs, sheets, presentations and text have editors at their own URLs; a folder or an
-/// archive is browsed in Files. [serial] rides along to whichever it is.
+/// it. Docs, sheets, presentations and text have editors at their own URLs, source and
+/// logs the code viewer; a folder or an archive is browsed in Files. [serial] rides along to whichever it is.
 String? viewFileRedirect(String path, String? serial) {
   final folder = AppRoutes.filesPath(path);
   if (!isLikelyFilePath(path)) return _withSerial(folder, serial);
+  if (opensInCodeViewer(path)) {
+    return AppRoutes.codeViewerPath(path, serial: serial);
+  }
   return switch (fileKindForName(path)) {
     FileKind.qdoc => AppRoutes.docFile(path, serial: serial),
     FileKind.qsheet => AppRoutes.sheetFile(path, serial: serial),

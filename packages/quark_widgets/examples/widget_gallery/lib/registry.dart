@@ -1139,6 +1139,114 @@ final List<GalleryEntry> registry = [
     },
   ),
 
+  // ── Code ──────────────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'QuarkCodeViewer',
+    group: 'Code',
+    // The entry holds what a page's controller would: the lines loaded so
+    // far, the query and its hits, and whether lines wrap. Scrolling to the
+    // end loads three more parts, then the file is whole.
+    build: (context, log) {
+      var lines = _galleryCodeLines;
+      var wrap = false;
+      var query = '';
+      var matches = const <CodeSearchMatch>[];
+      int? active;
+      var parts = 1;
+      return StatefulBuilder(
+        builder: (context, setState) {
+          void step(int by) {
+            if (matches.isEmpty) return;
+            setState(() {
+              active = ((active ?? (by > 0 ? -1 : 0)) + by) % matches.length;
+            });
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 16,
+            children: [
+              SizedBox(
+                height: 360,
+                child: QuarkCodeViewer(
+                  lines: lines,
+                  language: codeLanguageFor('counter.dart'),
+                  wrap: wrap,
+                  onWrapChanged: (value) {
+                    log('QuarkCodeViewer.onWrapChanged($value)');
+                    setState(() => wrap = value);
+                  },
+                  searchQuery: query,
+                  onSearchChanged: (value) {
+                    log('QuarkCodeViewer.onSearchChanged("$value")');
+                    setState(() {
+                      query = value;
+                      matches = findCodeMatches(lines, value);
+                      active = matches.isEmpty ? null : 0;
+                    });
+                  },
+                  matches: matches,
+                  activeMatch: active,
+                  onNextMatch: () {
+                    log('QuarkCodeViewer.onNextMatch');
+                    step(1);
+                  },
+                  onPreviousMatch: () {
+                    log('QuarkCodeViewer.onPreviousMatch');
+                    step(-1);
+                  },
+                  hasMore: parts < 4,
+                  onLoadMore: () {
+                    log('QuarkCodeViewer.onLoadMore');
+                    setState(() {
+                      lines = [
+                        ...lines,
+                        for (var i = 0; i < 40; i++)
+                          '// Part ${parts + 1}, line ${i + 1}.',
+                      ];
+                      parts++;
+                      matches = findCodeMatches(lines, query);
+                    });
+                  },
+                  statusLabel: 'Showing $parts of 4 parts',
+                ),
+              ),
+              const Text('JSON, with the next part failing to load'),
+              SizedBox(
+                height: 260,
+                child: QuarkCodeViewer(
+                  lines: _galleryJsonLines,
+                  language: CodeLanguage.json,
+                  wrap: true,
+                  hasMore: true,
+                  loadMoreError: "Couldn't load more of the file.",
+                  onLoadMore: () => log('QuarkCodeViewer.onLoadMore (retry)'),
+                  statusLabel: 'Showing 256 KB of 1.2 GB',
+                ),
+              ),
+              const Text('Loading'),
+              const SizedBox(
+                height: 160,
+                child: QuarkCodeViewer(lines: [], isLoading: true),
+              ),
+              const Text('Failed to load'),
+              SizedBox(
+                height: 260,
+                child: QuarkCodeViewer(
+                  lines: const [],
+                  error: "Couldn't load the file.",
+                  onRetry: () => log('QuarkCodeViewer.onRetry'),
+                ),
+              ),
+              const Text('Empty'),
+              const SizedBox(height: 220, child: QuarkCodeViewer(lines: [])),
+            ],
+          );
+        },
+      );
+    },
+  ),
+
   // ── File browser ──────────────────────────────────────────────────────────
   GalleryEntry(
     name: 'FileBreadcrumbBar',
@@ -2763,4 +2871,50 @@ const List<JobItem> _galleryJobs = [
     attempts: 1,
     elapsed: Duration(hours: 1, minutes: 2, seconds: 3),
   ),
+];
+
+const List<String> _galleryCodeLines = [
+  "import 'package:flutter/material.dart';",
+  '',
+  '/// Counts taps, and remembers the highest count it has reached.',
+  'class Counter extends ChangeNotifier {',
+  '  int _count = 0;',
+  '  int _highest = 0;',
+  '',
+  '  /// The current count.',
+  '  int get count => _count;',
+  '',
+  '  /* The highest count so far,',
+  '     kept across resets. */',
+  '  int get highest => _highest;',
+  '',
+  '  void increment() {',
+  '    _count += 1;',
+  '    if (_count > _highest) _highest = _count;',
+  '    notifyListeners();',
+  '  }',
+  '',
+  '  void reset() {',
+  '    _count = 0;',
+  '    notifyListeners();',
+  '  }',
+  '',
+  "  String describe() => 'Tapped \$_count times, and the most it has ever been is \$_highest, which is a long line so that wrapping has something to do.';",
+  '}',
+  '',
+  'void main() {',
+  '  final counter = Counter()..increment();',
+  '  print(counter.describe());',
+  '}',
+];
+
+const List<String> _galleryJsonLines = [
+  '{',
+  '  "name": "quark",',
+  '  "port": 8080,',
+  '  "secure": true,',
+  '  "hosts": ["quark.local", "192.168.1.20"],',
+  '  "description": "A self-hosted personal cloud, served from a device in your home, with a description long enough to wrap.",',
+  '  "backup": null',
+  '}',
 ];

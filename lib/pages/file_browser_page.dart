@@ -31,6 +31,7 @@ import 'package:quark/services/storage_service.dart';
 import 'package:quark/services/upload_chunk_source.dart';
 import 'package:quark/services/client_thumbnails.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
+import 'package:quark/utils/code_viewer_files.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_kind.dart';
@@ -1527,6 +1528,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     final kind = fileKindForName(node.name);
+    if (opensInCodeViewer(node.name)) {
+      _goToEditor(node.apiPath, AppRoutes.codeViewerPath(node.apiPath));
+      return;
+    }
     switch (kind) {
       // Navigate into archives as virtual directories.
       case FileKind.archive:
@@ -1538,7 +1543,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       // Excel workbooks — offer to convert to .qsheet (#1741).
       case FileKind.xlsx:
         return _handleXlsxOpen(node);
-      // Text and code open in the plaintext editor, at its own URL.
+      // Prose opens in the plaintext editor, at its own URL.
       case FileKind.text || FileKind.code:
         _goToEditor(node.apiPath, AppRoutes.plaintextEditorPath(node.apiPath));
         return;
@@ -1948,6 +1953,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   }) async {
     if (!mounted) return;
 
+    // Source, config and log files open read-only and highlighted (#2991),
+    // matching what clicking the row does.
+    if (opensInCodeViewer(fileName)) {
+      _goToEditor(filePath, AppRoutes.codeViewerPath(filePath));
+      return;
+    }
+
     switch (kind) {
       case FileKind.qdoc:
         _goToEditor(filePath, AppRoutes.docFile(filePath), extra: justCreated);
@@ -1969,8 +1981,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         );
         return;
 
-      // Source and config files open in the same plaintext editor for now —
-      // no syntax highlighting yet.
+      // Prose opens in the plaintext editor.
       case FileKind.text || FileKind.code:
         // Matches what clicking the row does — without this a deep link to a
         // file the browser opens happily reports "No supported editor".
