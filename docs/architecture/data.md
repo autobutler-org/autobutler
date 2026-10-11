@@ -82,12 +82,13 @@ and re-runs the migrations in one transaction and keeps the same tables SQLite's
   ids can have gaps where SQLite's would not.
 - **A failed statement ends its transaction.** SQLite carries on to the next statement; PostgreSQL refuses every
   one after it. Code inside `db.InTx` returns on an error and never continues past one.
-- **There is no single writer.** SQLite lets one transaction write at a time, which is what makes the
-  count-then-change guards exact: the last active admin (`authutil.ensureAnotherActiveAdmin`), the last holder
-  of a channel's `manage_channel` (`chatutil.keepingAnOwner`), and a job lane's limit (`ClaimJob`). PostgreSQL at
-  its default `READ COMMITTED` lets two transactions count before either commits, so two requests at the same
-  moment can each see the other as the survivor. That is open, and is tracked with the rest of the
-  multi-instance work in #2964.
+- **There is no single writer.** SQLite lets one transaction write at a time, which is what makes a
+  count-then-change guard exact. PostgreSQL at its default `READ COMMITTED` lets two transactions count before
+  either commits, so two requests at the same moment can each see the other as the survivor. The last active
+  admin (`authutil.guardingAdmins`) and the last holder of a channel's `manage_channel`
+  (`chatutil.keepingAnOwner`) take a row lock as their transaction's first statement, a no-op `UPDATE`, so the
+  second request waits for the first and counts what it left (#3171). A job lane's limit (`ClaimJob`) is still
+  open, and is tracked with the rest of the multi-instance work in #2964.
 
 ## Main schema
 

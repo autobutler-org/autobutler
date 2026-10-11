@@ -67,7 +67,8 @@ raw `?`-placeholder SQL in `pkg/vfs/sqlite_metadata_store.go` and `pkg/vfs/dbvfs
 `pkg/backup/chat_export.go:141`. One PostgreSQL trap is behavioral: the count-then-change guards that keep one
 admin and one channel owner (`pkg/util/authutil/helpers.go:27-51`, `pkg/util/chatutil/helpers.go:297-332`) run
 in a default-isolation transaction. SQLite's single writer makes them correct; under `READ COMMITTED` two
-concurrent demotions can each see the other as the survivor.
+concurrent demotions can each see the other as the survivor. Fixed in #3171: each transaction takes a row lock
+before it counts.
 
 Every `sql.Open` outside tests: `internal/db/connect.go:23` (main), `:46` (vault file);
 `pkg/backup/vault_export.go:53`, `pkg/backup/vault_import.go:25`, `pkg/backup/chat_export.go:72` (backup

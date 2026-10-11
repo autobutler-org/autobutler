@@ -139,7 +139,7 @@ func TestDemoteFromAdmin_CountsOnlyActiveAdmins(t *testing.T) {
 	mkUser(t, q, "sleeping", true)
 	setStatus(t, q, "sleeping", authutil.StatusActive, authutil.StatusDisabled)
 
-	if err := authutil.DemoteFromAdmin(ctx, q, "boss"); !errors.Is(err, authutil.ErrLastAdmin) {
+	if err := authutil.DemoteFromAdmin(ctx, database, "boss"); !errors.Is(err, authutil.ErrLastAdmin) {
 		t.Errorf("demote the only active admin = %v, want ErrLastAdmin", err)
 	}
 }

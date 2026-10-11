@@ -39,6 +39,23 @@ func ensureAnotherActiveAdmin(ctx context.Context, queries db.Querier, target db
 	return nil
 }
 
+// guardingAdmins runs change in one transaction that locks the active admin
+// rows before anything else, so two changes that could each take away an
+// admin run one after the other and ensureAnotherActiveAdmin in the second
+// counts what the first left (#3171). Every caller of
+// ensureAnotherActiveAdmin runs inside it.
+func guardingAdmins(ctx context.Context, database *db.DatabaseSqlc, change func(db.Querier) error) error {
+	if database == nil {
+		return errors.New("database not initialized")
+	}
+	return db.InTx(ctx, database.Db, func(q db.Querier) error {
+		if err := q.LockActiveAdmins(ctx); err != nil {
+			return fmt.Errorf("lock admins: %w", err)
+		}
+		return change(q)
+	})
+}
+
 // usernamePattern is what a new account's username must match. A username
 // also names a folder and a URL path segment, so it cannot hold a slash, start
 // with a dot, or be ".." (#1908). Accounts created before the rule keep theirs.

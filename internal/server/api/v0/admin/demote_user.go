@@ -41,7 +41,7 @@ func demoteUser(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(errors.New("database unavailable"))
 	}
 
-	if err := authutil.DemoteFromAdmin(c.Request.Context(), database.Queries, target); err != nil {
+	if err := authutil.DemoteFromAdmin(c.Request.Context(), database, target); err != nil {
 		return accountErrorResponse(err)
 	}
 	if bus := deps.EventBus(); bus != nil {

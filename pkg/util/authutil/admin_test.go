@@ -107,7 +107,7 @@ func TestDemoteFromAdmin_RefusesLastAdmin(t *testing.T) {
 	ctx := context.Background()
 	mkUser(t, q, "only", true)
 
-	err := authutil.DemoteFromAdmin(ctx, q, "only")
+	err := authutil.DemoteFromAdmin(ctx, database, "only")
 	if err == nil {
 		t.Fatal("expected demoting the last admin to fail")
 	}
@@ -128,7 +128,7 @@ func TestDemoteFromAdmin_AllowsWhenAnotherAdminExists(t *testing.T) {
 	mkUser(t, q, "a", true)
 	mkUser(t, q, "b", true)
 
-	if err := authutil.DemoteFromAdmin(ctx, q, "a"); err != nil {
+	if err := authutil.DemoteFromAdmin(ctx, database, "a"); err != nil {
 		t.Fatalf("demote with 2 admins should succeed: %v", err)
 	}
 	isAdmin, err := authutil.IsAdmin(ctx, q, "a")
@@ -159,10 +159,10 @@ func TestDemoteFromAdmin_GuardChecksTheTarget(t *testing.T) {
 	mkUser(t, q, "boss", true)
 	mkUser(t, q, "peon", false)
 
-	if err := authutil.DemoteFromAdmin(ctx, q, "peon"); err != nil {
+	if err := authutil.DemoteFromAdmin(ctx, database, "peon"); err != nil {
 		t.Errorf("demote a non-admin beside one admin = %v, want nil", err)
 	}
-	if err := authutil.DemoteFromAdmin(ctx, q, "boss"); !errors.Is(err, authutil.ErrLastAdmin) {
+	if err := authutil.DemoteFromAdmin(ctx, database, "boss"); !errors.Is(err, authutil.ErrLastAdmin) {
 		t.Errorf("demote the only admin = %v, want ErrLastAdmin", err)
 	}
 
@@ -185,7 +185,7 @@ func TestDemoteFromAdmin_UnknownUserSucceedsSilently(t *testing.T) {
 	mkUser(t, q, "boss", true)
 	mkUser(t, q, "second", true)
 
-	err := authutil.DemoteFromAdmin(ctx, q, "does-not-exist")
+	err := authutil.DemoteFromAdmin(ctx, database, "does-not-exist")
 	if err != nil {
 		t.Logf("demote of unknown user returned: %v", err)
 	}
