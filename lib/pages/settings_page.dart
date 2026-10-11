@@ -125,7 +125,7 @@ String shortGitSha(String commit) => (commit.isEmpty || commit == 'NOCOMMIT')
 /// Network (remote access, connected devices, SSH), Updates (the Quark's
 /// version, updates, repair) and About (the app's version, help and terms,
 /// the software bill of materials), and Features (a switch per beta feature
-/// flag, #2542). SSH access, updating, automatic updates, repair, reset and
+/// flag, #2542). SSH access, updating, repair, reset and
 /// the Features tab are admin-only, and Features shows only while the Quark
 /// has betas.
 ///
@@ -178,10 +178,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoadingVersionInfo = false;
   bool _isUpdatingVersion = false;
   String? _versionLoadError;
-
-  bool _autoUpdate = false;
-  String? _autoUpdateError;
-  bool _isLoadingAutoUpdate = false;
 
   bool _highContrast = false;
   bool _demoMode = false;
@@ -266,7 +262,6 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {});
     _loadAppVersion();
     _loadVersionInfo();
-    _loadSettings();
     _loadSbom();
     _loadDevices();
     _loadRemoteAccess();
@@ -418,31 +413,6 @@ class _SettingsPageState extends State<SettingsPage> {
       _sbomError = errors.isEmpty ? null : errors.join('\n');
       _isLoadingSbom = false;
     });
-  }
-
-  Future<void> _loadSettings() async {
-    if (AppSettings.instance.activeHost == null) return;
-    setState(() {
-      _isLoadingAutoUpdate = true;
-    });
-    try {
-      final autoUpdate = await SettingsService.getAutoUpdate();
-      if (!mounted) return;
-      setState(() {
-        _autoUpdate = autoUpdate;
-        _autoUpdateError = null;
-        _isLoadingAutoUpdate = false;
-      });
-      _noteReachability(null);
-    } catch (e) {
-      debugPrint('[settings_page.dart] Error loading settings: $e');
-      if (!mounted) return;
-      setState(() {
-        _autoUpdateError = Errors.message(e, 'load the setting');
-        _isLoadingAutoUpdate = false;
-      });
-      _noteReachability(e);
-    }
   }
 
   Future<void> _loadVersionInfo() async {
@@ -693,10 +663,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   setState(() => _selectedUpdateVersion = v),
               onUpdate: _performUpdate,
               onOpenReleaseNotes: _openReleaseNotes,
-              autoUpdate: _autoUpdate,
-              isLoadingAutoUpdate: _isLoadingAutoUpdate,
-              autoUpdateError: _autoUpdateError,
-              onAutoUpdateChanged: _setAutoUpdate,
             ),
           ),
           QuarkTab(
@@ -778,23 +744,6 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(content: Text(Errors.message(e, action))),
-      );
-    }
-  }
-
-  /// Saves the automatic-updates switch, flipping it back if the Quark
-  /// refuses.
-  Future<void> _setAutoUpdate(bool enabled) async {
-    setState(() => _autoUpdate = enabled);
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await SettingsService.setAutoUpdate(enabled);
-    } catch (e) {
-      debugPrint('[settings_page.dart] Error saving auto-update: $e');
-      if (!mounted) return;
-      setState(() => _autoUpdate = !enabled);
-      messenger.showSnackBar(
-        SnackBar(content: Text(Errors.message(e, 'save the setting'))),
       );
     }
   }

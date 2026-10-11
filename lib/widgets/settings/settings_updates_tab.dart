@@ -4,8 +4,9 @@ import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 /// The Updates tab of Settings (#2350): the Quark's installed version, and,
-/// for an admin, updating it, automatic updates and repairing the
-/// installation.
+/// for an admin, updating it and repairing the installation. Updates are
+/// manual and the tab says so: the automatic updates switch it had stored a
+/// setting nothing read (#2792).
 ///
 /// Called Updates rather than System, which names the Health, Storage and
 /// Jobs page (#2351). The page owns the values; this tab renders them and
@@ -26,10 +27,6 @@ class SettingsUpdatesTab extends StatelessWidget {
     required this.onSelectVersion,
     required this.onUpdate,
     required this.onOpenReleaseNotes,
-    required this.autoUpdate,
-    required this.isLoadingAutoUpdate,
-    required this.autoUpdateError,
-    required this.onAutoUpdateChanged,
     this.header,
     super.key,
   });
@@ -73,18 +70,6 @@ class SettingsUpdatesTab extends StatelessWidget {
   /// Opens release notes at the given URL.
   final ValueChanged<String> onOpenReleaseNotes;
 
-  /// Whether the Quark updates itself daily.
-  final bool autoUpdate;
-
-  /// Whether that setting is being read.
-  final bool isLoadingAutoUpdate;
-
-  /// Why that setting could not be read, or null.
-  final String? autoUpdateError;
-
-  /// Called when the user flips automatic updates.
-  final ValueChanged<bool> onAutoUpdateChanged;
-
   /// Shown above the tab's content and scrolled with it, such as the
   /// page's disconnected banner; null shows nothing.
   final Widget? header;
@@ -93,9 +78,6 @@ class SettingsUpdatesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final error = Theme.of(context).colorScheme.error;
     final linkInset = QuarkTokens.of(context).spacingSm;
-    const autoUpdateHint = Text(
-      'Quark will check for and install updates daily',
-    );
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -192,35 +174,20 @@ class SettingsUpdatesTab extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (hasHost) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Updates are manual. Quark does not update itself: an '
+                    'admin starts each one.',
+                    key: const ValueKey('updates_manual_note'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ],
             ),
           ),
         ),
         if (hasHost && isAdmin) ...[
-          const SizedBox(height: 16),
-          Card(
-            child: isLoadingAutoUpdate
-                ? const ListTile(
-                    title: Text('Automatic updates'),
-                    subtitle: autoUpdateHint,
-                    trailing: QuarkLoader(size: 24),
-                  )
-                : SwitchListTile(
-                    title: const Text('Automatic updates'),
-                    subtitle: autoUpdateError != null
-                        ? Text(
-                            disconnected
-                                ? quarkDisconnectedShort
-                                : autoUpdateError!,
-                            style: TextStyle(color: error),
-                          )
-                        : autoUpdateHint,
-                    value: autoUpdate,
-                    onChanged: autoUpdateError != null
-                        ? null
-                        : onAutoUpdateChanged,
-                  ),
-          ),
           const SizedBox(height: 24),
           // Renders nothing unless this Quark can repair itself (#2121).
           const RepairInstallationSection(),

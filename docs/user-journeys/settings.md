@@ -10,7 +10,7 @@ unknown tab lands on General too. Admins get a sixth tab, Features, while the Qu
 | **General** | `/settings/general` | Backend hosts, theme, left-handed mode, theme color, the view Calendar opens on ([JN-CA-011](calendar.md)), auto-refresh interval, demo mode, a link to the drives |
 | **Account** | `/settings/account` | Sign out, your sessions, then an **Account and data** row at the bottom that leads to Delete account and (admins) Reset this Quark |
 | **Network** | `/settings/network` | Remote access, connected devices, SSH access (admins) |
-| **Updates** | `/settings/updates` | The Quark's version, updates and automatic updates (admins), Repair installation (admins) |
+| **Updates** | `/settings/updates` | The Quark's version, a note that updates are manual, updates (admins), Repair installation (admins) |
 | **About** | `/settings/about` | The app's version, Help & Support, Terms of Service, the software bill of materials |
 | **Features** | `/settings/features` | A switch per beta feature, such as Chat (admins, only while a beta exists) |
 
@@ -176,19 +176,10 @@ unknown tab lands on General too. Admins get a sixth tab, Features, while the Qu
 
 ---
 
-### JN-ST-010: Enable auto-update
+### JN-ST-010: Enable auto-update (retired)
 
-**Preconditions:** User is signed in as an admin and on the Updates tab of Settings (`/settings/updates`).
-
-**Steps:**
-
-1. Find the auto-update toggle.
-2. Enable it.
-
-**Expected result:**
-
-- Auto-update is enabled on the quark.
-- Toggle reflects the enabled state.
+Retired by #2792: the switch stored a setting nothing read, so a Quark never updated itself. The Updates tab now
+says updates are manual, and an admin starts each one (JN-ST-009). Designed automatic updates are tracked in #3113.
 
 ---
 

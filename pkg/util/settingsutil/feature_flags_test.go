@@ -17,7 +17,7 @@ func TestFeatureFlag_UnsetAndRoundTrip(t *testing.T) {
 	if _, set, err := settingsutil.GetFeatureFlag("chat"); err != nil || set {
 		t.Fatalf("GetFeatureFlag with no file: set=%v err=%v; want unset", set, err)
 	}
-	if err := settingsutil.SetAutoUpdate(true); err != nil {
+	if err := settingsutil.SetRemoteAccess(true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -30,7 +30,7 @@ func TestFeatureFlag_UnsetAndRoundTrip(t *testing.T) {
 		if err != nil || !set || got != enabled {
 			t.Errorf("after reload: %v set=%v err=%v; want %v", got, set, err, enabled)
 		}
-		if !settingsutil.GetAutoUpdate() {
+		if !settingsutil.GetRemoteAccess() {
 			t.Error("setting a flag lost another setting")
 		}
 	}
@@ -43,9 +43,9 @@ func TestMigrate_ChatEnabledMovesToFeatureFlags(t *testing.T) {
 		file      string
 		want, set bool
 	}{
-		{`{"autoUpdate":true,"chatEnabled":false}`, false, true},
-		{`{"autoUpdate":true,"chatEnabled":true}`, true, true},
-		{`{"autoUpdate":true}`, false, false},
+		{`{"remoteAccessEnabled":true,"chatEnabled":false}`, false, true},
+		{`{"remoteAccessEnabled":true,"chatEnabled":true}`, true, true},
+		{`{"remoteAccessEnabled":true}`, false, false},
 	} {
 		path := settingsFile(t)
 		if err := os.WriteFile(path, []byte(tc.file), 0600); err != nil {
@@ -56,8 +56,8 @@ func TestMigrate_ChatEnabledMovesToFeatureFlags(t *testing.T) {
 		if err != nil || set != tc.set || got != tc.want {
 			t.Errorf("%s: chat=%v set=%v err=%v; want %v set=%v", tc.file, got, set, err, tc.want, tc.set)
 		}
-		if !settingsutil.GetAutoUpdate() {
-			t.Errorf("%s: autoUpdate lost", tc.file)
+		if !settingsutil.GetRemoteAccess() {
+			t.Errorf("%s: remoteAccessEnabled lost", tc.file)
 		}
 		if _, err := settingsutil.QueriesForTesting().GetSetting(t.Context(), "chatEnabled"); !errors.Is(err, sql.ErrNoRows) {
 			t.Errorf("%s: chatEnabled survived the migration (err=%v)", tc.file, err)

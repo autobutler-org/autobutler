@@ -61,7 +61,7 @@ func TestThemeColor_RoundTrip(t *testing.T) {
 	if got := settingsutil.GetThemeColor(); got != "" {
 		t.Errorf("theme color with no settings file = %q, want empty", got)
 	}
-	if err := settingsutil.SetAutoUpdate(true); err != nil {
+	if err := settingsutil.SetRemoteAccess(true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -74,7 +74,7 @@ func TestThemeColor_RoundTrip(t *testing.T) {
 			t.Errorf("theme color after a reload = %q, want %q", got, themeColor)
 		}
 	}
-	if !settingsutil.GetAutoUpdate() {
+	if !settingsutil.GetRemoteAccess() {
 		t.Error("setting the theme color lost another setting")
 	}
 

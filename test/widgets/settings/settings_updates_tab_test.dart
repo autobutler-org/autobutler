@@ -5,10 +5,29 @@ import 'package:quark_widgets/quark_widgets.dart';
 
 import '../../support/text_scale.dart';
 
-/// #2605, #2606: the Updates tab, with an update on offer, survives 200% text
+/// #2792: the Updates tab says updates are manual and has no automatic
+/// updates switch. #2605, #2606: the tab, with an update on offer, survives 200% text
 /// and every control on it, the release notes link included, is a 48dp
 /// target a screen reader can name.
 void main() {
+  testWidgets('says updates are manual and offers no automatic switch', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: QuarkTheme.from(QuarkTokens.dark, Brightness.dark),
+        home: Scaffold(body: updatesTab()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('updates_manual_note')), findsOneWidget);
+    expect(find.textContaining('Updates are manual'), findsOneWidget);
+    expect(find.byType(Switch), findsNothing);
+    expect(find.textContaining('Automatic updates'), findsNothing);
+    expect(find.text('Start update'), findsOneWidget);
+  });
+
   testLargeText('the tab with an update on offer lays out', (tester, _) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -79,8 +98,4 @@ SettingsUpdatesTab updatesTab() => SettingsUpdatesTab(
   onSelectVersion: (_) {},
   onUpdate: () {},
   onOpenReleaseNotes: (_) {},
-  autoUpdate: true,
-  isLoadingAutoUpdate: false,
-  autoUpdateError: null,
-  onAutoUpdateChanged: (_) {},
 );

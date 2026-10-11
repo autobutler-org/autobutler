@@ -35,8 +35,7 @@ type Settings struct {
 	// SettingsVersion is how many of the package's migrations settings.json
 	// had been through. The import runs the rest, so Load always reports the
 	// current count; a change to stored settings is now a database migration.
-	SettingsVersion int  `json:"settingsVersion"`
-	AutoUpdate      bool `json:"autoUpdate"`
+	SettingsVersion int `json:"settingsVersion"`
 	// RemoteAccessEnabled is the user's choice. The node's credential is its
 	// tsnet state dir, not a key kept here (#1876): files written before then
 	// still carry a remoteAccessAuthKey, which the import leaves behind.
@@ -133,20 +132,6 @@ func Load() (*Settings, error) {
 	}
 	s.SettingsVersion = len(migrations)
 	return s, nil
-}
-
-// GetAutoUpdate returns whether automatic updates are enabled.
-func GetAutoUpdate() bool {
-	s, err := Load()
-	if err != nil {
-		return false
-	}
-	return s.AutoUpdate
-}
-
-// SetAutoUpdate sets the auto-update preference and persists it.
-func SetAutoUpdate(enabled bool) error {
-	return set("autoUpdate", enabled)
 }
 
 // GetRemoteAccess returns whether remote access is enabled.

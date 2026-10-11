@@ -13,7 +13,6 @@ void main() {
   SettingsUpdatesTab updatesTab({
     bool isLoadingVersion = false,
     bool isUpdating = false,
-    bool isLoadingAutoUpdate = false,
   }) => SettingsUpdatesTab(
     hasHost: true,
     isAdmin: true,
@@ -28,10 +27,6 @@ void main() {
     onSelectVersion: (_) {},
     onUpdate: () {},
     onOpenReleaseNotes: (_) {},
-    autoUpdate: true,
-    isLoadingAutoUpdate: isLoadingAutoUpdate,
-    autoUpdateError: null,
-    onAutoUpdateChanged: (_) {},
   );
 
   RemoteAccessCard remoteAccess({
@@ -54,7 +49,6 @@ void main() {
   final busy = <String, Widget>{
     'updates, reading the version': updatesTab(isLoadingVersion: true),
     'updates, updating': updatesTab(isUpdating: true),
-    'updates, reading automatic updates': updatesTab(isLoadingAutoUpdate: true),
     'remote access, reading': remoteAccess(isLoading: true),
     'remote access, enabling': remoteAccess(
       status: const RemoteAccessStatus(enabled: false),
