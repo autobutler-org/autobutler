@@ -346,6 +346,14 @@ FLUTTER_BUILD_MODE ?= debug
 build/frontend/android: generate/frontend/sbom ## Build Android app
 	flutter build apk --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
 
+# Release by default, unlike the mobile targets: a debug Linux bundle is only useful to
+# `flutter run`, and the bundle this produces is the one a desktop user runs. A
+# FLUTTER_BUILD_MODE on the command line still wins over this target-specific value.
+.PHONY: build/frontend/linux
+build/frontend/linux: FLUTTER_BUILD_MODE = release
+build/frontend/linux: generate/frontend/sbom ## Build the Linux desktop bundle (build/linux/x64/<mode>/bundle)
+	flutter build linux --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
+
 .PHONY: build/frontend/ios
 build/frontend/ios: generate/frontend/sbom ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign \
