@@ -434,7 +434,7 @@ void main() {
           if (context == null) continue;
           focused.add(
             context.findAncestorWidgetOfExactType<AlbumTreeTile>()?.key ??
-                context.findAncestorWidgetOfExactType<InkWell>()?.key ??
+                context.findAncestorWidgetOfExactType<TextButton>()?.key ??
                 context.findAncestorWidgetOfExactType<IconButton>()?.key,
           );
         }

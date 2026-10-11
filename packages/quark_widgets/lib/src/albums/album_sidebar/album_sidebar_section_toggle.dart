@@ -54,17 +54,24 @@ class AlbumSidebarSectionToggle extends StatelessWidget {
     );
     if (onToggle == null) return label;
 
+    // A Material button, like the sort and create buttons beside it, so its
+    // tap target follows the theme's density the way theirs do and the
+    // header stays one height.
     return Tooltip(
       message: isExpanded ? 'Collapse albums' : 'Expand albums',
-      child: Semantics(
-        button: true,
-        expanded: isExpanded,
-        child: InkWell(
-          key: const ValueKey('album_section_toggle'),
-          borderRadius: BorderRadius.circular(tokens.radiusSm),
-          onTap: onToggle,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
+      child: MergeSemantics(
+        child: Semantics(
+          expanded: isExpanded,
+          child: TextButton(
+            key: const ValueKey('album_section_toggle'),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(24, 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+              ),
+            ),
+            onPressed: onToggle,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
