@@ -269,8 +269,16 @@ const List<String> recoveryWords = [
   'coin',
 ];
 
-/// How many words a recovery phrase has: 48 bits from [recoveryWords].
-const int recoveryPhraseWords = 6;
+/// How many words a new recovery phrase has: 16 words of 8 bits each from
+/// [recoveryWords], 128 bits (#2783).
+///
+/// Only generation reads this. Phrases made before #2783 have
+/// [legacyRecoveryPhraseWords] words and keep working: nothing checks a typed
+/// phrase's length, and the keys are derived from whatever was typed.
+const int recoveryPhraseWords = 16;
+
+/// How many words a phrase made before #2783 has: 48 bits.
+const int legacyRecoveryPhraseWords = 6;
 
 /// The phrase as the Quark compares it: trimmed and lowercased, as
 /// `authutil.NormalizeRecoveryPhrase` does, so a phrase typed with capitals

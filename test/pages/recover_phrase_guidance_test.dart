@@ -20,7 +20,7 @@ void main() {
       expect(
         find.descendant(
           of: find.widgetWithText(TextFormField, 'Recovery phrase'),
-          matching: find.textContaining('6 words Quark showed once'),
+          matching: find.textContaining('The words Quark showed once'),
         ),
         findsOneWidget,
       );

@@ -447,7 +447,7 @@ void main() {
       expect(put.method, 'PUT');
       expect(put.headers['Authorization'], 'Bearer session');
       final phrase = result.recoveryPhrase!;
-      expect(phrase.split('-'), hasLength(6));
+      expect(phrase.split('-'), hasLength(16));
       // The fake chat step has no keys to send, so none are.
       expect(jsonDecode(put.body), {
         'password': authKey,
@@ -683,7 +683,7 @@ void main() {
       final result = await recover();
 
       final phrase = result.recoveryPhrase!;
-      expect(phrase.split('-'), hasLength(6));
+      expect(phrase.split('-'), hasLength(16));
       expect(quark.lastBody.keys, {
         'username',
         'recoveryPhrase',
@@ -735,7 +735,7 @@ void main() {
         'authKey': authKey,
         'recoveryKey': await testRecoveryKey(result.recoveryPhrase),
       });
-      expect(result.recoveryPhrase.split('-'), hasLength(6));
+      expect(result.recoveryPhrase.split('-'), hasLength(16));
       expect(quark.sent.single.body, isNot(contains(result.recoveryPhrase)));
       expect(quark.sent.single.body, isNot(contains(_password)));
       await pumpEventQueue();
@@ -756,7 +756,7 @@ void main() {
         'authKey': authKey,
         'recoveryKey': await testRecoveryKey(phrase),
       });
-      expect(phrase.split('-'), hasLength(6));
+      expect(phrase.split('-'), hasLength(16));
       expect(quark.sent.single.body, isNot(contains(phrase)));
     });
 

@@ -16,7 +16,7 @@ Covers first-boot setup, login, logout, and password recovery.
 4. Enter a password.
 5. Re-enter the password in the confirm field.
 6. Tap **Create account**.
-7. A recovery phrase is displayed (6 words).
+7. A recovery phrase is displayed (16 words).
 8. Copy or write down the phrase.
 9. Check the acknowledgement checkbox ("I've saved my recovery phrase").
 10. Tap **Continue**.

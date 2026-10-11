@@ -147,7 +147,7 @@ void main() {
       expect(request.url.path, '/api/v0/auth/request-account');
       // #2430: the auth key derived from the password, never the password,
       // and the recovery key of a phrase the app made, never the phrase.
-      expect(phrase.split('-'), hasLength(6));
+      expect(phrase.split('-'), hasLength(16));
       expect(jsonDecode(request.body), {
         'username': 'bob',
         'authKey': await testAuthKey('hunter2hunter2'),
