@@ -152,7 +152,7 @@ void main() {
     final step = tester.widget<RecoveryPhraseStep>(
       find.byType(RecoveryPhraseStep),
     );
-    expect(step.phrase.split('-'), hasLength(6));
+    expect(step.phrase.split('-'), hasLength(16));
     expect(settings.sessionToken, isNull);
     expect(find.text('files'), findsNothing);
 

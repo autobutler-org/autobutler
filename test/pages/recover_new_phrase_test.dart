@@ -121,7 +121,7 @@ void main() {
       final step = tester.widget<RecoveryPhraseStep>(
         find.byType(RecoveryPhraseStep),
       );
-      expect(step.phrase.split('-'), hasLength(6));
+      expect(step.phrase.split('-'), hasLength(16));
       expect(
         tester.widget<BackToSignIn>(find.byType(BackToSignIn)).enabled,
         isFalse,

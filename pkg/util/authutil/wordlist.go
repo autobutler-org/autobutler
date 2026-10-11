@@ -5,6 +5,10 @@ package authutil
 // distinct, so each word carries 8 bits and a draw is unbiased. TestWordlist
 // enforces both; it held 232 while its comments claimed 256 (#2153).
 //
+// A phrase is 16 of these words, 128 bits (#2783); one made before that is 6
+// words, 48 bits, and still recovers its account, because the Quark never
+// checks a phrase's length or its words: it compares a key derived from it.
+//
 // The Quark no longer makes phrases: the app does, from its copy in
 // lib/utils/recovery_phrase.dart, which test/utils/recovery_phrase_test.dart
 // checks against this one (#2430). This stays the canonical list.

@@ -113,8 +113,12 @@ void main() {
 
     // Computed the same way as the auth key's vector above, with info
     // "recovery-auth" and "recovery-wrap". The Quark stores only a hash of
-    // the recovery key, so accounts depend on this never changing.
-    test('the construction is pinned by a fixed vector', () {
+    // the recovery key, so accounts depend on this never changing. The phrase
+    // is six words, the length every phrase had before #2783: those accounts
+    // recover with the keys this derives, so a longer new phrase must not
+    // change what a short one derives.
+    test('the construction is pinned by a fixed vector, a legacy six-word '
+        'phrase', () {
       final keys = crypto.deriveRecoveryKeys(
         'abandon-ability-able-about-above-absent',
         salt,

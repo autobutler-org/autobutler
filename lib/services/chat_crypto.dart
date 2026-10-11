@@ -123,7 +123,7 @@ class ChatCrypto {
 
   /// A new recovery phrase: [recoveryPhraseWords] words of [recoveryWords]
   /// joined by hyphens, the Quark's own format. The list has 256 words, so
-  /// each random byte picks one with no bias.
+  /// each random byte picks one with no bias: 16 words, 128 bits (#2783).
   String generateRecoveryPhrase() => [
     for (final byte in sodium.randombytes.buf(recoveryPhraseWords))
       recoveryWords[byte],

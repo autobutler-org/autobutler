@@ -192,12 +192,12 @@ class _RecoverPageState extends State<RecoverPage> {
                               controller: _phraseController,
                               decoration: const InputDecoration(
                                 labelText: 'Recovery phrase',
-                                hintText: 'word-word-word-word-word-word',
+                                hintText: 'word-word-word-…',
                                 // The phrase was last seen at setup, an account
                                 // request, or a first sign-in, possibly months ago
                                 // (#2034).
                                 helperText:
-                                    'The 6 words Quark showed once when your account '
+                                    'The words Quark showed once when your account '
                                     'was set up, joined by hyphens, in the same order.',
                                 helperMaxLines: 3,
                                 border: OutlineInputBorder(),
