@@ -181,59 +181,55 @@ func ChangePassword(ctx context.Context, params ChangePasswordParams) (ChangePas
 
 	// Re-encrypt all entries inside a transaction so a partial failure
 	// doesn't leave some entries on the old key and some on the new.
-	tx, err := params.VaultDB.Db.BeginTx(ctx, nil)
-	if err != nil {
-		return ChangePasswordResult{}, fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	qtx := params.VaultDB.Queries.WithTx(tx)
-
-	entries, err := qtx.ListAllVaultEntriesForReEncrypt(ctx)
-	if err != nil {
-		return ChangePasswordResult{}, fmt.Errorf("list entries for re-encrypt: %w", err)
-	}
-
-	for _, entry := range entries {
-		plaintext, err := vaultcrypto.Decrypt(params.OldKey, entry.Ciphertext, entry.Nonce)
+	var entries []db.ListAllVaultEntriesForReEncryptRow
+	err = db.InTx(ctx, params.VaultDB.Db, func(qtx *db.Queries) error {
+		var err error
+		entries, err = qtx.ListAllVaultEntriesForReEncrypt(ctx)
 		if err != nil {
-			return ChangePasswordResult{}, fmt.Errorf("decrypt entry %d: %w", entry.ID, err)
+			return fmt.Errorf("list entries for re-encrypt: %w", err)
 		}
 
-		var check json.RawMessage
-		if err := json.Unmarshal(plaintext, &check); err != nil {
-			return ChangePasswordResult{}, fmt.Errorf("corrupt entry %d: %w", entry.ID, err)
+		for _, entry := range entries {
+			plaintext, err := vaultcrypto.Decrypt(params.OldKey, entry.Ciphertext, entry.Nonce)
+			if err != nil {
+				return fmt.Errorf("decrypt entry %d: %w", entry.ID, err)
+			}
+
+			var check json.RawMessage
+			if err := json.Unmarshal(plaintext, &check); err != nil {
+				return fmt.Errorf("corrupt entry %d: %w", entry.ID, err)
+			}
+
+			newCiphertext, newNonce, err := vaultcrypto.Encrypt(newKey, plaintext)
+			if err != nil {
+				return fmt.Errorf("re-encrypt entry %d: %w", entry.ID, err)
+			}
+
+			if err := qtx.UpdateVaultEntryCiphertext(ctx, db.UpdateVaultEntryCiphertextParams{
+				Ciphertext: newCiphertext,
+				Nonce:      newNonce,
+				ID:         entry.ID,
+			}); err != nil {
+				return fmt.Errorf("save re-encrypted entry %d: %w", entry.ID, err)
+			}
 		}
 
-		newCiphertext, newNonce, err := vaultcrypto.Encrypt(newKey, plaintext)
+		newVerBlob, newVerNonce, err := vaultcrypto.MakeVerificationBlob(newKey)
 		if err != nil {
-			return ChangePasswordResult{}, fmt.Errorf("re-encrypt entry %d: %w", entry.ID, err)
+			return fmt.Errorf("create verification blob: %w", err)
 		}
 
-		if err := qtx.UpdateVaultEntryCiphertext(ctx, db.UpdateVaultEntryCiphertextParams{
-			Ciphertext: newCiphertext,
-			Nonce:      newNonce,
-			ID:         entry.ID,
+		if err := qtx.UpdateVaultConfigPassword(ctx, db.UpdateVaultConfigPasswordParams{
+			Salt:              newSalt,
+			VerificationBlob:  newVerBlob,
+			VerificationNonce: newVerNonce,
 		}); err != nil {
-			return ChangePasswordResult{}, fmt.Errorf("save re-encrypted entry %d: %w", entry.ID, err)
+			return fmt.Errorf("update vault config: %w", err)
 		}
-	}
-
-	newVerBlob, newVerNonce, err := vaultcrypto.MakeVerificationBlob(newKey)
+		return nil
+	})
 	if err != nil {
-		return ChangePasswordResult{}, fmt.Errorf("create verification blob: %w", err)
-	}
-
-	if err := qtx.UpdateVaultConfigPassword(ctx, db.UpdateVaultConfigPasswordParams{
-		Salt:              newSalt,
-		VerificationBlob:  newVerBlob,
-		VerificationNonce: newVerNonce,
-	}); err != nil {
-		return ChangePasswordResult{}, fmt.Errorf("update vault config: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return ChangePasswordResult{}, fmt.Errorf("commit tx: %w", err)
+		return ChangePasswordResult{}, err
 	}
 
 	// Re-unlock with the new key.

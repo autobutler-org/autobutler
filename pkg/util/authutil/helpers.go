@@ -22,20 +22,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
-// inTx runs fn against queries bound to one transaction, committing only if fn
-// succeeds.
-func inTx(ctx context.Context, database *db.DatabaseSqlc, fn func(*db.Queries) error) error {
-	tx, err := database.Db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	if err := fn(database.Queries.WithTx(tx)); err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-	return tx.Commit()
-}
-
 // ensureAnotherActiveAdmin returns ErrLastAdmin when target is the only active
 // admin, so demoting, disabling or deleting it would leave the Quark with none
 // (#1909). Any other target passes, including a non-admin or a disabled admin.

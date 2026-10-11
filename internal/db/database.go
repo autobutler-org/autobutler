@@ -4,6 +4,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"errors"
@@ -36,6 +37,27 @@ func (d *DatabaseSqlc) Query(query string, args ...any) (*sql.Rows, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 	return d.Db.Query(query, args...)
+}
+
+// InTx runs fn against queries bound to one transaction on sqlDB, committing
+// only if fn returns nil. An error from fn rolls the transaction back and is
+// returned as is; a panic in fn rolls it back too and carries on up the stack.
+func InTx(ctx context.Context, sqlDB *sql.DB, fn func(*Queries) error) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	// Runs on every way out, a panic included. After a commit it is a no-op
+	// that returns sql.ErrTxDone.
+	defer func() { _ = tx.Rollback() }()
+
+	if err := fn(New(tx)); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
 }
 
 //go:embed migrations

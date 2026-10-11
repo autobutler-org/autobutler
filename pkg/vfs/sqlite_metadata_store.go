@@ -30,27 +30,22 @@ func (s *SQLiteMetadataStore) Set(ctx context.Context, namespace, path string, k
 		return nil
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("vfs metadata set begin tx: %w", err)
-	}
-	defer tx.Rollback() //nolint:errcheck
-
-	qtx := s.queries.WithTx(tx)
-	for key, value := range kv {
-		err := qtx.UpsertVFSMetadata(ctx, db.UpsertVFSMetadataParams{
-			Namespace: namespace,
-			Path:      path,
-			Key:       key,
-			Value:     string(value),
-		})
-		if err != nil {
-			return fmt.Errorf("vfs metadata set exec key %q: %w", key, err)
+	err := db.InTx(ctx, s.db, func(qtx *db.Queries) error {
+		for key, value := range kv {
+			err := qtx.UpsertVFSMetadata(ctx, db.UpsertVFSMetadataParams{
+				Namespace: namespace,
+				Path:      path,
+				Key:       key,
+				Value:     string(value),
+			})
+			if err != nil {
+				return fmt.Errorf("exec key %q: %w", key, err)
+			}
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("vfs metadata set commit: %w", err)
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("vfs metadata set: %w", err)
 	}
 	return nil
 }
@@ -62,22 +57,17 @@ func (s *SQLiteMetadataStore) DeleteKeys(ctx context.Context, namespace, path st
 		return nil
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("vfs metadata delete keys begin tx: %w", err)
-	}
-	defer tx.Rollback() //nolint:errcheck
-
-	qtx := s.queries.WithTx(tx)
-	for _, key := range keys {
-		err := qtx.DeleteVFSMetadataKey(ctx, db.DeleteVFSMetadataKeyParams{Namespace: namespace, Path: path, Key: key})
-		if err != nil {
-			return fmt.Errorf("vfs metadata delete key %q: %w", key, err)
+	err := db.InTx(ctx, s.db, func(qtx *db.Queries) error {
+		for _, key := range keys {
+			err := qtx.DeleteVFSMetadataKey(ctx, db.DeleteVFSMetadataKeyParams{Namespace: namespace, Path: path, Key: key})
+			if err != nil {
+				return fmt.Errorf("key %q: %w", key, err)
+			}
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("vfs metadata delete keys commit: %w", err)
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("vfs metadata delete keys: %w", err)
 	}
 	return nil
 }
