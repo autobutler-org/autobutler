@@ -22,3 +22,12 @@ query-filters:
   # no CA that could vouch for the cert. Alert #91.
   - exclude:
       id: go/disabled-certificate-check
+
+  # go/weak-sensitive-data-hashing: hashToken in pkg/util/authutil/service.go hashes
+  # session tokens and auth keys, which are 32 random bytes (the key is the output of
+  # Argon2id on the client). A slow password hash adds nothing to a high-entropy
+  # secret and Basic auth pays for the hash on every request (#2765). HashKey refuses
+  # anything not shaped like a key, so a chosen password is never stored under it;
+  # those go through bcrypt. Alert #119.
+  - exclude:
+      id: go/weak-sensitive-data-hashing
