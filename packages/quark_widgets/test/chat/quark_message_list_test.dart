@@ -1371,4 +1371,97 @@ void main() {
 
     expect(reports, isEmpty);
   });
+
+  // #2623: a mention of a member is drawn apart, and a message that mentions
+  // the reader is highlighted.
+  group('mentions', () {
+    final mentioning = [
+      msg('m3', day2.add(const Duration(minutes: 2)), body: 'plain words'),
+      msg('m2', day2.add(const Duration(minutes: 1)), body: 'ask @Bob or @zed'),
+      msg('m1', day2, author: 'bob', body: 'hey @ada, see https://a.example'),
+    ];
+
+    List<String> mentionsIn(WidgetTester tester, String id) {
+      final spans = <String>[];
+      tester
+          .widget<Text>(
+            find.descendant(
+              of: find.byKey(ValueKey('message_body_$id')),
+              matching: find.byType(Text),
+            ),
+          )
+          .textSpan
+          ?.visitChildren((span) {
+            if (span is TextSpan && span.style?.backgroundColor != null) {
+              spans.add(span.text!);
+            }
+            return true;
+          });
+      return spans;
+    }
+
+    testBothViewports('draws members mentioned and highlights the reader', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(
+        tester,
+        QuarkMessageList(
+          messages: mentioning,
+          mentionNames: const ['ada', 'bob'],
+          currentUserName: 'ada',
+          onOpenLink: (_) {},
+        ),
+        size: size,
+      );
+
+      expect(mentionsIn(tester, 'm1'), ['@ada']);
+      expect(mentionsIn(tester, 'm2'), ['@Bob']);
+      expect(mentionsIn(tester, 'm3'), isEmpty);
+      expect(find.textRange.ofSubstring('https://a.example'), findsOneWidget);
+      expect(find.byKey(const ValueKey('message_mention_m1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('message_mention_m2')), findsNothing);
+      expect(find.byKey(const ValueKey('message_mention_m3')), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('Mentions you')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testBothViewports('without names or a reader nothing is marked', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(tester, QuarkMessageList(messages: mentioning), size: size);
+      expect(mentionsIn(tester, 'm1'), isEmpty);
+      expect(find.byKey(const ValueKey('message_mention_m1')), findsNothing);
+
+      await pumpAt(
+        tester,
+        QuarkMessageList(
+          messages: mentioning,
+          mentionNames: const ['ada', 'bob'],
+        ),
+        size: size,
+      );
+      expect(mentionsIn(tester, 'm1'), ['@ada']);
+      expect(find.byKey(const ValueKey('message_mention_m1')), findsNothing);
+    });
+
+    testBothViewports('an unverified message draws no mention', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(
+        tester,
+        QuarkMessageList(
+          messages: [msg('m1', day2, body: 'hey @ada', isUnverified: true)],
+          mentionNames: const ['ada'],
+          currentUserName: 'ada',
+        ),
+        size: size,
+      );
+
+      expect(mentionsIn(tester, 'm1'), isEmpty);
+      expect(find.byKey(const ValueKey('message_mention_m1')), findsNothing);
+    });
+  });
 }

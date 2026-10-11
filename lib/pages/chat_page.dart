@@ -59,6 +59,11 @@ import 'package:url_launcher/url_launcher.dart';
 /// `delete_messages`, deletes it after confirming. A holder of `add_reactions`
 /// reacts to a message, and taps a reaction of their own to take it back.
 ///
+/// Typing `@` in the composer suggests the open channel's members, and a
+/// message that mentions the signed-in account is highlighted (#2623). A
+/// mention is the text `@name` inside the encrypted message, found on this
+/// device; the Quark is never told who was mentioned.
+///
 /// The header's search (#2429) opens a bar above the messages and narrows
 /// them to the ones containing what is typed. Chat is end-to-end encrypted,
 /// so it runs on this device over the messages already loaded and decrypted;
@@ -501,6 +506,8 @@ class _ChatPageState extends State<ChatPage>
                                     ? null
                                     : c.selectedPermissions,
                                 currentUserId: c.currentUserKey,
+                                mentionNames: c.mentionNames,
+                                currentUserName: c.currentUserName,
                                 onCopy: _copyMessage,
                                 onDelete: _deleteMessage,
                                 onReact: _react,
@@ -553,6 +560,7 @@ class _ChatPageState extends State<ChatPage>
                           isWaitingForKey: c.isWaitingForKey,
                           disabledReason: c.composerDisabledReason,
                           maxLength: ChatConfig.maxMessageLength,
+                          mentionNames: c.mentionNames,
                           onSend: c.send,
                         ),
                       ),

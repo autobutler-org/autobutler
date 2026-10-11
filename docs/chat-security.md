@@ -44,9 +44,11 @@ phraseKey    = HKDF-SHA256(phraseMaster, info = "recovery-wrap")  the phrase wra
 `recoveryKey` (#2765). `ChatCrypto.deriveAuthKeys` and `deriveRecoveryKeys` in `lib/services/chat_crypto.dart` are
 the construction, pinned by fixed test vectors.
 
-The recovery phrase is generated in the app now, not on the Quark: six words from the Quark's own 256-word list
-(`lib/utils/recovery_phrase.dart`, checked word for word against `pkg/util/authutil/wordlist.go`), one random
-byte per word. So the Quark never sees it, only `recoveryKey`.
+The recovery phrase is generated in the app now, not on the Quark: sixteen words from the Quark's own 256-word
+list (`lib/utils/recovery_phrase.dart`, checked word for word against `pkg/util/authutil/wordlist.go`), one
+random byte per word, so 16 × log2(256) = 16 × 8 = 128 bits (#2783). So the Quark never sees it, only
+`recoveryKey`. A phrase made before #2783 has six words and still works: nothing checks a phrase's length, and
+the keys come from whatever was typed.
 
 `kdf_params.alg` records which scheme each wrap is in:
 
@@ -354,10 +356,20 @@ a count too; the app hears those through the message events and adjusts, or read
 
 ### Mentions
 
-Mentions aren't built. The Quark can't read `@name` inside ciphertext, so a mention badge needs either a
-plaintext list of mentioned accounts sent beside each message, which tells the Quark who was mentioned, or
-counting on the app alone, which shows nothing until a channel is fetched and decrypted. Which of the two is an
-open decision on #2424.
+A mention (#2623) is the text `@name` inside the encrypted message, and nothing else. No list of mentioned
+accounts travels beside the ciphertext, so the Quark never learns who was mentioned, and a client that knows
+nothing of mentions shows the text as it was typed.
+
+- The app finds mentions after decrypting, by matching `@name` against the names of the channel's readers. The
+  composer suggests those names, and a message that mentions the signed-in account is highlighted.
+- A name is matched as the member list spells it now. Renaming or removing an account stops its old mentions
+  from being drawn as mentions; the text stays.
+- A mention is not authenticated beyond the message it sits in, so the limits on authorship above apply to it
+  too.
+
+A mention badge on a channel that isn't open isn't built. It needs either a plaintext list of mentioned accounts
+sent beside each message, which tells the Quark who was mentioned, or counting on the app alone, which shows
+nothing until a channel is fetched and decrypted. Which of the two is an open decision on #2424.
 
 ### Routes
 
@@ -403,8 +415,11 @@ Quark restarts.
     claim that any account is `legacy` or `legacyRecovery`, on any device and at any time, and get the password at
     that sign-in or the phrase at that recovery, that once. The password opens the password wrap and the phrase the
     phrase wrap. A key the app derived still opens nothing.
-  - **48 bits.** A phrase is six words from 256, 48 bits. Argon2id makes each guess cost about 100 ms of a fast
-    machine's time, but a Quark holding the phrase wrap can guess offline, without the sign-in rate limit.
+  - **Six-word phrases, 48 bits.** A new phrase is sixteen words from 256: 16 × log2(256) = 128 bits, out of
+    reach of guessing (#2783). A phrase made before that is six words, 6 × 8 = 48 bits, and nothing replaces it
+    until the account is recovered, which issues a new one. Argon2id makes each guess cost about 100 ms of a fast
+    machine's time, so 2^47 expected guesses are about 450,000 core-years, which parallel hardware can buy, and a
+    Quark holding the phrase wrap can guess offline, without the sign-in rate limit.
 - **Metadata.** The Quark sees who is in which channel, when each message was sent, and how big it is, and
   who reacted to which message and when.
   Admins also see the names and topics of private channels they aren't in, through the admin channel list

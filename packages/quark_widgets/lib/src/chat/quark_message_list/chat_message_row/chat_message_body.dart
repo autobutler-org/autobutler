@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/quark_tokens.dart';
+import '../../chat_mentions.dart';
 
 /// A web address found in a message: the half-open range `[start, end)` of
 /// the text it covers, and the address a tap opens.
@@ -16,6 +17,11 @@ typedef ChatMessageLink = ({int start, int end, Uri uri});
 /// nothing in a message is interpreted. With [onOpenLink] null the text is
 /// plain: no link is styled that a tap could not open.
 ///
+/// Each `@name` in [text] that names one of [mentionNames] is drawn as a
+/// mention (see [ChatMentions]), and more heavily when it names [selfName],
+/// the reader. A mention is not tappable, and one inside a web address stays
+/// part of the link.
+///
 /// A part of `ChatMessageRow`, tested through `QuarkMessageList`. Spans carry
 /// no keys, so a test or a script reaches a link by its text inside the key
 /// the row puts on this widget.
@@ -25,6 +31,8 @@ class ChatMessageBody extends StatefulWidget {
     required this.text,
     this.style,
     this.onOpenLink,
+    this.mentionNames = const [],
+    this.selfName,
     super.key,
   });
 
@@ -37,6 +45,13 @@ class ChatMessageBody extends StatefulWidget {
   /// Called with a link's address when it is tapped. Null draws [text] with
   /// no links.
   final ValueChanged<Uri>? onOpenLink;
+
+  /// The names an `@mention` in [text] can resolve to. Empty draws none.
+  final List<String> mentionNames;
+
+  /// The reader's own name, whose mentions stand out from the rest. Null
+  /// draws every mention alike.
+  final String? selfName;
 
   static final RegExp _candidate = RegExp(
     r'(?<![A-Za-z0-9.@/])(?:https?://|www\.)[^\s<>]+',
@@ -128,29 +143,56 @@ class _ChatMessageBodyState extends State<ChatMessageBody> {
   @override
   Widget build(BuildContext context) {
     final text = widget.text;
-    if (_links.isEmpty) return Text(text, style: widget.style);
+    final mentions = [
+      for (final mention in ChatMentions.mentionsIn(text, widget.mentionNames))
+        if (!_links.any((l) => mention.start < l.end && l.start < mention.end))
+          mention,
+    ];
+    if (_links.isEmpty && mentions.isEmpty) {
+      return Text(text, style: widget.style);
+    }
 
-    final primary = QuarkTokens.of(context).primary;
+    final tokens = QuarkTokens.of(context);
+    final primary = tokens.primary;
+    final selfName = widget.selfName?.toLowerCase();
     final linkStyle = TextStyle(
       color: primary,
       decoration: TextDecoration.underline,
       decorationColor: primary,
     );
+    final marks = <({int start, int end, InlineSpan span})>[
+      for (final (index, link) in _links.indexed)
+        (
+          start: link.start,
+          end: link.end,
+          span: TextSpan(
+            text: text.substring(link.start, link.end),
+            style: linkStyle,
+            mouseCursor: SystemMouseCursors.click,
+            recognizer: _recognizers[index],
+          ),
+        ),
+      for (final mention in mentions)
+        (
+          start: mention.start,
+          end: mention.end,
+          span: TextSpan(
+            text: text.substring(mention.start, mention.end),
+            style: ChatMentions.styleOf(
+              tokens,
+              isSelf: mention.name.toLowerCase() == selfName,
+            ),
+          ),
+        ),
+    ]..sort((a, b) => a.start.compareTo(b.start));
     final spans = <InlineSpan>[];
     var at = 0;
-    for (final (index, link) in _links.indexed) {
-      if (link.start > at) {
-        spans.add(TextSpan(text: text.substring(at, link.start)));
+    for (final mark in marks) {
+      if (mark.start > at) {
+        spans.add(TextSpan(text: text.substring(at, mark.start)));
       }
-      spans.add(
-        TextSpan(
-          text: text.substring(link.start, link.end),
-          style: linkStyle,
-          mouseCursor: SystemMouseCursors.click,
-          recognizer: _recognizers[index],
-        ),
-      );
-      at = link.end;
+      spans.add(mark.span);
+      at = mark.end;
     }
     if (at < text.length) spans.add(TextSpan(text: text.substring(at)));
 

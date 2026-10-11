@@ -6,6 +6,7 @@ import '../../core/show_quark_menu.dart';
 import '../../models/chat_message_item.dart';
 import '../../models/quark_menu_entry.dart';
 import '../../theme/quark_tokens.dart';
+import '../chat_mentions.dart';
 import 'chat_message_row/chat_message_body.dart';
 import 'chat_message_row/chat_reaction_bar.dart';
 import 'chat_message_row/chat_reaction_picker.dart';
@@ -34,9 +35,16 @@ import 'chat_message_row/chat_reaction_picker.dart';
 /// address from someone who may not be who they claim is not put one tap
 /// away.
 ///
+/// Each `@name` in a text message that names one of [mentionNames] is drawn
+/// as a mention (see `ChatMessageBody`). A message that mentions [selfName],
+/// the reader, stands on a tint of the primary color with a bar down its
+/// leading edge, and a screen reader hears "Mentions you". An unverified
+/// message draws no mentions: its text is not the sender's.
+///
 /// A part of `QuarkMessageList`, tested through it.
 ///
-/// Key prefixes: `message_body_<id>` on a text message's body,
+/// Key prefixes: `message_mention_<id>` on the highlight of a message that
+/// mentions the reader, `message_body_<id>` on a text message's body,
 /// `message_menu_<id>` on the menu button, `message_copy_<id>`,
 /// `message_menu_react_<id>` and `message_delete_<id>` on the menu's entries,
 /// `message_menu_react_<id>_<emoji>` on each emoji "Add reaction" offers, and
@@ -51,6 +59,8 @@ class ChatMessageRow extends StatelessWidget {
     this.onDelete,
     this.onReact,
     this.onOpenLink,
+    this.mentionNames = const [],
+    this.selfName,
     this.longPressOpensMenu = true,
     super.key,
   });
@@ -80,6 +90,13 @@ class ChatMessageRow extends StatelessWidget {
   /// Called with a web address in the message's text when it is tapped. Null
   /// draws the text with no links, as an unverified message always is.
   final ValueChanged<Uri>? onOpenLink;
+
+  /// The names an `@mention` in the message can resolve to. Empty draws none.
+  final List<String> mentionNames;
+
+  /// The reader's own name. A message that mentions it is highlighted. Null
+  /// highlights nothing.
+  final String? selfName;
 
   /// Whether a long press opens the menu. False leaves the long press to
   /// whatever is above the row, such as a `SelectionArea`.
@@ -146,6 +163,13 @@ class ChatMessageRow extends StatelessWidget {
     final avatar = this.avatar;
     final onReact = this.onReact;
     final reacts = message.kind == ChatMessageKind.text;
+    final selfName = this.selfName;
+    final mentionNames = reacts && !message.isUnverified
+        ? this.mentionNames
+        : const <String>[];
+    final mentionsSelf =
+        selfName != null &&
+        ChatMentions.mentions(message.body, mentionNames, selfName);
     final hasMenu =
         reacts && (onCopy != null || onReact != null || onDelete != null);
     void openMenu(Offset position) => showQuarkMenu(
@@ -193,10 +217,12 @@ class ChatMessageRow extends StatelessWidget {
           color: message.isUnverified ? tokens.warning : tokens.foreground,
         ),
         onOpenLink: reacts && !message.isUnverified ? onOpenLink : null,
+        mentionNames: mentionNames,
+        selfName: selfName,
       ),
     };
 
-    return GestureDetector(
+    final row = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPressStart: hasMenu && longPressOpensMenu
           ? (details) => openMenu(details.globalPosition)
@@ -313,6 +339,20 @@ class ChatMessageRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+    if (!mentionsSelf) return row;
+    return Semantics(
+      label: 'Mentions you',
+      child: DecoratedBox(
+        key: ValueKey('message_mention_${message.id}'),
+        decoration: BoxDecoration(
+          color: tokens.primary.withValues(alpha: 0.08),
+          border: BorderDirectional(
+            start: BorderSide(color: tokens.primary, width: 3),
+          ),
+        ),
+        child: row,
       ),
     );
   }

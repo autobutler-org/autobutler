@@ -333,4 +333,171 @@ void main() {
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });
+
+  // #2623: typing @ suggests the members, and picking one writes the mention.
+  group('mentions', () {
+    const names = ['ada', 'ann', 'bob'];
+    const suggestions = ValueKey('mention_suggestions');
+
+    testBothViewports('typing @ suggests the names that match', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(
+        tester,
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: QuarkMessageComposer(onSend: (_) {}, mentionNames: names),
+        ),
+        size: size,
+      );
+      expect(find.byKey(suggestions), findsNothing);
+
+      await tester.enterText(find.byKey(field), 'hi @a');
+      await tester.pump();
+      expect(find.byKey(const ValueKey('mention_suggestion_ada')), findsOne);
+      expect(find.byKey(const ValueKey('mention_suggestion_ann')), findsOne);
+      expect(
+        find.byKey(const ValueKey('mention_suggestion_bob')),
+        findsNothing,
+      );
+
+      await tester.enterText(find.byKey(field), 'hi @zed');
+      await tester.pump();
+      expect(find.byKey(suggestions), findsNothing);
+
+      await tester.enterText(find.byKey(field), 'mail a@a');
+      await tester.pump();
+      expect(find.byKey(suggestions), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testBothViewports('a tap writes the mention and sends it as text', (
+      tester,
+      size,
+    ) async {
+      final sent = <String>[];
+      await pumpAt(
+        tester,
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: QuarkMessageComposer(onSend: sent.add, mentionNames: names),
+        ),
+        size: size,
+      );
+
+      await tester.enterText(find.byKey(field), 'hi @b');
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('mention_suggestion_bob')));
+      await tester.pump();
+
+      final text = tester.widget<TextField>(find.byKey(field)).controller!;
+      expect(text.text, 'hi @bob ');
+      expect(text.selection, const TextSelection.collapsed(offset: 8));
+      expect(find.byKey(suggestions), findsNothing);
+
+      await tester.tap(find.byKey(send));
+      await tester.pump();
+      expect(sent, ['hi @bob']);
+    });
+
+    testBothViewports('the keyboard moves, picks and closes', (
+      tester,
+      size,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final sent = <String>[];
+      await pumpAt(
+        tester,
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: QuarkMessageComposer(onSend: sent.add, mentionNames: names),
+        ),
+        size: size,
+      );
+      String highlighted() => tester
+          .widget<QuarkMentionSuggestions>(find.byType(QuarkMentionSuggestions))
+          .highlighted!;
+      final text = tester.widget<TextField>(find.byKey(field)).controller!;
+
+      await tester.enterText(find.byKey(field), '@a');
+      await tester.pump();
+      expect(highlighted(), 'ada');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(highlighted(), 'ann');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(highlighted(), 'ada', reason: 'wraps');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pump();
+      expect(highlighted(), 'ann');
+
+      // Enter picks rather than sends while the list is open.
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(text.text, '@ann ');
+      expect(sent, isEmpty);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(sent, ['@ann']);
+
+      await tester.enterText(find.byKey(field), '@b');
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(text.text, '@bob ');
+
+      // Escape closes the list for that @, and Enter sends again.
+      await tester.enterText(find.byKey(field), '@a');
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      expect(find.byKey(suggestions), findsNothing);
+      await tester.enterText(find.byKey(field), '@an');
+      await tester.pump();
+      expect(find.byKey(suggestions), findsNothing);
+      await tester.enterText(find.byKey(field), 'x @a');
+      await tester.pump();
+      expect(find.byKey(suggestions), findsOne, reason: 'another @');
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testBothViewports('a mention that names a member is drawn apart', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(
+        tester,
+        QuarkMessageComposer(onSend: (_) {}, mentionNames: names),
+        size: size,
+      );
+      List<String> styled() {
+        final context = tester.element(find.byKey(field));
+        final span = tester
+            .widget<TextField>(find.byKey(field))
+            .controller!
+            .buildTextSpan(context: context, withComposing: false);
+        return [
+          for (final child in span.children ?? const <InlineSpan>[])
+            if (child is TextSpan && child.style?.backgroundColor != null)
+              child.text!,
+        ];
+      }
+
+      await tester.enterText(find.byKey(field), 'hi @bob and @carol');
+      await tester.pump();
+      expect(styled(), ['@bob']);
+      expect(tester.takeException(), isNull);
+    });
+
+    testBothViewports('no names suggests nothing', (tester, size) async {
+      await pumpAt(tester, QuarkMessageComposer(onSend: (_) {}), size: size);
+
+      await tester.enterText(find.byKey(field), '@a');
+      await tester.pump();
+      expect(find.byKey(suggestions), findsNothing);
+    });
+  });
 }
