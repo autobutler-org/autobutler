@@ -200,3 +200,25 @@ func TestConvertOnADeviceTakesNoSnapshot(t *testing.T) {
 		assertAbsent(t, filepath.Join(filesDir, "docs", storageutil.VersionsDirName))
 	}
 }
+
+// A plain multipart upload that replaces an editor document snapshots it
+// first (#3156). Any other file is replaced without one.
+func TestPlainOverwriteSnapshotsEditorDocuments(t *testing.T) {
+	t.Parallel()
+	e, filesDir := newStorageVFSTestEngine(t)
+	for _, name := range []string{"deck.qslide", "notes.txt"} {
+		for _, content := range []string{"first", "second"} {
+			w := uploadFile(t, e, "/api/v0/files/upload/docs?overwrite=true", name, content)
+			if w.Code != http.StatusOK {
+				t.Fatalf("upload %s returned %d: %s", name, w.Code, w.Body.String())
+			}
+		}
+		assertContent(t, filepath.Join(filesDir, "docs", name), "second")
+	}
+	if got := snapshotsOf(t, filesDir, "docs", "deck.qslide"); !slices.Equal(got, []string{"first"}) {
+		t.Errorf("deck.qslide snapshots = %q, want the content the upload replaced", got)
+	}
+	if got := snapshotsOf(t, filesDir, "docs", "notes.txt"); len(got) != 0 {
+		t.Errorf("notes.txt snapshots = %q; only editor documents are versioned", got)
+	}
+}
