@@ -1,12 +1,14 @@
 package v0_files_test
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
@@ -115,5 +117,86 @@ func TestMoveOverAnEditorDocumentSnapshotsIt(t *testing.T) {
 		if got := snapshotsOf(t, filesDir, "docs", name); len(got) != 0 {
 			t.Errorf("%s snapshots = %q, want none", name, got)
 		}
+	}
+}
+
+// minimalWorkbook is the smallest .xlsx the converter accepts: one sheet with
+// one cell.
+func minimalWorkbook(t *testing.T) string {
+	t.Helper()
+	const rels = `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+	const relType = `http://schemas.openxmlformats.org/officeDocument/2006/relationships/`
+	parts := map[string]string{
+		"_rels/.rels": rels + `<Relationship Id="rId1" Type="` + relType + `officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+		"xl/workbook.xml": `<?xml version="1.0"?><workbook xmlns:r="` + strings.TrimSuffix(relType, "/") + `">` +
+			`<sheets><sheet name="Ledger" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+		"xl/_rels/workbook.xml.rels": rels + `<Relationship Id="rId1" Type="` + relType + `worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+		"xl/worksheets/sheet1.xml": `<?xml version="1.0"?><worksheet><sheetData>` +
+			`<row r="1"><c r="A1" t="inlineStr"><is><t>Item</t></is></c></row></sheetData></worksheet>`,
+	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for name, body := range parts {
+		w, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.String()
+}
+
+// Converting a workbook over an existing .qsheet snapshots the sheet it
+// replaces, as every other overwrite does (#2992). A conversion to a free name
+// snapshots nothing.
+func TestConvertOverAnExistingSheetSnapshotsIt(t *testing.T) {
+	t.Parallel()
+	e, filesDir := newStorageVFSTestEngine(t)
+	workbook := minimalWorkbook(t)
+	for _, name := range []string{"book.xlsx", "fresh.xlsx"} {
+		if w := uploadFile(t, e, "/api/v0/files/upload/docs", name, workbook); w.Code != http.StatusOK {
+			t.Fatalf("upload %s returned %d: %s", name, w.Code, w.Body.String())
+		}
+	}
+	if w := uploadFile(t, e, "/api/v0/files/upload/docs", "book.qsheet", "hand edited sheet"); w.Code != http.StatusOK {
+		t.Fatalf("upload sheet returned %d: %s", w.Code, w.Body.String())
+	}
+	for _, name := range []string{"book", "fresh"} {
+		w := doRequest(e, http.MethodPost, "/api/v0/files/convert/xlsx?overwrite=true&filePath=docs/"+name+".xlsx", nil, "")
+		if w.Code != http.StatusOK {
+			t.Fatalf("convert %s returned %d: %s", name, w.Code, w.Body.String())
+		}
+	}
+	if got := snapshotsOf(t, filesDir, "docs", "book.qsheet"); !slices.Equal(got, []string{"hand edited sheet"}) {
+		t.Errorf("book.qsheet snapshots = %q, want the sheet the conversion replaced", got)
+	}
+	if got := snapshotsOf(t, filesDir, "docs", "fresh.qsheet"); len(got) != 0 {
+		t.Errorf("fresh.qsheet snapshots = %q, want none", got)
+	}
+}
+
+// Versions live on the internal device only, so a conversion that replaces a
+// sheet on a device addressed by serial snapshots nothing.
+func TestConvertOnADeviceTakesNoSnapshot(t *testing.T) {
+	t.Parallel()
+	h := newDeviceUploadHarness(t)
+	upload := "/api/v0/files/upload/docs?serial=" + testUsbSerial
+	for name, content := range map[string]string{"book.xlsx": minimalWorkbook(t), "book.qsheet": "hand edited sheet"} {
+		if w := uploadFile(t, h.engine, upload, name, content); w.Code != http.StatusOK {
+			t.Fatalf("upload %s returned %d: %s", name, w.Code, w.Body.String())
+		}
+	}
+	w := doRequest(h.engine, http.MethodPost,
+		"/api/v0/files/convert/xlsx?overwrite=true&filePath=docs/book.xlsx&serial="+testUsbSerial, nil, "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("convert returned %d: %s", w.Code, w.Body.String())
+	}
+	for _, filesDir := range []string{h.usbDir, h.internalDir} {
+		assertAbsent(t, filepath.Join(filesDir, "docs", storageutil.VersionsDirName))
 	}
 }

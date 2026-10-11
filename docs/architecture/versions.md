@@ -45,9 +45,10 @@ Documents/
 - **Named snapshots** carry a label and skip the rate limit. Only named snapshots can be deleted by hand.
 - **The save hook.** When something replaces a `.qslide`, `.qsheet` or `.qdoc` on the internal device, the old
   content is snapshotted (`auto`) *before* the new bytes replace it. So the history holds the states you saved
-  over, and the live file is always the newest state. Three things replace a file, and all three run the hook
+  over, and the live file is always the newest state. Four things replace a file, and all four run the hook
   (#2992): the multipart upload with `overwrite` (how all three editors save), the last chunk of an upload
-  session opened with `overwrite`, and a move or rename onto a taken name. The hook needs no client change. A
+  session opened with `overwrite`, a move or rename onto a taken name, and an XLSX conversion with `overwrite`
+  onto an existing `.qsheet`. The PPTX import never replaces: it lands under a free name. The hook needs no client change. A
   failed snapshot is logged and never fails the save. It is an `auto` snapshot like any other, so the rate limit
   and the dedupe apply. Serial-addressed devices do not snapshot. Nothing copies a file over another one: the
   only copy, a photo's duplicate, always lands under a free name.
