@@ -8,9 +8,9 @@ numbered; [`sql/queries/AGENTS.md`](../../sql/queries/AGENTS.md) covers the quer
 This file sits in `internal/db/` and not beside the migrations because `database.go` embeds the whole
 `migrations/` directory into the binary. Nothing but migrations goes in there.
 
-> **Status.** Both schemas exist and sqlc generates a package for each, but the server opens SQLite only.
-> Nothing applies the PostgreSQL migrations outside the tests, and nothing connects to PostgreSQL with the
-> generated queries (#2957). Content search has no PostgreSQL schema yet (#2958).
+> **Status.** Both schemas exist, sqlc generates a package for each, and `db.ConnectToPostgres` opens and
+> migrates a PostgreSQL database. The server does not call it yet: it opens SQLite only (#2957). Content
+> search has no PostgreSQL schema yet (#2958).
 
 ## One schema, written once per engine
 
@@ -85,13 +85,39 @@ An index on such an expression calls the same function in both schemas, as `idx_
 Code outside this package takes the generated `db.Querier` interface, never the concrete `*db.Queries`, so the
 engine behind it can change without touching a caller.
 
-- **`db.NewQueries(conn)` builds one**, from a pool, a connection or a transaction. Do not call the generated
-  `db.New` outside this package and its tests.
+- **`db.NewQueries(sqlDB)` builds one from a pool**, for the engine that pool is connected to. Do not call
+  the generated `db.New` or `pgdb.New` outside this package and its tests: they bind one engine's queries
+  to whatever they are given.
 - **A transaction is `db.InTx`.** `WithTx` is not on the interface. The raw `*sql.Tx` code in `pkg/backup` and
   `internal/db/reset.go` is left as it is.
-- **`pgdb.NewAdapter(conn)` is the PostgreSQL `db.Querier`.** `pgdb.Queries` cannot satisfy the interface
-  itself, because sqlc gives each package its own parameter and result structs; the adapter converts between
-  them.
+- **Nothing outside this package asks which engine it is on.** `db.BackendOf(sqlDB)` reads it from the driver
+  the pool was opened with, and `NewQueries` and `InTx` are its callers. Code that finds itself wanting to
+  branch on it needs a query both engines accept, or a per-engine query, instead.
+- **The PostgreSQL `db.Querier` is the generated `postgresQueries`**, in this package. `pgdb.Queries` cannot
+  satisfy the interface itself, because sqlc gives each package its own parameter and result structs; the
+  adapter converts between them. It lives here and not in `pgdb` so that `NewQueries` can return it: `pgdb`
+  imports nothing of Quark's, and the other way round would be an import cycle.
+
+## Opening a database
+
+`db.ConfigFromEnv` is the one place that reads the choice: `QUARK_DB_BACKEND` is `sqlite` (also when unset
+or empty) or `postgres`, anything else is an error naming the two, and `postgres` needs `QUARK_DATABASE_URL`.
+The URL carries a password, so no log line or error repeats it.
+
+`db.ConnectToPostgres(url)` (`connect_postgres.go`) is the PostgreSQL counterpart of `ConnectToDatabase`:
+
+- **The pool** is bounded like SQLite's, and unlike it gives idle connections back and retires old ones. The
+  constants carry the reasoning.
+- **The session is pinned to UTC, and a `TIMESTAMPTZ` scans into a UTC `time.Time`**, which is what the SQLite
+  DSN's `_timezone=UTC` gives.
+- **Migrations run through golang-migrate's pgx v5 driver** from the embedded `migrations_postgres/`. It
+  takes a session-level advisory lock (`pg_advisory_lock`) around creating `schema_migrations` and around the
+  run, so two servers starting at once on one database are safe: the second waits, then finds nothing to do.
+- **There is no reset on PostgreSQL, and there must never be one.** A database that does not answer, a dirty
+  flag, a version this build does not have, or tables Quark did not make each stop startup with an error
+  saying what was found and what to do, and change nothing. SQLite's startup (`initSchema`) refuses the same
+  way, and sets a database from the pre-#1758 numbering aside; none of that code is reached from this path,
+  and PostgreSQL has no such legacy to set aside.
 
 ## Generated code
 
@@ -101,7 +127,7 @@ which runs sqlc for both engines and then the adapter generator.
 - **sqlc's output:** `*.sql.go`, `models.go`, `db.go` and `querier.go`, in `internal/db/` and in
   `internal/db/pgdb/`. sqlc does not remove a generated file whose source `.sql` was renamed or deleted;
   delete the stale `*.sql.go` in both packages yourself.
-- **`internal/db/pgdb/querier_adapter.go`**, written by `internal/db/genpgadapter` from the `Querier` interface
+- **`internal/db/querier_postgres.go`**, written by `internal/db/genpgadapter` from the `Querier` interface
   in `internal/db`. When it stops compiling, the two engines disagree about a query's signature or a column's
   type: fix the query or the schema, never the adapter.
 
@@ -109,10 +135,11 @@ which runs sqlc for both engines and then the adapter generator.
 
 ```bash
 make serve/postgres      # the development PostgreSQL, from compose.yaml
-make test/db/postgres    # prepare every generated statement, compare the schemas, run the adapter
+make test/db/postgres    # prepare every generated statement, compare the schemas, run the queries, connect and migrate
 ```
 
-The tests in `internal/db/pgdb` skip by name on the default backend. With the backend set to PostgreSQL and no
-database reachable they fail and say to run `make serve/postgres`. Each test works in a schema of its own and
-drops it, so they leave the development database as they found it. CI runs them in `test.yml`'s
+`dbtest.PostgresURL(t)` gives a test the URL of an empty schema of its own. The tests that use it, in
+`internal/db` and `internal/db/pgdb`, skip by name on the default backend. With the backend set to PostgreSQL and no
+database reachable they fail and say to run `make serve/postgres`. Each test's schema is dropped when
+it ends, so they leave the development database as they found it. CI runs them in `test.yml`'s
 `test-postgres` job.

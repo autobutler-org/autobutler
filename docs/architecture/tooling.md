@@ -11,7 +11,7 @@ Generated files are committed, and CI regenerates them and fails on any diff.
 flowchart LR
     migrations["internal/db/migrations/*.sql<br/>internal/db/migrations_postgres/*.sql"] --> sqlc{{sqlc}}
     queries["sql/queries/**/*.sql"] --> sqlc --> sqlcCode["internal/db/*.sql.go<br/>internal/db/pgdb/*.sql.go"]
-    sqlcCode --> adapterGen{{genpgadapter}} --> adapter["internal/db/pgdb/querier_adapter.go"]
+    sqlcCode --> adapterGen{{genpgadapter}} --> adapter["internal/db/querier_postgres.go"]
     annotations["handler godoc<br/>@Summary @Router …"] --> swag{{swag}} --> swagger["docs/swagger/"]
     svgs["packages/quark_icons/svgs"] --> icons{{generate/frontend/quark-icons}} --> font["icon font + Dart"]
     widgetComments["quark_widgets /// docs"] --> wd{{generate/frontend/widget-docs}} --> widgetDocs["docs.g.dart"]

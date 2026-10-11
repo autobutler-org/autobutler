@@ -1,7 +1,7 @@
 version: "2"
 # One query set, two engines (sql/queries/AGENTS.md). Each block compiles the
 # shared directory plus its own engine directory, and both keep the same emit
-# options: internal/db/pgdb/querier_adapter.go converts between the two
+# options: internal/db/querier_postgres.go converts between the two
 # packages' structs, which only compiles while they are identical.
 sql:
   - engine: "sqlite"

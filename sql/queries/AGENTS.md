@@ -9,8 +9,8 @@ both engines, so every file in this directory is written in the subset of SQL th
 reference: a rule here never changes what a query does on SQLite.
 
 `sqlc.yaml` has a block per engine. Both read this directory; the SQLite block generates `internal/db` and the
-PostgreSQL block `internal/db/pgdb`. The server opens SQLite only: nothing connects to PostgreSQL with these
-queries yet (#2957).
+PostgreSQL block `internal/db/pgdb`. `db.NewQueries` and `db.InTx` hand a caller whichever of the two matches
+the connection it holds.
 
 ## What holds a query to these rules
 
@@ -21,7 +21,7 @@ statement it left a parameter unexpanded in. Three things do the checking:
 - **Every generated statement is prepared on a real database** with that engine's schema applied:
   `internal/db/prepare_test.go` on SQLite, in every `make test/unit/backend`, and
   `internal/db/pgdb/postgres_test.go` on PostgreSQL, in `make test/db/postgres` and CI's `test-postgres` job.
-- **`internal/db/pgdb/querier_adapter.go` has to compile.** It converts each query's parameter and result
+- **`internal/db/querier_postgres.go` has to compile.** It converts each query's parameter and result
   structs between the two packages, which only works while both engines give a query the same Go signature.
 
 A query whose behavior, and not only its syntax, was reworked to be shared also gets a case in
