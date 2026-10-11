@@ -1624,6 +1624,30 @@ void main() {
       controller.toggleAlbumExpanded(4);
       expect(controller.expandedAlbumIds, isEmpty);
     });
+
+    test('folding the whole section keeps the selection, the sort, the open '
+        'branches and the photos, and survives a refresh (#3112)', () async {
+      final controller = _FakeQuark().controller();
+      await controller.refresh();
+      controller.toggleAlbumExpanded(4);
+      await controller.setAlbumSort(AlbumSort.nameDesc);
+      final photos = controller.photos.map((p) => p.id).toList();
+      final albums = controller.albums.map((a) => a.id).toList();
+      expect(controller.albumsSectionExpanded, isTrue);
+
+      controller.toggleAlbumsSectionExpanded();
+      await controller.refresh();
+
+      expect(controller.albumsSectionExpanded, isFalse);
+      expect(controller.expandedAlbumIds, {4});
+      expect(controller.albumSort, AlbumSort.nameDesc);
+      expect(controller.albums.map((a) => a.id), albums);
+      expect(controller.photos.map((p) => p.id), photos);
+
+      controller.toggleAlbumsSectionExpanded();
+      expect(controller.albumsSectionExpanded, isTrue);
+      expect(controller.expandedAlbumIds, {4});
+    });
   });
 
   group('uploads', () {

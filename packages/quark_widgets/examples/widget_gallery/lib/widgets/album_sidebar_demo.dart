@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-/// Holds the selection, expansion and sort [AlbumSidebar] refuses to hold, so
+/// Holds the selection, expansion, sort and whether the whole section is
+/// folded, all of which [AlbumSidebar] refuses to hold, so
 /// tapping "All photos" or an album moves the highlight the way a page would.
 /// The sort only moves the check: reordering is the caller's job.
 class AlbumSidebarDemo extends StatefulWidget {
@@ -30,6 +31,7 @@ class _AlbumSidebarDemoState extends State<AlbumSidebarDemo> {
   final Set<int> _expanded = {3};
   int? _selected;
   AlbumSort _sort = AlbumSort.nameAsc;
+  bool _sectionExpanded = true;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +60,11 @@ class _AlbumSidebarDemoState extends State<AlbumSidebarDemo> {
       onSortChanged: (s) {
         widget.log('AlbumSidebar.onSortChanged(${s.id})');
         setState(() => _sort = s);
+      },
+      isSectionExpanded: _sectionExpanded,
+      onToggleSection: () {
+        widget.log('AlbumSidebar.onToggleSection');
+        setState(() => _sectionExpanded = !_sectionExpanded);
       },
     );
   }

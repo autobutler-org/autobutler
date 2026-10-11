@@ -510,3 +510,29 @@ added outside Quark shows up once its thumbnail loads or after the next restart.
 - The page's own upload reloads the grid once it finishes, not on each file's event.
 - A reconnect reaches the page as a `resync` event the app sends itself, the same one the Quark sends when it
   dropped events a slow client missed.
+
+---
+
+### JN-PH-025: Collapse the albums list
+
+**Preconditions:** Photos is open (JN-PH-001).
+
+**Steps:**
+
+1. Tap **Albums**, the heading with a chevron at the top of the album sidebar.
+2. Tap it again.
+
+**Expected result:**
+
+- After step 1 the whole list folds away under its header: All photos, Favorites and the inbox, and every album.
+  On a narrow screen the grid moves up into the space; the wide layout's sidebar keeps its width.
+- After step 2 the list is back as it was: the same album highlighted, the same sub-albums open, in the same order.
+- The grid shows the same photos throughout, and stays at a position its content can hold, with no bounce.
+- The sort button and **New album** stay in the header and work while the list is folded; neither folds or opens it.
+- The list starts open, and stays folded through an album pick, a sort, and a refresh for as long as Photos is open.
+
+**Notes:**
+
+- The heading is a button: it takes keyboard focus, answers Enter and Space, and a screen reader announces it as
+  expanded or collapsed. Folded rows cannot be reached by Tab or a screen reader.
+- Under reduced motion the chevron changes without turning.

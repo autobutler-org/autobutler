@@ -6,6 +6,7 @@ import '../models/album_item.dart';
 import '../models/album_sort.dart';
 import '../theme/quark_tokens.dart';
 import 'album_sidebar/album_sidebar_all_photos_tile.dart';
+import 'album_sidebar/album_sidebar_section_toggle.dart';
 import 'album_sidebar/album_sidebar_sort_button.dart';
 import 'album_tree_tile.dart';
 
@@ -31,7 +32,15 @@ import 'album_tree_tile.dart';
 /// offering every [AlbumSort] with [sort] checked. The widget never reorders
 /// [albums] itself: the caller applies the choice and passes the list back in.
 ///
-/// Key prefixes: `album_create` on the create button, `album_sort` and
+/// Give it [onToggleSection] and the "Albums" label becomes a button with a
+/// chevron that folds the whole section down to its header. Whether it is
+/// folded is the caller's state, [isSectionExpanded] in and [onToggleSection]
+/// out, apart from [expandedIds], which still says which branches are open
+/// once the section is. The sort and create buttons stay in the header either
+/// way.
+///
+/// Key prefixes: `album_section_toggle` on the "Albums" label when it is a
+/// button, `album_create` on the create button, `album_sort` and
 /// `album_sort_option_<id>` on the sort button and its menu rows,
 /// `album_sidebar_all_photos` on the "All photos" row, and every album row's
 /// own `album_tile_<id>`, `album_expand_<id>`, and `album_menu_<id>` from
@@ -50,6 +59,8 @@ import 'album_tree_tile.dart';
 ///   onAlbumMenu: showAlbumMenu,
 ///   sort: controller.albumSort,
 ///   onSortChanged: controller.setAlbumSort,
+///   isSectionExpanded: controller.albumsSectionExpanded,
+///   onToggleSection: controller.toggleAlbumsSectionExpanded,
 /// );
 /// ```
 class AlbumSidebar extends StatelessWidget {
@@ -68,6 +79,8 @@ class AlbumSidebar extends StatelessWidget {
     this.isLoading = false,
     this.error,
     this.shrinkWrap = false,
+    this.isSectionExpanded = true,
+    this.onToggleSection,
     super.key,
   });
 
@@ -115,6 +128,16 @@ class AlbumSidebar extends StatelessWidget {
 
   /// Size to the list's own height instead of filling the parent.
   final bool shrinkWrap;
+
+  /// Whether the section's body is showing: the "All photos" row, the album
+  /// tree, and the loading, error and empty states. False leaves only the
+  /// header, so nothing under it is laid out, focusable, or read out.
+  final bool isSectionExpanded;
+
+  /// Called when the "Albums" label (key `album_section_toggle`) is tapped
+  /// or activated from the keyboard. Null leaves the label a plain heading
+  /// with no chevron.
+  final VoidCallback? onToggleSection;
 
   @override
   Widget build(BuildContext context) {
@@ -168,14 +191,9 @@ class AlbumSidebar extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Text(
-                'Albums',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface.withValues(alpha: 0.5),
-                  letterSpacing: 0.8,
-                ),
+              AlbumSidebarSectionToggle(
+                isExpanded: isSectionExpanded,
+                onToggle: onToggleSection,
               ),
               const Spacer(),
               if (onSortChanged != null)
@@ -191,32 +209,34 @@ class AlbumSidebar extends StatelessWidget {
             ],
           ),
         ),
-        if (onAllPhotosSelected != null)
-          AlbumSidebarAllPhotosTile(
-            isSelected: selectedAlbumId == null,
-            onTap: onAllPhotosSelected,
-          ),
-        if (isLoading)
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.spacingSm + tokens.spacingXs,
+        if (isSectionExpanded) ...[
+          if (onAllPhotosSelected != null)
+            AlbumSidebarAllPhotosTile(
+              isSelected: selectedAlbumId == null,
+              onTap: onAllPhotosSelected,
             ),
-            child: const Center(child: QuarkLoader(size: 20)),
-          )
-        else if (error != null)
-          Padding(
-            padding: hintPadding,
-            child: Text(error, style: hint),
-          )
-        else if (albums.isEmpty)
-          Padding(
-            padding: hintPadding,
-            child: Text('No albums yet', style: hint),
-          )
-        else if (shrinkWrap)
-          list
-        else
-          Expanded(child: list),
+          if (isLoading)
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: tokens.spacingSm + tokens.spacingXs,
+              ),
+              child: const Center(child: QuarkLoader(size: 20)),
+            )
+          else if (error != null)
+            Padding(
+              padding: hintPadding,
+              child: Text(error, style: hint),
+            )
+          else if (albums.isEmpty)
+            Padding(
+              padding: hintPadding,
+              child: Text('No albums yet', style: hint),
+            )
+          else if (shrinkWrap)
+            list
+          else
+            Expanded(child: list),
+        ],
         SizedBox(height: tokens.spacingSm),
         Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.5)),
       ],
