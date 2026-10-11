@@ -34,6 +34,10 @@ type ConvertXlsxParams struct {
 	// Without it an existing file is reported as [vfs.ErrConflict] and left
 	// alone, so a conversion never silently destroys earlier work.
 	Overwrite bool
+	// BeforeOverwrite, when set, is called with the .qsheet's path just before
+	// the conversion replaces it, while the old content is still there to
+	// snapshot (#2992).
+	BeforeOverwrite func(path string)
 }
 
 // ConvertXlsxResult reports the .qsheet that was written and what it holds.
@@ -146,6 +150,7 @@ func ConvertXlsxToQsheet(params ConvertXlsxParams) (ConvertXlsxResult, error) {
 		NewFilePath:     target,
 		OldDeviceSerial: params.Serial,
 		NewDeviceSerial: params.Serial,
+		BeforeOverwrite: params.BeforeOverwrite,
 	}); err != nil {
 		discardTemp(params.Ctx, fsys, tempPath)
 		return ConvertXlsxResult{}, err

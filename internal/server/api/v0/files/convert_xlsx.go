@@ -17,7 +17,7 @@ import (
 
 // convertXlsx godoc
 // @Summary Convert a spreadsheet to a Quark spreadsheet
-// @Description Reads an .xlsx or .xlsm workbook and writes it back as a sibling .qsheet, the format the Sheets editor opens. The workbook itself is left untouched. Answers 409 when a .qsheet of that name already exists and overwrite was not asked for. Needs read access on the workbook and write access on its directory; the caller owns a newly created .qsheet.
+// @Description Reads an .xlsx or .xlsm workbook and writes it back as a sibling .qsheet, the format the Sheets editor opens. The workbook itself is left untouched. Answers 409 when a .qsheet of that name already exists and overwrite was not asked for; with overwrite on the internal device, the replaced sheet is first snapshotted into its version history. Needs read access on the workbook and write access on its directory; the caller owns a newly created .qsheet.
 // @Tags files
 // @Produce json
 // @Param filePath query string true "Path to the .xlsx or .xlsm file to convert"
@@ -60,6 +60,8 @@ func convertXlsx(c *gin.Context) *serverutil.Response {
 		FilePath:  filePath,
 		Serial:    serial,
 		Overwrite: c.Query("overwrite") == "true",
+		// A conversion over a .qsheet snapshots it first (#2992).
+		BeforeOverwrite: beforeSave(c, deps, serial),
 	})
 	if err != nil {
 		// A conversion runs for as long as the workbook is large, and the

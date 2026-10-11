@@ -4917,7 +4917,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Reads an .xlsx or .xlsm workbook and writes it back as a sibling .qsheet, the format the Sheets editor opens. The workbook itself is left untouched. Answers 409 when a .qsheet of that name already exists and overwrite was not asked for. Needs read access on the workbook and write access on its directory; the caller owns a newly created .qsheet.",
+                "description": "Reads an .xlsx or .xlsm workbook and writes it back as a sibling .qsheet, the format the Sheets editor opens. The workbook itself is left untouched. Answers 409 when a .qsheet of that name already exists and overwrite was not asked for; with overwrite on the internal device, the replaced sheet is first snapshotted into its version history. Needs read access on the workbook and write access on its directory; the caller owns a newly created .qsheet.",
                 "produces": [
                     "application/json"
                 ],
