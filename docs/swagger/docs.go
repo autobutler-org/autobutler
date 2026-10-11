@@ -2145,6 +2145,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/password": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it; nothing changes if any part fails. The caller's sessions, this one and any other, stay signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change the caller's password",
+                "parameters": [
+                    {
+                        "description": "The caller's auth key, the new password's auth key and optionally the re-wrapped chat keys",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_auth.changePasswordBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "a malformed newAuthKey or chatKeys",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "no session, or the session's account no longer exists",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "the auth key is wrong or missing",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "426": {
+                        "description": "password is a raw password: the app is too old",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/recover": {
             "post": {
                 "description": "Resets the named account's password using its recoveryKey, the standard base64 of the 32-byte key the client derived from the phrase and the salt GET /auth/salt returned. A wrong key, an unknown username and an account with no recovery key all read as a wrong phrase. newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the same salt, replaces the account's auth key and clears its password hash. An account GET /auth/salt calls legacyRecovery recovers once with its raw recoveryPhrase in place of recoveryKey, beside newAuthKey and newRecoveryKey, the key of a phrase the client just generated: the reset stores both keys and clears the phrase and password hashes. An account with a recovery key refuses every phrase as a wrong one. A recoveryPhrase without both new keys, or a newPassword, is what only an app from before auth keys sends, and is refused with 426 (#2430). chatKeys, when sent, replaces the account's chat identity in the same transaction: the client fetched it from /auth/recover/keys, opened it with the phrase and re-wrapped it under the new password (#2416). The body is at most 8 KiB.",
@@ -12079,6 +12151,30 @@ const docTemplate = `{
                 },
                 "status": {
                     "description": "Status is pending or disabled.",
+                    "type": "string"
+                }
+            }
+        },
+        "v0_auth.changePasswordBody": {
+            "type": "object",
+            "required": [
+                "newAuthKey"
+            ],
+            "properties": {
+                "chatKeys": {
+                    "description": "ChatKeys is the account's chat identity re-wrapped under the new\npassword, stored in the same transaction. Absent leaves the stored keys\nas they are.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/chatutil.Keys"
+                        }
+                    ]
+                },
+                "newAuthKey": {
+                    "description": "NewAuthKey is the standard base64 of the 32-byte key the client derived\nfrom the new password and the salt GET /auth/salt returned.",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Password re-confirms the caller with the auth key of the password it has\nnow, so a session alone cannot change the password, as delete-account\ntakes it. A raw password is refused with 426 (#2430).",
                     "type": "string"
                 }
             }

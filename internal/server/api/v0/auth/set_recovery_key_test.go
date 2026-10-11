@@ -20,9 +20,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// putRecoveryKey sends PUT /auth/recovery-key as the caller, the way
-// requireAuth leaves a signed-in one; a zero user sends it with no caller.
+// putRecoveryKey sends PUT /auth/recovery-key as the caller.
 func putRecoveryKey(t *testing.T, database *db.DatabaseSqlc, caller db.User, body any) *httptest.ResponseRecorder {
+	t.Helper()
+	return putAs(t, database, caller, "/api/v0/auth/recovery-key", body)
+}
+
+// putAs sends a PUT to path as the caller, the way requireAuth leaves a
+// signed-in one; a zero user sends it with no caller.
+func putAs(t *testing.T, database *db.DatabaseSqlc, caller db.User, path string, body any) *httptest.ResponseRecorder {
 	t.Helper()
 	deps := deputil.NewDependencies().WithDatabase(database)
 	gin.SetMode(gin.TestMode)
@@ -37,7 +43,7 @@ func putRecoveryKey(t *testing.T, database *db.DatabaseSqlc, caller db.User, bod
 	})
 	serverutil.RegisterRouterWithGroup(engine.Group("/api/v0"), v0_auth.NewRouter())
 	raw, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPut, "/api/v0/auth/recovery-key", bytes.NewReader(raw))
+	req := httptest.NewRequest(http.MethodPut, path, bytes.NewReader(raw))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	engine.ServeHTTP(w, req)
