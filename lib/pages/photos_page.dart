@@ -107,6 +107,7 @@ class PhotosPageState extends State<PhotosPage>
     _scrollController.addListener(_onScroll);
     _scheduleNavMeasure();
     _controller.addListener(_scheduleAlbumUrlSync);
+    _controller.addListener(_scheduleReveal);
     _controller.showAlbumLink(widget.album);
   }
 
@@ -223,6 +224,7 @@ class PhotosPageState extends State<PhotosPage>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _controller.removeListener(_scheduleAlbumUrlSync);
+    _controller.removeListener(_scheduleReveal);
     _controller.dispose();
     super.dispose();
   }
@@ -486,21 +488,68 @@ class PhotosPageState extends State<PhotosPage>
     context.go(
       AppRoutes.photosAlbum(id == null ? null : _controller.albumLinkFor(id)),
     );
-    _scrollToGrid();
+    _revealGridFor(id);
   }
 
+  /// The pick whose grid the collapsed layout has yet to scroll to, or null
+  /// with none waiting.
+  ({int? albumId})? _pendingReveal;
+  bool _revealScheduled = false;
+
   /// The collapsed layout stacks the sidebar above the grid, so a tap on a
-  /// sidebar row would change a grid scrolled out of sight. Bring it back,
-  /// with a jump under reduced motion (#2607).
-  void _scrollToGrid() {
+  /// sidebar row would change a grid scrolled out of sight. Bring it back
+  /// once [albumId] is what the grid shows.
+  ///
+  /// Not from here: the tap comes before the route, the hidden categories and
+  /// the album's own photos have changed the layout, and a target measured
+  /// now can lie past the end of a short album, where the scroll overshoots
+  /// and springs back (#3111).
+  void _revealGridFor(int? albumId) {
+    if (!_compactLayout || !_scrollController.hasClients) return;
+    // An earlier pick's scroll is aimed at a layout this one replaces.
+    final position = _scrollController.position;
+    position.jumpTo(position.pixels);
+    _pendingReveal = (albumId: albumId);
+    _scheduleReveal();
+  }
+
+  /// Tries the waiting reveal after the next frame, so it reads the layout
+  /// that frame produced. Also the controller's listener: a pick that is
+  /// still loading is tried again when its photos arrive.
+  void _scheduleReveal() {
+    if (_pendingReveal == null || _revealScheduled) return;
+    _revealScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealScheduled = false;
+      _revealGrid();
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  /// Scrolls the grid to the top of the viewport, or as near as the content
+  /// allows, with a jump under reduced motion (#2607). Waits while the pick
+  /// has yet to reach the controller or is loading; a newer pick replaces it.
+  void _revealGrid() {
+    final pending = _pendingReveal;
+    if (pending == null || !mounted) return;
+    if (_controller.selectedAlbumId != pending.albumId ||
+        _controller.albumLoading) {
+      return;
+    }
+    _pendingReveal = null;
     if (!_compactLayout || !_scrollController.hasClients) return;
     final box = _navPanelKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
+    final position = _scrollController.position;
+    final target = box.size.height.clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
     if (reduceMotionOf(context)) {
-      _scrollController.jumpTo(box.size.height);
+      _scrollController.jumpTo(target);
     } else {
       _scrollController.animateTo(
-        box.size.height,
+        target,
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );

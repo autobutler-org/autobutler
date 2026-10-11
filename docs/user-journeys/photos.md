@@ -229,7 +229,9 @@ Covers the Photos page (`/photos`), including Quark photos, mobile device photos
   linked by its id instead. An unknown name or id shows All photos at `/photos`, and so does another account's album
   id.
 - Renaming the showing album updates the URL to its new name; deleting it returns to All photos.
-- On a narrow screen, where the sidebar sits above the grid, tapping a row scrolls the grid back into view.
+- On a narrow screen, where the sidebar sits above the grid, tapping a row scrolls the grid back into view once the
+  album's photos have loaded: one movement that stops at the top of the grid, or at the end of an album too short
+  to fill the screen, with no overshoot or bounce. Under reduced motion it is a jump.
 - Tapping a photo opens the viewer over the album's photos only.
 - Each photo has a menu button; it opens, like a long press or a right-click on the photo, at the pointer. The menu
   offers **Add to another album**, plus **Remove from album** (with a confirmation) in a user album or **Remove from
