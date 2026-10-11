@@ -4,10 +4,13 @@ Quark's database is SQLite, and that is what every `make` target uses unless tol
 being added as a second backend ([#2955](https://github.com/autobutler-org/quark/issues/2955)); this page is
 how to run one locally and point the server and the tests at it.
 
-> **Status.** The Makefile switch and the database are in place. The server does not read the setting yet:
-> choosing the backend at startup is [#2957](https://github.com/autobutler-org/quark/issues/2957), and the
-> PostgreSQL schema is [#2958](https://github.com/autobutler-org/quark/issues/2958). Until those land,
-> `DB_BACKEND=postgres` starts a server that still opens SQLite, and `make` prints a note saying so.
+> **Status.** The Makefile switch and the database are in place, and so is the query layer: a PostgreSQL
+> schema (`internal/db/migrations_postgres/`), the same queries generated for PostgreSQL (`internal/db/pgdb`),
+> and tests that run them on this database (see [What runs on PostgreSQL today](#what-runs-on-postgresql-today)).
+> The server does not read the setting yet: choosing the backend at startup is the rest of
+> [#2957](https://github.com/autobutler-org/quark/issues/2957), and content search on PostgreSQL is
+> [#2958](https://github.com/autobutler-org/quark/issues/2958). Until then `DB_BACKEND=postgres` starts a
+> server that still opens SQLite, and `make` prints a note saying so.
 
 ## Prerequisites
 
@@ -57,13 +60,13 @@ runs that check on its own.
 
 ## The database
 
-[`compose.yaml`](../../compose.yaml) runs one `postgres:17` container, for development only:
+[`compose.yaml`](../../compose.yaml) runs one `postgres:18` container, for development only:
 
 - user, password and database are all `quark`. The credentials are throwaway on purpose.
 - the port is published on `127.0.0.1:5432` only, so nothing else on your network can reach it.
 - data lives in the `quark_postgres` Docker volume and survives a restart.
-- `pg_trgm`, which filename search needs, ships in the image. The schema enables it in its first migration
-  (#2958), so there is no init script here to keep in step with the migrations.
+- `pg_trgm`, which filename search needs, ships in the image. The migration that adds filename search enables
+  it (#2958), so there is no init script here to keep in step with the migrations.
 
 | Target                     | What it does                                              |
 | -------------------------- | --------------------------------------------------------- |
@@ -76,6 +79,26 @@ database too, and keeps its data.
 
 If port 5432 is already taken by a PostgreSQL of your own, `make serve/postgres` fails to bind it. Stop the other
 one; the port is fixed so that the Makefile, the compose file and this page agree on one URL.
+
+## What runs on PostgreSQL today
+
+```bash
+make serve/postgres
+make test/db/postgres
+```
+
+`make test/db/postgres` runs the tests in `internal/db/pgdb` against this database. They prepare every
+statement sqlc generated for PostgreSQL, compare the PostgreSQL schema with the SQLite one column by column,
+run the migrations down and up again, and drive the queries through `db.Querier`, the interface the rest of
+the backend holds. Each test creates a schema of its own and drops it, so your data is left alone.
+
+The target names the backend itself and needs no `DB_BACKEND`. The same tests also run inside
+`make test/unit/backend DB_BACKEND=postgres`; on the default backend they are skipped by name. If no database
+answers they fail and tell you to run `make serve/postgres`. CI runs the target in `test.yml`'s
+`test-postgres` job, against a service container with the same image major and credentials as `compose.yaml`.
+
+[`sql/queries/AGENTS.md`](../../sql/queries/AGENTS.md) has the rules for writing a query both engines accept,
+and [`internal/db/AGENTS.md`](../../internal/db/AGENTS.md) the rules for the two schemas.
 
 ## Connecting with psql
 

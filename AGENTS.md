@@ -161,7 +161,8 @@ the same thing.
 
 ### Generated code (never hand-edit)
 
-`internal/db/*.sql.go` (sqlc), `docs/swagger/` (swag), `internal/server/public/` (the embedded web build),
+`internal/db/*.sql.go` and all of `internal/db/pgdb/` but its tests (sqlc and `internal/db/genpgadapter`),
+`docs/swagger/` (swag), `internal/server/public/` (the embedded web build),
 `assets/sbom_*.json`, `packages/quark_widgets/examples/widget_gallery/lib/docs.g.dart`, build outputs, and
 generated plugin registrants are all produced by a target. Regenerate them and commit the result; do not edit
 them by hand.
@@ -209,9 +210,11 @@ See #1705: `io.ReadAll` on a 4 GiB zip asked for ~12 GiB of heap and returned a
 When a change genuinely needs the database:
 
 1. Add the migration pair in `internal/db/migrations/` — `NNN_description.up.sql` and
-   `NNN_description.down.sql` (golang-migrate).
+   `NNN_description.down.sql` (golang-migrate) — and the pair with the same number in
+   `internal/db/migrations_postgres/`.
 2. Add or edit the query in `sql/queries/`.
-3. Run `make generate/backend/sqlc` and commit the regenerated `internal/db/*.sql.go`.
+3. Run `make generate/backend/sqlc` and commit what it regenerates in `internal/db/` and `internal/db/pgdb/`.
+4. Run `make serve/postgres` and `make test/db/postgres`.
 ### OS image changes are a last resort
 
 - Change the device image (`autobutler-org/armbian-build`) only as an absolute last resort. Before adding

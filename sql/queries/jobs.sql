@@ -15,32 +15,6 @@ WHERE
 LIMIT
     1;
 
--- name: ListJobs :many
-SELECT
-    *
-FROM
-    jobs
-WHERE
-    kind IN (sqlc.slice('kinds'))
-ORDER BY
-    id DESC;
-
--- ListJobs for one account, so a non-admin's listing never loads every other
--- account's jobs (#2756).
--- user_id stays ahead of the slice: SQLite numbers the slice's bare
--- placeholders from the highest number before them, so a named parameter
--- written after it would bind a kind (sqlc-dev/sqlc#2452).
--- name: ListUserJobs :many
-SELECT
-    *
-FROM
-    jobs
-WHERE
-    user_id = sqlc.arg(user_id)
-    AND kind IN (sqlc.slice('kinds'))
-ORDER BY
-    id DESC;
-
 -- The pending jobs, oldest first, for the dispatcher to pick from by lane.
 -- name: ListPendingJobs :many
 SELECT

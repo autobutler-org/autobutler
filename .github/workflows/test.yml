@@ -36,6 +36,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      postgres: ${{ steps.filter.outputs.postgres }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -72,6 +73,40 @@ jobs:
       - name: Run integration tests
         run: |
           make test/integration/backend
+  # The PostgreSQL half of the query layer's check (sql/queries/AGENTS.md): every generated
+  # statement prepared on a real server, the two schemas compared, and the adapter run
+  # through db.Querier. Only this; running the whole backend suite per backend is #2960.
+  test-postgres:
+    needs: changes
+    if: needs.changes.outputs.postgres != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      # The image major, user, password, database and port compose.yaml gives a developer,
+      # so the URL the Makefile builds reaches this one too. Keep the two in step.
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: quark
+          POSTGRES_PASSWORD: quark
+          POSTGRES_DB: quark
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U quark -d quark"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Check the queries and schema on PostgreSQL
+        run: |
+          make test/db/postgres
   api-chaos:
     needs: changes
     if: needs.changes.outputs.backend != 'false'
