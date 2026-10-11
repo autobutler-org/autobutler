@@ -4,8 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-import 'package:quark_widgets/src/chat/quark_mention_suggestions.dart';
-
 import '../support/pump.dart';
 
 /// The field messages are written in (#2420): the send button sends

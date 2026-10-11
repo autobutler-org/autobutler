@@ -108,7 +108,7 @@ final List<ChatMessageItem> galleryChatMessages = [
     authorId: 'ada',
     authorName: 'Ada Lovelace',
     sentAt: DateTime(2026, 9, 23, 20, 1),
-    body: 'Book club is at mine on Thursday.',
+    body: 'Book club is at mine on Thursday, @bob.',
   ),
   ChatMessageItem(
     id: 'm1',

@@ -1850,6 +1850,8 @@ final List<GalleryEntry> registry = [
             onLoadOlder: () => log('QuarkMessageList.onLoadOlder'),
             permissions: ChatPermissionPreset.moderator.permissions,
             currentUserId: galleryChatUserId,
+            mentionNames: const ['ada', 'bob', 'eve'],
+            currentUserName: galleryChatUserId,
             onCopy: (id) => log('QuarkMessageList.onCopy($id)'),
             onDelete: (id) => log('QuarkMessageList.onDelete($id)'),
             onReact: (id, emoji) =>
@@ -1890,8 +1892,9 @@ final List<GalleryEntry> registry = [
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         QuarkMessageComposer(
-          hintText: 'Message #general',
+          hintText: 'Message #general, @ to mention',
           permissions: ChatPermissionPreset.member.permissions,
+          mentionNames: const ['ada', 'bob', 'eve'],
           onSend: (text) => log('QuarkMessageComposer.onSend($text)'),
         ),
         const SizedBox(height: 16),
@@ -1909,6 +1912,31 @@ final List<GalleryEntry> registry = [
         QuarkMessageComposer(
           permissions: const {ChatPermission.manageMembers},
           onSend: (text) => log('QuarkMessageComposer.onSend($text)'),
+        ),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'QuarkMentionSuggestions',
+    group: 'Chat',
+    build: (context, log) => Wrap(
+      spacing: 24,
+      runSpacing: 24,
+      children: [
+        SizedBox(
+          width: 280,
+          child: QuarkMentionSuggestions(
+            names: const ['ada', 'adam', 'adele'],
+            highlighted: 'adam',
+            onSelect: (name) => log('QuarkMentionSuggestions.onSelect($name)'),
+          ),
+        ),
+        SizedBox(
+          width: 280,
+          child: QuarkMentionSuggestions(
+            names: const ['bob'],
+            onSelect: (name) => log('QuarkMentionSuggestions.onSelect($name)'),
+          ),
         ),
       ],
     ),

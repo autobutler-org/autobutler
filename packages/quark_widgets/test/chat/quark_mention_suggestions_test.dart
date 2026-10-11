@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quark_widgets/src/chat/quark_mention_suggestions.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 import '../support/pump.dart';
 
