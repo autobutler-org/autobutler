@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -1133,5 +1135,58 @@ func TestExpiredSessionsDoNotCountTowardTheCap(t *testing.T) {
 	}
 	if got := stagedCount(t, store.StagingDir()); got != 1 {
 		t.Errorf("staged %d files, want only the new session's", got)
+	}
+}
+
+// A commit that replaces a file on the internal device runs BeforeOverwrite
+// while the old content is still there (#2992). A new file, and a file on a
+// device addressed by serial, do not run it.
+func TestCommitRunsBeforeOverwriteOnlyWhenReplacing(t *testing.T) {
+	t.Parallel()
+
+	store := newTestStore(t)
+	dest, root := newLocalDestination(t)
+	usb, err := vfs.NewLocalVFS(t.TempDir(), vfs.FilesNamespace("USB1"))
+	if err != nil {
+		t.Fatalf("NewLocalVFS: %v", err)
+	}
+	if err := dest.Registry.Register(vfs.Namespace{ID: vfs.FilesNamespace("USB1")}, usb); err != nil {
+		t.Fatalf("register device namespace: %v", err)
+	}
+	if err := usb.Write(context.Background(), "deck.qslide", strings.NewReader("on usb"), vfs.WriteOptions{}); err != nil {
+		t.Fatalf("seed device: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "deck.qslide"), []byte("original"), 0o644); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	var seen []string
+	commit := func(serial, name string) {
+		t.Helper()
+		content := []byte("replacement")
+		total := int64(len(content))
+		created, err := store.CreateSession(uploadutil.CreateSessionParams{
+			Destination: dest, FileName: name, TotalSize: total, Serial: serial, Overwrite: true,
+		})
+		if err != nil {
+			t.Fatalf("create session: %v", err)
+		}
+		if _, err := store.WriteChunk(uploadutil.WriteChunkParams{
+			Ctx: context.Background(), Destination: dest, SessionID: created.SessionID,
+			Range: uploadutil.ContentRange{Start: 0, End: total - 1, Total: total}, Body: bytes.NewReader(content),
+			BeforeOverwrite: func(p string) {
+				old, _ := os.ReadFile(filepath.Join(root, p))
+				seen = append(seen, p+"="+string(old))
+			},
+		}); err != nil {
+			t.Fatalf("commit %s: %v", name, err)
+		}
+	}
+	commit("", "deck.qslide")
+	commit("", "new.qslide")
+	commit("USB1", "deck.qslide")
+
+	if want := []string{"deck.qslide=original"}; !slices.Equal(seen, want) {
+		t.Errorf("BeforeOverwrite saw %q, want %q", seen, want)
 	}
 }

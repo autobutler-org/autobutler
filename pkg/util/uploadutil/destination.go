@@ -128,6 +128,9 @@ func writeToVFS(fsys vfs.VFS, params WriteFileParams, fileName string) (Uploaded
 	var created bool
 	destPath, err := placeUnderFreeName(params.RootDir, fileName, params.KeepBoth, func(p string) error {
 		created = !params.Overwrite || !vfsExists(params.Ctx, fsys, p)
+		if !created && params.BeforeOverwrite != nil {
+			params.BeforeOverwrite(p)
+		}
 		if mover, ok := fsys.(vfs.FileMover); ok && params.SourcePath != "" {
 			return mover.MoveFileIn(params.Ctx, params.SourcePath, p, opts)
 		}

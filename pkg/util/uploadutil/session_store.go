@@ -167,7 +167,7 @@ func (s *SessionStore) WriteChunk(params WriteChunkParams) (WriteChunkResult, er
 	// resends the last chunk and the move into the namespace is attempted
 	// again, rather than the session sitting complete-but-unwritten until it
 	// expires.
-	return s.commit(params.Ctx, sess, params.Destination)
+	return s.commit(sess, params)
 }
 
 // DescribeSession is the resync path: after a dropped connection the client
@@ -346,7 +346,7 @@ func (s *SessionStore) admit(sess *session) error {
 
 // commit moves a fully staged file into the namespace. Called with the
 // session's lock held.
-func (s *SessionStore) commit(ctx context.Context, sess *session, dest Destination) (WriteChunkResult, error) {
+func (s *SessionStore) commit(sess *session, params WriteChunkParams) (WriteChunkResult, error) {
 	if err := sess.file.Sync(); err != nil {
 		return WriteChunkResult{}, fmt.Errorf("failed to flush staged upload: %w", err)
 	}
@@ -358,15 +358,20 @@ func (s *SessionStore) commit(ctx context.Context, sess *session, dest Destinati
 	// place rather than copy it (#1828). sess.file stays open across the move —
 	// on the platforms we build for an open file can be renamed — so a failed
 	// commit can still be retried, and discardLocked closes it afterwards.
-	written, err := dest.WriteFile(WriteFileParams{
-		Ctx:        ctx,
-		Reader:     sess.file,
-		SourcePath: sess.tempPath,
-		RootDir:    sess.rootDir,
-		FileName:   sess.fileName,
-		Serial:     sess.serial,
-		Overwrite:  sess.overwrite,
-		KeepBoth:   sess.keepBoth,
+	beforeOverwrite := params.BeforeOverwrite
+	if sess.serial != "" {
+		beforeOverwrite = nil
+	}
+	written, err := params.Destination.WriteFile(WriteFileParams{
+		Ctx:             params.Ctx,
+		Reader:          sess.file,
+		SourcePath:      sess.tempPath,
+		RootDir:         sess.rootDir,
+		FileName:        sess.fileName,
+		Serial:          sess.serial,
+		Overwrite:       sess.overwrite,
+		KeepBoth:        sess.keepBoth,
+		BeforeOverwrite: beforeOverwrite,
 	})
 	if err != nil {
 		// A transient failure (I/O, a full disk, a dropped request) keeps the

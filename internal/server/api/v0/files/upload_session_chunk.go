@@ -16,7 +16,7 @@ import (
 
 // uploadSessionChunk godoc
 // @Summary Send one chunk of a resumable upload
-// @Description Append the chunk named by Content-Range; the last one commits the file, and the caller owns it if it is new. A session opened by someone else is not found. A 409 carrying X-Upload-Offset is a chunk out of step; one without it is a name already in use. A photo or video's client-rendered thumbnail goes to PUT /thumbnails/{filePath} once the last chunk answers with where the file landed.
+// @Description Append the chunk named by Content-Range; the last one commits the file, and the caller owns it if it is new. A commit that replaces a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. A session opened by someone else is not found. A 409 carrying X-Upload-Offset is a chunk out of step; one without it is a name already in use. A photo or video's client-rendered thumbnail goes to PUT /thumbnails/{filePath} once the last chunk answers with where the file landed.
 // @Tags files
 // @Accept octet-stream
 // @Produce json
@@ -50,6 +50,8 @@ func uploadSessionChunk(c *gin.Context) *serverutil.Response {
 		UserID:      callerID(c),
 		Range:       chunk,
 		Body:        c.Request.Body,
+		// A save that arrives in chunks snapshots what it replaces too (#2992).
+		BeforeOverwrite: beforeSave(c, deps, ""),
 	})
 	if err != nil {
 		return uploadSessionError(c, err)

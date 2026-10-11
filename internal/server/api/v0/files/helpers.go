@@ -14,6 +14,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/downloadutil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
+	"github.com/autobutler-org/quark/pkg/util/fileversionutil"
 	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/uploadutil"
@@ -170,6 +171,20 @@ func uploadDestination(deps deputil.Dependencies) uploadutil.Destination {
 		Registry: deps.VFSRegistry(),
 		EventBus: deps.EventBus(),
 	}
+}
+
+// beforeSave is the hook a save runs before it replaces a file: an automatic
+// snapshot of an editor document's old content (#1173, #2992). Version history
+// lives on the internal device only, so a save to a device addressed by
+// serial gets no hook.
+func beforeSave(c *gin.Context, deps deputil.Dependencies, serial string) func(path string) {
+	fsys := uploadDestination(deps).FilesVFS("")
+	if serial != "" || fsys == nil {
+		return nil
+	}
+	return deps.FileVersions().BeforeSave(fileversionutil.BeforeSaveParams{
+		Ctx: c.Request.Context(), FS: fsys, AuthorID: callerID(c),
+	})
 }
 
 // Resumable chunked uploads (#1629). A large file no longer rides on one

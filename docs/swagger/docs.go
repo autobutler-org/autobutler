@@ -4723,7 +4723,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Enqueue a file move operation between paths/devices. Needs write access on the file and on the folder it moves into.",
+                "description": "Enqueue a file move operation between paths/devices. Needs write access on the file and on the folder it moves into. A file already at the new path is replaced; a .qslide, .qsheet or .qdoc on the internal device is first snapshotted into its version history.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5820,7 +5820,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload one or more files via multipart/form-data. Needs write access on the top-level directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped.",
+                "description": "Upload one or more files via multipart/form-data. Needs write access on the top-level directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -6018,7 +6018,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Append the chunk named by Content-Range; the last one commits the file, and the caller owns it if it is new. A session opened by someone else is not found. A 409 carrying X-Upload-Offset is a chunk out of step; one without it is a name already in use. A photo or video's client-rendered thumbnail goes to PUT /thumbnails/{filePath} once the last chunk answers with where the file landed.",
+                "description": "Append the chunk named by Content-Range; the last one commits the file, and the caller owns it if it is new. A commit that replaces a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. A session opened by someone else is not found. A 409 carrying X-Upload-Offset is a chunk out of step; one without it is a name already in use. A photo or video's client-rendered thumbnail goes to PUT /thumbnails/{filePath} once the last chunk answers with where the file landed.",
                 "consumes": [
                     "application/octet-stream"
                 ],
@@ -6118,7 +6118,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload one or more files via multipart/form-data. Needs write access on the directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped.",
+                "description": "Upload one or more files via multipart/form-data. Needs write access on the directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped.",
                 "consumes": [
                     "multipart/form-data"
                 ],

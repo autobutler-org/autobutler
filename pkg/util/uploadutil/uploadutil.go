@@ -178,6 +178,9 @@ type WriteFileParams struct {
 	// storageutil.NumberedName. With neither it nor Overwrite, a taken name is
 	// vfs.ErrConflict (#2016).
 	KeepBoth bool
+	// BeforeOverwrite, when set, is called with the file's path just before
+	// the write replaces it, while the old content is still there to snapshot.
+	BeforeOverwrite func(path string)
 }
 
 // WriteFileResult reports where the file ended up, API-relative.
@@ -335,6 +338,11 @@ type WriteChunkParams struct {
 	Range       ContentRange
 	// Body carries exactly Range.Length() bytes. Anything else is a 400.
 	Body io.Reader
+	// BeforeOverwrite, when set, is called with the finished file's path just
+	// before the commit replaces a file on the internal device, while the old
+	// content is still there to snapshot. A session for a device addressed by
+	// serial never calls it: version history lives on the internal device.
+	BeforeOverwrite func(path string)
 }
 
 // WriteChunkResult is the committed offset after the chunk, and — once the last
