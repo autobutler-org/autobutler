@@ -61,7 +61,7 @@ type Notification struct {
 // ListParams describes the account to list notifications for.
 type ListParams struct {
 	// Queries is the database the last snapshot backup is recorded in.
-	Queries *db.Queries
+	Queries db.Querier
 	// IsAdmin is whether the account is an admin.
 	IsAdmin bool
 	// Disabled is the types the account turned off.

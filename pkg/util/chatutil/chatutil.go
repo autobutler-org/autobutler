@@ -464,7 +464,7 @@ func CreateChannel(params CreateChannelParams) (CreateChannelResult, error) {
 	}
 	creator := sql.NullInt64{Int64: params.Principal.UserID, Valid: true}
 	var row db.ChatChannel
-	err = db.InTx(params.Ctx, params.Database.Db, func(q *db.Queries) error {
+	err = db.InTx(params.Ctx, params.Database.Db, func(q db.Querier) error {
 		var err error
 		row, err = q.CreateChatChannel(params.Ctx, db.CreateChatChannelParams{Name: name, Topic: topic, CreatedBy: creator})
 		if err != nil {
@@ -692,7 +692,7 @@ func SetMember(params SetMemberParams) (ListMembersResult, error) {
 	if err != nil {
 		return ListMembersResult{}, err
 	}
-	err = keepingAnOwner(params.Ctx, params.Database, params.Principal, params.ChannelID, func(q *db.Queries) error {
+	err = keepingAnOwner(params.Ctx, params.Database, params.Principal, params.ChannelID, func(q db.Querier) error {
 		if params.UserID != 0 {
 			return q.SetChatChannelUserMember(params.Ctx, db.SetChatChannelUserMemberParams{
 				ChannelID:   params.ChannelID,
@@ -788,7 +788,7 @@ func RemoveMember(params RemoveMemberParams) (ListMembersResult, error) {
 	if err != nil {
 		return ListMembersResult{}, err
 	}
-	err = keepingAnOwner(params.Ctx, params.Database, params.Principal, params.ChannelID, func(q *db.Queries) error {
+	err = keepingAnOwner(params.Ctx, params.Database, params.Principal, params.ChannelID, func(q db.Querier) error {
 		var deleted int64
 		var err error
 		if params.UserID != 0 {
@@ -903,7 +903,7 @@ func ValidateKeys(keys Keys) error {
 // GetKeysParams asks for an account's own stored chat identity.
 type GetKeysParams struct {
 	Ctx     context.Context
-	Queries *db.Queries
+	Queries db.Querier
 	UserID  int64
 }
 
@@ -930,7 +930,7 @@ func GetKeys(params GetKeysParams) (GetKeysResult, error) {
 // same transaction that resets the password.
 type PutKeysParams struct {
 	Ctx     context.Context
-	Queries *db.Queries
+	Queries db.Querier
 	UserID  int64
 	Keys    Keys
 }
@@ -979,7 +979,7 @@ func PutKeys(params PutKeysParams) (PutKeysResult, error) {
 // GetPublicKeysParams asks for another account's public chat keys.
 type GetPublicKeysParams struct {
 	Ctx     context.Context
-	Queries *db.Queries
+	Queries db.Querier
 	UserID  int64
 }
 
@@ -1386,7 +1386,7 @@ func CreateKeyVersion(params CreateKeyVersionParams) (CreateKeyVersionResult, er
 		return CreateKeyVersionResult{}, ErrGrantSignature
 	}
 	var result CreateKeyVersionResult
-	err = db.InTx(params.Ctx, params.Database.Db, func(q *db.Queries) error {
+	err = db.InTx(params.Ctx, params.Database.Db, func(q db.Querier) error {
 		state, err := loadKeyState(params.Ctx, q, params.ChannelID)
 		if err != nil {
 			return err

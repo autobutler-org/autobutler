@@ -32,7 +32,7 @@ type ExportJSON struct {
 
 // ExportParams decrypts the whole vault for a plaintext export.
 type ExportParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// Key is the unlocked vault key.
 	Key []byte
 }

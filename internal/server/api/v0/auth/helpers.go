@@ -41,14 +41,14 @@ func accountRefusalResponse(err error) *serverutil.Response {
 // the step that stores them inside that change's transaction, nil when the
 // body carried none. Recovery, a recovery-key rotation and a password change
 // all hand the account's chat identity back re-wrapped (#2416, #2430, #3022).
-func storeChatKeys(ctx context.Context, keys *chatutil.Keys) (func(*db.Queries, int64) error, error) {
+func storeChatKeys(ctx context.Context, keys *chatutil.Keys) (func(db.Querier, int64) error, error) {
 	if keys == nil {
 		return nil, nil
 	}
 	if err := chatutil.ValidateKeys(*keys); err != nil {
 		return nil, err
 	}
-	return func(q *db.Queries, userID int64) error {
+	return func(q db.Querier, userID int64) error {
 		_, err := chatutil.PutKeys(chatutil.PutKeysParams{Ctx: ctx, Queries: q, UserID: userID, Keys: *keys})
 		return err
 	}, nil

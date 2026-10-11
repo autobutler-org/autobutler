@@ -9,8 +9,9 @@ import (
 
 // QueriesForTesting is the database the package is bound to, for a test that
 // has to look at the rows themselves.
-func QueriesForTesting() *db.Queries {
-	return store.Load()
+func QueriesForTesting() db.Querier {
+	queries, _ := bound()
+	return queries
 }
 
 // DropFeatureFlagForTesting is dropFeatureFlag, for a test that retires a flag

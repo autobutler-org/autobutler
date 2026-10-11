@@ -12,7 +12,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
-func userID(t *testing.T, q *db.Queries, name string) int64 {
+func userID(t *testing.T, q db.Querier, name string) int64 {
 	t.Helper()
 	user, err := q.GetUserByUsername(context.Background(), name)
 	if err != nil {

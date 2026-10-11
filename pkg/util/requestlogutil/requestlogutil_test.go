@@ -16,14 +16,14 @@ import (
 
 var decidedAt = time.Date(2026, 10, 9, 12, 0, 0, 0, time.UTC)
 
-func appendEntry(t *testing.T, queries *db.Queries, entry requestlogutil.Entry) {
+func appendEntry(t *testing.T, queries db.Querier, entry requestlogutil.Entry) {
 	t.Helper()
 	if _, err := requestlogutil.Append(context.Background(), requestlogutil.AppendParams{Queries: queries, Entry: entry}); err != nil {
 		t.Fatalf("Append(%+v): %v", entry, err)
 	}
 }
 
-func list(t *testing.T, queries *db.Queries) []requestlogutil.Entry {
+func list(t *testing.T, queries db.Querier) []requestlogutil.Entry {
 	t.Helper()
 	result, err := requestlogutil.List(context.Background(), requestlogutil.ListParams{Queries: queries})
 	if err != nil {
@@ -34,7 +34,7 @@ func list(t *testing.T, queries *db.Queries) []requestlogutil.Entry {
 
 // importFile runs Import against dataDir and returns how many decisions the
 // file held.
-func importFile(t *testing.T, queries *db.Queries, dataDir string) int {
+func importFile(t *testing.T, queries db.Querier, dataDir string) int {
 	t.Helper()
 	result, err := requestlogutil.Import(context.Background(), requestlogutil.ImportParams{Queries: queries, DataDir: dataDir})
 	if err != nil {
@@ -146,7 +146,7 @@ func TestImport_NoFileIsNothingToDo(t *testing.T) {
 
 // twoInstances returns two handles on one migrated database file, as two
 // server instances on one database would hold.
-func twoInstances(t *testing.T) (*db.Queries, *db.Queries) {
+func twoInstances(t *testing.T) (db.Querier, db.Querier) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "quark.db")
 	open := func() *sql.DB {
@@ -171,7 +171,7 @@ func TestAppend_TwoInstancesShareTheHistory(t *testing.T) {
 	appendEntry(t, first, requestlogutil.Entry{Username: "waiting", Outcome: requestlogutil.OutcomeApproved, DecidedBy: "admin", DecidedAt: decidedAt})
 	appendEntry(t, second, requestlogutil.Entry{Username: "asker", Outcome: requestlogutil.OutcomeDenied, DecidedBy: "other-admin", DecidedAt: decidedAt})
 
-	for name, queries := range map[string]*db.Queries{"first": first, "second": second} {
+	for name, queries := range map[string]db.Querier{"first": first, "second": second} {
 		entries := list(t, queries)
 		if len(entries) != 2 || entries[0].Username != "asker" || entries[1].Username != "waiting" {
 			t.Errorf("%s instance lists %+v, want asker then waiting", name, entries)

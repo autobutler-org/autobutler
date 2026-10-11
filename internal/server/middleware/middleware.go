@@ -380,7 +380,7 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 // the chain. The principal is what the file routes check access against
 // (#1902); an admin lookup that fails aborts with 503 rather than guessing,
 // because guessing wrong either locks the admin out or lets a user in.
-func authenticated(c *gin.Context, queries *db.Queries, username string, userID int64) {
+func authenticated(c *gin.Context, queries db.Querier, username string, userID int64) {
 	isAdmin, err := authutil.IsAdmin(c.Request.Context(), queries, username)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "service unavailable"})

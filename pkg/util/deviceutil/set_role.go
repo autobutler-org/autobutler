@@ -17,7 +17,7 @@ type SetRoleParams struct {
 	// Ctx bounds the reads and the write.
 	Ctx context.Context
 	// Queries holds the device_roles rows and the user to authenticate.
-	Queries *db.Queries
+	Queries db.Querier
 	// Storage lists the connected devices a non-unassigned role needs.
 	Storage *storageutil.StorageService
 	// Serial identifies the device, empty for the internal one.

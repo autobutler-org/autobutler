@@ -118,7 +118,7 @@ type Event struct {
 
 // CreateEventParams adds an event to the default calendar.
 type CreateEventParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	Input   EventInput
 	// CreatedBy is the account creating the event, which owns it; 0 for none.
 	CreatedBy int64
@@ -154,7 +154,7 @@ func CreateEvent(ctx context.Context, params CreateEventParams) (CreateEventResu
 
 // GetEventParams reads one event.
 type GetEventParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	ID      int64
 }
 
@@ -175,7 +175,7 @@ func GetEvent(ctx context.Context, params GetEventParams) (GetEventResult, error
 
 // ListEventsParams lists the events that may have an occurrence in [From, To).
 type ListEventsParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	From    time.Time
 	To      time.Time
 }
@@ -203,7 +203,7 @@ func ListEvents(ctx context.Context, params ListEventsParams) (ListEventsResult,
 // the whole series: the MVP has no per-occurrence edits. The owner stays the
 // account that created it, whoever edits it.
 type UpdateEventParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	ID      int64
 	Input   EventInput
 }
@@ -229,7 +229,7 @@ func UpdateEvent(ctx context.Context, params UpdateEventParams) (UpdateEventResu
 
 // DeleteEventParams deletes an event, every occurrence of it included.
 type DeleteEventParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	ID      int64
 }
 

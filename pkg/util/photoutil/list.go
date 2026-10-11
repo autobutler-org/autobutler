@@ -61,7 +61,7 @@ type ListPhotosParams struct {
 	Order string
 	// Queries reads the capture dates SortTaken orders by. Nil sorts SortTaken
 	// by the date added alone.
-	Queries *db.Queries
+	Queries db.Querier
 	// Offset and Limit page the sorted result.
 	Offset int
 	Limit  int
@@ -103,7 +103,7 @@ func ParseSort(raw string) string {
 // TakenDatesParams names where capture dates are stored.
 type TakenDatesParams struct {
 	Ctx     context.Context
-	Queries *db.Queries
+	Queries db.Querier
 }
 
 // TakenDatesResult maps a photo, keyed by device serial and canonical path,

@@ -13,7 +13,7 @@ import (
 
 // setupUserWithSessions creates a user and N sessions, returning the user ID
 // and the raw session tokens so callers can compute expected IDs.
-func setupUserWithSessions(t *testing.T, q *db.Queries, n int) (int64, []string) {
+func setupUserWithSessions(t *testing.T, q db.Querier, n int) (int64, []string) {
 	t.Helper()
 	ctx := context.Background()
 

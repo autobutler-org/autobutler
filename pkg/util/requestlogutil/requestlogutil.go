@@ -44,7 +44,7 @@ type Entry struct {
 
 // AppendParams is a decision to add to the history.
 type AppendParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	Entry   Entry
 }
 
@@ -53,7 +53,7 @@ type AppendResult struct{}
 
 // ListParams locates the history.
 type ListParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 }
 
 // ListResult is the history, newest decision first and never nil.
@@ -64,7 +64,7 @@ type ListResult struct {
 // ImportParams locates the history file of a Quark from before the history
 // moved into the database.
 type ImportParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// DataDir is the Quark's data directory (storageutil.GetDataDir).
 	DataDir string
 }

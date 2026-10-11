@@ -30,7 +30,7 @@ func (s *SQLiteMetadataStore) Set(ctx context.Context, namespace, path string, k
 		return nil
 	}
 
-	err := db.InTx(ctx, s.db, func(qtx *db.Queries) error {
+	err := db.InTx(ctx, s.db, func(qtx db.Querier) error {
 		for key, value := range kv {
 			err := qtx.UpsertVFSMetadata(ctx, db.UpsertVFSMetadataParams{
 				Namespace: namespace,
@@ -57,7 +57,7 @@ func (s *SQLiteMetadataStore) DeleteKeys(ctx context.Context, namespace, path st
 		return nil
 	}
 
-	err := db.InTx(ctx, s.db, func(qtx *db.Queries) error {
+	err := db.InTx(ctx, s.db, func(qtx db.Querier) error {
 		for _, key := range keys {
 			err := qtx.DeleteVFSMetadataKey(ctx, db.DeleteVFSMetadataKeyParams{Namespace: namespace, Path: path, Key: key})
 			if err != nil {

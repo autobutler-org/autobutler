@@ -9,12 +9,12 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func newDeviceDB(t *testing.T) *db.Queries {
+func newDeviceDB(t *testing.T) db.Querier {
 	t.Helper()
 	return dbtest.NewDB(t).Queries
 }
 
-func upsert(t *testing.T, q *db.Queries, ip, ua string) db.ConnectedDevice {
+func upsert(t *testing.T, q db.Querier, ip, ua string) db.ConnectedDevice {
 	t.Helper()
 	d, err := q.UpsertConnectedDevice(context.Background(), db.UpsertConnectedDeviceParams{
 		IpAddress: ip,

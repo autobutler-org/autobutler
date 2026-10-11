@@ -104,7 +104,7 @@ func shareablePath(access Access, serial, p string) (string, error) {
 
 // ensurePrincipal returns ErrPrincipalNotFound unless the user is active or
 // the group exists.
-func ensurePrincipal(ctx context.Context, queries *db.Queries, userID, groupID int64) error {
+func ensurePrincipal(ctx context.Context, queries db.Querier, userID, groupID int64) error {
 	if userID != 0 {
 		user, err := queries.GetUserByID(ctx, userID)
 		if errors.Is(err, sql.ErrNoRows) || (err == nil && user.Status != authutil.StatusActive) {
@@ -122,7 +122,7 @@ func ensurePrincipal(ctx context.Context, queries *db.Queries, userID, groupID i
 // ensureNotSelfOwner returns ErrSelfOwner when a non-admin's change would
 // touch their own owner row on exactly this path. Ownership they inherit from
 // a parent folder is not touched by it, so it doesn't count.
-func ensureNotSelfOwner(ctx context.Context, queries *db.Queries, principal Principal, serial, rel string, userID int64) error {
+func ensureNotSelfOwner(ctx context.Context, queries db.Querier, principal Principal, serial, rel string, userID int64) error {
 	if principal.IsAdmin || userID == 0 || userID != principal.UserID {
 		return nil
 	}

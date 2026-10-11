@@ -47,7 +47,7 @@ type MetadataParams struct {
 	// Ctx bounds the VFS and database calls.
 	Ctx context.Context
 	// Queries reads rotation, favorite, and album membership.
-	Queries *db.Queries
+	Queries db.Querier
 	// UserID is the account whose favorite and albums are reported.
 	UserID int64
 	// Registry holds one namespace per device; the photo is read through
@@ -152,7 +152,7 @@ type SaveRotationParams struct {
 	// Ctx bounds the database write.
 	Ctx context.Context
 	// Queries writes the rotation record.
-	Queries *db.Queries
+	Queries db.Querier
 	// Serial is the device serial the file belongs to, empty for local files.
 	Serial string
 	// RelPath is the photo's path relative to its files directory.

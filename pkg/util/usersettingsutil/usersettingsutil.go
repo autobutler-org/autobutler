@@ -67,7 +67,7 @@ func (s Settings) Validate() error {
 
 // LoadParams names the account whose settings to read.
 type LoadParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	UserID  int64
 }
 
@@ -78,7 +78,7 @@ type LoadResult struct {
 
 // SaveParams is an account's new settings, replacing the stored ones whole.
 type SaveParams struct {
-	Queries  *db.Queries
+	Queries  db.Querier
 	UserID   int64
 	Settings Settings
 }
@@ -91,7 +91,7 @@ type SaveResult struct {
 // ImportParams locates the settings files of a Quark from before the
 // settings moved into the database.
 type ImportParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// DataDir is the Quark's data directory (storageutil.GetDataDir).
 	DataDir string
 }

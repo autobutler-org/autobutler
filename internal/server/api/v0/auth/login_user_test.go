@@ -63,7 +63,7 @@ func decodeBody(t *testing.T, w *httptest.ResponseRecorder) map[string]any {
 	return body
 }
 
-func setUserStatus(t *testing.T, queries *db.Queries, username, from, to string) {
+func setUserStatus(t *testing.T, queries db.Querier, username, from, to string) {
 	t.Helper()
 	if _, err := queries.SetUserStatus(context.Background(), db.SetUserStatusParams{Username: username, FromStatus: from, ToStatus: to}); err != nil {
 		t.Fatal(err)

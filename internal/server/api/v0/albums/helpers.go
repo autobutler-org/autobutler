@@ -55,7 +55,7 @@ var errNoAccess = errors.New("photo not found")
 
 // countItems counts the album's items the caller can read (#1904). A failed
 // count reads as zero, as the unfiltered count always has.
-func countItems(q *db.Queries, access accessutil.Access, albumID int64) int64 {
+func countItems(q db.Querier, access accessutil.Access, albumID int64) int64 {
 	counted, _ := albumutil.CountItems(context.Background(), albumutil.CountItemsParams{
 		Queries: q,
 		Access:  access,
@@ -89,7 +89,7 @@ func callerID(c *gin.Context) int64 {
 
 // rejectSystemAlbum loads the caller's album and applies forbidSystemAlbum. A
 // missing album, or another account's, answers 404.
-func rejectSystemAlbum(ctx context.Context, q *db.Queries, userID, id int64) *serverutil.Response {
+func rejectSystemAlbum(ctx context.Context, q db.Querier, userID, id int64) *serverutil.Response {
 	album, err := q.GetAlbum(ctx, db.GetAlbumParams{ID: id, UserID: userID})
 	if errors.Is(err, sql.ErrNoRows) {
 		return serverutil.NotFound(errAlbumNotFound)

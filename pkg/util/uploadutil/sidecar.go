@@ -39,7 +39,7 @@ func (s Sidecars) store(part *multipart.Part, relPath string) error {
 	if fileType != storageutil.FileTypeImage && fileType != storageutil.FileTypeVideo {
 		return thumbnailutil.ErrNotMedia
 	}
-	var queries *db.Queries
+	var queries db.Querier
 	if s.Database != nil {
 		queries = s.Database.Queries
 	}

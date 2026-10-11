@@ -14,13 +14,13 @@ import (
 )
 
 // newTestDB returns queries over a database carrying the real migration set.
-func newTestDB(t *testing.T) *db.Queries {
+func newTestDB(t *testing.T) db.Querier {
 	t.Helper()
 	return dbtest.NewDB(t).Queries
 }
 
 // newUser creates an account to own favorites and albums.
-func newUser(t *testing.T, q *db.Queries, username string) int64 {
+func newUser(t *testing.T, q db.Querier, username string) int64 {
 	t.Helper()
 	user, err := q.CreateUser(context.Background(), db.CreateUserParams{
 		Username: username, PasswordHash: "h", RecoveryPhraseHash: "r",

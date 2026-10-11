@@ -118,7 +118,7 @@ func CreateGroup(ctx context.Context, params CreateGroupParams) (CreateGroupResu
 	}
 	var result CreateGroupResult
 	madeDir := ""
-	err = db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
+	err = db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
 		row, err := q.CreateGroup(ctx, name)
 		if sqlutil.IsUniqueConstraintErr(err) {
 			return ErrGroupNameTaken

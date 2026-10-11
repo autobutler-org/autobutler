@@ -22,14 +22,21 @@ import (
 
 type DatabaseSqlc struct {
 	Db      *sql.DB
-	Queries *Queries
+	Queries Querier
+}
+
+// NewQueries returns the generated queries bound to conn: a pool, one
+// connection or a transaction. It is the one place outside the tests that
+// builds them, so it is where the engine behind Querier gets chosen.
+func NewQueries(conn DBTX) Querier {
+	return New(conn)
 }
 
 // InTx runs fn against queries bound to one transaction on sqlDB, committing
 // only if fn returns nil. An error from fn rolls the transaction back and comes
 // back as it is, so callers can still match it with errors.Is; a panic in fn
 // rolls back too and keeps unwinding.
-func InTx(ctx context.Context, sqlDB *sql.DB, fn func(*Queries) error) error {
+func InTx(ctx context.Context, sqlDB *sql.DB, fn func(Querier) error) error {
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
@@ -37,7 +44,7 @@ func InTx(ctx context.Context, sqlDB *sql.DB, fn func(*Queries) error) error {
 	// A no-op once Commit has run.
 	defer tx.Rollback()
 
-	if err := fn(New(tx)); err != nil {
+	if err := fn(NewQueries(tx)); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {

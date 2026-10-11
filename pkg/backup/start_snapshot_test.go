@@ -14,7 +14,7 @@ import (
 
 // newRolesQueries returns queries over the real schema. StartSnapshotBackup
 // reads device_roles and nothing else before it decides whether to go on.
-func newRolesQueries(t *testing.T) *db.Queries {
+func newRolesQueries(t *testing.T) db.Querier {
 	t.Helper()
 	return dbtest.NewDB(t).Queries
 }

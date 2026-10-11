@@ -12,7 +12,7 @@ import (
 )
 
 // mkUser inserts a user and optionally promotes them to admin.
-func mkUser(t *testing.T, q *db.Queries, name string, admin bool) {
+func mkUser(t *testing.T, q db.Querier, name string, admin bool) {
 	t.Helper()
 	hash := dbtest.BcryptHash(t, "pw")
 	if _, err := q.CreateUser(context.Background(), db.CreateUserParams{

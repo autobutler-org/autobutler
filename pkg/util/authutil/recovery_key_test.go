@@ -11,7 +11,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
-func checkRecovery(queries *db.Queries, username, key string) error {
+func checkRecovery(queries db.Querier, username, key string) error {
 	_, err := authutil.CheckRecovery(context.Background(), queries, authutil.CheckRecoveryParams{
 		Username: username, RecoveryKey: key,
 	})
@@ -152,7 +152,7 @@ func TestSetRecoveryKey(t *testing.T) {
 	database := setupAda(t)
 	queries := database.Queries
 	addLegacy(t, queries)
-	set := func(username, key string, after func(*db.Queries, int64) error) error {
+	set := func(username, key string, after func(db.Querier, int64) error) error {
 		_, err := authutil.SetRecoveryKey(ctx, database, authutil.SetRecoveryKeyParams{UserID: userRow(t, queries, username).ID, RecoveryKey: key, AfterSet: after})
 		return err
 	}
@@ -167,7 +167,7 @@ func TestSetRecoveryKey(t *testing.T) {
 		t.Errorf("malformed = %v, want ErrInvalidRecoveryKey", err)
 	}
 	failing := errors.New("chat keys refused")
-	if err := set("ada", authKeyOf(9), func(*db.Queries, int64) error { return failing }); !errors.Is(err, failing) {
+	if err := set("ada", authKeyOf(9), func(db.Querier, int64) error { return failing }); !errors.Is(err, failing) {
 		t.Errorf("failing AfterSet = %v", err)
 	}
 	if row := userRow(t, queries, "ada"); row.RecoveryKeyHash != "" {

@@ -29,7 +29,7 @@ const lastSnapshotKey = "lastSnapshotBackup"
 const lastSnapshotFilename = "last-snapshot-backup"
 
 // RecordSnapshot records that a snapshot backup completed at the given time.
-func RecordSnapshot(ctx context.Context, queries *db.Queries, at time.Time) error {
+func RecordSnapshot(ctx context.Context, queries db.Querier, at time.Time) error {
 	if err := queries.SetSetting(ctx, db.SetSettingParams{Key: lastSnapshotKey, Value: lastSnapshotValue(at)}); err != nil {
 		return fmt.Errorf("record snapshot backup: %w", err)
 	}
@@ -42,7 +42,7 @@ func RecordSnapshot(ctx context.Context, queries *db.Queries, at time.Time) erro
 // ponytail: a Quark whose last backup predates this record reads as never
 // backed up until its next snapshot. If that matters, fall back to the
 // manifest's mtime on the connected snapshot-backup devices.
-func LastSnapshot(ctx context.Context, queries *db.Queries) (time.Time, error) {
+func LastSnapshot(ctx context.Context, queries db.Querier) (time.Time, error) {
 	value, err := queries.GetSetting(ctx, lastSnapshotKey)
 	if errors.Is(err, sql.ErrNoRows) {
 		return time.Time{}, nil
@@ -65,7 +65,7 @@ func LastSnapshot(ctx context.Context, queries *db.Queries) (time.Time, error) {
 // finds nothing to do. A time already in the database is kept, and a file
 // that holds no time is retired without importing anything, as it read as no
 // record. No file is nothing to do.
-func ImportLastSnapshot(ctx context.Context, queries *db.Queries, dataDir string) error {
+func ImportLastSnapshot(ctx context.Context, queries db.Querier, dataDir string) error {
 	path := filepath.Join(dataDir, lastSnapshotFilename)
 	f, err := os.Open(path)
 	if errors.Is(err, fs.ErrNotExist) {

@@ -54,8 +54,18 @@ PostgreSQL schema: it is created by a migration, it carries a comment naming the
 the forms it does not support, and it rejects an unsupported form rather than returning something
 plausible.
 
+## Callers hold `db.Querier`
+
+Code outside this package takes the generated `db.Querier` interface, never the concrete `*db.Queries`, so the
+engine behind it can change without touching a caller.
+
+- **`db.NewQueries(conn)` builds one**, from a pool, a connection or a transaction. Do not call the generated
+  `db.New` outside this package and its tests.
+- **A transaction is `db.InTx`.** `WithTx` is not on the interface. The raw `*sql.Tx` code in `pkg/backup` and
+  `internal/db/reset.go` runs SQL that is not a generated query and stays as it is.
+
 ## Generated code
 
-`*.sql.go`, `models.go`, `db.go` and every other file sqlc writes under `internal/db/` is generated: change
+`*.sql.go`, `models.go`, `db.go`, `querier.go` and every other file sqlc writes under `internal/db/` is generated: change
 the query or the migration and run `make generate/backend/sqlc`. Never edit one by hand. sqlc does not remove
 a generated file whose source `.sql` was renamed or deleted; delete the stale `*.sql.go` yourself.

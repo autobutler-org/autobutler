@@ -27,7 +27,7 @@ func timed(title, start, end string) calendarutil.EventInput {
 	return calendarutil.EventInput{Title: title, Start: at(start), End: at(end)}
 }
 
-func create(t *testing.T, q *db.Queries, input calendarutil.EventInput) calendarutil.Event {
+func create(t *testing.T, q db.Querier, input calendarutil.EventInput) calendarutil.Event {
 	t.Helper()
 	result, err := calendarutil.CreateEvent(context.Background(), calendarutil.CreateEventParams{Queries: q, Input: input})
 	if err != nil {

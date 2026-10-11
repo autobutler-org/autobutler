@@ -29,7 +29,7 @@ func under(id int64) sql.NullInt64 { return sql.NullInt64{Int64: id, Valid: true
 
 // newOwnedQueries returns queries over a fresh database and an account to own
 // albums.
-func newOwnedQueries(t *testing.T) (*db.Queries, int64) {
+func newOwnedQueries(t *testing.T) (db.Querier, int64) {
 	t.Helper()
 	q := dbtest.NewDB(t).Queries
 	user, err := q.CreateUser(context.Background(), db.CreateUserParams{Username: "founder", PasswordHash: "h", RecoveryPhraseHash: "r"})
@@ -39,7 +39,7 @@ func newOwnedQueries(t *testing.T) (*db.Queries, int64) {
 	return q, user.ID
 }
 
-func create(t *testing.T, q *db.Queries, owner int64, name string, parent sql.NullInt64) db.PhotoAlbum {
+func create(t *testing.T, q db.Querier, owner int64, name string, parent sql.NullInt64) db.PhotoAlbum {
 	t.Helper()
 	result, err := albumutil.CreateAlbum(context.Background(), albumutil.CreateAlbumParams{
 		Queries: q, UserID: owner, Name: name, ParentID: parent,

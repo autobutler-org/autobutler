@@ -24,7 +24,7 @@ import (
 // harness is the router on a real database holding an admin and a member.
 type harness struct {
 	engine            *gin.Engine
-	queries           *db.Queries
+	queries           db.Querier
 	adminID, memberID int64
 }
 

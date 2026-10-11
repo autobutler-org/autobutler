@@ -11,7 +11,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func newTestDBWithRoles(t *testing.T) *db.Queries {
+func newTestDBWithRoles(t *testing.T) db.Querier {
 	t.Helper()
 	return dbtest.NewDB(t).Queries
 }

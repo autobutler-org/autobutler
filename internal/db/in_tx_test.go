@@ -10,7 +10,7 @@ import (
 )
 
 // writeKey is the write every test here makes inside its transaction.
-func writeKey(ctx context.Context, q *db.Queries, key string) error {
+func writeKey(ctx context.Context, q db.Querier, key string) error {
 	return q.UpsertVFSMetadata(ctx, db.UpsertVFSMetadataParams{Namespace: "ns", Path: "p", Key: key, Value: `"v"`})
 }
 
@@ -33,7 +33,7 @@ func TestInTx_CommitsWhenFnReturnsNil(t *testing.T) {
 	database := dbtest.NewDB(t)
 	ctx := context.Background()
 
-	err := db.InTx(ctx, database.Db, func(q *db.Queries) error {
+	err := db.InTx(ctx, database.Db, func(q db.Querier) error {
 		return writeKey(ctx, q, "kept")
 	})
 	if err != nil {
@@ -49,7 +49,7 @@ func TestInTx_RollsBackAndReturnsFnErrorUnwrapped(t *testing.T) {
 	ctx := context.Background()
 	errSentinel := errors.New("sentinel")
 
-	err := db.InTx(ctx, database.Db, func(q *db.Queries) error {
+	err := db.InTx(ctx, database.Db, func(q db.Querier) error {
 		if err := writeKey(ctx, q, "dropped"); err != nil {
 			return err
 		}
@@ -74,7 +74,7 @@ func TestInTx_RollsBackWhenFnPanics(t *testing.T) {
 				t.Error("the panic did not propagate out of InTx")
 			}
 		}()
-		_ = db.InTx(ctx, database.Db, func(q *db.Queries) error {
+		_ = db.InTx(ctx, database.Db, func(q db.Querier) error {
 			if err := writeKey(ctx, q, "dropped"); err != nil {
 				t.Fatalf("write: %v", err)
 			}
@@ -98,7 +98,7 @@ func TestInTx_WrapsBeginFailure(t *testing.T) {
 	cancel()
 
 	called := false
-	err := db.InTx(ctx, database.Db, func(*db.Queries) error {
+	err := db.InTx(ctx, database.Db, func(db.Querier) error {
 		called = true
 		return nil
 	})

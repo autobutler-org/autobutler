@@ -20,19 +20,20 @@ const authSaltSecretKey = "authSaltSecret"
 
 var (
 	// store is the database Bind gave the package. It is a handle, not state:
-	// every instance's points at the same rows.
-	store        atomic.Pointer[db.Queries]
+	// every instance's points at the same rows. A pointer to the interface,
+	// because atomic.Pointer holds a pointer and db.Querier is not one.
+	store        atomic.Pointer[db.Querier]
 	testDB       *sql.DB // opened by ResetForTesting only
 	pathOverride string  // set by ResetForTesting only
 )
 
 // bound returns the database the settings live in, or ErrNotBound.
-func bound() (*db.Queries, error) {
+func bound() (db.Querier, error) {
 	queries := store.Load()
 	if queries == nil {
 		return nil, ErrNotBound
 	}
-	return queries, nil
+	return *queries, nil
 }
 
 // set stores one setting as its JSON, leaving every other row alone.
@@ -70,7 +71,7 @@ func decodeRaw(raw, flags map[string]json.RawMessage, s *Settings) error {
 
 // storedSaltSecret returns the salt secret in the database, or nil when there
 // is none or what is stored is not one.
-func storedSaltSecret(ctx context.Context, queries *db.Queries) ([]byte, error) {
+func storedSaltSecret(ctx context.Context, queries db.Querier) ([]byte, error) {
 	value, err := queries.GetSetting(ctx, authSaltSecretKey)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil

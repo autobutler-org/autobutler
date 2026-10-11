@@ -115,7 +115,7 @@ func Import(ctx context.Context, params ImportParams) (ImportResult, error) {
 	}
 
 	result := ImportResult{Ignored: ignored, Errors: parseErrors}
-	err := db.InTx(ctx, params.VaultDB.Db, func(qtx *db.Queries) error {
+	err := db.InTx(ctx, params.VaultDB.Db, func(qtx db.Querier) error {
 		existingEntries, err := qtx.ListVaultEntries(ctx)
 		if err != nil {
 			return fmt.Errorf("list entries: %w", err)

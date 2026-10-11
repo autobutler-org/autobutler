@@ -16,7 +16,7 @@ func TestChangePassword(t *testing.T) {
 	ctx := context.Background()
 	database := setupWithKeys(t)
 	ada := userRow(t, database.Queries, "ada")
-	change := func(userID int64, current, next string, after func(*db.Queries, int64) error) error {
+	change := func(userID int64, current, next string, after func(db.Querier, int64) error) error {
 		_, err := authutil.ChangePassword(ctx, database, authutil.ChangePasswordParams{
 			UserID: userID, CurrentAuthKey: current, NewAuthKey: next, AfterChange: after,
 		})
@@ -28,7 +28,7 @@ func TestChangePassword(t *testing.T) {
 		name          string
 		userID        int64
 		current, next string
-		after         func(*db.Queries, int64) error
+		after         func(db.Querier, int64) error
 		want          error
 	}{
 		{"wrong key", ada.ID, authKeyOf(2), authKeyOf(3), nil, authutil.ErrIncorrectPassword},
@@ -36,7 +36,7 @@ func TestChangePassword(t *testing.T) {
 		{"raw password", ada.ID, "a-raw-password", authKeyOf(3), nil, authutil.ErrAppTooOld},
 		{"malformed new key", ada.ID, authKeyOf(1), "a-raw-password", nil, authutil.ErrInvalidAuthKey},
 		{"unknown account", ada.ID + 100, authKeyOf(1), authKeyOf(3), nil, authutil.ErrUserNotFound},
-		{"failing step", ada.ID, authKeyOf(1), authKeyOf(3), func(*db.Queries, int64) error { return errStep }, errStep},
+		{"failing step", ada.ID, authKeyOf(1), authKeyOf(3), func(db.Querier, int64) error { return errStep }, errStep},
 	} {
 		if err := change(tc.userID, tc.current, tc.next, tc.after); !errors.Is(err, tc.want) {
 			t.Errorf("%s: %v, want %v", tc.name, err, tc.want)
@@ -47,7 +47,7 @@ func TestChangePassword(t *testing.T) {
 	}
 
 	stepRan := false
-	if err := change(ada.ID, authKeyOf(1), authKeyOf(3), func(_ *db.Queries, userID int64) error {
+	if err := change(ada.ID, authKeyOf(1), authKeyOf(3), func(_ db.Querier, userID int64) error {
 		stepRan = userID == ada.ID
 		return nil
 	}); err != nil || !stepRan {

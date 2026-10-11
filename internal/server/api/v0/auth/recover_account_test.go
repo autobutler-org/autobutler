@@ -54,7 +54,7 @@ func TestRecoverAccount_NamedAccount(t *testing.T) {
 
 // createRecoverableUser adds an active account that signs in with the auth key
 // of "original-password" and recovers with the recovery key of phrase.
-func createRecoverableUser(t *testing.T, queries *db.Queries, username, phrase string) {
+func createRecoverableUser(t *testing.T, queries db.Querier, username, phrase string) {
 	t.Helper()
 	keyHash, err := authutil.HashKey(dbtest.AuthKey("original-password"))
 	if err != nil {

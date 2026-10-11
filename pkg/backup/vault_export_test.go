@@ -13,7 +13,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func setupLiveVaultDB(t *testing.T, masterPassword string) (*sql.DB, *db.Queries, []byte) {
+func setupLiveVaultDB(t *testing.T, masterPassword string) (*sql.DB, db.Querier, []byte) {
 	t.Helper()
 	database := dbtest.NewDB(t)
 	d := database.Db

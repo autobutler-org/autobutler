@@ -19,7 +19,7 @@ func newPooledQueries(t *testing.T) *Queries {
 		t.Fatalf("open database: %v", err)
 	}
 	t.Cleanup(func() { sqlDB.Close() })
-	return pooledQueries(sqlDB)
+	return pooledQueries(sqlDB).(*Queries)
 }
 
 // One slow query must not hold up every other request's reads (#2766). On the

@@ -23,7 +23,7 @@ import (
 // compares it by.
 type StorePhotoHashesParams struct {
 	Ctx     context.Context
-	Queries *db.Queries
+	Queries db.Querier
 	// Serial and RelPath name the photo, spelled any way a request spells it.
 	Serial  string
 	RelPath string
@@ -141,7 +141,7 @@ func DHashSource(ctx context.Context, fsys vfs.VFS, relPath string, source io.Re
 // BackfillHashesParams points the backfill at the photo library.
 type BackfillHashesParams struct {
 	Ctx     context.Context
-	Queries *db.Queries
+	Queries db.Querier
 	// Registry enumerates the library the way [ListPhotos] does, and each
 	// photo is read through its device's namespace in it.
 	Registry vfs.Registry

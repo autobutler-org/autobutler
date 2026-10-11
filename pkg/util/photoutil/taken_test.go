@@ -46,7 +46,7 @@ func exifJPEG(t *testing.T, seed int, taken string) []byte {
 }
 
 // takenAtRows lists the stored capture dates, keyed by path.
-func takenAtRows(t *testing.T, q *db.Queries) map[string]time.Time {
+func takenAtRows(t *testing.T, q db.Querier) map[string]time.Time {
 	t.Helper()
 	rows, err := q.ListPhotoTakenAt(context.Background())
 	if err != nil {

@@ -211,7 +211,7 @@ func TestListPhotos_VFS_OffsetBeyondTotal(t *testing.T) {
 
 // --- SaveRotation ---
 
-func newRotationDB(t *testing.T) *db.Queries {
+func newRotationDB(t *testing.T) db.Querier {
 	t.Helper()
 	return dbtest.NewDB(t).Queries
 }

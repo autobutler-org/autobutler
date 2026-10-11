@@ -33,7 +33,7 @@ type ImportBackupResult struct {
 // rather than a server fault.
 func ImportBackup(ctx context.Context, params ImportBackupParams) (ImportBackupResult, error) {
 	var result *backup.VaultImportResult
-	err := db.InTx(ctx, params.VaultDB.Db, func(qtx *db.Queries) error {
+	err := db.InTx(ctx, params.VaultDB.Db, func(qtx db.Querier) error {
 		imported, err := backup.ImportVault(ctx, qtx, params.LiveKey, params.RecoveryPassword, params.BackupDir)
 		if err != nil {
 			return fmt.Errorf("%w: %w", ErrBackupImportFailed, err)

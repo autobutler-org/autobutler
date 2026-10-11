@@ -33,7 +33,7 @@ var (
 
 // CreateAlbumParams creates a user album.
 type CreateAlbumParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// UserID owns the album.
 	UserID int64
 	Name   string
@@ -48,7 +48,7 @@ type CreateAlbumResult struct {
 
 // RenameAlbumParams renames an existing album in place.
 type RenameAlbumParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// UserID owns the album. Another account's album is missing.
 	UserID int64
 	ID     int64
@@ -62,7 +62,7 @@ type RenameAlbumResult struct {
 
 // MoveAlbumParams moves an existing album under a new parent.
 type MoveAlbumParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// UserID owns the album. Another account's album is missing.
 	UserID int64
 	ID     int64
@@ -77,7 +77,7 @@ type MoveAlbumResult struct {
 
 // CountItemsParams counts the items of one album that a caller can see.
 type CountItemsParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// Access leaves out the items the caller cannot read (#1904).
 	Access  accessutil.Access
 	AlbumID int64
@@ -111,7 +111,7 @@ func CountItems(ctx context.Context, params CountItemsParams) (CountItemsResult,
 
 // ListItemsParams lists one album's items in the caller's chosen order.
 type ListItemsParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// Access leaves out the items the caller cannot read (#1904).
 	Access  accessutil.Access
 	AlbumID int64

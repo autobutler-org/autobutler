@@ -54,7 +54,7 @@ type StartSnapshotBackupParams struct {
 	Ctx context.Context
 	// Queries reads the device roles, the vault, and the job holding the
 	// target's lock.
-	Queries *db.Queries
+	Queries db.Querier
 	// Registry holds the target device's files namespace.
 	Registry vfs.Registry
 	// Queue runs the backup. Its Handler for [Kind] comes from [NewHandler].
@@ -137,7 +137,7 @@ func StartSnapshotBackup(params StartSnapshotBackupParams) (StartSnapshotBackupR
 
 // activeBackup is the error naming the pending or running backup for a target,
 // or nil when it has none.
-func activeBackup(ctx context.Context, queries *db.Queries, targetSerial string) *BackupInProgressError {
+func activeBackup(ctx context.Context, queries db.Querier, targetSerial string) *BackupInProgressError {
 	row, err := queries.GetActiveBackupJob(ctx, targetSerial)
 	if err != nil {
 		return nil

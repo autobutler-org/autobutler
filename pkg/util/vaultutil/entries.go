@@ -14,7 +14,7 @@ import (
 // ListEntriesParams lists the vault's entries. No key is needed: the list view
 // is built entirely from the columns stored in the clear.
 type ListEntriesParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 }
 
 // ListEntriesResult carries the entries in storage order.
@@ -24,7 +24,7 @@ type ListEntriesResult struct {
 
 // GetEntryParams reads and decrypts one entry.
 type GetEntryParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// Key is the unlocked vault key. The caller still owns it and is
 	// responsible for zeroing it.
 	Key []byte
@@ -39,7 +39,7 @@ type GetEntryResult struct {
 // BackfillEntryHostsParams recomputes url_host for entries stored with an empty
 // one, which the key is needed for because the URL itself is encrypted.
 type BackfillEntryHostsParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	Key     []byte
 }
 
@@ -50,7 +50,7 @@ type BackfillEntryHostsResult struct {
 
 // CreateEntryParams encrypts a new entry and stores it.
 type CreateEntryParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	Key     []byte
 	Fields  EntryFields
 }
@@ -63,7 +63,7 @@ type CreateEntryResult struct {
 
 // UpdateEntryParams replaces an existing entry wholesale.
 type UpdateEntryParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	Key     []byte
 	ID      int64
 	Fields  EntryFields
@@ -76,7 +76,7 @@ type UpdateEntryResult struct {
 
 // DeleteEntryParams removes one entry.
 type DeleteEntryParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	ID      int64
 }
 
