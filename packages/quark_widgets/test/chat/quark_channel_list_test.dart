@@ -279,6 +279,64 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // #3157: unread messages that mention the account get a pill of their own.
+  testBothViewports('counts unread mentions in an @ pill before the count', (
+    tester,
+    size,
+  ) async {
+    await pumpAt(
+      tester,
+      QuarkChannelList(
+        serverName: 'Home',
+        channels: [
+          const ChatChannelItem(
+            id: 'family',
+            name: 'family',
+            isPrivate: true,
+            unreadCount: 120,
+            mentionCount: 2,
+          ),
+          ChatChannelItem(
+            id: 'busy',
+            name: 'b${'u' * 200}',
+            unreadCount: 300,
+            mentionCount: 100,
+          ),
+          const ChatChannelItem(id: 'one', name: 'one', unreadCount: 1),
+        ],
+      ),
+      size: size,
+    );
+
+    final mention = find.byKey(const ValueKey('channel_mention_family'));
+    expect(
+      find.descendant(of: mention, matching: find.text('@2')),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('2 unread mentions'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('2 unread mentions')), findsOneWidget);
+    expect(find.text('@99+'), findsOneWidget);
+    expect(
+      tester.getRect(mention).right,
+      lessThan(
+        tester
+            .getRect(find.byKey(const ValueKey('channel_unread_family')))
+            .left,
+      ),
+    );
+    final tile = tester.getRect(
+      find.byKey(const ValueKey('channel_tile_busy')),
+    );
+    expect(
+      tester.getRect(find.byKey(const ValueKey('channel_unread_busy'))).right,
+      lessThanOrEqualTo(tile.right),
+    );
+
+    // Unread without a mention: the count alone.
+    expect(find.byKey(const ValueKey('channel_mention_one')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testBothViewports('caps the unread count at 99+', (tester, size) async {
     await pumpAt(
       tester,

@@ -1125,6 +1125,44 @@ void main() {
     });
   });
 
+  // #3157: a mention in a channel that was never opened shows on its row.
+  test('a channel item carries its unread mentions', () async {
+    final chat = FakeChat(
+      channels: [
+        ChatChannel(
+          id: 1,
+          name: 'general',
+          isDefault: true,
+          permissions: memberSet,
+        ),
+        ChatChannel(
+          id: 2,
+          name: 'random',
+          permissions: memberSet,
+          unreadCount: 2,
+        ),
+      ],
+    );
+    ChatMessage unread(int id, String text) => ChatMessage(
+      id: id,
+      channelId: 2,
+      authorId: 8,
+      keyVersion: 1,
+      ciphertext: utf8.encode(text),
+      createdAt: DateTime.utc(2026, 9, 25, 10, id),
+    );
+    chat.unreadMessages[2] = [unread(30, 'hi @ada'), unread(31, 'anyone?')];
+    chat.controller.select('general');
+    await chat.controller.refresh();
+    await pumpEventQueue();
+
+    final items = chat.controller.channelItems;
+    expect(items.firstWhere((c) => c.id == '2').mentionCount, 1);
+    expect(items.firstWhere((c) => c.id == '1').mentionCount, 0);
+    expect(chat.opened.keys, [1], reason: 'random was never opened');
+    chat.controller.dispose();
+  });
+
   group('on-device search (#2429)', () {
     Future<FakeChat> openGeneral() async {
       final chat = FakeChat();

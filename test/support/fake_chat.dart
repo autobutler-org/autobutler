@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:quark/controllers/chat_channel_keys_controller.dart';
 import 'package:quark/controllers/chat_controller.dart';
 import 'package:quark/controllers/chat_messages_controller.dart';
 import 'package:quark/controllers/chat_unread_controller.dart';
+import 'package:quark/controllers/chat_unread_mentions_controller.dart';
 import 'package:quark/models/chat_channel.dart';
 import 'package:quark/models/chat_channel_keys.dart';
 import 'package:quark/models/chat_message.dart';
@@ -212,8 +214,23 @@ class FakeChat {
       events: events.stream,
       now: () => DateTime(2026, 9, 25, 12),
       unread: unread,
+      unreadMentions: ChatUnreadMentionsController(
+        unread: unread,
+        ensureKeys: (_) async => false,
+        listMembers: (_) async => this.members,
+        fetchMessages: (channelId, {limit}) async =>
+            unreadMessages[channelId] ?? const [],
+        openMessage: (message) => utf8.decode(message.ciphertext ?? const []),
+        isUnlocked: () => unlocked,
+        keyChanges: keys,
+        currentUserId: () => 7,
+      ),
     );
   }
+
+  /// The newest messages of each channel never opened, their text as their
+  /// ciphertext, which the unread mentions are counted from.
+  final Map<int, List<ChatMessage>> unreadMessages = {};
 
   /// Every `channelId messageId` the read marker was moved to.
   final List<String> marked = [];

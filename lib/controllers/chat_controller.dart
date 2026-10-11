@@ -6,6 +6,7 @@ import 'package:quark/controllers/chat_channel_share_target.dart';
 import 'package:quark/controllers/chat_keys_controller.dart';
 import 'package:quark/controllers/chat_messages_controller.dart';
 import 'package:quark/controllers/chat_unread_controller.dart';
+import 'package:quark/controllers/chat_unread_mentions_controller.dart';
 import 'package:quark/models/chat_channel.dart';
 import 'package:quark/models/chat_channel_keys.dart';
 import 'package:quark/models/chat_message.dart';
@@ -120,6 +121,9 @@ class ChatPendingSend {
 ///   whether the newest message is in view with [setAtBottom]; while it is,
 ///   the open channel's read marker follows the newest message loaded. Not
 ///   while locked or searching, when the newest message isn't what is shown.
+/// - Each also carries how many of those unread messages mention the
+///   account (#3157), which a [ChatUnreadMentionsController] this controller
+///   owns reads on the device, so a channel never opened shows them.
 ///
 /// Every collaborator has a real default; tests pass fakes.
 class ChatController extends ChangeNotifier {
@@ -149,6 +153,7 @@ class ChatController extends ChangeNotifier {
     Stream<FileEvent>? events,
     DateTime Function()? now,
     ChatUnreadController? unread,
+    ChatUnreadMentionsController? unreadMentions,
   }) : _listChannels = listChannels,
        _listMembers = listMembers,
        _listAllChannels = listAllChannels,
@@ -182,9 +187,12 @@ class ChatController extends ChangeNotifier {
            currentUserId ?? (() => AppSettings.instance.userId.value),
        _now = now ?? DateTime.now,
        _unread = unread ?? ChatUnreadController.instance {
+    _unreadMentions =
+        unreadMentions ?? ChatUnreadMentionsController(unread: _unread);
     _wasUnlocked = _isUnlocked();
     _keyChanges.addListener(_onKeysChanged);
     _unread.addListener(_notify);
+    _unreadMentions.addListener(_notify);
     _events = (events ?? EventsService.instance.events).listen(_onEvent);
   }
 
@@ -223,6 +231,7 @@ class ChatController extends ChangeNotifier {
   final int? Function() _currentUserId;
   final DateTime Function() _now;
   final ChatUnreadController _unread;
+  late final ChatUnreadMentionsController _unreadMentions;
   late final StreamSubscription<FileEvent> _events;
 
   String? _requested;
@@ -522,6 +531,7 @@ class ChatController extends ChangeNotifier {
           isPrivate: c.isPrivate,
           permissions: c.permissions,
           unreadCount: _unread.countOf(c.id),
+          mentionCount: _unreadMentions.countOf(c.id),
         ),
   ];
 
@@ -553,28 +563,12 @@ class ChatController extends ChangeNotifier {
   /// account that reads it, alone or through a group, in alphabetical order.
   /// A mention is only the text `@name` inside the encrypted message, so
   /// this list is all that decides what counts as one.
-  List<String> get mentionNames => {
-    for (final m in _members)
-      if (m.permissions.contains(ChatPermission.readMessages))
-        ...m.userId != null ? [m.name] : m.users.map((u) => u.username),
-  }.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  List<String> get mentionNames => _members.mentionNames;
 
   /// The signed-in account's name as it is in [mentionNames], which a
   /// message has to mention to be highlighted. Null when the account is not
   /// among the open channel's members.
-  String? get currentUserName {
-    final me = _currentUserId();
-    for (final m in _members) {
-      if (m.userId != null) {
-        if (m.userId == me) return m.name;
-        continue;
-      }
-      for (final u in m.users) {
-        if (u.id == me) return u.username;
-      }
-    }
-    return null;
-  }
+  String? get currentUserName => _members.nameOfUser(_currentUserId());
 
   /// The name to show for account [userId]: from the members, or a stand-in
   /// for an account no longer in the channel.
@@ -1065,6 +1059,7 @@ class ChatController extends ChangeNotifier {
     _events.cancel();
     _keyChanges.removeListener(_onKeysChanged);
     _unread.removeListener(_notify);
+    _unreadMentions.dispose();
     _closeMessages();
     super.dispose();
   }

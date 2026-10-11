@@ -62,6 +62,9 @@ class ChatUnreadController extends ChangeNotifier {
   /// heard of.
   int countOf(int channelId) => _counts[channelId] ?? 0;
 
+  /// Every channel's unread count, by channel id.
+  Map<int, int> get counts => _counts;
+
   /// Whether any channel holds an unread message.
   bool get hasUnread => _counts.values.any((count) => count > 0);
 

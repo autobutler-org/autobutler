@@ -25,6 +25,7 @@ export 'src/calendar/calendar_reminder_banner.dart';
 export 'src/calendar/calendar_reminders.dart';
 export 'src/calendar/calendar_time_grid.dart';
 export 'src/calendar/calendar_upcoming_list.dart';
+export 'src/chat/chat_mentions.dart';
 export 'src/chat/quark_channel_dialog.dart';
 export 'src/chat/quark_channel_list.dart';
 export 'src/chat/quark_chat_layout.dart';

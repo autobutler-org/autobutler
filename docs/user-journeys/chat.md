@@ -423,6 +423,13 @@ on two devices or browsers, one with `general` open and one on **Files**.
   the name goes back to normal and the count goes away.
 - After step 4, the dot is gone: reading the channel on one device clears it on the others without a reload.
 
+**Edge cases:**
+
+- When one of `carol`'s messages says `@bob`, `family` also carries an "@1" beside its count on the device
+  showing `general`, before `bob` has opened it (#3157). It goes away with the count. The Quark can't read a
+  message, so this device opens the unread ones itself: there is no "@" while chat is locked, and it looks no
+  further back than the channel's newest 200 messages.
+
 **Notes:**
 
 - A channel is read once its newest message is in view. Scrolled up into its history, new messages keep

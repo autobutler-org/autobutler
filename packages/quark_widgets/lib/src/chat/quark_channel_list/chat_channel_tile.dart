@@ -11,10 +11,13 @@ import 'chat_unread_pill.dart';
 /// [ChatChannelItem.permissions], what the signed-in account may do there as
 /// a preset or Custom. A channel with a [ChatChannelItem.unreadCount] above
 /// zero draws its name in bold and the count in a pill at its end, `99+`
-/// above 99.
+/// above 99. One with a [ChatChannelItem.mentionCount] above zero has a
+/// second pill before it, reading `@` and how many of them mention the
+/// signed-in account.
 ///
 /// A part of `QuarkChannelList`, tested through it. Keys: `channel_tile_<id>`
-/// on the row and `channel_unread_<id>` on its unread count.
+/// on the row, `channel_unread_<id>` on its unread count and
+/// `channel_mention_<id>` on its unread mentions.
 class ChatChannelTile extends StatelessWidget {
   /// Creates the tile for [channel].
   const ChatChannelTile({
@@ -47,10 +50,20 @@ class ChatChannelTile extends StatelessWidget {
         color: tokens.mutedForeground,
       ),
     );
-    final pill = ChatUnreadPill(
-      key: ValueKey('channel_unread_${channel.id}'),
-      count: channel.unreadCount,
-    );
+    final trailing = [
+      if (channel.mentionCount > 0)
+        ChatUnreadPill(
+          key: ValueKey('channel_mention_${channel.id}'),
+          count: channel.mentionCount,
+          isMention: true,
+        ),
+      if (channel.unreadCount > 0)
+        ChatUnreadPill(
+          key: ValueKey('channel_unread_${channel.id}'),
+          count: channel.unreadCount,
+        ),
+      if (channel.isPrivate) lock,
+    ];
     return ListTile(
       key: ValueKey('channel_tile_${channel.id}'),
       dense: true,
@@ -78,19 +91,13 @@ class ChatChannelTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(color: tokens.mutedForeground, fontSize: 12),
             ),
-      trailing: switch ((hasUnread, channel.isPrivate)) {
-        (false, false) => null,
-        (false, true) => lock,
-        (true, false) => pill,
-        (true, true) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            pill,
-            SizedBox(width: tokens.spacingSm),
-            lock,
-          ],
-        ),
-      },
+      trailing: trailing.isEmpty
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: tokens.spacingSm,
+              children: trailing,
+            ),
       onTap: onSelect == null ? null : () => onSelect(channel.id),
     );
   }
