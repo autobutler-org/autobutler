@@ -51,14 +51,11 @@ LABEL org.opencontainers.image.title="Quark" \
       org.opencontainers.image.version="${VERSION}"
 
 # tzdata: Quark's calendar and backup schedules resolve local times, and slim ships no zoneinfo.
-# ffmpeg: ffmpegutil shells out to `ffmpeg` and `ffprobe` by bare name through exec.LookPath, so
-# without them every video thumbnail and transcode fails. It is a few hundred MB with its codecs
-# and it ships whether or not the deployment ever touches video -- see docs/container.md.
 # dcraw, libimage-exiftool-perl: photoutil reads a RAW photo's embedded preview with `dcraw`, then
-# `exiftool`, and only falls back to ffmpeg when neither is installed.
+# `exiftool`. There is no ffmpeg: video is probed, trimmed and remuxed in pure Go (#2378).
 # sudo: storageutil mounts a USB drive with `sudo mount`, as it does on a device (#2515).
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates dcraw ffmpeg libimage-exiftool-perl sudo tzdata \
+ && apt-get install -y --no-install-recommends ca-certificates dcraw libimage-exiftool-perl sudo tzdata \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=fetch /fetch/quark /usr/local/bin/quark

@@ -21,7 +21,7 @@ func DeviceFS(registry vfs.Registry, serial string) (vfs.VFS, error) {
 }
 
 // HostPath is the host path of relPath on fsys, for an external tool (dcraw,
-// exiftool, ffmpeg) that can only take a path. A namespace not backed by a
+// exiftool) that can only take a path. A namespace not backed by a
 // host directory has none, and is [vfs.ErrNotFound] for a file an external
 // tool would need.
 func HostPath(ctx context.Context, fsys vfs.VFS, relPath string) (string, error) {

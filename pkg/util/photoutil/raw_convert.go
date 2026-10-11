@@ -21,11 +21,11 @@ import (
 const rawToolTimeout = 30 * time.Second
 
 // RawToJPEG converts a camera RAW file to a JPEG image by extracting
-// the embedded preview. Tries dcraw first, then exiftool, then ffmpeg, each
-// for at most rawToolTimeout.
+// the embedded preview. Tries dcraw first, then exiftool, each for at most
+// rawToolTimeout.
 // Returns the decoded image or an error if no tool is available.
 func RawToJPEG(filePath string) (image.Image, error) {
-	for _, convert := range []func(context.Context, string) (image.Image, error){rawViaDcraw, rawViaExiftool, rawViaFfmpeg} {
+	for _, convert := range []func(context.Context, string) (image.Image, error){rawViaDcraw, rawViaExiftool} {
 		ctx, cancel := context.WithTimeout(context.Background(), rawToolTimeout)
 		img, err := convert(ctx, filePath)
 		cancel()
@@ -34,7 +34,7 @@ func RawToJPEG(filePath string) (image.Image, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no RAW converter available (install dcraw, exiftool, or ffmpeg)")
+	return nil, fmt.Errorf("no RAW converter available (install dcraw or exiftool)")
 }
 
 // WriteRawAsJPEG converts a camera RAW file and encodes it straight onto w.
@@ -60,7 +60,7 @@ func IsRawFile(filePath string) bool {
 // IsRawConverterAvailable returns true if at least one RAW conversion
 // tool is on the PATH.
 func IsRawConverterAvailable() bool {
-	for _, cmd := range []string{"dcraw", "exiftool", "ffmpeg"} {
+	for _, cmd := range []string{"dcraw", "exiftool"} {
 		if _, err := exec.LookPath(cmd); err == nil {
 			return true
 		}
@@ -122,38 +122,6 @@ func rawViaExiftool(ctx context.Context, filePath string) (image.Image, error) {
 	img, _, err := DecodeImage(f)
 	if err != nil {
 		return nil, fmt.Errorf("decode exiftool output: %w", err)
-	}
-	return img, nil
-}
-
-// rawViaFfmpeg converts the RAW file to JPEG using ffmpeg.
-func rawViaFfmpeg(ctx context.Context, filePath string) (image.Image, error) {
-	ffmpeg, err := exec.LookPath("ffmpeg")
-	if err != nil {
-		return nil, fmt.Errorf("ffmpeg not found")
-	}
-
-	tmpDir, err := os.MkdirTemp("", "quark-raw-*")
-	if err != nil {
-		return nil, err
-	}
-	defer os.RemoveAll(tmpDir)
-
-	outPath := filepath.Join(tmpDir, "converted.jpg")
-	cmd := rawTool(ctx, ffmpeg, "-i", filePath, "-vframes", "1", "-q:v", "2", "-y", outPath)
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("ffmpeg: %w", err)
-	}
-
-	f, err := os.Open(outPath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	img, _, err := DecodeImage(f)
-	if err != nil {
-		return nil, fmt.Errorf("decode ffmpeg output: %w", err)
 	}
 	return img, nil
 }
