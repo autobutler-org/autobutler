@@ -101,26 +101,6 @@ func restoreKeptTables(ctx context.Context, conn *sql.Conn, kept []string) error
 	return nil
 }
 
-// ResetRawDatabase empties a database that carries no migration set — the
-// health database, whose tables are created by whatever writes to it rather
-// than by migrations. There is nothing to re-run afterwards, so this drops the
-// objects and stops.
-//
-// Like ResetDatabase it works through the caller's live handle instead of
-// unlinking the file, for the same reason: the process holds the descriptor
-// open for its lifetime.
-func ResetRawDatabase(database *DatabaseRaw) error {
-	if database == nil || database.Db == nil {
-		return fmt.Errorf("database not initialized")
-	}
-	return exclusively(database.Db, func(ctx context.Context, conn *sql.Conn) error {
-		if err := dropAllObjects(ctx, conn); err != nil {
-			return fmt.Errorf("failed to drop health database objects: %w", err)
-		}
-		return nil
-	})
-}
-
 // exclusively runs work in one transaction on one connection, holding the
 // database's write lock from the start so that no other connection, in this
 // process or another, sees work half done.

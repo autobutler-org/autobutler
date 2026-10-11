@@ -16,7 +16,7 @@ flowchart LR
 
     subgraph Device["Quark device (Linux or macOS)"]
         bin["quark serve<br/>Go + gin"]
-        sqlite[("SQLite<br/>quark.db · quark.health.db")]
+        sqlite[("SQLite<br/>quark.db")]
         disk[("Data dir +<br/>managed USB drives")]
     end
 

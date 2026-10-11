@@ -56,7 +56,7 @@ multi-instance work point at #2955.
 | D5 | `internal/db/connect.go:15-23` | The main database is the SQLite file `<data dir>/quark.db` | Several hosts opening one SQLite file over a network mount depend on that share's locking | data loss | #2955, #2968 | Multi-instance mode requires PostgreSQL and refuses SQLite |
 | D6 | `internal/db/connect.go:78-104` | `sharedQueries` pins one `*sql.Conn` for every sqlc query and strips cancellation | Not a correctness guard: `BeginTx` callers already use the pool. On PostgreSQL a dropped pinned connection is never replaced, so the instance fails every query until restart | failed request | #2955 | Pool with normal contexts on PostgreSQL; keep the pin for SQLite |
 | D7 | `internal/db/dsn.go:47` | `busy_timeout(5000)`, no `journal_mode`, timestamps compared as text | Rollback journal: any writer blocks readers in other processes; 5 s then `SQLITE_BUSY` | failed request | #2955 | PostgreSQL DSN, real timestamp columns, `now()` |
-| D8 | `internal/db/connect.go:106-122` | `<data dir>/quark.health.db`, opened lazily. Nothing writes to it outside tests; its one use is the factory reset | A SQLite file on the share that #2968 says must not exist | safe today | #2968 (raised in its comments) | Delete it, or keep it on instance-local disk |
+| D8 | removed (was `internal/db/connect.go`) | `<data dir>/quark.health.db`. Deleted in #3124: nothing wrote to it outside tests, and its one use was the factory reset. A device that ran a factory reset before then keeps an empty file by that name, which nothing opens | None: no instance opens the file | safe today | #3124 | None needed |
 | D9 | `internal/server/middleware/middleware.go:186` | `setupDone atomic.Bool`, cached for the life of the process once true | Converges on its own before setup. After a reset the process restarts (D4), so it lasts at most the poll interval, and in that window it fails closed: auth is demanded on an install with no accounts | safe today | #3085 | None needed |
 | D10 | `cmd/quark/serve/serve.go:44`; `pkg/util/storageutil/dir.go:98-110` | No PID file, lock file or instance id anywhere. The data dir is derived from the OS user with no override | Nothing distinguishes "my" work from another process's, and "shared files, private scratch" cannot be expressed: database, settings, certs, tmp, mounts and files all hang off one root | design blocker | uncovered | Give each instance an id, and split the root into a shared files root, a database DSN, and an instance-local state dir. Most rows below depend on this |
 | D11 | `internal/server/server.go:57-60`, `:242-276` | `repairHomes`: find accounts and groups with no home folder, create folder and row | Two instances booting together race the find-then-create. The comment calls both idempotent; the bodies were not read | wasted work | #2966 (unnamed) | Run under the startup lock |
@@ -70,7 +70,7 @@ admin and one channel owner (`pkg/util/authutil/helpers.go:27-51`, `pkg/util/cha
 in a default-isolation transaction. SQLite's single writer makes them correct; under `READ COMMITTED` two
 concurrent demotions can each see the other as the survivor.
 
-Every `sql.Open` outside tests: `internal/db/connect.go:23` (main), `:46` (vault file), `:117` (health);
+Every `sql.Open` outside tests: `internal/db/connect.go:23` (main), `:46` (vault file);
 `pkg/backup/vault_export.go:53`, `pkg/backup/vault_import.go:25`, `pkg/backup/chat_export.go:72` (backup
 transport files). All name the `sqlite` driver.
 

@@ -1938,7 +1938,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "Delete the appliance databases (quark.db, quark.health.db). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next.",
+                        "description": "Delete the appliance database (quark.db). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next.",
                         "name": "database",
                         "in": "query"
                     },

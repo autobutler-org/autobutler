@@ -17,7 +17,7 @@ flowchart TB
         svc["quark serve<br/>(systemd unit / launchd)"]
         public["Embedded web build<br/>internal/server/public"]
         tsnet["tsnet node<br/>pkg/util/remoteutil"]
-        dbs[("SQLite<br/>quark.db<br/>quark.health.db")]
+        dbs[("SQLite<br/>quark.db")]
         data[("Data dir<br/>files/")]
         usb[("Managed USB drives<br/>auto-mounted")]
         vaultDb[("vault.db<br/>on an external drive")]
