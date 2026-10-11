@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:quark/controllers/change_password_controller.dart';
 import 'package:quark/controllers/feature_flags_controller.dart';
 import 'package:quark/controllers/notifications_controller.dart';
 import 'package:quark/controllers/remote_access_controller.dart';
@@ -24,6 +25,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:quark/widgets/layout/app_drawer.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/notifications/notification_preferences_card.dart';
+import 'package:quark/widgets/settings/change_password/change_password_dialog.dart';
 import 'package:quark/widgets/settings/connected_devices_card.dart';
 import 'package:quark/widgets/settings/remote_access_card.dart';
 import 'package:quark/widgets/settings/remote_access_setup_sheet.dart';
@@ -605,6 +607,7 @@ class _SettingsPageState extends State<SettingsPage> {
               signedIn: AppSettings.instance.sessionToken != null,
               isAdmin: isAdmin,
               onSignOut: _signOut,
+              onChangePassword: _changePassword,
               sessions: SessionsSection(
                 onSignedOut: () => context.go(AppRoutes.files),
               ),
@@ -789,6 +792,37 @@ class _SettingsPageState extends State<SettingsPage> {
       _avatarBusy = false;
       _avatarError = error;
     });
+  }
+
+  /// Shows the change-password dialog (#3022), which stays up while the
+  /// change runs and closes only once it has gone through.
+  Future<void> _changePassword() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = ChangePasswordController();
+    final changed = await showDialog<bool>(
+      context: context,
+      // A stray tap outside must not drop three typed passwords.
+      barrierDismissible: false,
+      builder: (ctx) => ListenableBuilder(
+        listenable: controller,
+        builder: (ctx, _) => ChangePasswordDialog(
+          isWorking: controller.isWorking,
+          error: controller.error,
+          onCancel: () => Navigator.of(ctx).pop(),
+          onSubmit: (currentPassword, newPassword) async {
+            final ok = await controller.changePassword(
+              currentPassword: currentPassword,
+              newPassword: newPassword,
+            );
+            if (ok && ctx.mounted) Navigator.of(ctx).pop(true);
+          },
+        ),
+      ),
+    );
+    controller.dispose();
+    if (changed == true) {
+      messenger.showSnackBar(const SnackBar(content: Text('Password changed')));
+    }
   }
 
   Future<void> _signOut() async {

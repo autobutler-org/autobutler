@@ -159,20 +159,9 @@ class ChatKeysController extends ChangeNotifier {
         phraseWrapKey: phraseWrapKey,
       );
       await _putMine(current, sessionToken: sessionToken);
-    } else if (stored.kdfParams.isSplit) {
-      final keys = crypto.deriveAuthKeys(
-        password,
-        stored.byPassword.salt,
-        stored.kdfParams,
-      );
-      try {
-        identity = crypto.unwrapWithKey(stored.byPassword, keys.wrapKey);
-      } finally {
-        keys.dispose();
-      }
     } else {
-      identity = crypto.unwrap(stored.byPassword, password, stored.kdfParams);
-      if (authSalt != null) {
+      identity = _openByPassword(crypto, stored, password);
+      if (!stored.kdfParams.isSplit && authSalt != null) {
         // The phrase wrap is kept as it is, so the cost it records has to
         // stay the one it was made with.
         final params = stored.kdfParams.split;
@@ -203,6 +192,87 @@ class ChatKeysController extends ChangeNotifier {
           );
     await _adopt(identity);
     return rewrapped;
+  }
+
+  /// A password change's half of the work, before `PUT /auth/password`
+  /// stores the new one (#3022): fetches the stored keys, opens them with
+  /// [currentPassword], and returns them re-wrapped under [newPassword] to
+  /// send in that request. Null for an account with no keys yet, which has
+  /// nothing to carry over.
+  ///
+  /// [authSalt] is the account's auth salt; the result's password wrap is in
+  /// the split scheme under it. The phrase wrap is returned as it was stored,
+  /// since the recovery phrase has not changed. The unlocked [identity] is
+  /// left alone: the same keys are under the new wrap.
+  ///
+  /// A wrong [currentPassword] throws a [MessageException] carrying
+  /// [Errors.wrongCurrentPassword], before anything is sent.
+  Future<WrappedChatKeys?> keysForPasswordChange({
+    required String currentPassword,
+    required String newPassword,
+    required Uint8List authSalt,
+  }) async {
+    final crypto = await _cryptoLoaded();
+    final stored = await _fetchMine();
+    if (stored == null) return null;
+    final identity = _openByPassword(
+      crypto,
+      stored,
+      currentPassword,
+      wrongSecret: Errors.wrongCurrentPassword,
+    );
+    try {
+      // The phrase wrap is kept as it is, so the cost it records has to stay
+      // the one it was made with.
+      final params = stored.kdfParams.isSplit
+          ? stored.kdfParams
+          : stored.kdfParams.split;
+      return WrappedChatKeys(
+        publicKeys: stored.publicKeys,
+        byPassword: _wrapByPassword(
+          crypto,
+          identity,
+          newPassword,
+          authSalt,
+          params,
+        ),
+        byPhrase: stored.byPhrase,
+        kdfParams: params,
+      );
+    } finally {
+      identity.dispose();
+    }
+  }
+
+  /// Opens [stored]'s password wrap in whichever scheme it records.
+  static ChatIdentity _openByPassword(
+    ChatCrypto crypto,
+    WrappedChatKeys stored,
+    String password, {
+    String wrongSecret = Errors.chatKeysWrongPassword,
+  }) {
+    if (!stored.kdfParams.isSplit) {
+      return crypto.unwrap(
+        stored.byPassword,
+        password,
+        stored.kdfParams,
+        wrongSecret: wrongSecret,
+      );
+    }
+    final keys = crypto.deriveAuthKeys(
+      password,
+      stored.byPassword.salt,
+      stored.kdfParams,
+    );
+    try {
+      return crypto.unwrapWithKey(
+        stored.byPassword,
+        keys.wrapKey,
+        wrongSecret: wrongSecret,
+      );
+    } finally {
+      keys.dispose();
+    }
   }
 
   /// Recovery's half of the work, before `/auth/recover` resets the password:

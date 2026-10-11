@@ -497,6 +497,172 @@ void main() {
     });
   });
 
+  group('a password change (#3022)', () {
+    Matcher wrongCurrentPassword() => throwsA(
+      isA<MessageException>().having(
+        (e) => e.message,
+        'message',
+        Errors.wrongCurrentPassword,
+      ),
+    );
+
+    test('re-wraps the same identity under the new password, and uploads '
+        'nothing', () async {
+      final phrase = phraseKeys('apple-bread-cloud');
+      final first = controller();
+      await first.signedIn(
+        password: 'pw-one',
+        phraseWrapKey: phrase.wrapKey,
+        authSalt: _salt,
+      );
+      final box = first.identity!.box.publicKey;
+      final before = quark.stored!;
+      final puts = quark.puts;
+
+      final rewrapped = (await controller().keysForPasswordChange(
+        currentPassword: 'pw-one',
+        newPassword: 'pw-two',
+        authSalt: _salt,
+      ))!;
+
+      // `PUT /auth/password` stores it, not this call.
+      expect(quark.puts, puts);
+      expect(quark.stored!.toJson(), before.toJson());
+      expect(rewrapped.publicKeys.boxPublicKey, box);
+      expect(rewrapped.byPassword.salt, _salt);
+      expect(rewrapped.byPassword.wrapped, isNot(before.byPassword.wrapped));
+      // The recovery phrase has not changed, so neither has its wrap.
+      expect(rewrapped.byPhrase!.wrapped, before.byPhrase!.wrapped);
+      expect(rewrapped.byPhrase!.salt, before.byPhrase!.salt);
+      expect(rewrapped.kdfParams.toJson(), before.kdfParams.toJson());
+      expect(rewrapped.kdfParams.alg, KdfParams.phraseSplitAlgorithm);
+
+      // What the Quark does with the request.
+      quark.stored = rewrapped;
+      final after = controller(persist: false);
+      await after.signedIn(password: 'pw-two', authSalt: _salt);
+      expect(after.identity!.box.publicKey, box);
+      await expectLater(
+        controller(persist: false).unlock('pw-one'),
+        throwsA(isA<MessageException>()),
+      );
+      // The phrase still opens it, for the next recovery.
+      expect(
+        crypto.unwrapWithKey(rewrapped.byPhrase!, phrase.wrapKey).box.publicKey,
+        box,
+      );
+    });
+
+    test('keys with no phrase wrap come back without one', () async {
+      await controller().signedIn(password: 'pw-one', authSalt: _salt);
+
+      final rewrapped = (await controller().keysForPasswordChange(
+        currentPassword: 'pw-one',
+        newPassword: 'pw-two',
+        authSalt: _salt,
+      ))!;
+
+      expect(rewrapped.byPhrase, isNull);
+      expect(rewrapped.kdfParams.alg, KdfParams.splitAlgorithm);
+    });
+
+    test('first-scheme keys move to the split scheme under the new '
+        'password', () async {
+      final box = storeOldScheme(password: 'pw-one', phrase: 'a b c');
+      final old = quark.stored!;
+      final puts = quark.puts;
+
+      final rewrapped = (await controller().keysForPasswordChange(
+        currentPassword: 'pw-one',
+        newPassword: 'pw-two',
+        authSalt: _salt,
+      ))!;
+
+      expect(quark.puts, puts);
+      expect(rewrapped.kdfParams.alg, KdfParams.splitAlgorithm);
+      expect(rewrapped.byPassword.salt, _salt);
+      // The old phrase wrap is carried over untouched, at the cost it records.
+      expect(rewrapped.byPhrase!.wrapped, old.byPhrase!.wrapped);
+      expect(rewrapped.kdfParams.opsLimit, old.kdfParams.opsLimit);
+      expect(rewrapped.kdfParams.memLimit, old.kdfParams.memLimit);
+
+      quark.stored = rewrapped;
+      final after = controller(persist: false);
+      await after.unlock('pw-two');
+      expect(after.identity!.box.publicKey, box);
+      // And the phrase still recovers it.
+      final recovered = await controller().keysForRecovery(
+        username: 'grace',
+        recoveryPhrase: 'a b c',
+        recoveryKeys: phraseKeys('a b c'),
+        newPassword: 'pw-three',
+        authSalt: _salt,
+      );
+      expect(recovered.publicKeys.boxPublicKey, box);
+    });
+
+    test('a wrong current password fails before anything is re-wrapped, in '
+        'either scheme', () async {
+      await controller().signedIn(password: 'pw-one', authSalt: _salt);
+      final puts = quark.puts;
+
+      await expectLater(
+        controller().keysForPasswordChange(
+          currentPassword: 'not-the-password',
+          newPassword: 'pw-two',
+          authSalt: _salt,
+        ),
+        wrongCurrentPassword(),
+      );
+      expect(quark.puts, puts);
+
+      storeOldScheme(password: 'pw-one', phrase: 'a b c');
+      await expectLater(
+        controller().keysForPasswordChange(
+          currentPassword: 'not-the-password',
+          newPassword: 'pw-two',
+          authSalt: _salt,
+        ),
+        wrongCurrentPassword(),
+      );
+      expect(quark.puts, puts);
+    });
+
+    test('an account with no keys has nothing to carry over', () async {
+      expect(
+        await controller().keysForPasswordChange(
+          currentPassword: 'pw-one',
+          newPassword: 'pw-two',
+          authSalt: _salt,
+        ),
+        isNull,
+      );
+      expect(quark.puts, 0);
+    });
+
+    test('the unlocked identity is left as it was', () async {
+      final keys = controller();
+      await keys.signedIn(password: 'pw-one', authSalt: _salt);
+      final identity = keys.identity;
+      var notified = 0;
+      keys.addListener(() => notified++);
+
+      await keys.keysForPasswordChange(
+        currentPassword: 'pw-one',
+        newPassword: 'pw-two',
+        authSalt: _salt,
+      );
+
+      expect(keys.identity, same(identity));
+      expect(notified, 0);
+      // Still usable: the change disposed its own copy, not this one.
+      expect(
+        keys.identity!.box.publicKey,
+        quark.stored!.publicKeys.boxPublicKey,
+      );
+    });
+  });
+
   test('signing out locks and forgets the cached identity', () async {
     final keys = controller();
     await keys.start();
