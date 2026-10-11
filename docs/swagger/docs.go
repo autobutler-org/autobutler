@@ -7053,6 +7053,176 @@ const docTemplate = `{
                 }
             }
         },
+        "/playback": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the caller's own resume position and watched flag for the video, all zero with no updatedAt when nothing is stored. Needs read access on the video.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "playback"
+                ],
+                "summary": "Get the caller's playback state for a video",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Files-relative path of the video",
+                        "name": "relPath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number; empty for the internal drive",
+                        "name": "deviceSerial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/playbackutil.State"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Stores where the caller's player has got to. A position at or past 95% of the duration marks the video watched and resets the position to 0; an earlier one keeps the stored watched flag. Needs read access on the video.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "playback"
+                ],
+                "summary": "Save the caller's resume position for a video",
+                "parameters": [
+                    {
+                        "description": "Video reference, position and duration in milliseconds",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_playback.savePlaybackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/playbackutil.State"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/playback/watched": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Marking a video watched resets the caller's resume position to 0 and keeps the stored duration. Marking it unwatched forgets the caller's state for it, resume position included, and returns the zero state. Needs read access on the video.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "playback"
+                ],
+                "summary": "Mark a video watched or unwatched for the caller",
+                "parameters": [
+                    {
+                        "description": "Video reference and the watched flag",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_playback.setWatchedRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/playbackutil.State"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/sbom": {
             "get": {
                 "security": [
@@ -11776,6 +11946,27 @@ const docTemplate = `{
                 }
             }
         },
+        "playbackutil.State": {
+            "type": "object",
+            "properties": {
+                "durationMs": {
+                    "description": "DurationMs is the video's length as the player last reported it.",
+                    "type": "integer"
+                },
+                "positionMs": {
+                    "description": "PositionMs is where to resume, in milliseconds. It is 0 once the video\ncounts as watched, so watching it again starts from the beginning.",
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt is when the state was stored, RFC 3339 in UTC. Empty when\nnothing is stored.",
+                    "type": "string"
+                },
+                "watched": {
+                    "description": "Watched stays set until SetWatched clears it.",
+                    "type": "boolean"
+                }
+            }
+        },
         "requestlogutil.Entry": {
             "type": "object",
             "properties": {
@@ -13124,6 +13315,37 @@ const docTemplate = `{
                 },
                 "serial": {
                     "type": "string"
+                }
+            }
+        },
+        "v0_playback.savePlaybackRequest": {
+            "type": "object",
+            "properties": {
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "durationMs": {
+                    "type": "integer"
+                },
+                "positionMs": {
+                    "type": "integer"
+                },
+                "relPath": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_playback.setWatchedRequest": {
+            "type": "object",
+            "properties": {
+                "deviceSerial": {
+                    "type": "string"
+                },
+                "relPath": {
+                    "type": "string"
+                },
+                "watched": {
+                    "type": "boolean"
                 }
             }
         },

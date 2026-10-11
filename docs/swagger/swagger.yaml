@@ -812,6 +812,26 @@ definitions:
           for a photo whose date is known (#2592).
         type: integer
     type: object
+  playbackutil.State:
+    properties:
+      durationMs:
+        description: DurationMs is the video's length as the player last reported
+          it.
+        type: integer
+      positionMs:
+        description: |-
+          PositionMs is where to resume, in milliseconds. It is 0 once the video
+          counts as watched, so watching it again starts from the beginning.
+        type: integer
+      updatedAt:
+        description: |-
+          UpdatedAt is when the state was stored, RFC 3339 in UTC. Empty when
+          nothing is stored.
+        type: string
+      watched:
+        description: Watched stays set until SetWatched clears it.
+        type: boolean
+    type: object
   requestlogutil.Entry:
     properties:
       decidedAt:
@@ -1809,6 +1829,26 @@ definitions:
         type: string
     required:
     - relPath
+    type: object
+  v0_playback.savePlaybackRequest:
+    properties:
+      deviceSerial:
+        type: string
+      durationMs:
+        type: integer
+      positionMs:
+        type: integer
+      relPath:
+        type: string
+    type: object
+  v0_playback.setWatchedRequest:
+    properties:
+      deviceSerial:
+        type: string
+      relPath:
+        type: string
+      watched:
+        type: boolean
     type: object
   v0_settings.PairDeviceResponse:
     properties:
@@ -7497,6 +7537,121 @@ paths:
       summary: Save the rotation for a photo
       tags:
       - photos
+  /playback:
+    get:
+      description: Returns the caller's own resume position and watched flag for the
+        video, all zero with no updatedAt when nothing is stored. Needs read access
+        on the video.
+      parameters:
+      - description: Files-relative path of the video
+        in: query
+        name: relPath
+        required: true
+        type: string
+      - description: Device serial number; empty for the internal drive
+        in: query
+        name: deviceSerial
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/playbackutil.State'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Get the caller's playback state for a video
+      tags:
+      - playback
+    put:
+      consumes:
+      - application/json
+      description: Stores where the caller's player has got to. A position at or past
+        95% of the duration marks the video watched and resets the position to 0;
+        an earlier one keeps the stored watched flag. Needs read access on the video.
+      parameters:
+      - description: Video reference, position and duration in milliseconds
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v0_playback.savePlaybackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/playbackutil.State'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Save the caller's resume position for a video
+      tags:
+      - playback
+  /playback/watched:
+    put:
+      consumes:
+      - application/json
+      description: Marking a video watched resets the caller's resume position to
+        0 and keeps the stored duration. Marking it unwatched forgets the caller's
+        state for it, resume position included, and returns the zero state. Needs
+        read access on the video.
+      parameters:
+      - description: Video reference and the watched flag
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v0_playback.setWatchedRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/playbackutil.State'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Mark a video watched or unwatched for the caller
+      tags:
+      - playback
   /sbom:
     get:
       description: Returns the Go version and all embedded dependency information

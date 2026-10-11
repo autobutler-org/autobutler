@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:quark/widgets/layout/chrome_app_bar.dart';
 import 'package:http/http.dart' as http;
+import 'package:quark/controllers/video_playback_controller.dart';
+import 'package:quark/services/playback_position_service.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/local_media_proxy.dart';
 import 'package:quark/utils/error_text.dart';
@@ -29,12 +31,24 @@ class VideoViewerPage extends StatefulWidget {
   /// which pops the route this player was pushed on.
   final VoidCallback? onClose;
 
+  /// Reads where the user left off in this video.
+  final LoadPlayback loadPlayback;
+
+  /// Stores how far playback has reached.
+  final SavePlayback savePlayback;
+
+  /// Marks this video watched or unwatched.
+  final SetPlaybackWatched setPlaybackWatched;
+
   const VideoViewerPage({
     super.key,
     required this.url,
     required this.name,
     this.canAutoplay = canAutoplayMedia,
     this.onClose,
+    this.loadPlayback = PlaybackPositionService.get,
+    this.savePlayback = PlaybackPositionService.save,
+    this.setPlaybackWatched = PlaybackPositionService.setWatched,
   });
 
   @override
@@ -44,6 +58,8 @@ class VideoViewerPage extends StatefulWidget {
 class _VideoViewerPageState extends State<VideoViewerPage> {
   VideoPlayerController? _controller;
   LocalMediaProxy? _proxy;
+  // Resume position and watched state; null when the URL names no file.
+  VideoPlaybackController? _playback;
   bool _loading = true;
   String? _errorMessage;
   bool _isUnsupportedFormat = false;
@@ -80,6 +96,17 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
   @override
   void initState() {
     super.initState();
+    final params = widget.url.queryParameters;
+    final relPath = params['filePath'] ?? '';
+    if (relPath.isNotEmpty) {
+      _playback = VideoPlaybackController(
+        relPath: relPath,
+        serial: params['serial'],
+        load: widget.loadPlayback,
+        save: widget.savePlayback,
+        setWatched: widget.setPlaybackWatched,
+      );
+    }
     _initializePlayer();
   }
 
@@ -140,6 +167,30 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       _loading = false;
     });
 
+    final playback = _playback;
+    if (playback != null) {
+      // Bounded: a slow or failing Quark must not hold up playback.
+      final resumeAt = await playback.load().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => null,
+      );
+      // The page's dispose has already disposed the player.
+      if (!mounted) return;
+      if (resumeAt != null && resumeAt < controller.value.duration) {
+        await controller.seekTo(resumeAt);
+        if (!mounted) return;
+      }
+      final player = controller;
+      player.addListener(() {
+        final value = player.value;
+        playback.report(
+          value.position,
+          value.duration,
+          isPlaying: value.isPlaying,
+        );
+      });
+    }
+
     // Autoplay only when the browser will allow it. A tab opened straight
     // onto a video's URL has no user gesture behind it, and the browser
     // rejects play() there. video_player_web reports that rejection on the
@@ -172,6 +223,10 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
 
   @override
   void dispose() {
+    // The listener has kept the last position current; save it before the
+    // player goes. The request outlives the page, its reply is dropped.
+    _playback?.flush();
+    _playback?.dispose();
     _controller?.dispose();
     _controller = null;
     _proxy?.close();
@@ -339,6 +394,29 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     }
   }
 
+  Future<void> _toggleWatched() async {
+    final playback = _playback;
+    if (playback == null) return;
+    final wasWatched = playback.watched;
+    try {
+      await playback.toggleWatched();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Errors.message(
+              e,
+              wasWatched
+                  ? 'mark the video as unwatched'
+                  : 'mark the video as watched',
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _convert() {
     final params = widget.url.queryParameters;
     return convertVideo(
@@ -351,6 +429,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
+    final playback = _playback;
     // A text button is drawn in the content's accent, which the chrome is not
     // a surface for (#2740).
     final onChrome = TextButton.styleFrom(
@@ -410,6 +489,23 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
                         key: const ValueKey('video_viewer_convert'),
                         onPressed: _convert,
                         child: const Text('Convert…'),
+                      ),
+                    if (playback != null)
+                      ListenableBuilder(
+                        listenable: playback,
+                        builder: (context, _) => MenuItemButton(
+                          key: ValueKey(
+                            playback.watched
+                                ? 'video_viewer_mark_unwatched'
+                                : 'video_viewer_mark_watched',
+                          ),
+                          onPressed: _toggleWatched,
+                          child: Text(
+                            playback.watched
+                                ? 'Mark as unwatched'
+                                : 'Mark as watched',
+                          ),
+                        ),
                       ),
                   ],
                   builder: (context, controller, _) => QuarkBarIconButton(
