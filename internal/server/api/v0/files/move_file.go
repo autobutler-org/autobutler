@@ -14,7 +14,7 @@ import (
 
 // moveFile godoc
 // @Summary Move or rename a file
-// @Description Enqueue a file move operation between paths/devices. Needs write access on the file and on the folder it moves into.
+// @Description Enqueue a file move operation between paths/devices. Needs write access on the file and on the folder it moves into. A file already at the new path is replaced; a .qslide, .qsheet or .qdoc on the internal device is first snapshotted into its version history.
 // @Tags files
 // @Accept json
 // @Produce json
@@ -66,6 +66,8 @@ func moveFile(c *gin.Context) *serverutil.Response {
 		NewFilePath:     req.NewFilePath,
 		OldDeviceSerial: req.OldDeviceSerial,
 		NewDeviceSerial: req.NewDeviceSerial,
+		// A move that lands on an editor document snapshots it first (#2992).
+		BeforeOverwrite: beforeSave(c, deps, req.NewDeviceSerial),
 	}); err != nil {
 		return fileError(err)
 	}

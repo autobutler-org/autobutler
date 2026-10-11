@@ -43,11 +43,14 @@ Documents/
   `fileversionutil`). The clock is the newest auto snapshot's `createdAt` in the index, so the limit survives a
   restart and needs no memory state.
 - **Named snapshots** carry a label and skip the rate limit. Only named snapshots can be deleted by hand.
-- **The save hook.** When the multipart upload overwrites a `.qslide`, `.qsheet` or `.qdoc` on the internal
-  device (how all three editors save), the upload snapshots the old content (`auto`) *before* the new bytes
-  replace it. So the history holds the states you saved over, and the live file is always the newest state.
-  The hook needs no client change. A failed snapshot is logged and never fails the save. Chunked upload
-  sessions and serial-addressed devices do not snapshot; the editors use neither.
+- **The save hook.** When something replaces a `.qslide`, `.qsheet` or `.qdoc` on the internal device, the old
+  content is snapshotted (`auto`) *before* the new bytes replace it. So the history holds the states you saved
+  over, and the live file is always the newest state. Three things replace a file, and all three run the hook
+  (#2992): the multipart upload with `overwrite` (how all three editors save), the last chunk of an upload
+  session opened with `overwrite`, and a move or rename onto a taken name. The hook needs no client change. A
+  failed snapshot is logged and never fails the save. It is an `auto` snapshot like any other, so the rate limit
+  and the dedupe apply. Serial-addressed devices do not snapshot. Nothing copies a file over another one: the
+  only copy, a photo's duplicate, always lands under a free name.
 
 ## Retention
 
@@ -84,8 +87,9 @@ writes.
 
 - **Rename or move** (`move`, internal device): the store moves from
   `<old dir>/.quark-versions/<old name>` to `<new dir>/.quark-versions/<new name>`. A store already at the
-  destination belonged to the file the move replaced, so it is dropped. A folder move needs nothing: its
-  `.quark-versions` directories travel inside it.
+  destination belonged to the file the move replaced, and holds the snapshot the save hook just took of it. The
+  two are merged into one history, newest first, so the move can be undone by restoring that snapshot. A folder
+  move needs nothing: its `.quark-versions` directories travel inside it.
 - **Trash** (`delete`): the store stays where it is, so restoring the file from the trash brings its history
   back. A trashed folder takes its stores into the trash with it.
 - **Permanent delete** (`trash_changed`, from emptying the trash, deleting one item, or the 30-day expiry):
@@ -100,6 +104,7 @@ writes.
 | Crash between index write and stale `.snap` delete | Stray `.snap`, removed by the next prune                             |
 | Crash mid-restore                                | The atomic write leaves the old file; the pre-restore snapshot exists  |
 | Snapshot fails during a save                     | Logged; the save goes through without a history entry                  |
+| A save lands while a restore is running          | The save hook's snapshot and the write that follows it are not one step, so the later write wins. A save that lands between a restore's snapshot and its write is replaced without a history entry |
 | `index.json` corrupt or hand-edited              | Read as empty or filtered to valid entries; the next snapshot rewrites it |
 | Events missed (subscriber overflow, restart)     | A store can be left behind at an old path. Moves are not replayed; a store orphaned by a missed event lingers until a later delete in that folder sweeps it |
 | Cross-device move                                | History stays on the internal device and is swept once the trash no longer holds the path |

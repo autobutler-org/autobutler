@@ -25,6 +25,7 @@ class FileBrowserListTile extends StatelessWidget {
     this.isAdmin = false,
     this.subtitle,
     this.onNavigateToFolder,
+    this.onVersionHistory,
     this.onSelectionChanged,
     super.key,
   });
@@ -56,6 +57,9 @@ class FileBrowserListTile extends StatelessWidget {
   /// A second line under the row, or null for none.
   final String? subtitle;
   final void Function(FileNode)? onNavigateToFolder;
+
+  /// Passed to [FileMenu.onVersionHistory].
+  final void Function(FileNode)? onVersionHistory;
   final void Function(FileNode node)? onSelectionChanged;
 
   @override
@@ -70,6 +74,7 @@ class FileBrowserListTile extends StatelessWidget {
       isAdmin: isAdmin,
       onDispatchMenuAction: onDispatchMenuAction,
       onNavigateToFolder: onNavigateToFolder,
+      onVersionHistory: onVersionHistory,
     );
     // ListTile.onLongPress hands over no position, so the gestures are caught
     // outside it; the row's own context is what the entries dispatch against,

@@ -922,3 +922,42 @@ them goes there. Files inside an archive still open over the browser and have no
 - The viewer needs no internet connection: the PDF engine ships inside the app, the web build included.
 - A PDF inside an archive (JN-FB-020) still downloads; it has no viewer there.
 - Word, Excel, PowerPoint and EPUB files still open in the generic viewer (JN-FB-019).
+
+---
+
+### JN-FB-046: See a file's version history, preview a version and restore it
+
+**Preconditions:** `notes.md` sits in a folder on the internal drive and has been saved at least twice, so the
+Quark holds an earlier version of it.
+
+**Steps:**
+
+1. Open the file's menu, with its three-dot button or a long press on its row, and tap **Version history**.
+2. Tap **Preview** on an earlier version.
+3. Go back to the sheet and tap **Restore** on that version.
+4. Read the confirmation and tap **Restore**.
+
+**Expected result:**
+
+- A sheet titled "Version history · notes.md" lists the versions newest first. Each row shows when the version
+  was saved, its name or "Automatic", its size and who saved it: "You" for the signed-in account, a username
+  for anyone else, "System" for one the Quark saved on its own.
+- A loader shows only until the first listing arrives. The sheet's refresh button reloads the list with the
+  rows still on screen.
+- **Preview** opens that version read-only: a picture in the image viewer, an SVG in the SVG viewer, and a
+  text, code or CSV file as plain text. Nothing in the preview can save over the file.
+- The confirmation says the file goes back to that version and that what it holds now is saved first as
+  "Before restore", so the restore can be undone.
+- After **Restore** the sheet says "Restored", the list reloads with a "Before restore" version at the top,
+  and the file in Files holds the restored content. **Cancel** changes nothing.
+- While a restore or a preview is loading, that row shows a loader and every other row's buttons are dimmed.
+
+**Notes:**
+
+- **Version history** is offered on files on the internal drive only: not on a folder, a file on a USB drive,
+  an entry inside an archive (JN-FB-020), or anything in the trash.
+- A kind with no read-only viewer here, such as a video, a PDF or a document, says "A preview isn't available
+  for this kind of file." A version over 25 MB says it is too large to preview. Either can still be restored.
+- A refusal shows as a sentence in the sheet, where a snack bar would be hidden: restoring into a folder the
+  account can only read, for one.
+- Comparing two versions, retention settings and the space versions use are not built yet (#2992).

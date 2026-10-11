@@ -421,7 +421,8 @@ func TestFollow_MovesTheStoreWithItsFile(t *testing.T) {
 	f.write(t, "a/deck.qslide", "A")
 	v := f.snapshot(t, "a/deck.qslide", KindNamed, "A")
 	f.write(t, "b/other.qslide", "old")
-	f.snapshot(t, "b/other.qslide", KindNamed, "Old")
+	f.now = f.now.Add(time.Minute)
+	replaced := f.snapshot(t, "b/other.qslide", KindNamed, "Old")
 
 	// Not moved while the file is still where it was.
 	if res, err := f.store.Follow(FollowParams{Ctx: f.ctx, FS: f.fs, OldPath: "a/deck.qslide", NewPath: "b/other.qslide"}); err != nil || res.Moved {
@@ -438,12 +439,24 @@ func TestFollow_MovesTheStoreWithItsFile(t *testing.T) {
 	if err != nil || !res.Moved {
 		t.Fatalf("follow = %+v, %v; want moved", res, err)
 	}
+	// The history of the file the move replaced stays, so the move can be
+	// undone from it (#2992): both histories, newest first.
 	versions := f.list(t, "b/other.qslide")
-	if len(versions) != 1 || versions[0].ID != v.Version.ID {
-		t.Fatalf("versions at the new path = %+v, want the moved file's", versions)
+	if len(versions) != 2 || versions[0].ID != replaced.Version.ID || versions[1].ID != v.Version.ID {
+		t.Fatalf("versions at the new path = %+v, want the replaced file's, then the moved file's", versions)
+	}
+	if got := f.content(t, "b/other.qslide", replaced.Version.ID) + f.content(t, "b/other.qslide", v.Version.ID); got != "oldA" {
+		t.Errorf("merged snapshots read %q, want each history's own content", got)
 	}
 	if f.exists("a/" + storageutil.VersionsDirName) {
 		t.Error("an empty version folder was left behind")
+	}
+	// The merged store is whole: nothing in it is a stray the next snapshot
+	// would sweep.
+	f.write(t, "b/other.qslide", "edited")
+	f.snapshot(t, "b/other.qslide", KindNamed, "Edited")
+	if got := f.list(t, "b/other.qslide"); len(got) != 3 || f.content(t, "b/other.qslide", v.Version.ID) != "A" {
+		t.Errorf("versions after another snapshot = %+v, want all three", got)
 	}
 }
 

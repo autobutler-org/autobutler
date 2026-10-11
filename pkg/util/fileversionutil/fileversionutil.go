@@ -378,7 +378,8 @@ type FollowResult struct {
 // Follow moves the store of the file that was at OldPath to sit beside it at
 // NewPath. It moves nothing unless the file really left OldPath for NewPath:
 // a store at OldPath whose file is still there belongs to that file. A store
-// already at NewPath belonged to the file the move replaced, and goes.
+// already at NewPath belonged to the file the move replaced; the two are
+// merged, so the snapshot taken of the replaced file is not lost with it.
 func (s *Store) Follow(params FollowParams) (FollowResult, error) {
 	oldPath, err := cleanPath(params.OldPath)
 	if err != nil {
@@ -402,10 +403,12 @@ func (s *Store) Follow(params FollowParams) (FollowResult, error) {
 	if info, err := fsys.Stat(ctx, newPath); err != nil || info.IsDir {
 		return FollowResult{}, nil
 	}
-	if err := removeAll(ctx, fsys, newStore); err != nil {
-		return FollowResult{}, err
+	if exists(ctx, fsys, newStore) {
+		err = mergeStore(ctx, fsys, oldStore, newStore)
+	} else {
+		err = fsys.Move(ctx, oldStore, newStore)
 	}
-	if err := fsys.Move(ctx, oldStore, newStore); err != nil {
+	if err != nil {
 		return FollowResult{}, err
 	}
 	removeIfEmpty(ctx, fsys, path.Dir(oldStore))

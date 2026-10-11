@@ -342,6 +342,31 @@ func commit(ctx context.Context, fsys vfs.VFS, dir string, versions, removed []V
 	return nil
 }
 
+// mergeStore moves the snapshots of the store at from into the store at into
+// and lists both histories there, newest first. Ids start with their time, so
+// sorting by id is sorting by time.
+func mergeStore(ctx context.Context, fsys vfs.VFS, from, into string) error {
+	moved, err := readIndex(ctx, fsys, from)
+	if err != nil {
+		return err
+	}
+	kept, err := readIndex(ctx, fsys, into)
+	if err != nil {
+		return err
+	}
+	for _, v := range moved {
+		if err := fsys.Move(ctx, snapPath(from, v.ID), snapPath(into, v.ID)); err != nil {
+			return err
+		}
+	}
+	versions := slices.Concat(moved, kept)
+	slices.SortStableFunc(versions, func(a, b Version) int { return strings.Compare(b.ID, a.ID) })
+	if err := commit(ctx, fsys, into, versions, nil); err != nil {
+		return err
+	}
+	return removeAll(ctx, fsys, from)
+}
+
 // hashFile is the SHA-256 of a file's content, streamed.
 func hashFile(ctx context.Context, fsys vfs.VFS, p string) (string, error) {
 	rc, err := fsys.Open(ctx, p)

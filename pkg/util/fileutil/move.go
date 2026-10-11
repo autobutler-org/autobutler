@@ -32,6 +32,10 @@ type MoveFileParams struct {
 	// internal one. Two different serials make this a cross-device move.
 	OldDeviceSerial string
 	NewDeviceSerial string
+	// BeforeOverwrite, when set, is called with NewFilePath just before the
+	// move replaces a file there, while the old content is still there to
+	// snapshot.
+	BeforeOverwrite func(path string)
 }
 
 // MoveFileResult reports a completed move.
@@ -140,12 +144,20 @@ func movePath(params MoveFileParams) error {
 	if err != nil {
 		return err
 	}
-	if params.OldDeviceSerial == params.NewDeviceSerial {
-		return src.Move(params.Ctx, params.OldFilePath, params.NewFilePath)
+	sameDevice := params.OldDeviceSerial == params.NewDeviceSerial
+	dst := src
+	if !sameDevice {
+		if dst, err = FilesVFS(params.Registry, params.NewDeviceSerial); err != nil {
+			return err
+		}
 	}
-	dst, err := FilesVFS(params.Registry, params.NewDeviceSerial)
-	if err != nil {
-		return err
+	if params.BeforeOverwrite != nil {
+		if info, err := dst.Stat(params.Ctx, params.NewFilePath); err == nil && !info.IsDir {
+			params.BeforeOverwrite(params.NewFilePath)
+		}
+	}
+	if sameDevice {
+		return src.Move(params.Ctx, params.OldFilePath, params.NewFilePath)
 	}
 	return moveBetween(params.Ctx, src, params.OldFilePath, dst, params.NewFilePath)
 }
