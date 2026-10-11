@@ -484,6 +484,50 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    // #2623: @ suggests the members, and a message naming you stands out.
+    testWidgets('a mention is suggested, sent and highlighted ($label)', (
+      tester,
+    ) async {
+      final fake = FakeChat(
+        members: [
+          ChatMember(userId: 7, name: 'ada', permissions: ownerSet),
+          const ChatMember(userId: 8, name: 'bob', permissions: memberSet),
+        ],
+      );
+      fake.entries[1] = [
+        for (final (id, text) in [(11, 'morning all'), (12, 'ping @ada')])
+          ChatTimelineMessage(
+            message: ChatMessage(
+              id: id,
+              channelId: 1,
+              authorId: 8,
+              keyVersion: 1,
+              ciphertext: null,
+              createdAt: DateTime.utc(2026, 9, 25, 10, id),
+            ),
+            state: ChatMessageState.ready,
+            text: text,
+          ),
+      ];
+      await pumpChat(tester, size, chat: fake);
+
+      expect(find.byKey(const ValueKey('message_mention_12')), findsOneWidget);
+      expect(find.byKey(const ValueKey('message_mention_11')), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('message_composer_field')),
+        'thanks @b',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('mention_suggestion_bob')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('message_composer_send')));
+      await tester.pumpAndSettle();
+
+      expect(fake.opened[1]!.sent, ['thanks @bob']);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('waiting for a key closes the composer ($label)', (
       tester,
     ) async {

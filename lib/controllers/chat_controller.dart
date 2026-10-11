@@ -549,6 +549,33 @@ class ChatController extends ChangeNotifier {
       ),
   ];
 
+  /// The names an `@mention` in the open channel resolves to (#2623): every
+  /// account that reads it, alone or through a group, in alphabetical order.
+  /// A mention is only the text `@name` inside the encrypted message, so
+  /// this list is all that decides what counts as one.
+  List<String> get mentionNames => {
+    for (final m in _members)
+      if (m.permissions.contains(ChatPermission.readMessages))
+        ...m.userId != null ? [m.name] : m.users.map((u) => u.username),
+  }.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+  /// The signed-in account's name as it is in [mentionNames], which a
+  /// message has to mention to be highlighted. Null when the account is not
+  /// among the open channel's members.
+  String? get currentUserName {
+    final me = _currentUserId();
+    for (final m in _members) {
+      if (m.userId != null) {
+        if (m.userId == me) return m.name;
+        continue;
+      }
+      for (final u in m.users) {
+        if (u.id == me) return u.username;
+      }
+    }
+    return null;
+  }
+
   /// The name to show for account [userId]: from the members, or a stand-in
   /// for an account no longer in the channel.
   String nameOf(int userId) {

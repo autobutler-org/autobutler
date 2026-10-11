@@ -4,8 +4,8 @@ Covers the chat beta (#2414): opening a channel, sending and receiving
 end-to-end encrypted messages, unlocking chat on web after a reload, waiting
 for a channel key, an admin turning the beta off, and creating, sharing,
 renaming, leaving and deleting channels (#2422), reacting to messages
-(#2426), a message's menu (#2631), and searching a channel on the device
-(#2429).
+(#2426), a message's menu (#2631), searching a channel on the device
+(#2429), and mentioning a member (#2623).
 
 ---
 
@@ -433,6 +433,37 @@ on two devices or browsers, one with `general` open and one on **Files**.
   a message says ([`docs/chat-security.md`](../chat-security.md)).
 - Nothing is marked read while chat is locked (JN-CHAT-004) or while a search is filtering the channel
   (JN-CHAT-018).
-- Mentions are not built, so there is no separate badge for a message that names you.
+- A message that mentions you (JN-CHAT-020) counts like any other: there is no separate badge for it.
 - When the connection to the Quark drops and comes back, the counts are read again, so messages that arrived while
   it was down are counted without a reload.
+
+---
+
+### JN-CHAT-020: Mention a member
+
+**Preconditions:** Two accounts, `bob` and `carol`, are **Member**s of a channel, each with it open.
+
+**Steps:**
+
+1. As `carol`, type `lunch @b` in the composer.
+2. Tap `@bob` in the list above the composer, then send.
+3. As `bob`, look at the message.
+
+**Expected result:**
+
+- After step 1, a list above the composer offers the members whose names start with `b`.
+- After step 2, the composer reads `lunch @bob `, with `@bob` in the primary color on a tint of it. The message
+  is sent as that text.
+- After step 3, `@bob` is drawn the same way in the message, and for `bob` the whole message stands on a tint
+  with a bar down its leading edge. For `carol` it is not highlighted.
+
+**Notes:**
+
+- On a desktop the arrow keys move through the list, Enter or Tab picks, and Escape closes it. While the list
+  is open Enter picks instead of sending.
+- Only accounts that read the channel are offered, whether they were added alone or through a group. Text after
+  an `@` that names none of them is sent and shown as plain text.
+- The `@` has to start a word, so an email address is not a mention.
+- Chat is end-to-end encrypted, so a mention is only the text `@name` inside the message. The app finds it after
+  decrypting; the Quark is never told who was mentioned ([`docs/chat-security.md`](../chat-security.md)).
+- A mention sends no notification and adds no badge to a channel that isn't open.

@@ -67,6 +67,12 @@ import 'quark_message_list/chat_system_line.dart';
 /// [Uri]; the caller opens it. An unverified sender's message, and every
 /// system line, stays plain text.
 ///
+/// Each `@name` in a text message that names one of [mentionNames] is drawn
+/// as a mention, and a message that mentions [currentUserName] is highlighted
+/// (#2623). Chat is end-to-end encrypted, so a mention is only that text
+/// inside the message: the list finds it, and nothing else says who was
+/// mentioned.
+///
 /// With [onEncryptionHelp] set, each system line about encryption
 /// ([ChatMessageItem.isEncryptionEvent]) and each unverified system line ends
 /// in a "(?)" button with [encryptionHelpTooltip]; a tap fires
@@ -78,7 +84,8 @@ import 'quark_message_list/chat_system_line.dart';
 /// in place of the list: no messages, no spinner and no waiting for a key,
 /// because no key is coming.
 ///
-/// Key prefixes: `message_<id>` on each message, `message_body_<id>` on a
+/// Key prefixes: `message_<id>` on each message, `message_mention_<id>` on
+/// the highlight of one that mentions the user, `message_body_<id>` on a
 /// text message's body (a link is reached by its text inside it),
 /// `message_menu_<id>` on its menu button, `message_copy_<id>`,
 /// `message_menu_react_<id>` and `message_delete_<id>` on the menu's entries,
@@ -100,6 +107,8 @@ import 'quark_message_list/chat_system_line.dart';
 ///   onLoadOlder: controller.loadOlder,
 ///   permissions: controller.selectedPermissions,
 ///   currentUserId: controller.userId,
+///   mentionNames: controller.mentionNames,
+///   currentUserName: controller.userName,
 ///   onCopy: (id) => copy(controller.textOf(id)),
 ///   onDelete: controller.deleteMessage,
 ///   onReact: controller.toggleReaction,
@@ -118,6 +127,8 @@ class QuarkMessageList extends StatelessWidget {
     this.onLoadOlder,
     this.permissions,
     this.currentUserId,
+    this.mentionNames = const [],
+    this.currentUserName,
     this.onCopy,
     this.onDelete,
     this.onReact,
@@ -175,6 +186,14 @@ class QuarkMessageList extends StatelessWidget {
   /// The signed-in account's id, whose own messages always offer "Delete".
   /// Null matches no author.
   final String? currentUserId;
+
+  /// The names an `@mention` can resolve to, usually the channel's members.
+  /// Empty draws no mentions.
+  final List<String> mentionNames;
+
+  /// The signed-in account's name as it is in [mentionNames]. A message that
+  /// mentions it is highlighted. Null highlights nothing.
+  final String? currentUserName;
 
   /// Called with a text message's id to copy its text; the clipboard is the
   /// caller's. Null leaves "Copy text" out of every menu.
@@ -362,6 +381,8 @@ class QuarkMessageList extends StatelessWidget {
                         ? null
                         : (emoji) => onReact(message.id, emoji),
                     onOpenLink: onOpenLink,
+                    mentionNames: mentionNames,
+                    selfName: currentUserName,
                     avatar: !startsGroup(message, older)
                         ? null
                         : avatarBuilder != null

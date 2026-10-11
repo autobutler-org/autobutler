@@ -354,10 +354,20 @@ a count too; the app hears those through the message events and adjusts, or read
 
 ### Mentions
 
-Mentions aren't built. The Quark can't read `@name` inside ciphertext, so a mention badge needs either a
-plaintext list of mentioned accounts sent beside each message, which tells the Quark who was mentioned, or
-counting on the app alone, which shows nothing until a channel is fetched and decrypted. Which of the two is an
-open decision on #2424.
+A mention (#2623) is the text `@name` inside the encrypted message, and nothing else. No list of mentioned
+accounts travels beside the ciphertext, so the Quark never learns who was mentioned, and a client that knows
+nothing of mentions shows the text as it was typed.
+
+- The app finds mentions after decrypting, by matching `@name` against the names of the channel's readers. The
+  composer suggests those names, and a message that mentions the signed-in account is highlighted.
+- A name is matched as the member list spells it now. Renaming or removing an account stops its old mentions
+  from being drawn as mentions; the text stays.
+- A mention is not authenticated beyond the message it sits in, so the limits on authorship above apply to it
+  too.
+
+A mention badge on a channel that isn't open isn't built. It needs either a plaintext list of mentioned accounts
+sent beside each message, which tells the Quark who was mentioned, or counting on the app alone, which shows
+nothing until a channel is fetched and decrypted. Which of the two is an open decision on #2424.
 
 ### Routes
 

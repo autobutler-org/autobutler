@@ -1326,4 +1326,36 @@ void main() {
       none.controller.dispose();
     });
   });
+
+  // #2623: a mention resolves against the accounts that read the channel.
+  test('mentions resolve to the readers, alone or through a group', () async {
+    final chat = FakeChat(
+      members: [
+        const ChatMember(
+          groupId: 4,
+          name: 'family',
+          permissions: memberSet,
+          users: [
+            ChatMemberUser(id: 9, username: 'bob'),
+            ChatMemberUser(id: 7, username: 'ada'),
+          ],
+        ),
+        ChatMember(userId: 7, name: 'ada', permissions: ownerSet),
+        const ChatMember(userId: 10, name: 'Carol', permissions: memberSet),
+        const ChatMember(
+          userId: 11,
+          name: 'dan',
+          permissions: {ChatPermission.manageMembers},
+        ),
+      ],
+    );
+    expect(chat.controller.mentionNames, isEmpty);
+    expect(chat.controller.currentUserName, isNull);
+    chat.controller.select('general');
+    await chat.controller.refresh();
+
+    expect(chat.controller.mentionNames, ['ada', 'bob', 'Carol']);
+    expect(chat.controller.currentUserName, 'ada');
+    chat.controller.dispose();
+  });
 }
