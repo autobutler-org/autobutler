@@ -242,6 +242,9 @@ Every query lives in `sql/queries/*.sql` and reaches Go as generated code in `in
   statements built from `sqlite_master` at runtime (`internal/db/reset.go`), and writes to a database
   outside the migration set (the external backup vault in `pkg/backup/vault_export.go`, whose schema is
   `internal/db/vault_schema.go`).
+- **Queries and schema are written for two engines, SQLite and PostgreSQL (#2955).** Before writing a query
+  read [`sql/queries/AGENTS.md`](sql/queries/AGENTS.md); before writing a migration read
+  [`internal/db/AGENTS.md`](internal/db/AGENTS.md). Each directory's `CLAUDE.md` imports its `AGENTS.md`.
 
 ### Backend development assumptions
 
