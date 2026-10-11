@@ -32,21 +32,17 @@ type ImportBackupResult struct {
 // wrapped in [ErrBackupImportFailed], which the caller answers as bad input
 // rather than a server fault.
 func ImportBackup(ctx context.Context, params ImportBackupParams) (ImportBackupResult, error) {
-	tx, err := params.VaultDB.Db.BeginTx(ctx, nil)
+	var result *backup.VaultImportResult
+	err := db.InTx(ctx, params.VaultDB.Db, func(qtx *db.Queries) error {
+		imported, err := backup.ImportVault(ctx, qtx, params.LiveKey, params.RecoveryPassword, params.BackupDir)
+		if err != nil {
+			return fmt.Errorf("%w: %w", ErrBackupImportFailed, err)
+		}
+		result = imported
+		return nil
+	})
 	if err != nil {
-		return ImportBackupResult{}, fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	qtx := params.VaultDB.Queries.WithTx(tx)
-
-	result, err := backup.ImportVault(ctx, qtx, params.LiveKey, params.RecoveryPassword, params.BackupDir)
-	if err != nil {
-		return ImportBackupResult{}, fmt.Errorf("%w: %w", ErrBackupImportFailed, err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return ImportBackupResult{}, fmt.Errorf("commit: %w", err)
+		return ImportBackupResult{}, err
 	}
 
 	return ImportBackupResult{Import: result}, nil

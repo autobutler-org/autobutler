@@ -464,7 +464,7 @@ func CreateChannel(params CreateChannelParams) (CreateChannelResult, error) {
 	}
 	creator := sql.NullInt64{Int64: params.Principal.UserID, Valid: true}
 	var row db.ChatChannel
-	err = inTx(params.Ctx, params.Database, func(q *db.Queries) error {
+	err = db.InTx(params.Ctx, params.Database.Db, func(q *db.Queries) error {
 		var err error
 		row, err = q.CreateChatChannel(params.Ctx, db.CreateChatChannelParams{Name: name, Topic: topic, CreatedBy: creator})
 		if err != nil {
@@ -1386,7 +1386,7 @@ func CreateKeyVersion(params CreateKeyVersionParams) (CreateKeyVersionResult, er
 		return CreateKeyVersionResult{}, ErrGrantSignature
 	}
 	var result CreateKeyVersionResult
-	err = inTx(params.Ctx, params.Database, func(q *db.Queries) error {
+	err = db.InTx(params.Ctx, params.Database.Db, func(q *db.Queries) error {
 		state, err := loadKeyState(params.Ctx, q, params.ChannelID)
 		if err != nil {
 			return err

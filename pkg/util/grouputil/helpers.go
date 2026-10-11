@@ -50,19 +50,6 @@ func folderRelPath(name string) string {
 	return path.Join(authutil.GroupsDirName, name)
 }
 
-// inTx runs fn in one transaction, rolling back when it returns an error.
-func inTx(ctx context.Context, database *db.DatabaseSqlc, fn func(*db.Queries) error) error {
-	tx, err := database.Db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	if err := fn(database.Queries.WithTx(tx)); err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-	return tx.Commit()
-}
-
 // grantFolder gives a group write on its folder: one row, so membership alone
 // decides who reaches it. Written straight to the table for the reason
 // authutil.grantHome gives.

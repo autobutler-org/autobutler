@@ -114,90 +114,83 @@ func Import(ctx context.Context, params ImportParams) (ImportResult, error) {
 		return ImportResult{}, ErrUnsupportedImportFormat
 	}
 
-	tx, err := params.VaultDB.Db.BeginTx(ctx, nil)
-	if err != nil {
-		return ImportResult{}, fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	qtx := params.VaultDB.Queries.WithTx(tx)
-
-	existingEntries, err := qtx.ListVaultEntries(ctx)
-	if err != nil {
-		return ImportResult{}, fmt.Errorf("list entries: %w", err)
-	}
-	dedupSet := make(map[string]bool)
-	for _, e := range existingEntries {
-		dedupSet[dedupKey(e.Name, e.UrlHost)] = true
-	}
-
-	existingFolders, err := qtx.ListVaultFolders(ctx)
-	if err != nil {
-		return ImportResult{}, fmt.Errorf("list folders: %w", err)
-	}
-	folderMap := make(map[string]int64)
-	for _, f := range existingFolders {
-		folderMap[f.Name] = f.ID
-	}
-
 	result := ImportResult{Ignored: ignored, Errors: parseErrors}
-
-	for _, entry := range entries {
-		host := HostFromURL(entry.URL)
-		if dedupSet[dedupKey(entry.Name, host)] {
-			result.Skipped++
-			continue
+	err := db.InTx(ctx, params.VaultDB.Db, func(qtx *db.Queries) error {
+		existingEntries, err := qtx.ListVaultEntries(ctx)
+		if err != nil {
+			return fmt.Errorf("list entries: %w", err)
+		}
+		dedupSet := make(map[string]bool)
+		for _, e := range existingEntries {
+			dedupSet[dedupKey(e.Name, e.UrlHost)] = true
 		}
 
-		var folderID sql.NullInt64
-		if entry.Folder != "" {
-			if id, ok := folderMap[entry.Folder]; ok {
-				folderID = sql.NullInt64{Int64: id, Valid: true}
-			} else {
-				f, err := qtx.CreateVaultFolder(ctx, db.CreateVaultFolderParams{
-					Name: entry.Folder,
-				})
-				if err != nil {
-					result.Errors = append(result.Errors, fmt.Sprintf("create folder %q: %v", entry.Folder, err))
-					continue
-				}
-				folderMap[entry.Folder] = f.ID
-				folderID = sql.NullInt64{Int64: f.ID, Valid: true}
+		existingFolders, err := qtx.ListVaultFolders(ctx)
+		if err != nil {
+			return fmt.Errorf("list folders: %w", err)
+		}
+		folderMap := make(map[string]int64)
+		for _, f := range existingFolders {
+			folderMap[f.Name] = f.ID
+		}
+
+		for _, entry := range entries {
+			host := HostFromURL(entry.URL)
+			if dedupSet[dedupKey(entry.Name, host)] {
+				result.Skipped++
+				continue
 			}
-		}
 
-		payload := EntryPayload{
-			URL:        entry.URL,
-			Username:   entry.Username,
-			Password:   entry.Password,
-			Notes:      entry.Notes,
-			TOTPSecret: entry.TOTPSecret,
-		}
-		plaintext, _ := json.Marshal(payload)
-		ct, nonce, err := vaultcrypto.Encrypt(params.Key, plaintext)
-		if err != nil {
-			result.Errors = append(result.Errors, fmt.Sprintf("encrypt %q: %v", entry.Name, err))
-			continue
-		}
+			var folderID sql.NullInt64
+			if entry.Folder != "" {
+				if id, ok := folderMap[entry.Folder]; ok {
+					folderID = sql.NullInt64{Int64: id, Valid: true}
+				} else {
+					f, err := qtx.CreateVaultFolder(ctx, db.CreateVaultFolderParams{
+						Name: entry.Folder,
+					})
+					if err != nil {
+						result.Errors = append(result.Errors, fmt.Sprintf("create folder %q: %v", entry.Folder, err))
+						continue
+					}
+					folderMap[entry.Folder] = f.ID
+					folderID = sql.NullInt64{Int64: f.ID, Valid: true}
+				}
+			}
 
-		_, err = qtx.CreateVaultEntry(ctx, db.CreateVaultEntryParams{
-			Name:       entry.Name,
-			UrlHost:    host,
-			FolderID:   folderID,
-			Ciphertext: ct,
-			Nonce:      nonce,
-		})
-		if err != nil {
-			result.Errors = append(result.Errors, fmt.Sprintf("create %q: %v", entry.Name, err))
-			continue
+			payload := EntryPayload{
+				URL:        entry.URL,
+				Username:   entry.Username,
+				Password:   entry.Password,
+				Notes:      entry.Notes,
+				TOTPSecret: entry.TOTPSecret,
+			}
+			plaintext, _ := json.Marshal(payload)
+			ct, nonce, err := vaultcrypto.Encrypt(params.Key, plaintext)
+			if err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("encrypt %q: %v", entry.Name, err))
+				continue
+			}
+
+			_, err = qtx.CreateVaultEntry(ctx, db.CreateVaultEntryParams{
+				Name:       entry.Name,
+				UrlHost:    host,
+				FolderID:   folderID,
+				Ciphertext: ct,
+				Nonce:      nonce,
+			})
+			if err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("create %q: %v", entry.Name, err))
+				continue
+			}
+
+			dedupSet[dedupKey(entry.Name, host)] = true
+			result.Imported++
 		}
-
-		dedupSet[dedupKey(entry.Name, host)] = true
-		result.Imported++
-	}
-
-	if err := tx.Commit(); err != nil {
-		return ImportResult{}, fmt.Errorf("commit: %w", err)
+		return nil
+	})
+	if err != nil {
+		return ImportResult{}, err
 	}
 
 	return result, nil
