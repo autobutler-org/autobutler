@@ -67,6 +67,7 @@ class FileBrowserView extends StatefulWidget {
     this.isAdmin = false,
     this.searchQuery,
     this.onNavigateToFolder,
+    this.onVersionHistory,
     this.inArchive = false,
     this.isInitialLoad = false,
     this.errorBuilder,
@@ -150,6 +151,10 @@ class FileBrowserView extends StatefulWidget {
   final String? searchQuery;
 
   final void Function(FileNode)? onNavigateToFolder;
+
+  /// Opens a file's version history (#2992). Null, as in the trash and the
+  /// folder picker, leaves the entry out of every menu.
+  final void Function(FileNode)? onVersionHistory;
 
   /// When true, we are browsing inside an archive — only download is available
   /// for files (no move/rename/delete).
@@ -379,6 +384,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                                 menuActions: widget.menuActions,
                                 subtitle: widget.subtitleFor?.call(item),
                                 onNavigateToFolder: widget.onNavigateToFolder,
+                                onVersionHistory: widget.onVersionHistory,
                                 onSelectionChanged: widget.onSelectionChanged,
                               ),
                             ),
@@ -454,6 +460,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                       isAdmin: widget.isAdmin,
                       onDispatchMenuAction: _dispatchMenuAction,
                       onNavigateToFolder: widget.onNavigateToFolder,
+                      onVersionHistory: widget.onVersionHistory,
                     );
                     return FolderDropWrapper(
                       item: item,
@@ -631,6 +638,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                       menuActions: widget.menuActions,
                       subtitle: widget.subtitleFor?.call(item),
                       onNavigateToFolder: widget.onNavigateToFolder,
+                      onVersionHistory: widget.onVersionHistory,
                       onSelectionChanged: widget.onSelectionChanged,
                     ),
                   );

@@ -22,7 +22,9 @@ typedef FileMenuActionDispatch =
 /// Convert video only on a video file, Open as presentation only on a
 /// PowerPoint file the Quark can import, Navigate to folder only in search
 /// results, and no Move/Rename or Delete on the `users` or `groups` folder, a
-/// home folder, or a group's folder itself unless the viewer is an admin. Share is hidden on the `users` and `groups`
+/// home folder, or a group's folder itself unless the viewer is an admin.
+/// Version history is offered on a file on the internal drive, the only place
+/// the Quark keeps versions, and only where [onVersionHistory] is set. Share is hidden on the `users` and `groups`
 /// folders for everyone, admins included: access is additive down the tree, so
 /// a grant there would expose every home or every group folder at once, and
 /// the Quark refuses it (#2016).
@@ -37,6 +39,7 @@ class FileMenu {
     required this.onDispatchMenuAction,
     this.isAdmin = false,
     this.onNavigateToFolder,
+    this.onVersionHistory,
   });
 
   final FileNode item;
@@ -56,6 +59,9 @@ class FileMenu {
   final bool isAdmin;
   final FileMenuActionDispatch onDispatchMenuAction;
   final void Function(FileNode)? onNavigateToFolder;
+
+  /// Opens the version history of a file (#2992). Null leaves the entry out.
+  final void Function(FileNode)? onVersionHistory;
 
   /// The entries for [item], empty when nothing applies to it.
   ///
@@ -87,6 +93,7 @@ class FileMenu {
     );
 
     final onNavigateToFolder = this.onNavigateToFolder;
+    final onVersionHistory = this.onVersionHistory;
     return [
       if (menuActions.contains(FileMenuAction.download))
         entry(FileMenuAction.download, 'Download'),
@@ -96,6 +103,15 @@ class FileMenu {
           !inArchive &&
           !isStructuralDir)
         entry(FileMenuAction.share, 'Share…'),
+      if (onVersionHistory != null &&
+          !inArchive &&
+          !item.isDir &&
+          serial.trim().isEmpty)
+        QuarkMenuEntry(
+          key: const ValueKey('file_version_history'),
+          label: 'Version history',
+          onSelected: () => onVersionHistory(item),
+        ),
       if (menuActions.contains(FileMenuAction.delete) && canChange)
         entry(FileMenuAction.delete, 'Delete', destructive: true),
       if (menuActions.contains(FileMenuAction.extractHere) &&

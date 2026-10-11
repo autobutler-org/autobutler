@@ -46,6 +46,7 @@ import 'package:quark/widgets/file_browser/archive_text_preview.dart';
 import 'package:quark/widgets/file_browser/file_browser_create_fab.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
 import 'package:quark/widgets/file_browser/upload_conflict_prompt.dart';
+import 'package:quark/widgets/file_versions/file_versions_sheet.dart';
 import 'package:quark/widgets/file_browser/file_route_error_state.dart';
 import 'package:quark/widgets/file_browser/file_storage_footer.dart';
 import 'package:quark/widgets/file_browser/file_storage_footer_scope.dart';
@@ -2399,6 +2400,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
                             isSearchMode: _isSearchMode,
                             searchQuery: _searchQuery,
                             onNavigateToFolder: _navigateToFolder,
+                            onVersionHistory: (node) => showFileVersionsSheet(
+                              context,
+                              relPath: node.apiPath,
+                              name: node.name,
+                            ),
                             currentPath: _currentPath,
                             errorBuilder: (context, error) =>
                                 FolderRouteErrorState(

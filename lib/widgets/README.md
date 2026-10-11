@@ -62,6 +62,12 @@ lib/widgets/
     new_file_dialog.dart        one-line wrapper that pops NewFileDialog
     upload_conflict_prompt.dart pops UploadConflictDialog and holds the
                                 "do the same for the rest" tick while it is open
+  file_versions/
+    file_versions_sheet.dart    opens FileVersionsPanel around a
+                                FileVersionsController for one file (#2992);
+                                refreshes through AutoRefreshMixin, confirms a
+                                restore, and pushes the read-only viewers for
+                                a preview; reads Errors and AppSettings
   hosts/
     emulator_loopback_hint.dart the line under an Add Quark address field
                                 suggesting 10.0.2.2 for localhost; reads

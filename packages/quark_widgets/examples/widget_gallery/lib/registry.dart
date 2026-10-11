@@ -1257,6 +1257,77 @@ final List<GalleryEntry> registry = [
     ),
   ),
 
+  // ── File versions ─────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'FileVersionsPanel',
+    group: 'File versions',
+    build: (context, log) => Wrap(
+      spacing: 24,
+      runSpacing: 24,
+      children: [
+        SizedBox(
+          width: 420,
+          child: QuarkSheet(
+            title: 'Version history · notes.md',
+            onClose: () => log('QuarkSheet.onClose'),
+            child: FileVersionsPanel(
+              versions: [
+                FileVersionItem(
+                  id: 'v3',
+                  createdAt: DateTime(2026, 10, 11, 15, 4),
+                  sizeLabel: '2.0 KB',
+                  author: 'You',
+                  label: 'Before restore',
+                ),
+                FileVersionItem(
+                  id: 'v2',
+                  createdAt: DateTime(2026, 10, 10, 9, 30),
+                  sizeLabel: '1.5 KB',
+                  author: 'alice',
+                  label: 'Final draft',
+                  isNamed: true,
+                ),
+                FileVersionItem(
+                  id: 'v1',
+                  createdAt: DateTime(2026, 10, 9, 8),
+                  sizeLabel: '900 B',
+                  author: 'System',
+                ),
+              ],
+              busyId: 'v2',
+              notice: 'Restored the version from Oct 9, 2026, 8:00 AM.',
+              onPreview: (id) => log('FileVersionsPanel.onPreview($id)'),
+              onRestore: (id) => log('FileVersionsPanel.onRestore($id)'),
+              onRefresh: () => log('FileVersionsPanel.onRefresh'),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 420,
+          child: QuarkSheet(
+            title: 'Version history · empty.txt',
+            onClose: () => log('QuarkSheet.onClose'),
+            child: FileVersionsPanel(
+              versions: const [],
+              error: "Couldn't load the versions.",
+              onRefresh: () => log('FileVersionsPanel.onRefresh'),
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'RestoreVersionDialog',
+    group: 'File versions',
+    build: (context, log) => RestoreVersionDialog(
+      fileName: 'notes.md',
+      savedAt: DateTime(2026, 10, 9, 8),
+      onConfirm: () => log('RestoreVersionDialog.onConfirm'),
+      onCancel: () => log('RestoreVersionDialog.onCancel'),
+    ),
+  ),
+
   // ── Jobs ──────────────────────────────────────────────────────────────────
   GalleryEntry(
     name: 'JobsBadge',
