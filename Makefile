@@ -354,6 +354,33 @@ build/frontend/linux: FLUTTER_BUILD_MODE = release
 build/frontend/linux: generate/frontend/sbom ## Build the Linux desktop bundle (build/linux/x64/<mode>/bundle)
 	flutter build linux --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
 
+# Per user, no sudo. The bundle lands in $(LINUX_APP_DIR), a quark symlink in $(PREFIX)/bin, and the
+# launcher entry and hicolor icons under $(PREFIX)/share. The bundle directory is replaced
+# wholesale, so re-running upgrades in place without leaving files of the old build behind. The
+# .desktop file in the repo says Exec=quark so it validates; the installed copy gets the absolute path.
+PREFIX ?= $(HOME)/.local
+LINUX_APP_DIR = $(PREFIX)/share/quark-app
+LINUX_BUNDLE_DIR = build/linux/$(if $(filter aarch64 arm64,$(shell uname -m)),arm64,x64)/release/bundle
+
+.PHONY: install/frontend/linux
+install/frontend/linux: build/frontend/linux ## Install the Linux desktop app into the launcher (PREFIX=~/.local)
+	rm -rf $(LINUX_APP_DIR)
+	mkdir -p $(LINUX_APP_DIR) $(PREFIX)/bin $(PREFIX)/share/applications $(PREFIX)/share/icons
+	cp -a $(LINUX_BUNDLE_DIR)/. $(LINUX_APP_DIR)/
+	ln -sf $(LINUX_APP_DIR)/quark $(PREFIX)/bin/quark
+	sed 's|^Exec=.*|Exec=$(PREFIX)/bin/quark|' linux/quark.desktop > $(PREFIX)/share/applications/quark.desktop
+	cp -a linux/icons/hicolor $(PREFIX)/share/icons/
+	-update-desktop-database $(PREFIX)/share/applications 2>/dev/null
+	-gtk-update-icon-cache -q -f -t $(PREFIX)/share/icons/hicolor 2>/dev/null
+
+.PHONY: uninstall/frontend/linux
+uninstall/frontend/linux: ## Remove the Linux desktop app installed by install/frontend/linux
+	rm -rf $(LINUX_APP_DIR)
+	rm -f $(PREFIX)/bin/quark $(PREFIX)/share/applications/quark.desktop
+	rm -f $(PREFIX)/share/icons/hicolor/*/apps/quark.png
+	-update-desktop-database $(PREFIX)/share/applications 2>/dev/null
+	-gtk-update-icon-cache -q -f -t $(PREFIX)/share/icons/hicolor 2>/dev/null
+
 .PHONY: build/frontend/ios
 build/frontend/ios: generate/frontend/sbom ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign \

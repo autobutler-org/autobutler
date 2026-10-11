@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Quark
+Comment=Your personal cloud
+Exec=quark
+Icon=quark
+Terminal=false
+Categories=Network;FileTransfer;Utility;
+StartupWMClass=org.autobutler.quark
