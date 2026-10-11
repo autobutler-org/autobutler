@@ -38,3 +38,28 @@ func TestRawViaDcraw_HungToolReturns(t *testing.T) {
 		t.Fatal("rawViaDcraw still running 10 s after its context ended")
 	}
 }
+
+// TestRawToJPEG_NeverRunsFfmpeg pins that RAW conversion stops at dcraw and
+// exiftool (#2382): the device ships no ffmpeg, and one that happens to be on
+// PATH is not run as a decoder.
+func TestRawToJPEG_NeverRunsFfmpeg(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("needs a shell script on PATH")
+	}
+	bin := t.TempDir()
+	ran := filepath.Join(bin, "ran")
+	if err := os.WriteFile(filepath.Join(bin, "ffmpeg"), []byte("#!/bin/sh\n: > "+ran+"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin)
+
+	if IsRawConverterAvailable() {
+		t.Error("ffmpeg alone on PATH counts as a RAW converter")
+	}
+	if _, err := RawToJPEG(filepath.Join(t.TempDir(), "photo.cr2")); err == nil {
+		t.Error("RawToJPEG succeeded with neither dcraw nor exiftool on PATH")
+	}
+	if _, err := os.Stat(ran); err == nil {
+		t.Error("RawToJPEG ran ffmpeg")
+	}
+}

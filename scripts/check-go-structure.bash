@@ -103,7 +103,7 @@ HOST_PATH_ALLOWED=(
     "pkg/util/photoutil/device.go"
     # A RAW photo's hash comes from the converter, which takes a host path.
     "pkg/util/photoutil/hashes.go"
-    # Thumbnails of RAW photos and video frames come from dcraw and ffmpeg.
+    # A RAW photo's thumbnail comes from dcraw, and a video's keyframe decoder opens a path.
     "pkg/util/thumbnailutil/generate.go"
     # A RAW download converted to JPEG goes through dcraw.
     "pkg/util/fileutil/download.go"
@@ -138,7 +138,7 @@ OS_FILE_ALLOWED=(
     # each imports, then retires, the files an older Quark kept in the data directory.
     "pkg/util/usersettingsutil/"
     "pkg/util/requestlogutil/"
-    # The thumbnail cache, and the temp files dcraw and ffmpeg write into.
+    # The thumbnail cache, and the temp files a thumbnail is written through.
     "pkg/util/thumbnailutil/"
     # Upload and transcode staging, outside the files tree until committed.
     "pkg/util/uploadutil/"

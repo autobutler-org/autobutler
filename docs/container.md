@@ -11,11 +11,11 @@ It carries a released binary and its runtime dependencies — no Go toolchain an
 `linux/amd64` and `linux/arm64` are both in the manifest, so the same tag runs on a cloud VM and on
 a Raspberry Pi.
 
-The image is around 600 MB, and most of that is `ffmpeg`; Debian's `ffmpeg` package pulls in the
-full codec set. Video no longer needs it. A video's thumbnail is a keyframe decoded in pure Go, for
+The image carries no `ffmpeg` (#2382). A video's thumbnail is a keyframe decoded in pure Go, for
 AV1 and VP8, and one a client renders for every other codec; probing, trimming, and converting
-video copy streams in pure Go. Only RAW conversion still shells out to `ffmpeg`, as its last resort
-after `dcraw` and `exiftool`, so a deployment without it starts and serves normally.
+video copy streams in pure Go. A RAW photo's preview comes from `dcraw`, then `exiftool`, and
+nothing else. With `ffmpeg` and Debian's full codec set the image was around 600 MB, most of it
+that package; the size without it has not been measured yet.
 
 To build it yourself for the host architecture, `make build/docker`. It packages the most recent
 git tag; pass `BUILD_NAME=X.Y.Z` for a different released version. The image cannot be built for a
@@ -63,7 +63,7 @@ docker run --rm -v "$PWD/build/quark-linux:/usr/local/bin/quark:ro" \
 # NOCOMMIT
 ```
 
-Use it to check a change under the shipped runtime — same base image, same ffmpeg, same `quark`
+Use it to check a change under the shipped runtime — same base image, same RAW tools, same `quark`
 user, same mount layout — or to test arm64 from an amd64 machine and the other way round. It is not
 a development loop; `make watch/backend` still is.
 
