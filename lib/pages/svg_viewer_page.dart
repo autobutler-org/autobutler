@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:quark/widgets/layout/chrome_app_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/svg_viewport.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
@@ -19,6 +22,13 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// transparent rather than as the page background — and it sits outside the
 /// [InteractiveViewer], so the backdrop stays put while the artwork pans and
 /// zooms over it.
+///
+/// The artwork is scaled to fill the body whatever size it declares: a vector
+/// has no native resolution, so a 16 pixel icon is not shown at 16 pixels. A
+/// root that declares no usable size gets one from [svgWithViewport] first.
+/// Markup the decoder rejects shows an error in place of the artwork. Scripts
+/// are never run and external references never fetched — `flutter_svg` draws
+/// the shapes and skips the rest.
 ///
 /// [bytes] is the raw file content and [name] the file name shown in the app
 /// bar. Null [bytes] is still loading, unless [error] says why it never will.
@@ -59,7 +69,17 @@ class SvgViewerPage extends StatelessWidget {
         (null, _) => const Center(child: QuarkLoader()),
         (final Uint8List bytes, _) => QuarkCheckerboard(
           child: InteractiveViewer(
-            child: Center(child: SvgPicture.memory(bytes, fit: BoxFit.contain)),
+            child: SizedBox.expand(
+              child: SvgPicture.string(
+                svgWithViewport(utf8.decode(bytes, allowMalformed: true)),
+                placeholderBuilder: (context) =>
+                    const Center(child: QuarkLoader()),
+                errorBuilder: (context, error, stackTrace) => EmptyStateWidget(
+                  icon: QuarkIcons.broken_image_outlined,
+                  headline: Errors.couldNot('show this SVG'),
+                ),
+              ),
+            ),
           ),
         ),
       },
