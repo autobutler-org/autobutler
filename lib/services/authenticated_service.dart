@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/local_trust.dart';
+import 'package:quark/services/local_trust_pin_io.dart';
 import 'package:quark/utils/error_text.dart';
 
 /// Thrown when an API call returns 401 — session expired or invalid.
@@ -28,7 +29,8 @@ const Duration kConnectTimeout = Duration(seconds: 5);
 /// [isLocalTrustHost]). Whatever host the TLS layer reports must look local
 /// too, so a redirect cannot carry the opt-out to a public or tailnet name
 /// (#2154). It is not held to an exact match: iOS can report a name other than
-/// the one dialed.
+/// the one dialed. A saved Quark must also present the certificate it is pinned
+/// to (#2721, see [acceptsPinnedCertificate]).
 ///
 /// [hostAddress] defaults to [activeBaseUrl]. A caller passes one only to
 /// reach a Quark that is not active yet — probing an address before it is
@@ -40,12 +42,13 @@ const Duration kConnectTimeout = Duration(seconds: 5);
 http.Client buildLocalTrustHttpClient([String? hostAddress]) {
   if (kIsWeb) return http.Client();
 
-  final host = _extractHost(hostAddress ?? activeBaseUrl);
+  final address = hostAddress ?? activeBaseUrl;
+  final host = _extractHost(address);
 
   final inner = HttpClient()..connectionTimeout = kConnectTimeout;
-  if (isLocalTrustHost(host)) {
+  if (address != null && isLocalTrustHost(host)) {
     inner.badCertificateCallback = (cert, certHost, port) =>
-        isLocalTrustHost(certHost);
+        isLocalTrustHost(certHost) && acceptsPinnedCertificate(cert, address);
   }
   return IOClient(inner);
 }

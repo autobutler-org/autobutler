@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/services/local_media_proxy.dart';
 import 'package:quark/services/local_trust.dart';
+import 'package:quark/services/local_trust_pin_io.dart';
 
 /// Borrows the app's standard `Authorization: Bearer` header so proxied media
 /// requests authenticate the same way every other API call does.
@@ -90,9 +91,12 @@ class _LocalMediaProxyIo implements LocalMediaProxy {
   /// seen handing back an mDNS-resolved address that doesn't match the
   /// configured host, which is the same trap `connectLocalTrustWs` sidesteps.
   /// It may not be a public name, so a redirect from the Quark cannot carry
-  /// the opt-out off the local network (#2154).
+  /// the opt-out off the local network (#2154). A saved Quark must also
+  /// present the certificate it is pinned to (#2721).
   bool _shouldTrustCertificate(X509Certificate cert, String host, int port) {
-    return isLocalTrustHost(_upstream.host) && isLocalTrustHost(host);
+    return isLocalTrustHost(_upstream.host) &&
+        isLocalTrustHost(host) &&
+        acceptsPinnedCertificate(cert, '$_upstream');
   }
 
   @override

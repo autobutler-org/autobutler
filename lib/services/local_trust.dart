@@ -12,9 +12,13 @@
 /// local; any other client accepts a private, loopback or link-local address,
 /// and a local name only when it is one the user chose
 /// ([acceptsUnverifiedCertificate]) — a name that merely ends in `.local` or
-/// `.lan` is not enough. This narrows who can present a forged certificate; it does
-/// not stop a hostile network that answers for the user's own Quark name or
-/// address, which only pinning the certificate would.
+/// `.lan` is not enough.
+///
+/// That narrows who can present a forged certificate. Pinning (#2721) is what
+/// stops a hostile network that answers for the user's own Quark name or
+/// address: an accepted certificate must also pass [checkCertificatePin]
+/// against the one the saved Quark presented first. `local_trust_pin_io.dart`
+/// applies it in every certificate callback; the pins live in `AppSettings`.
 ///
 /// Deliberately pure Dart (no `dart:io`, no Flutter) so it can be imported from
 /// web builds and unit-tested without a binding.
@@ -88,6 +92,35 @@ bool acceptsUnverifiedCertificate(String? host, Iterable<String?> chosenHosts) {
   final normalized = host.toLowerCase();
   return chosenHosts.any((chosen) => chosen?.toLowerCase() == normalized);
 }
+
+/// What comparing a presented certificate with a saved Quark's pin found.
+enum CertificatePinCheck {
+  /// Nothing is pinned yet: this certificate becomes the pin.
+  firstUse,
+
+  /// The certificate is the pinned one.
+  match,
+
+  /// The certificate is not the pinned one, and must be refused.
+  mismatch,
+}
+
+/// Compares the SHA-256 of a certificate a Quark [presented] with the one
+/// [pinned] for it, null when it has none (#2721).
+///
+/// Trust on first use: a Quark's self-signed certificate cannot be verified
+/// against anything, so the first one seen is remembered and every later
+/// connection must present the same one. That closes the gap
+/// [acceptsUnverifiedCertificate] leaves open — a hostile network answering
+/// for the user's own Quark name — for every connection after the first.
+CertificatePinCheck checkCertificatePin({
+  required String? pinned,
+  required String presented,
+}) => pinned == null
+    ? CertificatePinCheck.firstUse
+    : pinned == presented
+    ? CertificatePinCheck.match
+    : CertificatePinCheck.mismatch;
 
 /// Returns true for RFC 1918 private ranges, loopback, and link-local IPv4.
 bool _isPrivateIpv4(String host) {

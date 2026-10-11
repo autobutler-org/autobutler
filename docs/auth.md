@@ -12,7 +12,8 @@ and gets **426** with an `error` telling the user to update the app. A script de
 
 The examples below use `http://localhost:8080`, which is what `make watch/backend` (or `make serve/backend`)
 serves. If you're running the secure mode instead, the base URL is `https://localhost` and `curl` needs `-k`,
-because the certificate is self-signed.
+because the certificate is self-signed. The app does not skip the check the way `-k` does: it pins the
+certificate a saved Quark presents on first use and refuses a different one (#2721).
 
 ## Deriving the keys
 

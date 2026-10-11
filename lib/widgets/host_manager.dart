@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:quark/services/app_settings.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/widgets/host_dialog.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-/// The list of configured Quarks, with switch / add / edit / remove.
+/// The list of configured Quarks, with switch / add / edit / remove, and
+/// Forget certificate for one whose certificate is pinned (#2721).
+///
+/// A Quark that presented a certificate other than its pin says so under its
+/// address, since the app refuses to connect to it until the pin is
+/// forgotten.
+///
+/// Keys: `host_row_<index>`, `host_menu_<index>`, `host_action_edit_<index>`,
+/// `host_action_remove_<index>`, `host_action_forget_certificate_<index>` and
+/// `host_certificate_changed_<index>` (the mismatch notice).
 ///
 /// Shared by Settings and the login page so a user pointed at a Quark they
 /// can't reach can still change hosts without getting past the auth gate
@@ -31,6 +41,7 @@ class _HostManagerState extends State<HostManager> {
   void initState() {
     super.initState();
     AppSettings.instance.activeHostNotifier.addListener(_onActiveHostChanged);
+    AppSettings.instance.certificatesChanged.addListener(_onActiveHostChanged);
   }
 
   @override
@@ -38,11 +49,15 @@ class _HostManagerState extends State<HostManager> {
     AppSettings.instance.activeHostNotifier.removeListener(
       _onActiveHostChanged,
     );
+    AppSettings.instance.certificatesChanged.removeListener(
+      _onActiveHostChanged,
+    );
     super.dispose();
   }
 
   /// Picks up host changes made elsewhere (Settings and the login page can
-  /// both be alive across a navigation).
+  /// both be alive across a navigation), and a certificate pinned, refused or
+  /// forgotten.
   void _onActiveHostChanged() {
     if (mounted) setState(() {});
   }
@@ -92,6 +107,16 @@ class _HostManagerState extends State<HostManager> {
       label: 'Edit',
       onSelected: () => _addOrEdit(index: index),
     ),
+    // Only a Quark with a pin, or one refused for not matching it, has
+    // anything to forget.
+    if (_hasCertificate(index))
+      QuarkMenuEntry(
+        key: ValueKey('host_action_forget_certificate_$index'),
+        label: 'Forget certificate',
+        onSelected: () => AppSettings.instance.forgetCertificate(
+          AppSettings.instance.hosts[index].hostAddress,
+        ),
+      ),
     QuarkMenuEntry(
       key: ValueKey('host_action_remove_$index'),
       label: 'Remove',
@@ -99,6 +124,12 @@ class _HostManagerState extends State<HostManager> {
       onSelected: () => _remove(index),
     ),
   ];
+
+  bool _hasCertificate(int index) {
+    final address = AppSettings.instance.hosts[index].hostAddress;
+    return AppSettings.instance.hasCertificateFor(address) ||
+        AppSettings.instance.certificateChangedFor(address);
+  }
 
   Future<void> _remove(int index) async {
     final confirm = await QuarkWidget.showDialog<bool>(
@@ -167,7 +198,26 @@ class _HostManagerState extends State<HostManager> {
                     child: ListTile(
                       leading: ExcludeSemantics(child: Radio<int>(value: idx)),
                       title: Text(host.name),
-                      subtitle: Text(host.hostAddress),
+                      subtitle:
+                          AppSettings.instance.certificateChangedFor(
+                            host.hostAddress,
+                          )
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(host.hostAddress),
+                                Text(
+                                  Errors.certificateChanged,
+                                  key: ValueKey(
+                                    'host_certificate_changed_$idx',
+                                  ),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(host.hostAddress),
                       trailing: QuarkMenuButton(
                         key: ValueKey('host_menu_$idx'),
                         tooltip: 'Actions for ${host.name}',

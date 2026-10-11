@@ -701,3 +701,32 @@ The Quark has at least one feature in beta, such as Chat.
 - The setting belongs to this device, unlike the theme color (JN-ST-031), and survives an app restart.
 - A platform that has its own contrast setting (an OS high-contrast mode) selects the same high-contrast theme, in
   the picked theme color, with the switch off.
+
+---
+
+### JN-ST-036: Re-trust a Quark whose certificate changed
+
+**Preconditions:** The mobile or desktop app, with a Quark saved at a local address (`https://quark.local`, a LAN
+IP) that it has connected to before.
+
+**Steps:**
+
+1. Reset or reinstall the Quark so it issues itself a new certificate, then open the app.
+2. Navigate to `/settings/general`, or open the host list on the sign-in page.
+3. Open the Quark's menu and choose **Forget certificate**.
+4. Connect again.
+
+**Expected result:**
+
+- After step 1 the app refuses to connect to the Quark. Its row in the host list says its security certificate
+  has changed, and an action that needed the Quark reports the same thing.
+- **Forget certificate** shows only for a Quark that has a certificate pinned.
+- After step 3 the notice is gone, and step 4 connects and pins the certificate the Quark presents now.
+
+**Notes:**
+
+- The app pins the SHA-256 of a saved Quark's self-signed certificate the first time it connects (#2721), per
+  `host:port`. Renaming the saved entry keeps the pin; changing its address or removing it drops the pin.
+- There is no "connect anyway": a changed certificate is also what a network impersonating the Quark looks like.
+- Nothing is pinned in the browser, which owns TLS there, or for a remote-access or public address, whose
+  certificate is verified the ordinary way.
