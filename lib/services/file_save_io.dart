@@ -82,7 +82,7 @@ Future<String?> saveDownloadToPickedPath({
       await downloaded.delete();
     }
   } catch (_) {
-    await _removePlaceholder(destination);
+    _removePlaceholder(destination);
     rethrow;
   }
   return destination;
@@ -105,10 +105,13 @@ Future<String?> saveBytesToPickedPath(
 /// The Linux picker writes the bytes it is handed to the chosen path before
 /// returning. It is handed none, so a failed download would otherwise leave an
 /// empty file behind where the user expected theirs.
-Future<void> _removePlaceholder(String path) async {
+///
+/// One stat and one unlink, done synchronously: a failed save should report
+/// at once, not after a round of the event loop.
+void _removePlaceholder(String path) {
   try {
     final file = File(path);
-    if (await file.length() == 0) await file.delete();
+    if (file.lengthSync() == 0) file.deleteSync();
   } catch (_) {
     // Nothing there, or nothing we may touch: either way, nothing to clean.
   }

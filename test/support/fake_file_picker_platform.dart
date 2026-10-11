@@ -31,8 +31,8 @@ class FakeFilePickerPlatform extends FilePickerPlatform {
     WebOptions webOptions = const WebOptions(),
   }) async {
     offered.add(fileName);
-    final file = File('${dir.path}/$fileName');
-    await file.writeAsBytes(bytes);
+    // Written synchronously so a widget test's fake clock need not wait on it.
+    final file = File('${dir.path}/$fileName')..writeAsBytesSync(bytes);
     return Uri.file(file.path);
   }
 
