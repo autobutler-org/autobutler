@@ -12,6 +12,7 @@ import 'package:quark/models/calendar_view.dart';
 import 'package:quark/models/feature_flag.dart';
 import 'package:quark/models/file_list_column.dart';
 import 'package:quark/models/photo_sort.dart';
+import 'package:quark/services/local_trust.dart';
 import 'package:quark/utils/emulator_loopback.dart';
 import 'package:quark_widgets/quark_widgets.dart'
     show AlbumSort, QuarkThemeColor;
@@ -323,6 +324,35 @@ class AppSettings {
   /// Holds a JSON object of host key -> resolved theme color storage string.
   static const _themeColorsKey = 'themeColors';
 
+  /// Holds a JSON object of [_certificateKey] -> certificate SHA-256.
+  static const _hostCertificatesKey = 'hostCertificates';
+
+  /// The SHA-256 of the self-signed certificate each saved Quark presented the
+  /// first time the app connected to it, keyed by [_certificateKey] (#2721).
+  ///
+  /// Keyed by `host:port` rather than held on [HostEntry]: the WebSocket, the
+  /// media proxy and the app-wide `HttpOverrides` know only the authority they
+  /// dialed, and renaming a saved Quark keeps its pin while pointing it at a
+  /// new address starts over. Pins for addresses no longer saved are dropped
+  /// by [_saveHosts].
+  final ValueNotifier<Map<String, String>> _certificates = ValueNotifier(
+    const {},
+  );
+
+  /// The saved Quarks, by [_certificateKey], that presented a certificate
+  /// other than their pin since the app started. Not persisted: the next
+  /// handshake finds the mismatch again.
+  final ValueNotifier<Set<String>> _certificateMismatches = ValueNotifier(
+    const {},
+  );
+
+  /// Notifies when a certificate is pinned or forgotten, or a saved Quark
+  /// presents one that does not match its pin.
+  late final Listenable certificatesChanged = Listenable.merge([
+    _certificates,
+    _certificateMismatches,
+  ]);
+
   /// Pre-#1623 key: a single app-wide "terms accepted" bool. Read once on
   /// load and migrated into [_acceptedTermsHostsKey] so existing users aren't
   /// asked to re-accept for the Quark they're already using.
@@ -408,6 +438,10 @@ class AppSettings {
 
     _usernames = _decodeHostMap(_prefs!.getString(_usernamesKey));
     _themeColors = _decodeHostMap(_prefs!.getString(_themeColorsKey));
+    _certificates.value = _decodeHostMap(
+      _prefs!.getString(_hostCertificatesKey),
+    );
+    _certificateMismatches.value = const {};
     _quarkThemeColor.value = null;
     _userThemeColor.value = null;
 
@@ -726,11 +760,125 @@ class AppSettings {
   bool hasAcceptedTermsFor(String hostAddress) =>
       _acceptedTermsHosts.contains(_hostKey(hostAddress));
 
+  /// The `host:port` a TLS connection to [host] on [port] is pinned under.
+  static String _certificateKey(String host, int port) =>
+      '${host.toLowerCase()}:$port';
+
+  /// [_certificateKey] for a saved or dialed address, whatever its scheme and
+  /// path: `https://quark.local` and `wss://quark.local/api/v0/events` are the
+  /// same server. Null for an address with no host, such as the web build's
+  /// `/`.
+  static String? _certificateKeyOf(String? address) {
+    final uri = address == null ? null : Uri.tryParse(address.trim());
+    if (uri == null || uri.host.isEmpty) return null;
+    // Only TLS connections are pinned, so no explicit port means 443; `Uri`
+    // knows that default for `https` but not for `wss`.
+    return _certificateKey(uri.host, uri.hasPort ? uri.port : 443);
+  }
+
+  bool _isSavedCertificateKey(String key) =>
+      _hosts.any((h) => _certificateKeyOf(h.hostAddress) == key);
+
+  /// Whether a certificate that failed verification, with fingerprint
+  /// [sha256], is the one the saved Quark at [address] is pinned to (#2721).
+  ///
+  /// Trust on first use: the first certificate a saved Quark presents is
+  /// pinned and accepted; after that only the same certificate is, and any
+  /// other is refused and reported by [certificateChangedFor] until
+  /// [forgetCertificate]. An address that is not saved has nothing to pin
+  /// against and is accepted — probing an address before saving it — so the
+  /// caller must already have decided the host may present a self-signed
+  /// certificate at all.
+  ///
+  /// Synchronous, because a `badCertificateCallback` is; the pin is written to
+  /// storage in the background.
+  bool trustCertificate(String address, String sha256) {
+    final key = _certificateKeyOf(address);
+    return key == null || _trustCertificateKey(key, sha256);
+  }
+
+  bool _trustCertificateKey(String key, String sha256) {
+    if (!_isSavedCertificateKey(key)) return true;
+    switch (checkCertificatePin(
+      pinned: _certificates.value[key],
+      presented: sha256,
+    )) {
+      case CertificatePinCheck.firstUse:
+        _certificates.value = {..._certificates.value, key: sha256};
+        unawaited(_persistCertificates());
+        return true;
+      case CertificatePinCheck.match:
+        return true;
+      case CertificatePinCheck.mismatch:
+        _certificateMismatches.value = {..._certificateMismatches.value, key};
+        return false;
+    }
+  }
+
+  /// [trustCertificate] for a client that was not built for one Quark, which
+  /// knows only the [host] and [port] the TLS layer reports.
+  ///
+  /// A saved authority is held to its own pin. Anything else — iOS can report
+  /// the mDNS-resolved address instead of the saved name — is never pinned,
+  /// since it cannot be attributed to a Quark: it is accepted when it presents
+  /// a certificate some saved Quark is pinned to, or while the Quark in use
+  /// has no pin to compare with.
+  bool trustReportedCertificate(String host, int port, String sha256) {
+    final key = _certificateKey(host, port);
+    if (_isSavedCertificateKey(key)) return _trustCertificateKey(key, sha256);
+    return _certificates.value.containsValue(sha256) ||
+        !hasCertificateFor(activeHost);
+  }
+
+  /// Whether a certificate is pinned for the Quark at [hostAddress].
+  bool hasCertificateFor(String? hostAddress) =>
+      _certificates.value.containsKey(_certificateKeyOf(hostAddress));
+
+  /// Whether the Quark at [hostAddress] presented a certificate other than
+  /// its pin, so the app refuses to connect to it.
+  bool certificateChangedFor(String? hostAddress) =>
+      _certificateMismatches.value.contains(_certificateKeyOf(hostAddress));
+
+  /// Forgets the certificate pinned for the Quark at [hostAddress], so the
+  /// next connection pins whatever it presents — for a Quark that was reset
+  /// or re-issued its certificate.
+  Future<void> forgetCertificate(String hostAddress) =>
+      _forgetCertificateKey(_certificateKeyOf(hostAddress));
+
+  Future<void> _forgetCertificateKey(String? key) async {
+    _certificateMismatches.value = {
+      for (final k in _certificateMismatches.value)
+        if (k != key) k,
+    };
+    if (!_certificates.value.containsKey(key)) return;
+    _certificates.value = {
+      for (final e in _certificates.value.entries)
+        if (e.key != key) e.key: e.value,
+    };
+    await _persistCertificates();
+  }
+
+  Future<void> _persistCertificates() async {
+    await _prefs?.setString(
+      _hostCertificatesKey,
+      jsonEncode(_certificates.value),
+    );
+  }
+
   Future<void> _saveHosts() async {
     await _prefs?.setString(
       'hosts',
       jsonEncode(_hosts.map((e) => e.toJson()).toList()),
     );
+    // A pin belongs to a saved address: removing a Quark, or moving it to a
+    // new address, drops the pin and any mismatch reported against it.
+    final stale = {
+      ..._certificates.value.keys,
+      ..._certificateMismatches.value,
+    }.where((key) => !_isSavedCertificateKey(key)).toList();
+    for (final key in stale) {
+      await _forgetCertificateKey(key);
+    }
     await _prefs?.setInt('activeHostIndex', _activeIndex);
     _publishActiveHost();
   }

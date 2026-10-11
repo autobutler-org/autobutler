@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:quark/services/local_trust.dart';
+import 'package:quark/services/local_trust_pin_io.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -23,10 +24,12 @@ WebSocketChannel connectLocalTrustWs(Uri uri, {Map<String, dynamic>? headers}) {
   }
 
   // Local host: trust its self-signed cert, but never a public name the TLS
-  // layer reports, consistent with buildLocalTrustHttpClient() in
+  // layer reports, and only the certificate the saved Quark is pinned to
+  // (#2721), consistent with buildLocalTrustHttpClient() in
   // authenticated_service.dart.
   final httpClient = HttpClient()
-    ..badCertificateCallback = (cert, host, port) => isLocalTrustHost(host);
+    ..badCertificateCallback = (cert, host, port) =>
+        isLocalTrustHost(host) && acceptsPinnedCertificate(cert, '$uri');
   return IOWebSocketChannel.connect(
     uri,
     headers: headers,

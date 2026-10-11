@@ -1,3 +1,4 @@
+import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -24,12 +25,29 @@ abstract final class Errors {
   /// album'`. Lowercase, no trailing period.
   static String message(Object? error, String action) {
     if (error == null) return couldNot(action);
-    if (isQuarkUnreachableError(error)) return quarkDisconnectedInline;
     if (error is UnauthorizedException) return sessionExpired;
     if (error is MessageException) return _sentence(error.message);
     if (error is ApiException) return _forStatus(error.statusCode, action);
+    // Everything above is an answer from the Quark, which a refused
+    // certificate never gets as far as. The handshake failure itself reaches
+    // here as whatever the platform threw, so the refusal is read from where
+    // it was recorded rather than from the error.
+    final settings = AppSettings.instance;
+    if (settings.certificateChangedFor(settings.activeHost)) {
+      return certificateChanged;
+    }
+    if (isQuarkUnreachableError(error)) return quarkDisconnectedInline;
     return couldNot(action);
   }
+
+  /// A saved Quark presented a different certificate from the one the app
+  /// pinned the first time it connected, so the app refuses to talk to it
+  /// (#2721). Names the way out: Forget certificate in the Quark's menu.
+  static const String certificateChanged =
+      "This Quark's security certificate has changed, so the app won't "
+      'connect to it. If you reset or reinstalled your Quark, choose Forget '
+      "certificate from its menu under Backend hosts, then try again. If you "
+      "didn't, you may be on a network that is impersonating it.";
 
   /// The Quark writes its own copy in lowercase fragments — "server busy,
   /// please retry". Reshape it so it reads like the rest of the app's text.

@@ -68,7 +68,10 @@ still coupled, and [`lib/widgets/README.md`](../../lib/widgets/README.md) tracks
 
 `AuthenticatedService` is the mixin every service uses: one shared `http.Client` (trusting the device's
 self-signed certificate on native platforms), bearer auth from `AppSettings`, and a single `401` path back to
-login. `EventsService` keeps one WebSocket to `/api/v0/events` and rebroadcasts `FileEvent`s to whoever listens.
+login. That trust is pinned (#2721): the first self-signed certificate a saved Quark presents has its SHA-256
+stored in `AppSettings`, and every certificate callback — the shared client, the events WebSocket, the media
+proxy, the app-wide `HttpOverrides` — refuses any other through `local_trust_pin_io.dart` until the user picks
+**Forget certificate** on that host. The browser owns TLS on web, so nothing is pinned there. `EventsService` keeps one WebSocket to `/api/v0/events` and rebroadcasts `FileEvent`s to whoever listens.
 Anything touching `dart:io` or the browser sits behind a conditional import (`foo_io.dart` / `foo_web.dart` /
 `foo_stub.dart`) — `upload_chunk_source`, `ws_connect`, `local_media_proxy`.
 

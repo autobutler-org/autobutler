@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/local_trust.dart';
+import 'package:quark/services/local_trust_pin_io.dart';
 
 /// Applies [acceptsUnverifiedCertificate] to every [HttpClient] created in this
 /// isolate.
@@ -18,7 +19,9 @@ import 'package:quark/services/local_trust.dart';
 /// The hosts these clients may reach are not chosen by the user, so a local
 /// name is trusted only when it is one of the saved Quarks' addresses (home or
 /// remote) or the address in use (#2154). Being connected to a local Quark
-/// does not loosen verification for any other host.
+/// does not loosen verification for any other host. A host that passes must
+/// also present a pinned certificate (#2721, see
+/// [acceptsReportedPinnedCertificate]).
 class LocalTrustHttpOverrides extends HttpOverrides {
   /// [chosenAddresses] lists the addresses the user picked; it defaults to the
   /// saved Quarks plus [activeBaseUrl] and is read again on every handshake, so
@@ -31,7 +34,8 @@ class LocalTrustHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (cert, host, port) => trusts(host);
+      ..badCertificateCallback = (cert, host, port) =>
+          trusts(host) && acceptsReportedPinnedCertificate(cert, host, port);
   }
 
   /// Whether a certificate that failed verification is accepted from [host].
