@@ -18,6 +18,7 @@ import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/local_trust_overrides_stub.dart'
     if (dart.library.io) 'package:quark/services/local_trust_overrides_io.dart';
+import 'package:quark/services/video_playback_backend.dart';
 import 'package:quark/utils/app_log.dart';
 import 'package:quark/utils/first_frame_gate.dart';
 import 'package:quark/utils/startup.dart';
@@ -44,6 +45,8 @@ Future<void> _run() async {
   // "Enable accessibility" button, so screen readers see nothing until then
   // (#2599). The handle is never disposed: the tree lives as long as the app.
   if (kIsWeb) SemanticsBinding.instance.ensureSemantics();
+  // Linux has no video_player backend of its own (#3151).
+  installVideoPlaybackBackend();
   await maybeStartProbeAgent();
   // The native launch screen is blank, and nothing is painted until the
   // settings are in. A load that stalls, say on the secure-storage read, now
