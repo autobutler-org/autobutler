@@ -12,7 +12,7 @@ services:
   postgres:
     # Pinned to a major so Renovate moves it. pg_trgm ships in this image; the schema
     # enables it in its first migration, so there is no init script to keep in step.
-    image: postgres:17
+    image: postgres:18
     environment:
       POSTGRES_USER: quark
       POSTGRES_PASSWORD: quark
