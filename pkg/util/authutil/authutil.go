@@ -1600,9 +1600,8 @@ func DemoteFromAdmin(ctx context.Context, queries *db.Queries, username string) 
 // aspects are opt-in: a request that selects none is rejected rather than
 // treated as "everything", so a truncated or mis-serialized call fails closed.
 type DeleteAccountParams struct {
-	Database       *db.DatabaseSqlc
-	Queries        *db.Queries
-	HealthDatabase *db.DatabaseRaw
+	Database *db.DatabaseSqlc
+	Queries  *db.Queries
 	// DataDir is the appliance's own data directory. Production passes
 	// storageutil.GetDataDir(); tests pass a temporary directory.
 	DataDir string
@@ -1656,9 +1655,8 @@ type DeleteAccountResult struct {
 //     so the setup flow re-triggers rather than the appliance becoming
 //     unreachable.
 //
-//   - DeleteDatabase: the appliance's databases, quark.db and quark.health.db.
-//     An internal vault lives in quark.db itself (migration 005), so it goes
-//     with them; a separate vault.db file exists only on an external device.
+//   - DeleteDatabase: the appliance's database, quark.db. An internal vault
+//     lives in quark.db itself (migration 005), so it goes with it; a separate vault.db file exists only on an external device.
 //
 //   - DeleteFiles: the file trees the appliance owns, <dataDir>/files and the
 //     mount-point scaffolding under <dataDir>/mounts.
@@ -1759,11 +1757,6 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 	}
 
 	if params.DeleteDatabase {
-		if params.HealthDatabase != nil {
-			if err := db.ResetRawDatabase(params.HealthDatabase); err != nil {
-				return result, fmt.Errorf("failed to reset health database: %w", err)
-			}
-		}
 		if err := db.ResetDatabase(params.Database); err != nil {
 			return result, fmt.Errorf("failed to reset database: %w", err)
 		}

@@ -80,21 +80,3 @@ func pooledQueries(sqlDB *sql.DB) *Queries {
 	sqlDB.SetMaxIdleConns(maxOpenConns)
 	return New(sqlDB)
 }
-
-func ConnectToHealthDatabase() (*DatabaseRaw, error) {
-	var database DatabaseRaw
-	dataDir := storageutil.GetDataDir()
-	err := os.MkdirAll(dataDir, 0755)
-	if err != nil {
-		panic(fmt.Sprintf("failed to create data directory: %v", err))
-	}
-
-	healthFilePath := filepath.Join(dataDir, "quark.health.db")
-
-	// Initialize health database for OTEL traces (no migrations needed)
-	database.Db, err = sql.Open("sqlite", DSN(healthFilePath))
-	if err != nil {
-		panic(fmt.Sprintf("failed to open health database: %v", err))
-	}
-	return &database, nil
-}

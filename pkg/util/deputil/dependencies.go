@@ -38,7 +38,6 @@ type dependencies struct {
 	eventBus       *eventbus.Bus
 	fileIndex      *indexutil.FileIndex
 	fileVersions   *fileversionutil.Store
-	healthDatabase *db.DatabaseRaw
 	sshSystem      sshutil.System
 	hostnameSystem hostnameutil.System
 	repairSystem   repairutil.System
@@ -123,11 +122,6 @@ func (d *dependencies) WithFileVersions(store *fileversionutil.Store) Dependenci
 	return d
 }
 
-func (d *dependencies) WithHealthDatabase(database *db.DatabaseRaw) Dependencies {
-	d.healthDatabase = database
-	return d
-}
-
 func (d *dependencies) WithStorageService(s *storageutil.StorageService) Dependencies {
 	d.storageService = s
 	return d
@@ -187,10 +181,6 @@ func (d *dependencies) EventBus() *eventbus.Bus {
 
 func (d *dependencies) FileIndex() *indexutil.FileIndex {
 	return d.fileIndex
-}
-
-func (d *dependencies) HealthDatabase() *db.DatabaseRaw {
-	return d.healthDatabase
 }
 
 func (d *dependencies) IOSemaphore() *iosemutil.Semaphore {

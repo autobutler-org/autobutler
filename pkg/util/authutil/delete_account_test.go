@@ -2,7 +2,6 @@ package authutil_test
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,7 +10,6 @@ import (
 	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
-	_ "modernc.org/sqlite"
 )
 
 // deleteAccountFixture is a self-contained appliance on disk: a real database
@@ -212,41 +210,6 @@ func TestDeleteAccount_NoAspectSelected(t *testing.T) {
 	}
 	assertExists(t, filepath.Join(fixture.filesDir, "local.txt"), "nothing should have been touched")
 	assertExists(t, filepath.Join(fixture.deviceDataDir, "on-device.txt"), "nothing should have been touched")
-}
-
-// TestDeleteAccount_ResetsHealthDatabase verifies the health database is emptied
-// alongside the main one, through the live handle rather than by unlinking.
-func TestDeleteAccount_ResetsHealthDatabase(t *testing.T) {
-	fixture := newDeleteAccountFixture(t)
-
-	healthDB, err := sql.Open("sqlite", db.DSN(filepath.Join(fixture.dataDir, "quark.health.db")))
-	if err != nil {
-		t.Fatalf("open health db: %v", err)
-	}
-	t.Cleanup(func() { healthDB.Close() })
-	if _, err := healthDB.Exec(`CREATE TABLE traces (id INTEGER PRIMARY KEY, payload TEXT)`); err != nil {
-		t.Fatalf("create traces: %v", err)
-	}
-	if _, err := healthDB.Exec(`INSERT INTO traces (payload) VALUES ('span')`); err != nil {
-		t.Fatalf("seed traces: %v", err)
-	}
-
-	params := fixture.params()
-	params.DeleteDatabase = true
-	params.HealthDatabase = &db.DatabaseRaw{Db: healthDB}
-	if _, err := authutil.DeleteAccount(context.Background(), params); err != nil {
-		t.Fatalf("DeleteAccount: %v", err)
-	}
-
-	var tables int
-	if err := healthDB.QueryRow(
-		`SELECT count(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`,
-	).Scan(&tables); err != nil {
-		t.Fatalf("count health tables: %v", err)
-	}
-	if tables != 0 {
-		t.Errorf("expected the health database emptied, %d tables remain", tables)
-	}
 }
 
 // TestDeleteAccount_ResetIssuesANewInstallID is how the other instances

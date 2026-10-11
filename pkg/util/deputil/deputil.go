@@ -62,7 +62,6 @@ type Dependencies interface {
 	FileIndex() *indexutil.FileIndex
 	// FileVersions keeps each file's version history (#1173).
 	FileVersions() *fileversionutil.Store
-	HealthDatabase() *db.DatabaseRaw
 	HostnameSystem() hostnameutil.System
 	IOSemaphore() *iosemutil.Semaphore
 	JobQueue() *jobutil.Queue
@@ -89,7 +88,6 @@ type Dependencies interface {
 	WithEventBus(b *eventbus.Bus) Dependencies
 	WithFileIndex(idx *indexutil.FileIndex) Dependencies
 	WithFileVersions(store *fileversionutil.Store) Dependencies
-	WithHealthDatabase(healthDatabase *db.DatabaseRaw) Dependencies
 	WithHostnameSystem(system hostnameutil.System) Dependencies
 	WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies
 	WithJobQueue(q *jobutil.Queue) Dependencies
@@ -172,11 +170,6 @@ func DefaultDependencies() (Dependencies, error) {
 		}
 	} else { // coverage: ignore - requires database connection failure
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
-	if database, err := db.ConnectToHealthDatabase(); err == nil { // coverage: ignore - requires health database connection success
-		deps.WithHealthDatabase(database)
-	} else { // coverage: ignore - requires health database connection failure
-		return nil, fmt.Errorf("failed to connect to health database: %w", err)
 	}
 	svc := storageutil.NewStorageService(storageutil.NewDetector()) // coverage: ignore
 	deps.WithStorageService(svc)                                    // coverage: ignore

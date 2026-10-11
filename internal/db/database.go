@@ -25,10 +25,6 @@ type DatabaseSqlc struct {
 	Queries *Queries
 }
 
-type DatabaseRaw struct {
-	Db *sql.DB
-}
-
 func (d *DatabaseSqlc) Exec(query string, args ...any) (sql.Result, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
@@ -37,20 +33,6 @@ func (d *DatabaseSqlc) Exec(query string, args ...any) (sql.Result, error) {
 }
 
 func (d *DatabaseSqlc) Query(query string, args ...any) (*sql.Rows, error) {
-	if d == nil {
-		return nil, fmt.Errorf("database not initialized")
-	}
-	return d.Db.Query(query, args...)
-}
-
-func (d *DatabaseRaw) Exec(query string, args ...any) (sql.Result, error) {
-	if d == nil {
-		return nil, fmt.Errorf("database not initialized")
-	}
-	return d.Db.Exec(query, args...)
-}
-
-func (d *DatabaseRaw) Query(query string, args ...any) (*sql.Rows, error) {
 	if d == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}

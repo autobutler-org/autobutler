@@ -23,7 +23,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param account query bool false "Delete the caller's own account (users row). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next."
-// @Param database query bool false "Delete the appliance databases (quark.db, quark.health.db). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next."
+// @Param database query bool false "Delete the appliance database (quark.db). Does NOT delete stored files unless files=true is also passed; files left behind stay readable by whoever sets the appliance up next."
 // @Param files query bool false "Delete stored files under the data directory"
 // @Param devices query bool false "Delete the Quark data directory on attached external devices"
 // @Param body body deleteAccountBody true "The caller's own auth key, in the password field"
@@ -129,7 +129,6 @@ func deleteAccount(c *gin.Context) *serverutil.Response {
 	result, err := authutil.DeleteAccount(c.Request.Context(), authutil.DeleteAccountParams{
 		Database:       database,
 		Queries:        database.Queries,
-		HealthDatabase: (*deps).HealthDatabase(),
 		DataDir:        storageutil.GetDataDir(),
 		DeviceDataDirs: deviceDataDirs,
 		Username:       username,

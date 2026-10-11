@@ -67,7 +67,6 @@ classDiagram
     class Dependencies {
         <<interface>>
         Database() DatabaseSqlc
-        HealthDatabase() DatabaseRaw
         VaultDB() DatabaseSqlc
         StorageService() StorageService
         VFSRegistry() vfs.Registry
@@ -83,7 +82,6 @@ classDiagram
         IOSemaphore() Semaphore
     }
     Dependencies --> DatabaseSqlc : quark.db
-    Dependencies --> DatabaseRaw : quark.health.db
     Dependencies --> StorageService : managed devices
     Dependencies --> Registry : a files namespace per device
     Registry --> StorageServiceVFS
@@ -128,7 +126,7 @@ sequenceDiagram
     participant bg as background workers
     participant gin as gin engine
 
-    main->>deps: connect quark.db + quark.health.db, run migrations
+    main->>deps: connect quark.db, run migrations
     deps-->>main: storage service, VFS registry, event bus, job queue, vault session
     main->>s: StartServer(deps, opts)
     s->>s: remove stale update backups, register health collector

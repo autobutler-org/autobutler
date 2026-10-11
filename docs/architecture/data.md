@@ -9,7 +9,6 @@ history, and indexes. The rule in `AGENTS.md` is to reach for the database last.
 flowchart LR
     subgraph datadir["Data dir (storageutil.GetDataDir)"]
         mainDb[("quark.db<br/>main schema, migrated")]
-        healthDb[("quark.health.db<br/>system metrics")]
         files[/"files/<br/>user files, per-user homes"/]
         tls[/"self-signed cert + key"/]
     end
@@ -25,7 +24,6 @@ flowchart LR
 | Store              | Opened by                         | Schema source                             |
 | ------------------ | --------------------------------- | ----------------------------------------- |
 | `quark.db`         | `db.ConnectToDatabase`            | `internal/db/migrations` (golang-migrate) |
-| `quark.health.db`  | `db.ConnectToHealthDatabase`      | raw, owned by `healthutil`                |
 | `vault.db`         | `db.ConnectToVaultDatabase`       | `internal/db/vault_schema.go`             |
 
 All three use the pure-Go `modernc.org/sqlite` driver, so the binary cross-compiles without cgo.
