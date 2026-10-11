@@ -12,8 +12,8 @@ typedef QuarkBrowser = Stream<List<HostEntry>> Function();
 const String quarkServiceType = '_quark._tcp';
 
 /// The browser for this platform, or null where it cannot browse mDNS: the
-/// web, whose browsers expose no mDNS, and desktop, which nobody has asked
-/// for. Only iOS and Android browse.
+/// web, whose browsers expose no mDNS, and macOS and Windows, which nobody
+/// has asked for. iOS, Android and Linux browse.
 QuarkBrowser? get quarkBrowser => platform.quarkBrowser;
 
 /// The entry a resolved Quark service becomes, named [name] and addressed by

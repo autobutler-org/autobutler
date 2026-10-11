@@ -1,9 +1,13 @@
+import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/services/quark_discovery.dart';
+import 'package:quark/services/quark_discovery_io.dart';
 
 /// The address a Quark found on the network fills in (#2312): the host the
 /// platform resolved, over https, with the port only when it is not 443.
 void main() {
+  linuxBrowseTests();
+
   String? address(String? host, [int port = 443]) => discoveredQuark(
     name: 'Quark on quark',
     hosts: [host],
@@ -144,6 +148,29 @@ void main() {
         'https://quark.lan',
         'https://quark',
       ]);
+    });
+  });
+}
+
+// #3152: a Linux machine with no Avahi daemon cannot browse, and that must
+// read as "no Quarks found", not as an error.
+void linuxBrowseTests() {
+  Future<BonsoirDiscovery> noAvahi() async =>
+      throw Exception('org.freedesktop.Avahi was not provided');
+
+  group('browseQuarks', () {
+    test('a failed browse emits an empty list when failures are empty', () {
+      expect(
+        browseQuarks(create: noAvahi, failuresAreEmpty: true),
+        emits(isEmpty),
+      );
+    });
+
+    test('a failed browse is an error elsewhere', () {
+      expect(
+        browseQuarks(create: noAvahi, failuresAreEmpty: false),
+        emitsError(isException),
+      );
     });
   });
 }
