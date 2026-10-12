@@ -87,10 +87,12 @@ make serve/postgres
 make test/db/postgres
 ```
 
-`make test/db/postgres` runs the tests in `internal/db/pgdb` against this database. They prepare every
+`make test/db/postgres` runs the tests under `internal/db` against this database. They prepare every
 statement sqlc generated for PostgreSQL, compare the PostgreSQL schema with the SQLite one column by column,
 run the migrations down and up again, and drive the queries through `db.Querier`, the interface the rest of
-the backend holds. Each test creates a schema of its own and drops it, so your data is left alone.
+the backend holds. They also open an empty database the way the server will (`db.ConnectToPostgres`): connect,
+migrate, and refuse a database that is dirty, from another build, or not Quark's, without changing it. Each
+test creates a schema of its own and drops it, so your data is left alone.
 
 The target names the backend itself and needs no `DB_BACKEND`. The same tests also run inside
 `make test/unit/backend DB_BACKEND=postgres`; on the default backend they are skipped by name. If no database

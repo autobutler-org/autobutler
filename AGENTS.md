@@ -161,7 +161,8 @@ the same thing.
 
 ### Generated code (never hand-edit)
 
-`internal/db/*.sql.go` and all of `internal/db/pgdb/` but its tests (sqlc and `internal/db/genpgadapter`),
+`internal/db/*.sql.go`, `internal/db/querier_postgres.go` and all of `internal/db/pgdb/` but `pgdb.go` and its
+tests (sqlc and `internal/db/genpgadapter`),
 `docs/swagger/` (swag), `internal/server/public/` (the embedded web build),
 `assets/sbom_*.json`, `packages/quark_widgets/examples/widget_gallery/lib/docs.g.dart`, build outputs, and
 generated plugin registrants are all produced by a target. Regenerate them and commit the result; do not edit

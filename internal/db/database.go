@@ -1,6 +1,8 @@
-// Package db is Quark's SQLite layer: the connection, the golang-migrate migrations under migrations/, and the
-// query methods sqlc generates from sql/queries/. Code outside this package reaches the database through those
-// generated methods.
+// Package db is Quark's database layer, for both engines it runs on: SQLite, the default, and PostgreSQL
+// (#2955). It holds the connection to each, the golang-migrate migrations under migrations/ and
+// migrations_postgres/, and the query methods sqlc generates from sql/queries/, for SQLite here and for
+// PostgreSQL in pgdb. Code outside this package reaches the database through the Querier interface, which
+// NewQueries and InTx hand out for whichever engine the connection is on, and never asks which engine that is.
 package db
 
 import (
@@ -25,11 +27,14 @@ type DatabaseSqlc struct {
 	Queries Querier
 }
 
-// NewQueries returns the generated queries bound to conn: a pool, one
-// connection or a transaction. It is the one place outside the tests that
-// builds them, so it is where the engine behind Querier gets chosen.
-func NewQueries(conn DBTX) Querier {
-	return New(conn)
+// NewQueries returns the generated queries for the engine sqlDB is connected
+// to, bound to its pool. It and InTx are the only places outside the tests
+// that build them, so they are where the engine behind Querier gets chosen.
+//
+// It takes the pool and nothing narrower, because the pool is what says which
+// engine this is: queries on a transaction come from InTx.
+func NewQueries(sqlDB *sql.DB) Querier {
+	return queriesFor(BackendOf(sqlDB), sqlDB)
 }
 
 // InTx runs fn against queries bound to one transaction on sqlDB, committing
@@ -44,7 +49,7 @@ func InTx(ctx context.Context, sqlDB *sql.DB, fn func(Querier) error) error {
 	// A no-op once Commit has run.
 	defer tx.Rollback()
 
-	if err := fn(NewQueries(tx)); err != nil {
+	if err := fn(queriesFor(BackendOf(sqlDB), tx)); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {

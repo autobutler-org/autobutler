@@ -828,7 +828,7 @@ generate/backend: generate/backend/sqlc generate/backend/swagger ## Generate bac
 .PHONY: generate/backend/sqlc
 generate/backend/sqlc: ## Generate sqlc files for both engines, and the PostgreSQL adapter
 	sqlc generate
-	# internal/db/pgdb/querier_adapter.go, written from the Querier interface sqlc just generated.
+	# internal/db/querier_postgres.go, written from the Querier interface sqlc just generated.
 	# GOOS and GOARCH are cleared so the generator is built for this machine: a cross-compiling
 	# build/backend exports the target's, and `go run` would build a binary it cannot execute.
 	GOOS= GOARCH= $(GO) run ./internal/db/genpgadapter
@@ -1432,16 +1432,17 @@ test/structure/go: ## Prove check-go-structure.bash fails on a planted violation
 test/db-backend: ## Prove the DB_BACKEND switch rejects a bad value and reaches the server recipes
 	./scripts/check-db-backend-test.bash "$(MAKE)"
 
-# The PostgreSQL half of the query layer's check: every generated statement prepared on a real
-# server with the schema applied, the two schemas compared, and the adapter run through
-# db.Querier. It names the backend itself, so it needs no DB_BACKEND; the same tests also run
-# under `make test/unit/backend DB_BACKEND=postgres`. With no database reachable the tests
-# fail and say to run `make serve/postgres`. -count=1 because the database is not an input
-# go's test cache can see.
+# The PostgreSQL half of the database layer's check: every generated statement prepared on a
+# real server with the schema applied, the two schemas compared, the queries run through
+# db.Querier, and the connection and migration path the server starts on. It names the backend
+# itself, so it needs no DB_BACKEND; the same tests also run under
+# `make test/unit/backend DB_BACKEND=postgres`. With no database reachable the tests fail and
+# say to run `make serve/postgres`. -count=1 because the database is not an input go's test
+# cache can see.
 .PHONY: test/db/postgres
-test/db/postgres: ## Check the generated queries and schema on PostgreSQL (start it with make serve/postgres)
+test/db/postgres: ## Check the queries, schema and connection on PostgreSQL (start it with make serve/postgres)
 	QUARK_DB_BACKEND=postgres QUARK_DATABASE_URL='$(call POSTGRES_URL,127.0.0.1)' \
-		$(GO) test -count=1 ./internal/db/pgdb/...
+		$(GO) test -count=1 ./internal/db/...
 
 MIGRATION_BASE_REF ?= origin/main
 

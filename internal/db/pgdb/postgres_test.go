@@ -1,11 +1,7 @@
 package pgdb_test
 
 import (
-	"context"
-	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
-	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -52,52 +48,16 @@ func migrate(t *testing.T, conn *sql.DB, direction string) {
 	}
 }
 
-// openPostgres returns a connection to a schema of its own, with the
-// PostgreSQL migrations applied, on the database the Makefile's DB_BACKEND
-// switch names. The schema is dropped when the test ends.
-//
-// On the default backend the test is skipped by name. With the backend set
-// to postgres a database that cannot be reached fails the test: a PostgreSQL
-// check that quietly did not run would read as a pass.
+// openPostgres returns a connection to an empty schema of the test's own
+// (dbtest.PostgresURL) with the PostgreSQL migrations applied by hand, so
+// that the tests here can also run them down.
 func openPostgres(t *testing.T) *sql.DB {
 	t.Helper()
-	if os.Getenv("QUARK_DB_BACKEND") != "postgres" {
-		t.Skip("PostgreSQL only: run `make test/db/postgres`, or any backend test target with DB_BACKEND=postgres")
-	}
-	databaseURL, err := url.Parse(os.Getenv("QUARK_DATABASE_URL"))
-	if err != nil || databaseURL.Host == "" {
-		t.Fatalf("QUARK_DB_BACKEND=postgres but QUARK_DATABASE_URL is not a database URL (%v). Run the tests through make, which sets both: `make test/db/postgres`", err)
-	}
-	admin, err := sql.Open("pgx", databaseURL.String())
+	conn, err := sql.Open("pgx", dbtest.PostgresURL(t))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer admin.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := admin.PingContext(ctx); err != nil {
-		t.Fatalf("no PostgreSQL answers at %s (%v). Run `make serve/postgres`, then run this again", databaseURL.Host, err)
-	}
-
-	var suffix [8]byte
-	_, _ = rand.Read(suffix[:])
-	schema := "quark_test_" + hex.EncodeToString(suffix[:])
-	if _, err := admin.Exec("CREATE SCHEMA " + schema); err != nil {
-		t.Fatalf("create schema %s: %v", schema, err)
-	}
-	query := databaseURL.Query()
-	query.Set("search_path", schema)
-	databaseURL.RawQuery = query.Encode()
-	conn, err := sql.Open("pgx", databaseURL.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if _, err := conn.Exec("DROP SCHEMA " + schema + " CASCADE"); err != nil {
-			t.Errorf("drop schema %s: %v", schema, err)
-		}
-		conn.Close()
-	})
+	t.Cleanup(func() { conn.Close() })
 	migrate(t, conn, "up")
 	return conn
 }

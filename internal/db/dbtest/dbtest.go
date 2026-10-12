@@ -9,15 +9,22 @@
 package dbtest
 
 import (
+	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
 	"time"
 
+	// Registers the "pgx" driver PostgresURL makes its schema with.
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"golang.org/x/crypto/bcrypt"
 	// Registers the "sqlite" driver these connections use.
 	_ "modernc.org/sqlite"
@@ -60,6 +67,53 @@ func NewDB(t *testing.T) *db.DatabaseSqlc {
 		t.Fatalf("dbtest: apply migrations: %v", err)
 	}
 	return database
+}
+
+// PostgresURL returns the URL of an empty PostgreSQL schema of the test's own,
+// on the database the Makefile's DB_BACKEND switch names, and drops the schema
+// when the test ends. Open it with db.ConnectToPostgres, which migrates it.
+//
+// On the default backend the test is skipped by name. With the backend set
+// to postgres a database that cannot be reached fails the test: a PostgreSQL
+// check that quietly did not run would read as a pass.
+func PostgresURL(t *testing.T) string {
+	t.Helper()
+	if os.Getenv(db.BackendEnv) != string(db.Postgres) {
+		t.Skip("PostgreSQL only: run `make test/db/postgres`, or any backend test target with DB_BACKEND=postgres")
+	}
+	databaseURL, err := url.Parse(os.Getenv(db.DatabaseURLEnv))
+	if err != nil || databaseURL.Host == "" {
+		t.Fatalf("%s=postgres but %s is not a database URL (%v). Run the tests through make, which sets both: `make test/db/postgres`",
+			db.BackendEnv, db.DatabaseURLEnv, err)
+	}
+	admin, err := sql.Open("pgx", databaseURL.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := admin.PingContext(ctx); err != nil {
+		admin.Close()
+		t.Fatalf("no PostgreSQL answers at %s (%v). Run `make serve/postgres`, then run this again", databaseURL.Host, err)
+	}
+
+	var suffix [8]byte
+	_, _ = rand.Read(suffix[:])
+	schema := "quark_test_" + hex.EncodeToString(suffix[:])
+	if _, err := admin.Exec("CREATE SCHEMA " + schema); err != nil {
+		admin.Close()
+		t.Fatalf("dbtest: create schema %s: %v", schema, err)
+	}
+	t.Cleanup(func() {
+		if _, err := admin.Exec("DROP SCHEMA " + schema + " CASCADE"); err != nil {
+			t.Errorf("dbtest: drop schema %s: %v", schema, err)
+		}
+		admin.Close()
+	})
+	query := databaseURL.Query()
+	query.Set("search_path", schema)
+	databaseURL.RawQuery = query.Encode()
+	return databaseURL.String()
 }
 
 // AuthKey is the auth key a test's account signs in with in place of secret

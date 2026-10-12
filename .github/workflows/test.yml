@@ -73,9 +73,10 @@ jobs:
       - name: Run integration tests
         run: |
           make test/integration/backend
-  # The PostgreSQL half of the query layer's check (sql/queries/AGENTS.md): every generated
-  # statement prepared on a real server, the two schemas compared, and the adapter run
-  # through db.Querier. Only this; running the whole backend suite per backend is #2960.
+  # The PostgreSQL half of the database layer's check (sql/queries/AGENTS.md): every generated
+  # statement prepared on a real server, the two schemas compared, the queries run through
+  # db.Querier, and the connection and migration path the server starts on. Only this;
+  # running the whole backend suite per backend is #2960.
   test-postgres:
     needs: changes
     if: needs.changes.outputs.postgres != 'false'

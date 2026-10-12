@@ -13,7 +13,6 @@ import (
 
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/internal/db/dbtest"
-	"github.com/autobutler-org/quark/internal/db/pgdb"
 )
 
 // The same calls give the same answers on both engines. exerciseQuerier holds
@@ -21,12 +20,12 @@ import (
 // is the reference, and TestAdapterOnPostgres runs it through the adapter.
 func TestQuerierOnSQLite(t *testing.T) {
 	database := dbtest.NewDB(t)
-	exerciseQuerier(t, database.Db, db.NewQueries)
+	exerciseQuerier(t, database.Db)
 }
 
 func TestAdapterOnPostgres(t *testing.T) {
 	conn := openPostgres(t)
-	exerciseQuerier(t, conn, func(tx db.DBTX) db.Querier { return pgdb.NewAdapter(tx) })
+	exerciseQuerier(t, conn)
 
 	// GetActiveBackupJob's predicate has to be the expression
 	// idx_jobs_backup_target indexes, json_extract() included, or the planner
@@ -71,10 +70,10 @@ func names(jobs []db.Job) []string {
 // exerciseQuerier drives one engine's queries through db.Querier: each shape
 // the generated code takes, and each query that was reworked to be shared or
 // is written once per engine.
-func exerciseQuerier(t *testing.T, conn *sql.DB, queries func(db.DBTX) db.Querier) {
+func exerciseQuerier(t *testing.T, conn *sql.DB) {
 	t.Helper()
 	ctx := context.Background()
-	q := queries(conn)
+	q := db.NewQueries(conn)
 	must := func(err error) {
 		t.Helper()
 		if err != nil {
@@ -302,11 +301,15 @@ func exerciseQuerier(t *testing.T, conn *sql.DB, queries func(db.DBTX) db.Querie
 		t.Fatalf("UpsertDBVFSFile over a directory = %d, %v, want 0 rows", rows, err)
 	}
 
-	// A transaction is wrapped exactly as a pool is.
-	tx, err := conn.BeginTx(ctx, nil)
-	must(err)
-	must(queries(tx).DeleteUser(ctx, user.ID))
-	must(tx.Rollback())
+	// A transaction gets the same engine's queries as the pool, and an error
+	// from the callback rolls it back.
+	rolledBack := errors.New("roll this back")
+	if err := db.InTx(ctx, conn, func(tx db.Querier) error {
+		must(tx.DeleteUser(ctx, user.ID))
+		return rolledBack
+	}); !errors.Is(err, rolledBack) {
+		t.Fatalf("InTx = %v, want the callback's error", err)
+	}
 	if _, err := q.GetUserByID(ctx, user.ID); err != nil {
 		t.Fatalf("a rolled-back delete still removed the user: %v", err)
 	}
