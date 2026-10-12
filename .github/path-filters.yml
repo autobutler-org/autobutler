@@ -22,6 +22,14 @@ backend: &backend
   - scripts/coverage-excluded-packages.txt
   # test/chaos/powercut builds its image from these.
   - test/chaos/powercut/**
+# test.yml's test-postgres: the generated queries and the two schemas, on PostgreSQL.
+postgres:
+  - *ci
+  - go.mod
+  - go.sum
+  - sqlc.yaml
+  - sql/**
+  - internal/db/**
 # performance.yml: the server under load, and the harness that loads it.
 performance:
   - *backend

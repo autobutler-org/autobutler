@@ -8,10 +8,24 @@ Quark runs on SQLite and is gaining PostgreSQL as a second backend (#2955). sqlc
 both engines, so every file in this directory is written in the subset of SQL the two share. SQLite is the
 reference: a rule here never changes what a query does on SQLite.
 
-> **Status.** Every query here follows the rules, and `internal/db/prepare_test.go` prepares each generated
-> statement on SQLite. `sqlc.yaml` still generates the SQLite package only, so nothing yet rejects a query
-> PostgreSQL would refuse: #2957 adds the PostgreSQL generation and the check that prepares every statement
-> there too.
+`sqlc.yaml` has a block per engine. Both read this directory; the SQLite block generates `internal/db` and the
+PostgreSQL block `internal/db/pgdb`. The server opens SQLite only: nothing connects to PostgreSQL with these
+queries yet (#2957).
+
+## What holds a query to these rules
+
+`sqlc generate` passing is not enough. sqlc does not check operand types, and it has generated code for a
+statement it left a parameter unexpanded in. Three things do the checking:
+
+- **`make check/lint/sqlc`** (`sqlc vet`) compiles every query for both engines.
+- **Every generated statement is prepared on a real database** with that engine's schema applied:
+  `internal/db/prepare_test.go` on SQLite, in every `make test/unit/backend`, and
+  `internal/db/pgdb/postgres_test.go` on PostgreSQL, in `make test/db/postgres` and CI's `test-postgres` job.
+- **`internal/db/pgdb/querier_adapter.go` has to compile.** It converts each query's parameter and result
+  structs between the two packages, which only works while both engines give a query the same Go signature.
+
+A query whose behavior, and not only its syntax, was reworked to be shared also gets a case in
+`exerciseQuerier` (`internal/db/pgdb/adapter_test.go`), which runs the same calls on both engines.
 
 ## Shared by default
 
@@ -109,6 +123,9 @@ CAST(CASE WHEN NOT EXISTS (SELECT 1 FROM ...) THEN 1 ELSE 0 END AS BIGINT) AS is
 ```
 
 ### 8. Cast a bare `IS [NOT] NULL` in a select list to `BOOLEAN`
+
+sqlc's PostgreSQL engine cannot type the bare expression and generates `interface{}` for it, where SQLite's
+generates `bool`. A comparison such as `COUNT(*) > 0` is `bool` on both and needs no cast.
 
 ```sql
 -- before
@@ -212,12 +229,17 @@ for the form the query uses. Two are in use, both only where the value depends o
 on JSON stored in a column:
 
 - `datetime('now', '-' || CAST(sqlc.arg(seconds) AS BIGINT) || ' seconds')` — the job lease and maintenance
-  interval comparisons.
+  interval comparisons. The seconds are never negative: `'--60 seconds'` is NULL on SQLite and an error on
+  PostgreSQL.
 - `json_extract(column, '$.key')` — `GetActiveBackupJob`.
 
-Adding a use, or a new form of an existing one, means adding or extending the function in the PostgreSQL
-schema and its test. Prefer computing the value in Go and passing it in as a parameter, so that neither
-engine needs a function the other lacks.
+Both are defined in `internal/db/migrations_postgres/032_baseline.up.sql`, each with a comment listing what it
+does not support. Adding a use, or a new form of an existing one, means adding or extending the function in a
+PostgreSQL migration and its case in `TestSQLiteNamedFunctions` (`internal/db/pgdb/postgres_test.go`).
+
+Prefer computing the value in Go and passing it in as a parameter, so that neither engine needs a function
+the other lacks: `RotateInstallID` takes the new id from `db.NewInstallID` where it once called
+`randomblob`.
 
 ### 17. A `SELECT` whose callers depend on row order has an `ORDER BY`
 
@@ -240,15 +262,21 @@ stays in the shared directory.
   `sql/queries/postgres/<topic>_postgres.sql`. sqlc names a generated file after the source file's base name,
   so a `jobs.sql` in an engine directory would merge into the shared `jobs.sql.go`.
 - **Both files change together.** Adding, renaming or removing a query in one engine's file without the other
-  leaves the two generated packages with different methods.
-
-> **Status.** The engine directories appear with the PostgreSQL generation (#2957). Until then `ListJobs` and
-> `ListUserJobs` sit in `jobs.sql` in their SQLite form.
+  leaves the two generated packages with different methods, and the adapter stops compiling.
+- **Preparing a statement does not prove an IN-list binds what it should.** On SQLite, sqlc expands the slice
+  into bare `?` placeholders at call time, and SQLite numbers them from the highest numbered parameter before
+  them. A named parameter written *after* the slice would bind one of the slice's values
+  ([sqlc-dev/sqlc#2452](https://github.com/sqlc-dev/sqlc/issues/2452)), so every other parameter goes ahead of
+  the slice, and the query gets a test that runs it with two or more values and with none
+  (`internal/db/list_jobs_test.go`, and the per-engine cases in `exerciseQuerier`).
 
 ## sqlc traps
 
 - **sqlc never deletes a generated file.** Rename or remove a `.sql` file and its old `*.sql.go` stays in
-  `internal/db`, still compiled, until you delete it by hand.
+  `internal/db` and `internal/db/pgdb`, still compiled, until you delete it by hand.
+- **Files with the same base name merge.** A block's query directories all generate into one package, and
+  `jobs.sql` in two of them becomes a single `jobs.sql.go`. That is why an engine file carries its engine in
+  its name.
 - **The same query name in two files is a `duplicate query name` error**, including a query left behind in the
   shared file after it was copied to an engine directory.
 - **Regenerate and commit.** After any change here run `make generate/backend/sqlc` and commit the result; CI

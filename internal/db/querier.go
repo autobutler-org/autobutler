@@ -304,6 +304,11 @@ type Querier interface {
 	// grants (#2016). Like ListAccountsMissingHome it keys on the row rather than
 	// the directory, and it spells the path the way grouputil does.
 	ListGroupsMissingFolder(ctx context.Context) ([]ListGroupsMissingFolderRow, error)
+	// ListJobs lists every job of the given kinds, newest first. It and
+	// ListUserJobs are written once per engine, because an IN-list over a
+	// parameter has no form both accept (rule 15 in sql/queries/AGENTS.md). This
+	// is the SQLite form and sql/queries/postgres/jobs_postgres.sql the PostgreSQL
+	// one: change both together.
 	ListJobs(ctx context.Context, kinds []string) ([]Job, error)
 	ListNearDuplicates(ctx context.Context) ([]ListNearDuplicatesRow, error)
 	// ListPathAccessForUser returns every row that applies to a user: their own,

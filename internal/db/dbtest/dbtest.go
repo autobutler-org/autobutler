@@ -12,7 +12,9 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"fmt"
 	"path/filepath"
+	"regexp"
 	"testing"
 	"time"
 
@@ -105,4 +107,29 @@ func HideTable(t *testing.T, sqlDB *sql.DB, table string) (restore func()) {
 // salt on every run.
 func SaltSecret() ([]byte, error) {
 	return []byte("dbtest salt secret, 32 bytes...."), nil
+}
+
+var (
+	// generatedQuery matches one statement constant in a file sqlc generated.
+	generatedQuery = regexp.MustCompile("(?s)const \\w+ = `-- name: (\\w+) :\\w+\n(.*?)`")
+	// slicePlaceholder is what sqlc.slice leaves for the generated method to
+	// expand at call time; one placeholder is its shortest valid expansion.
+	slicePlaceholder = regexp.MustCompile(`/\*SLICE:\w+\*/\?`)
+)
+
+// PrepareAll prepares every statement in the source of a file sqlc generated,
+// and returns how many it found and one line per statement the database
+// rejected. sqlc accepting a query is not the engine accepting it, so each
+// engine's tests run this over their generated package.
+func PrepareAll(database *sql.DB, source string) (checked int, failures []string) {
+	for _, match := range generatedQuery.FindAllStringSubmatch(source, -1) {
+		checked++
+		stmt, err := database.Prepare(slicePlaceholder.ReplaceAllString(match[2], "?"))
+		if err != nil {
+			failures = append(failures, fmt.Sprintf("%s: %v", match[1], err))
+			continue
+		}
+		_ = stmt.Close()
+	}
+	return checked, failures
 }

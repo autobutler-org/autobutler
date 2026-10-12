@@ -33,6 +33,10 @@ All three use the pure-Go `modernc.org/sqlite` driver, so the binary cross-compi
 Tables are grouped by the migration that introduced them. Queries live in `sql/queries/*.sql` and are generated
 into `internal/db/*.sql.go` by sqlc, which type-checks them against the migrations.
 
+The same queries are also generated for PostgreSQL, into `internal/db/pgdb`, against a second migration set in
+`internal/db/migrations_postgres/` (#2955). The server does not open PostgreSQL yet, so everything on this page
+describes SQLite; [`internal/db/AGENTS.md`](../../internal/db/AGENTS.md) says how the two schemas stay in step.
+
 ```mermaid
 erDiagram
     users ||--o{ sessions : "signs in with"
