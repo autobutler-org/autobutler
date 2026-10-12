@@ -5757,6 +5757,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
+                    },
+                    "501": {
+                        "description": "Content search is not supported on the PostgreSQL backend yet",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
                     }
                 }
             }
@@ -8119,6 +8125,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
+                    },
+                    "501": {
+                        "description": "A snapshot includes the chat backup, which is not supported on the PostgreSQL backend yet",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
                     }
                 }
             }
@@ -9930,6 +9942,12 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "501": {
+                        "description": "Moving the vault is not supported on the PostgreSQL backend yet",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }

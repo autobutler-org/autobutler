@@ -37,6 +37,7 @@ type ContentSearchResult struct {
 // @Success 200 {array}  ContentSearchResult
 // @Failure 400 {object} serverutil.Response "Bad Request — missing query"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
+// @Failure 501 {object} serverutil.Response "Content search is not supported on the PostgreSQL backend yet"
 // @Security BearerAuth
 // @Router /files/search/content [get]
 func searchContent(c *gin.Context) *serverutil.Response {

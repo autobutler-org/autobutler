@@ -109,8 +109,11 @@ SQLite is the default and needs nothing. To run against PostgreSQL instead, with
 
 ```bash
 make serve/postgres                      # start the development database
-make serve/backend DB_BACKEND=postgres   # or watch/backend, test/unit/backend, ...
+make serve/backend DB_BACKEND=postgres   # or watch/backend
 ```
+
+The server then runs on PostgreSQL. A few features answer `501` there for now; the
+[list](architecture/data.md#what-does-not-work-on-postgresql-yet) names each with its issue.
 
 [PostgreSQL for local development](architecture/postgres-dev.md) has the rest: the `DB_BACKEND` switch,
 resetting the database, `psql`, and running both backends side by side.

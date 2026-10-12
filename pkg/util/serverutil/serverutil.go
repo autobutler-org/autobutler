@@ -205,9 +205,15 @@ func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {
 		// whatever status code the handler passed in. This means service functions
 		// can signal HTTP semantics with fmt.Errorf("...: %w", httpErr) and the
 		// HTTP layer will pick it up automatically.
+		//
+		// So does the status of any other error that names one, which is how a
+		// feature a backend cannot do yet answers 501 from every handler that
+		// reaches it without each one having to know (db.UnsupportedError).
 		if resp.Error != nil {
 			if httpErr, ok := errors.AsType[*HttpError](resp.Error); ok {
 				resp.StatusCode = httpErr.StatusCode
+			} else if statusErr, ok := errors.AsType[statusError](resp.Error); ok {
+				resp.StatusCode = statusErr.HTTPStatus()
 			}
 		}
 		switch resp.ContentType {

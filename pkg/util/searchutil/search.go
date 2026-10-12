@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
 )
 
@@ -90,12 +91,20 @@ func clampLimit(limit int) int {
 // through sqlc. MATCH, the rank ordering it implies, and snippet() are FTS5
 // extensions that sqlc's SQLite parser does not accept; the writes next door
 // in searchutil.go are ordinary SQL and are generated.
-func searchPage(ctx context.Context, db *sql.DB, query string, limit, offset int) ([]SearchResult, error) {
+//
+// So it is SQLite's alone. The PostgreSQL schema has no file_content_fts, and
+// a search there is turned away by name until #2958 gives it one; the index
+// writes are shared queries on file_content and run on both.
+func searchPage(ctx context.Context, sqlDB *sql.DB, query string, limit, offset int) ([]SearchResult, error) {
+	if err := db.RequireSQLite(sqlDB, "Content search", 2958); err != nil {
+		return nil, err
+	}
+
 	// Sanitize the query: wrap in double-quotes if it contains no FTS5
 	// operators so a bare word search never triggers syntax errors.
 	safeQuery := sanitizeFTSQuery(query)
 
-	rows, err := db.QueryContext(ctx, `
+	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT
 		    fc.serial,
 		    fc.rel_path,

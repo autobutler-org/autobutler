@@ -319,6 +319,9 @@ type Querier interface {
 	// holds it, with the name of the account or group each one was granted to,
 	// for the sharing sheet (#1911). substr, not LIKE, for the reason
 	// MovePathAccessTree gives. The CASTs give sqlc a type for each COALESCE.
+	// Ordered because accessutil.ownerName takes the first owner on the deepest
+	// path, so two owners of one folder need an order: the earlier grant comes
+	// first. It is the order SQLite already returned, reading idx_path_access_path.
 	ListPathAccessOnAncestors(ctx context.Context, arg ListPathAccessOnAncestorsParams) ([]ListPathAccessOnAncestorsRow, error)
 	// The pending jobs, oldest first, for the dispatcher to pick from by lane.
 	ListPendingJobs(ctx context.Context) ([]ListPendingJobsRow, error)

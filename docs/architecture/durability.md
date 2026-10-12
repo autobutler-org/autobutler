@@ -45,6 +45,18 @@ the main database records the new location, and only then is the source emptied.
 moves leaves the vault where it was; a crash after leaves a stale, still-encrypted copy on the old device, which
 the next move onto that device replaces.
 
+## PostgreSQL
+
+Everything above is about SQLite. On an install whose main database is PostgreSQL
+([The PostgreSQL backend](data.md#the-postgresql-backend)), a committed transaction is as durable as that server
+makes it. Quark sets and checks nothing there: not `synchronous_commit`, not `fsync`, not the server's version.
+What Quark should require of PostgreSQL, and what a backup of such an install contains, is #2963; until then that
+is the operator's to get right. The orderings above that span more than one statement are transactions on
+PostgreSQL too.
+
+The vault on a drive (`vault.db`) and the files a backup writes stay SQLite on every backend, so this section
+changes nothing for them, and the Files section below is the same on both.
+
 ## Files
 
 Every write that lands a user file goes through a temp file beside its destination and a rename:

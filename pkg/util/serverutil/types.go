@@ -22,3 +22,10 @@ func (w redactingWriter) Write(p []byte) (int, error) {
 	}
 	return len(p), nil
 }
+
+// statusError is an error that names the HTTP status it should be answered
+// with, without being an *HttpError: db.UnsupportedError is one.
+type statusError interface {
+	error
+	HTTPStatus() int
+}

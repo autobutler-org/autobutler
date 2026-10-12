@@ -243,7 +243,10 @@ the other lacks: `RotateInstallID` takes the new id from `db.NewInstallID` where
 
 ### 17. A `SELECT` whose callers depend on row order has an `ORDER BY`
 
-Without one SQLite happens to return rows in rowid order. PostgreSQL makes no such promise.
+Without one SQLite happens to return rows in rowid order, or in the order of whichever index it read.
+PostgreSQL makes no such promise. Write the order SQLite already gives, so its results do not change:
+`ListPathAccessOnAncestors` orders by `rel_path, id`, which is the order of the index SQLite reads it from. A
+caller that folds the rows into a map, or sorts them itself, needs none.
 
 ### 18. Portable as written
 

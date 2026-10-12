@@ -1,7 +1,8 @@
 # Data
 
-Files are the primary data and live on disk. SQLite holds only what cannot: identity, grants, collections, job
-history, and indexes. The rule in `AGENTS.md` is to reach for the database last.
+Files are the primary data and live on disk. The database holds only what cannot: identity, grants, collections,
+job history, and indexes. The rule in `AGENTS.md` is to reach for the database last. The database is SQLite unless
+the install is pointed at PostgreSQL; see [The PostgreSQL backend](#the-postgresql-backend).
 
 ## Where state lives
 
@@ -28,14 +29,73 @@ flowchart LR
 
 All three use the pure-Go `modernc.org/sqlite` driver, so the binary cross-compiles without cgo.
 
+## The PostgreSQL backend
+
+The main schema can live in a PostgreSQL database in place of `quark.db` (#2955). Two environment variables
+choose it when the server starts, and `db.ConfigFromEnv` is the one place that reads them:
+
+| Variable             | Value                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| `QUARK_DB_BACKEND`   | `sqlite`, also when unset or empty, or `postgres`. Anything else refuses to start  |
+| `QUARK_DATABASE_URL` | the PostgreSQL connection URL. Required with `postgres`, ignored with `sqlite`     |
+
+With neither set Quark is on SQLite exactly as it was. With `postgres`, `db.ConnectToDatabase` hands over to
+`db.ConnectToPostgres`, which connects through pgx's `database/sql` driver, pins the session to UTC, and runs
+the migrations in `internal/db/migrations_postgres/` under golang-migrate's advisory lock. It never repairs or
+resets a database. One that does not answer, is marked dirty, is at a version this build does not have, or
+already holds tables Quark did not make stops startup with an error saying what was found and what to do, and
+is left as it was. The URL carries a password, so the log names the host, database and user and nothing else.
+
+Only the main schema moves. Files stay on disk, and
+anything exported or portable is a SQLite file on every backend: `vault.db` on a drive, and the
+`vault_backup.db` and `chat_backup.db` a backup writes. Code above `internal/db` holds a `db.Querier` and does
+not know which engine answers it.
+
+### What does not work on PostgreSQL yet
+
+This is the one list. A refused feature answers `501 Not Implemented` with a message naming it and its issue
+(`db.UnsupportedError`, raised by `db.RequireSQLite`), sends none of its SQLite-only SQL to PostgreSQL, and
+leaves the rest of the server serving.
+
+| Feature                                                          | On PostgreSQL today                                                                                      | Issue |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----- |
+| Content search (`GET /files/search/content`)                     | Refused. Files are still indexed into `file_content`, so the text is there when search arrives           | #2958 |
+| Snapshot backup (`POST /storage/devices/snapshot-backup`)        | Refused before anything is copied: every snapshot includes the chat backup                               | #2963 |
+| Chat backup and restore (`backup.ExportChat`, `ImportChat`)      | Refused: both attach a SQLite file to the live connection                                                | #2963 |
+| Moving the vault to or from a drive (`PUT /vault/storage-location`) | Refused. The vault stays in the main database                                                          | #2963 |
+| `/health` and the durability guarantees                          | `/health` does not report on the PostgreSQL connection, and Quark checks no PostgreSQL durability setting | #2963 |
+| Moving an existing install's data from SQLite                    | No tool. A PostgreSQL install starts empty                                                               | #2962 |
+| Choosing the backend from the admin settings                     | Environment variables only                                                                               | #2961 |
+| More than one instance on one database                           | Not refused and not safe. See [Running Quark in a Container](../container.md)                            | #2964 |
+| The backend test suites                                          | Run on SQLite whatever `DB_BACKEND` says, except `make test/db/postgres`                                 | #2960 |
+
+What does work that might be expected not to: the vault and its backup export and import (the file is SQLite,
+the live side is not), and the factory reset an admin asks for (`db.ResetDatabase`), which on PostgreSQL drops
+and re-runs the migrations in one transaction and keeps the same tables SQLite's does.
+
+### What behaves differently
+
+- **Timestamps keep microseconds.** SQLite stores whole seconds. A handler that prints a time at full precision
+  shows the fraction, and rows made within one second, which tie on SQLite and come back in insertion order,
+  sort by their real order.
+- **An id is not reused after a refused insert.** A PostgreSQL sequence moves on even when the insert fails, so
+  ids can have gaps where SQLite's would not.
+- **A failed statement ends its transaction.** SQLite carries on to the next statement; PostgreSQL refuses every
+  one after it. Code inside `db.InTx` returns on an error and never continues past one.
+- **There is no single writer.** SQLite lets one transaction write at a time, which is what makes the
+  count-then-change guards exact: the last active admin (`authutil.ensureAnotherActiveAdmin`), the last holder
+  of a channel's `manage_channel` (`chatutil.keepingAnOwner`), and a job lane's limit (`ClaimJob`). PostgreSQL at
+  its default `READ COMMITTED` lets two transactions count before either commits, so two requests at the same
+  moment can each see the other as the survivor. That is open, and is tracked with the rest of the
+  multi-instance work in #2964.
+
 ## Main schema
 
 Tables are grouped by the migration that introduced them. Queries live in `sql/queries/*.sql` and are generated
 into `internal/db/*.sql.go` by sqlc, which type-checks them against the migrations.
 
 The same queries are also generated for PostgreSQL, into `internal/db/pgdb`, against a second migration set in
-`internal/db/migrations_postgres/` (#2955), and `internal/db` can open and migrate a PostgreSQL database. The
-server does not do so yet, so everything on this page describes SQLite; [`internal/db/AGENTS.md`](../../internal/db/AGENTS.md) says how the two schemas stay in step.
+`internal/db/migrations_postgres/` (#2955). The tables below are the same on both engines; [`internal/db/AGENTS.md`](../../internal/db/AGENTS.md) says how the two schemas stay in step.
 
 ```mermaid
 erDiagram

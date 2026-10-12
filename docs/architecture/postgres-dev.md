@@ -1,16 +1,15 @@
 # PostgreSQL for local development
 
 Quark's database is SQLite, and that is what every `make` target uses unless told otherwise. PostgreSQL is
-being added as a second backend ([#2955](https://github.com/autobutler-org/quark/issues/2955)); this page is
-how to run one locally and point the server and the tests at it.
+the second backend ([#2955](https://github.com/autobutler-org/quark/issues/2955)); this page is how to run one
+locally and point the server and the tests at it.
 
-> **Status.** The Makefile switch and the database are in place, and so is the query layer: a PostgreSQL
-> schema (`internal/db/migrations_postgres/`), the same queries generated for PostgreSQL (`internal/db/pgdb`),
-> and tests that run them on this database (see [What runs on PostgreSQL today](#what-runs-on-postgresql-today)).
-> The server does not read the setting yet: choosing the backend at startup is the rest of
-> [#2957](https://github.com/autobutler-org/quark/issues/2957), and content search on PostgreSQL is
-> [#2958](https://github.com/autobutler-org/quark/issues/2958). Until then `DB_BACKEND=postgres` starts a
-> server that still opens SQLite, and `make` prints a note saying so.
+> **Status.** The server chooses its backend at startup: `make serve/backend DB_BACKEND=postgres` starts one
+> that connects to this database, migrates it and serves from it. Some features are not on PostgreSQL yet
+> and say so when asked; [the data architecture page](data.md#what-does-not-work-on-postgresql-yet) lists each
+> with its issue. The backend test suites still build their databases on SQLite whatever the switch says
+> ([#2960](https://github.com/autobutler-org/quark/issues/2960)); see
+> [What runs on PostgreSQL today](#what-runs-on-postgresql-today).
 
 ## Prerequisites
 
@@ -36,7 +35,7 @@ default) and `postgres`; anything else stops `make` with a message naming the tw
 make serve/backend                             # SQLite, as always
 make serve/backend DB_BACKEND=postgres
 make watch/backend DB_BACKEND=postgres         # the same with hot reload
-make test/unit/backend DB_BACKEND=postgres
+make test/unit/backend DB_BACKEND=postgres     # adds the PostgreSQL tests; the rest still run on SQLite (#2960)
 make test/integration/backend DB_BACKEND=postgres
 make serve/docker DB_BACKEND=postgres          # the container image, joined to the compose network
 ```
@@ -49,6 +48,9 @@ With `DB_BACKEND=postgres` the Makefile hands the server two environment variabl
 | -------------------- | ----------------------------------------------------------------- |
 | `QUARK_DB_BACKEND`   | `postgres`                                                        |
 | `QUARK_DATABASE_URL` | `postgres://quark:quark@127.0.0.1:5432/quark?sslmode=disable`     |
+
+The server reads them in one place, `db.ConfigFromEnv`. A backend it does not know, or `postgres` with no
+URL, stops it with a message naming what to set.
 
 With `DB_BACKEND=sqlite` it sets neither, so a SQLite run is the same command it was before the switch existed.
 `serve/docker` passes the same two with the host `postgres` in place of `127.0.0.1`, because a container
@@ -87,15 +89,28 @@ make serve/postgres
 make test/db/postgres
 ```
 
-`make test/db/postgres` runs the tests under `internal/db` against this database. They prepare every
-statement sqlc generated for PostgreSQL, compare the PostgreSQL schema with the SQLite one column by column,
-run the migrations down and up again, and drive the queries through `db.Querier`, the interface the rest of
-the backend holds. They also open an empty database the way the server will (`db.ConnectToPostgres`): connect,
-migrate, and refuse a database that is dirty, from another build, or not Quark's, without changing it. Each
-test creates a schema of its own and drops it, so your data is left alone.
+`make test/db/postgres` runs every test that needs a real PostgreSQL against this database:
+
+- **The query and schema layer** (`internal/db/...`). Every statement sqlc generated for PostgreSQL is
+  prepared, the PostgreSQL schema is compared with the SQLite one column by column, the migrations run down
+  and up again, and the queries are driven through `db.Querier`, the interface the rest of the backend holds.
+- **Startup** (`internal/db`). An empty database is opened the way the server opens it
+  (`db.ConnectToPostgres`): connect, migrate, and refuse a database that is dirty, from another build, or not
+  Quark's, without changing it. Several starts at once on one database all come up.
+- **Serving** (`internal/server`). `TestPostgresServesTheFirstRunAsSQLiteDoes` starts Quark on an empty
+  PostgreSQL database through `deputil.DefaultDependencies`, mounts the real routers, and drives a first run
+  over HTTP: setup, sign-in, creating and listing accounts, groups and albums, each one's duplicate, and a
+  factory reset. It runs the same journey on SQLite and fails on any step the two answer differently, apart
+  from the ones PostgreSQL refuses by design.
+- **What differs at run time** (`pkg/util/sqlutil`, `pkg/util/searchutil`, `pkg/backup`). A unique violation
+  is recognized from each engine's driver, the SQLite-only features are refused by name, and the vault backup
+  round-trips with PostgreSQL as the live database.
+
+Each test creates a schema of its own and drops it, so your data is left alone.
 
 The target names the backend itself and needs no `DB_BACKEND`. The same tests also run inside
-`make test/unit/backend DB_BACKEND=postgres`; on the default backend they are skipped by name. If no database
+`make test/unit/backend DB_BACKEND=postgres`; on the default backend they are skipped by name. Everything else
+in the backend suites builds its database with `dbtest.NewDB`, which is SQLite on every backend until #2960. If no database
 answers they fail and tell you to run `make serve/postgres`. CI runs the target in `test.yml`'s
 `test-postgres` job, against a service container with the same image major and credentials as `compose.yaml`.
 

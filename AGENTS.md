@@ -246,6 +246,12 @@ Every query lives in `sql/queries/*.sql` and reaches Go as generated code in `in
   statements built from `sqlite_master` at runtime (`internal/db/reset.go`), and writes to a database
   outside the migration set (the external backup vault in `pkg/backup/vault_export.go`, whose schema is
   `internal/db/vault_schema.go`).
+- **Raw SQL that only SQLite accepts sits behind `db.RequireSQLite`.** The main database may be PostgreSQL, and
+  such a statement sent there fails with an error that tells nobody what is wrong. The guard returns a
+  `*db.UnsupportedError` naming the feature and the issue that tracks it, which every handler answers as
+  `501`. Add the feature to the list in
+  [`docs/architecture/data.md`](docs/architecture/data.md#what-does-not-work-on-postgresql-yet). A file Quark
+  opens as SQLite itself (a vault on a drive, a backup) needs no guard.
 - **Queries and schema are written for two engines, SQLite and PostgreSQL (#2955).** Before writing a query
   read [`sql/queries/AGENTS.md`](sql/queries/AGENTS.md); before writing a migration read
   [`internal/db/AGENTS.md`](internal/db/AGENTS.md). Each directory's `CLAUDE.md` imports its `AGENTS.md`.

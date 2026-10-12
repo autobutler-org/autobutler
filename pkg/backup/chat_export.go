@@ -42,7 +42,14 @@ var chatBackupTables = []string{
 // The file is built under a temp name of its own and renamed into place, so a
 // failed export leaves the previous backup whole and two exports never share a
 // temp (#3084).
+//
+// The copy is SQLite's ATTACH DATABASE on the live connection, so a
+// PostgreSQL-backed Quark returns a *db.UnsupportedError and writes nothing
+// until one streamed path serves both backends (#2963).
 func ExportChat(ctx context.Context, liveDB *sql.DB, targetDir string) (string, error) {
+	if err := requireChatBackup(liveDB); err != nil {
+		return "", err
+	}
 	dbPath := filepath.Join(targetDir, backupChatFilename)
 	tmpPath := filepath.Join(targetDir, storageutil.WriteTempPrefix+rand.Text()+"-"+backupChatFilename)
 
@@ -67,6 +74,12 @@ func ExportChat(ctx context.Context, liveDB *sql.DB, targetDir string) (string, 
 		return "", fmt.Errorf("flush chat backup directory: %w", err)
 	}
 	return dbPath, nil
+}
+
+// requireChatBackup turns away a live database the chat backup cannot attach
+// a file to.
+func requireChatBackup(liveDB *sql.DB) error {
+	return db.RequireSQLite(liveDB, "Chat backup", 2963)
 }
 
 func createChatBackupFile(path string) error {

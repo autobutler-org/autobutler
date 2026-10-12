@@ -55,6 +55,10 @@ type StartSnapshotBackupParams struct {
 	// Queries reads the device roles, the vault, and the job holding the
 	// target's lock.
 	Queries db.Querier
+	// ChatDB is the live database, whose chat tables every snapshot exports.
+	// A backend the chat export cannot read refuses the backup here, before
+	// anything is copied. Nil skips that check.
+	ChatDB *sql.DB
 	// Registry holds the target device's files namespace.
 	Registry vfs.Registry
 	// Queue runs the backup. Its Handler for [Kind] comes from [NewHandler].
@@ -88,6 +92,14 @@ type StartSnapshotBackupResult struct {
 // request, and whichever instance runs the job needs neither.
 func StartSnapshotBackup(params StartSnapshotBackupParams) (StartSnapshotBackupResult, error) {
 	ctx := params.Ctx
+
+	// Every snapshot carries the chat export. Refused now, with the reason,
+	// rather than after the files are copied or by leaving the chat out.
+	if params.ChatDB != nil {
+		if err := requireChatBackup(params.ChatDB); err != nil {
+			return StartSnapshotBackupResult{}, fmt.Errorf("a snapshot backup includes the chat: %w", err)
+		}
+	}
 
 	role, err := params.Queries.GetDeviceRole(ctx, params.TargetDeviceSerial)
 	if err != nil || role != "snapshot-backup" {

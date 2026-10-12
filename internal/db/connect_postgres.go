@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net"
 	"strconv"
 	"time"
@@ -75,6 +76,10 @@ func ConnectToPostgres(url string) (*DatabaseSqlc, error) {
 	sqlDB.SetMaxIdleConns(postgresMaxOpenConns)
 	sqlDB.SetConnMaxIdleTime(postgresConnMaxIdleTime)
 	sqlDB.SetConnMaxLifetime(postgresConnMaxLifetime)
+	// Host, database and user only: the URL carries the password.
+	slog.Info("using the PostgreSQL backend",
+		"address", net.JoinHostPort(config.Host, strconv.Itoa(int(config.Port))),
+		"database", config.Database, "user", config.User)
 	return &DatabaseSqlc{Db: sqlDB, Queries: NewQueries(sqlDB)}, nil
 }
 

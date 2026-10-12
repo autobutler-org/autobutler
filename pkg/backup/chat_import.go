@@ -37,7 +37,13 @@ var (
 // not here is treated as the live schema treats a deleted one: the row keeps a
 // NULL where the foreign key says SET NULL, and is skipped where it says
 // CASCADE. Their usernames come back in the result.
+//
+// Like [ExportChat] it attaches the file to the live connection, and returns a
+// *db.UnsupportedError on a PostgreSQL-backed Quark (#2963).
 func ImportChat(ctx context.Context, liveDB *sql.DB, backupDir string) (ChatImportResult, error) {
+	if err := requireChatBackup(liveDB); err != nil {
+		return ChatImportResult{}, err
+	}
 	dbPath, err := filepath.Abs(filepath.Join(backupDir, backupChatFilename))
 	if err != nil {
 		return ChatImportResult{}, err

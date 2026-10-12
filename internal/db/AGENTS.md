@@ -8,9 +8,10 @@ numbered; [`sql/queries/AGENTS.md`](../../sql/queries/AGENTS.md) covers the quer
 This file sits in `internal/db/` and not beside the migrations because `database.go` embeds the whole
 `migrations/` directory into the binary. Nothing but migrations goes in there.
 
-> **Status.** Both schemas exist, sqlc generates a package for each, and `db.ConnectToPostgres` opens and
-> migrates a PostgreSQL database. The server does not call it yet: it opens SQLite only (#2957). Content
-> search has no PostgreSQL schema yet (#2958).
+> **Status.** The server runs on either engine, chosen at startup. Content search has no PostgreSQL schema
+> yet (#2958), and a few other features are SQLite-only for now:
+> [`docs/architecture/data.md`](../../docs/architecture/data.md#what-does-not-work-on-postgresql-yet) lists
+> them.
 
 ## One schema, written once per engine
 
@@ -90,9 +91,16 @@ engine behind it can change without touching a caller.
   to whatever they are given.
 - **A transaction is `db.InTx`.** `WithTx` is not on the interface. The raw `*sql.Tx` code in `pkg/backup` and
   `internal/db/reset.go` is left as it is.
-- **Nothing outside this package asks which engine it is on.** `db.BackendOf(sqlDB)` reads it from the driver
+- **Nothing outside this package branches on the engine.** `db.BackendOf(sqlDB)` reads it from the driver
   the pool was opened with, and `NewQueries` and `InTx` are its callers. Code that finds itself wanting to
   branch on it needs a query both engines accept, or a per-engine query, instead.
+- **The one thing a caller may do is refuse.** A feature built on raw SQL only SQLite accepts starts with
+  `db.RequireSQLite(sqlDB, "<Feature>", <issue>)` and returns its `*db.UnsupportedError`, which `serverutil`
+  answers as `501`. Today that is content search, the chat backup and with it the snapshot backup, and moving
+  the vault to or from a drive.
+- **An error inside `db.InTx` ends the transaction.** On PostgreSQL a failed statement aborts it and every
+  later statement is refused, where SQLite carries on. Return the error, a unique violation included
+  (`sqlutil.IsUniqueConstraintErr` recognizes both engines'), and never continue past one.
 - **The PostgreSQL `db.Querier` is the generated `postgresQueries`**, in this package. `pgdb.Queries` cannot
   satisfy the interface itself, because sqlc gives each package its own parameter and result structs; the
   adapter converts between them. It lives here and not in `pgdb` so that `NewQueries` can return it: `pgdb`
@@ -104,7 +112,8 @@ engine behind it can change without touching a caller.
 or empty) or `postgres`, anything else is an error naming the two, and `postgres` needs `QUARK_DATABASE_URL`.
 The URL carries a password, so no log line or error repeats it.
 
-`db.ConnectToPostgres(url)` (`connect_postgres.go`) is the PostgreSQL counterpart of `ConnectToDatabase`:
+`db.ConnectToDatabase` is what the server calls. It opens SQLite's `quark.db` as it always has, or, when the
+environment names PostgreSQL, hands over to `db.ConnectToPostgres(url)` (`connect_postgres.go`):
 
 - **The pool** is bounded like SQLite's, and unlike it gives idle connections back and retires old ones. The
   constants carry the reasoning.
@@ -118,6 +127,23 @@ The URL carries a password, so no log line or error repeats it.
   saying what was found and what to do, and change nothing. SQLite's startup (`initSchema`) refuses the same
   way, and sets a database from the pre-#1758 numbering aside; none of that code is reached from this path,
   and PostgreSQL has no such legacy to set aside.
+
+`db.ResetDatabase` is a different thing: the factory reset an admin asks for by name. It works on both
+engines. On PostgreSQL (`reset_postgres.go`) it runs the migrations' own down files and then the up files in
+one transaction, carries the same kept tables across, and moves their identity sequences past the rows it
+restored.
+
+## What PostgreSQL does differently at run time
+
+The schema and the queries are held equal by the tests. These are not, and code has to allow for them:
+
+- **A `TIMESTAMPTZ` keeps microseconds**, where SQLite's `DATETIME` text keeps whole seconds. Never rely on two
+  rows made in the same second tying, or on a time read back being equal to the second.
+- **A sequence does not give an id back.** A refused insert still uses one up.
+- **There is no single writer.** A guard that counts and then changes is exact on SQLite and can race on
+  PostgreSQL at `READ COMMITTED`. The ones that exist are listed in
+  [`docs/architecture/data.md`](../../docs/architecture/data.md#what-behaves-differently) and tracked in #2964;
+  do not add another without a lock or a constraint behind it.
 
 ## Generated code
 

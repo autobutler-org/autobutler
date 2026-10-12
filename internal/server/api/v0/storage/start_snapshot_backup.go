@@ -23,6 +23,7 @@ import (
 // @Failure 409 {object} serverutil.Response
 // @Failure 426 {object} serverutil.Response "password is a raw password, not the auth key: the app is too old"
 // @Failure 500 {object} serverutil.Response
+// @Failure 501 {object} serverutil.Response "A snapshot includes the chat backup, which is not supported on the PostgreSQL backend yet"
 // @Security BearerAuth
 // @Router /storage/devices/snapshot-backup [post]
 func startSnapshotBackup(c *gin.Context) *serverutil.Response {
@@ -46,6 +47,7 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 	result, err := backup.StartSnapshotBackup(backup.StartSnapshotBackupParams{
 		Ctx:                c.Request.Context(),
 		Queries:            deps.Database().Queries,
+		ChatDB:             deps.Database().Db,
 		Registry:           deps.VFSRegistry(),
 		Queue:              deps.JobQueue(),
 		UserID:             userID,
