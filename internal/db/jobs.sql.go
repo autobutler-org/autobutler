@@ -15,9 +15,9 @@ const cancelJob = `-- name: CancelJob :one
 UPDATE jobs
 SET
     status = 'canceled',
-    finished_at = datetime('now')
+    finished_at = CURRENT_TIMESTAMP
 WHERE
-    id = ?
+    id = ?1
     AND status IN ('pending', 'running')
 RETURNING id, kind, name, status, params, progress, lane, attempts, error, created_at, started_at, finished_at, user_id, detail, owner, heartbeat_at
 `
@@ -51,9 +51,9 @@ UPDATE jobs
 SET
     status = 'running',
     attempts = attempts + 1,
-    started_at = datetime('now'),
+    started_at = CURRENT_TIMESTAMP,
     owner = ?1,
-    heartbeat_at = datetime('now')
+    heartbeat_at = CURRENT_TIMESTAMP
 WHERE
     jobs.id = ?2
     AND jobs.status = 'pending'
@@ -66,7 +66,7 @@ WHERE
             busy.status = 'running'
             AND busy.kind = jobs.kind
             AND busy.lane = jobs.lane
-    ) < CAST(?3 AS INTEGER)
+    ) < CAST(?3 AS BIGINT)
 RETURNING id, kind, name, status, params, progress, lane, attempts, error, created_at, started_at, finished_at, user_id, detail, owner, heartbeat_at
 `
 
@@ -110,7 +110,7 @@ const createJob = `-- name: CreateJob :one
 INSERT INTO
     jobs (kind, name, params, lane, user_id)
 VALUES
-    (?, ?, ?, ?, ?)
+    (?1, ?2, ?3, ?4, ?5)
 RETURNING id, kind, name, status, params, progress, lane, attempts, error, created_at, started_at, finished_at, user_id, detail, owner, heartbeat_at
 `
 
@@ -157,13 +157,13 @@ UPDATE jobs
 SET
     status = 'failed',
     error = ?1,
-    finished_at = datetime('now')
+    finished_at = CURRENT_TIMESTAMP
 WHERE
     status = 'running'
     AND attempts >= ?2
     AND (
         heartbeat_at IS NULL
-        OR heartbeat_at < datetime('now', '-' || CAST(?3 AS INTEGER) || ' seconds')
+        OR heartbeat_at < datetime('now', '-' || CAST(?3 AS BIGINT) || ' seconds')
     )
 RETURNING id, kind, name, status, params, progress, lane, attempts, error, created_at, started_at, finished_at, user_id, detail, owner, heartbeat_at
 `
@@ -222,14 +222,14 @@ func (q *Queries) FailExhaustedStaleJobs(ctx context.Context, arg FailExhaustedS
 const finishJob = `-- name: FinishJob :one
 UPDATE jobs
 SET
-    status = ?,
-    error = ?,
-    progress = ?,
-    finished_at = datetime('now')
+    status = ?1,
+    error = ?2,
+    progress = ?3,
+    finished_at = CURRENT_TIMESTAMP
 WHERE
-    id = ?
+    id = ?4
     AND status = 'running'
-    AND owner = ?
+    AND owner = ?5
 RETURNING id, kind, name, status, params, progress, lane, attempts, error, created_at, started_at, finished_at, user_id, detail, owner, heartbeat_at
 `
 
@@ -319,7 +319,7 @@ SELECT
 FROM
     jobs
 WHERE
-    id = ?
+    id = ?1
 LIMIT
     1
 `
@@ -351,9 +351,9 @@ func (q *Queries) GetJob(ctx context.Context, id int64) (Job, error) {
 const heartbeatJobs = `-- name: HeartbeatJobs :many
 UPDATE jobs
 SET
-    heartbeat_at = datetime('now')
+    heartbeat_at = CURRENT_TIMESTAMP
 WHERE
-    owner = ?
+    owner = ?1
     AND status = 'running'
 RETURNING id
 `
@@ -506,6 +506,9 @@ type ListUserJobsParams struct {
 
 // ListJobs for one account, so a non-admin's listing never loads every other
 // account's jobs (#2756).
+// user_id stays ahead of the slice: SQLite numbers the slice's bare
+// placeholders from the highest number before them, so a named parameter
+// written after it would bind a kind (sqlc-dev/sqlc#2452).
 func (q *Queries) ListUserJobs(ctx context.Context, arg ListUserJobsParams) ([]Job, error) {
 	query := listUserJobs
 	var queryParams []interface{}
@@ -570,13 +573,19 @@ WHERE
                 jobs AS newer
             WHERE
                 newer.status IN ('completed', 'failed', 'canceled')
-                AND newer.user_id IS jobs.user_id
+                AND (
+                    newer.user_id = jobs.user_id
+                    OR (
+                        newer.user_id IS NULL
+                        AND jobs.user_id IS NULL
+                    )
+                )
             ORDER BY
                 newer.id DESC
             LIMIT
                 1
             OFFSET
-                ?2
+                CAST(?2 AS BIGINT)
         )
     )
 `
@@ -606,9 +615,9 @@ SET
     heartbeat_at = NULL,
     started_at = NULL
 WHERE
-    id = ?
+    id = ?1
     AND status = 'running'
-    AND owner = ?
+    AND owner = ?2
 RETURNING id, kind, name, status, params, progress, lane, attempts, error, created_at, started_at, finished_at, user_id, detail, owner, heartbeat_at
 `
 
@@ -655,7 +664,7 @@ WHERE
     status = 'running'
     AND (
         heartbeat_at IS NULL
-        OR heartbeat_at < datetime('now', '-' || CAST(?1 AS INTEGER) || ' seconds')
+        OR heartbeat_at < datetime('now', '-' || CAST(?1 AS BIGINT) || ' seconds')
     )
 RETURNING id, kind, name, status, params, progress, lane, attempts, error, created_at, started_at, finished_at, user_id, detail, owner, heartbeat_at
 `
@@ -706,13 +715,13 @@ const retryJob = `-- name: RetryJob :one
 UPDATE jobs
 SET
     status = 'pending',
-    lane = ?,
+    lane = ?1,
     progress = 0,
     error = '',
     started_at = NULL,
     finished_at = NULL
 WHERE
-    id = ?
+    id = ?2
     AND status = 'failed'
 RETURNING id, kind, name, status, params, progress, lane, attempts, error, created_at, started_at, finished_at, user_id, detail, owner, heartbeat_at
 `
@@ -752,9 +761,9 @@ func (q *Queries) RetryJob(ctx context.Context, arg RetryJobParams) (Job, error)
 const updateJobDetail = `-- name: UpdateJobDetail :exec
 UPDATE jobs
 SET
-    detail = ?
+    detail = ?1
 WHERE
-    id = ?
+    id = ?2
     AND status = 'running'
 `
 
@@ -772,11 +781,11 @@ func (q *Queries) UpdateJobDetail(ctx context.Context, arg UpdateJobDetailParams
 const updateJobProgress = `-- name: UpdateJobProgress :execrows
 UPDATE jobs
 SET
-    progress = ?
+    progress = ?1
 WHERE
-    id = ?
+    id = ?2
     AND status = 'running'
-    AND owner = ?
+    AND owner = ?3
 `
 
 type UpdateJobProgressParams struct {

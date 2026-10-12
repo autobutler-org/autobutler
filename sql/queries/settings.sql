@@ -2,23 +2,23 @@
 SELECT key, value FROM settings;
 
 -- name: GetSetting :one
-SELECT value FROM settings WHERE key = ?;
+SELECT value FROM settings WHERE key = sqlc.arg(key);
 
 -- name: SetSetting :exec
-INSERT INTO settings (key, value) VALUES (?, ?)
+INSERT INTO settings (key, value) VALUES (sqlc.arg(key), sqlc.arg(value))
 ON CONFLICT (key) DO UPDATE SET value = excluded.value;
 
 -- name: AddSetting :exec
 -- Keeps a value already there: for the salt secret two instances may both try
 -- to create, and for the import of settings.json.
-INSERT INTO settings (key, value) VALUES (?, ?)
+INSERT INTO settings (key, value) VALUES (sqlc.arg(key), sqlc.arg(value))
 ON CONFLICT (key) DO NOTHING;
 
 -- name: GetUserSettings :one
-SELECT settings FROM user_settings WHERE user_id = ?;
+SELECT settings FROM user_settings WHERE user_id = sqlc.arg(user_id);
 
 -- name: SetUserSettings :exec
-INSERT INTO user_settings (user_id, settings) VALUES (?, ?)
+INSERT INTO user_settings (user_id, settings) VALUES (sqlc.arg(user_id), sqlc.arg(settings))
 ON CONFLICT (user_id) DO UPDATE SET settings = excluded.settings;
 
 -- name: AddUserSettings :exec
@@ -30,15 +30,15 @@ ON CONFLICT (user_id) DO NOTHING;
 
 -- name: AddAccountRequestDecision :exec
 INSERT INTO account_request_history (username, outcome, decided_by, decided_at)
-VALUES (?, ?, ?, ?)
+VALUES (sqlc.arg(username), sqlc.arg(outcome), sqlc.arg(decided_by), sqlc.arg(decided_at))
 ON CONFLICT DO NOTHING;
 
 -- name: TrimAccountRequestHistory :exec
 DELETE FROM account_request_history
-WHERE id NOT IN (SELECT id FROM account_request_history ORDER BY id DESC LIMIT ?);
+WHERE id NOT IN (SELECT id FROM account_request_history ORDER BY id DESC LIMIT CAST(sqlc.arg('limit') AS BIGINT));
 
 -- name: ListAccountRequestHistory :many
 SELECT username, outcome, decided_by, decided_at
 FROM account_request_history
 ORDER BY id DESC
-LIMIT ?;
+LIMIT CAST(sqlc.arg('limit') AS BIGINT);

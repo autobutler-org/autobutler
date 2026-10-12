@@ -12,14 +12,14 @@ SELECT
 FROM
     vfs_metadata
 WHERE
-    namespace = ?
-    AND path = ?;
+    namespace = sqlc.arg(namespace)
+    AND path = sqlc.arg(path);
 
 -- name: UpsertVFSMetadata :exec
 INSERT INTO
     vfs_metadata (namespace, path, key, value, updated_at)
 VALUES
-    (?, ?, ?, ?, datetime('now'))
+    (sqlc.arg(namespace), sqlc.arg(path), sqlc.arg(key), sqlc.arg(value), CURRENT_TIMESTAMP)
 ON CONFLICT (namespace, path, key) DO UPDATE SET
     value = excluded.value,
     updated_at = excluded.updated_at;
@@ -27,9 +27,9 @@ ON CONFLICT (namespace, path, key) DO UPDATE SET
 -- name: DeleteVFSMetadataKey :exec
 DELETE FROM vfs_metadata
 WHERE
-    namespace = ?
-    AND path = ?
-    AND key = ?;
+    namespace = sqlc.arg(namespace)
+    AND path = sqlc.arg(path)
+    AND key = sqlc.arg(key);
 
 -- name: ListVFSMetadataPathsByKey :many
 SELECT
@@ -37,8 +37,8 @@ SELECT
 FROM
     vfs_metadata
 WHERE
-    namespace = ?
-    AND key = ?
+    namespace = sqlc.arg(namespace)
+    AND key = sqlc.arg(key)
 ORDER BY
     path;
 
@@ -48,9 +48,9 @@ SELECT
 FROM
     vfs_metadata
 WHERE
-    namespace = ?
-    AND key = ?
-    AND value = ?
+    namespace = sqlc.arg(namespace)
+    AND key = sqlc.arg(key)
+    AND value = sqlc.arg(value)
 ORDER BY
     path;
 
@@ -79,8 +79,8 @@ SELECT
 FROM
     vfs_db_entries
 WHERE
-    namespace = ?
-    AND path = ?;
+    namespace = sqlc.arg(namespace)
+    AND path = sqlc.arg(path);
 
 -- name: GetDBVFSEntryContent :one
 SELECT
@@ -89,36 +89,37 @@ SELECT
 FROM
     vfs_db_entries
 WHERE
-    namespace = ?
-    AND path = ?;
+    namespace = sqlc.arg(namespace)
+    AND path = sqlc.arg(path);
 
 -- A directory already at the path is left alone and reports no rows.
 -- name: UpsertDBVFSFile :execrows
 INSERT INTO
     vfs_db_entries (namespace, path, is_dir, size, mime_type, content, updated_at)
 VALUES
-    (?, ?, 0, ?, ?, ?, datetime('now'))
+    (sqlc.arg(namespace), sqlc.arg(path), FALSE, sqlc.arg(size), sqlc.arg(mime_type), sqlc.arg(content), CURRENT_TIMESTAMP)
 ON CONFLICT (namespace, path) DO UPDATE SET
     size = excluded.size,
     mime_type = excluded.mime_type,
     content = excluded.content,
     updated_at = excluded.updated_at
 WHERE
-    is_dir = 0;
+    vfs_db_entries.is_dir = FALSE;
 
 -- Anything already at the path is left alone and reports no rows.
 -- name: InsertDBVFSFileIfAbsent :execrows
 INSERT INTO
     vfs_db_entries (namespace, path, is_dir, size, mime_type, content, updated_at)
 VALUES
-    (?, ?, 0, ?, ?, ?, datetime('now'))
+    (sqlc.arg(namespace), sqlc.arg(path), FALSE, sqlc.arg(size), sqlc.arg(mime_type), sqlc.arg(content), CURRENT_TIMESTAMP)
 ON CONFLICT (namespace, path) DO NOTHING;
 
 -- name: InsertDBVFSDirIfAbsent :exec
-INSERT OR IGNORE INTO
+INSERT INTO
     vfs_db_entries (namespace, path, is_dir, size, mime_type, content)
 VALUES
-    (?, ?, 1, 0, '', NULL);
+    (sqlc.arg(namespace), sqlc.arg(path), TRUE, 0, '', NULL)
+ON CONFLICT (namespace, path) DO NOTHING;
 
 -- name: CountDBVFSEntriesUnder :one
 SELECT
@@ -133,8 +134,8 @@ WHERE
 -- name: DeleteDBVFSEntry :execrows
 DELETE FROM vfs_db_entries
 WHERE
-    namespace = ?
-    AND path = ?;
+    namespace = sqlc.arg(namespace)
+    AND path = sqlc.arg(path);
 
 -- name: DeleteDBVFSEntryTree :execrows
 DELETE FROM vfs_db_entries

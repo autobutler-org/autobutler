@@ -134,6 +134,43 @@ func TestMoveFileCarriesFavoritesAndAlbumItems(t *testing.T) {
 	}
 }
 
+// TestMoveFileIntoItsOwnSubtreeLeavesPhotoRowsAlone: MoveFavorites and
+// MoveAlbumItems skip a row whose destination is taken by reading the table
+// they are updating, which is only well defined while the moved paths and
+// their destinations do not overlap. They overlap when a folder moves into
+// itself, and a device refuses that rename before any row is touched.
+func TestMoveFileIntoItsOwnSubtreeLeavesPhotoRowsAlone(t *testing.T) {
+	const serial = "USB-2957"
+	mountPoint := t.TempDir()
+	paths := []string{"trip/b.jpg", "trip/inner/b.jpg"}
+	for _, p := range paths {
+		full := filepath.Join(mountPoint, "quark", "data", "files", p)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	database := dbtest.NewDB(t)
+	q := database.Queries
+	owner := photoOwner(t, q, "founder")
+	for _, p := range paths {
+		favorite(t, q, owner, serial, p)
+	}
+
+	if _, err := MoveFile(MoveFileParams{
+		Ctx: context.Background(), Registry: usbRegistry(t, mountPoint, serial), EventBus: eventbus.New(), Database: database,
+		OldFilePath: "trip", NewFilePath: "trip/inner", OldDeviceSerial: serial, NewDeviceSerial: serial,
+	}); err == nil {
+		t.Fatal("MoveFile(trip, trip/inner) succeeded, want the rename refused")
+	}
+	want := []string{serial + "|trip/b.jpg", serial + "|trip/inner/b.jpg"}
+	if got := favoriteKeys(t, q, owner); !reflect.DeepEqual(got, want) {
+		t.Errorf("favorites = %v, want %v", got, want)
+	}
+}
+
 // TestDeleteFilesForgetsFavoritesAndAlbumItems deletes a file and a folder and
 // waits for the background cleanup to drop their favorites and album rows,
 // leaving a prefix-sharing sibling and another device's same path alone.

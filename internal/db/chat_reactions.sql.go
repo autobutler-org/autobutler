@@ -10,7 +10,7 @@ import (
 )
 
 const countUserChatReactions = `-- name: CountUserChatReactions :one
-SELECT COUNT(*) FROM chat_reactions WHERE message_id = ? AND user_id = ?
+SELECT COUNT(*) FROM chat_reactions WHERE message_id = ?1 AND user_id = ?2
 `
 
 type CountUserChatReactionsParams struct {
@@ -65,7 +65,7 @@ func (q *Queries) CreateChatReaction(ctx context.Context, arg CreateChatReaction
 }
 
 const deleteChatReaction = `-- name: DeleteChatReaction :exec
-DELETE FROM chat_reactions WHERE id = ?
+DELETE FROM chat_reactions WHERE id = ?1
 `
 
 func (q *Queries) DeleteChatReaction(ctx context.Context, id int64) error {
@@ -74,7 +74,7 @@ func (q *Queries) DeleteChatReaction(ctx context.Context, id int64) error {
 }
 
 const getChatReaction = `-- name: GetChatReaction :one
-SELECT id, message_id, user_id, key_version, ciphertext, created_at FROM chat_reactions WHERE id = ?
+SELECT id, message_id, user_id, key_version, ciphertext, created_at FROM chat_reactions WHERE id = ?1
 `
 
 func (q *Queries) GetChatReaction(ctx context.Context, id int64) (ChatReaction, error) {

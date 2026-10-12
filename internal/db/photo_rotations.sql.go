@@ -12,8 +12,8 @@ import (
 const deletePhotoRotation = `-- name: DeletePhotoRotation :exec
 DELETE FROM photo_rotations
 WHERE
-    device_serial = ?
-    AND rel_path = ?
+    device_serial = ?1
+    AND rel_path = ?2
 `
 
 type DeletePhotoRotationParams struct {
@@ -32,8 +32,8 @@ SELECT
 FROM
     photo_rotations
 WHERE
-    device_serial = ?
-    AND rel_path = ?
+    device_serial = ?1
+    AND rel_path = ?2
 LIMIT
     1
 `
@@ -54,7 +54,7 @@ const upsertPhotoRotation = `-- name: UpsertPhotoRotation :exec
 INSERT INTO
     photo_rotations (device_serial, rel_path, rotation_quarters, updated_at)
 VALUES
-    (?, ?, ?, datetime('now'))
+    (?1, ?2, ?3, CURRENT_TIMESTAMP)
 ON CONFLICT (device_serial, rel_path) DO UPDATE SET
     rotation_quarters = excluded.rotation_quarters,
     updated_at = excluded.updated_at

@@ -21,7 +21,7 @@ func (q *Queries) GetVaultLocation(ctx context.Context) (string, error) {
 }
 
 const setVaultLocation = `-- name: SetVaultLocation :exec
-UPDATE vault_location SET device_serial = ?, updated_at = datetime('now') WHERE id = 1
+UPDATE vault_location SET device_serial = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = 1
 `
 
 func (q *Queries) SetVaultLocation(ctx context.Context, deviceSerial string) error {

@@ -37,8 +37,8 @@ func (q *Queries) CountDBVFSEntriesUnder(ctx context.Context, arg CountDBVFSEntr
 const deleteDBVFSEntry = `-- name: DeleteDBVFSEntry :execrows
 DELETE FROM vfs_db_entries
 WHERE
-    namespace = ?
-    AND path = ?
+    namespace = ?1
+    AND path = ?2
 `
 
 type DeleteDBVFSEntryParams struct {
@@ -81,9 +81,9 @@ func (q *Queries) DeleteDBVFSEntryTree(ctx context.Context, arg DeleteDBVFSEntry
 const deleteVFSMetadataKey = `-- name: DeleteVFSMetadataKey :exec
 DELETE FROM vfs_metadata
 WHERE
-    namespace = ?
-    AND path = ?
-    AND key = ?
+    namespace = ?1
+    AND path = ?2
+    AND key = ?3
 `
 
 type DeleteVFSMetadataKeyParams struct {
@@ -106,8 +106,8 @@ SELECT
 FROM
     vfs_db_entries
 WHERE
-    namespace = ?
-    AND path = ?
+    namespace = ?1
+    AND path = ?2
 `
 
 type GetDBVFSEntryParams struct {
@@ -141,8 +141,8 @@ SELECT
 FROM
     vfs_db_entries
 WHERE
-    namespace = ?
-    AND path = ?
+    namespace = ?1
+    AND path = ?2
 `
 
 type GetDBVFSEntryContentParams struct {
@@ -163,10 +163,11 @@ func (q *Queries) GetDBVFSEntryContent(ctx context.Context, arg GetDBVFSEntryCon
 }
 
 const insertDBVFSDirIfAbsent = `-- name: InsertDBVFSDirIfAbsent :exec
-INSERT OR IGNORE INTO
+INSERT INTO
     vfs_db_entries (namespace, path, is_dir, size, mime_type, content)
 VALUES
-    (?, ?, 1, 0, '', NULL)
+    (?1, ?2, TRUE, 0, '', NULL)
+ON CONFLICT (namespace, path) DO NOTHING
 `
 
 type InsertDBVFSDirIfAbsentParams struct {
@@ -183,7 +184,7 @@ const insertDBVFSFileIfAbsent = `-- name: InsertDBVFSFileIfAbsent :execrows
 INSERT INTO
     vfs_db_entries (namespace, path, is_dir, size, mime_type, content, updated_at)
 VALUES
-    (?, ?, 0, ?, ?, ?, datetime('now'))
+    (?1, ?2, FALSE, ?3, ?4, ?5, CURRENT_TIMESTAMP)
 ON CONFLICT (namespace, path) DO NOTHING
 `
 
@@ -278,8 +279,8 @@ SELECT
 FROM
     vfs_metadata
 WHERE
-    namespace = ?
-    AND path = ?
+    namespace = ?1
+    AND path = ?2
 `
 
 type ListVFSMetadataParams struct {
@@ -327,8 +328,8 @@ SELECT
 FROM
     vfs_metadata
 WHERE
-    namespace = ?
-    AND key = ?
+    namespace = ?1
+    AND key = ?2
 ORDER BY
     path
 `
@@ -367,9 +368,9 @@ SELECT
 FROM
     vfs_metadata
 WHERE
-    namespace = ?
-    AND key = ?
-    AND value = ?
+    namespace = ?1
+    AND key = ?2
+    AND value = ?3
 ORDER BY
     path
 `
@@ -437,14 +438,14 @@ const upsertDBVFSFile = `-- name: UpsertDBVFSFile :execrows
 INSERT INTO
     vfs_db_entries (namespace, path, is_dir, size, mime_type, content, updated_at)
 VALUES
-    (?, ?, 0, ?, ?, ?, datetime('now'))
+    (?1, ?2, FALSE, ?3, ?4, ?5, CURRENT_TIMESTAMP)
 ON CONFLICT (namespace, path) DO UPDATE SET
     size = excluded.size,
     mime_type = excluded.mime_type,
     content = excluded.content,
     updated_at = excluded.updated_at
 WHERE
-    is_dir = 0
+    vfs_db_entries.is_dir = FALSE
 `
 
 type UpsertDBVFSFileParams struct {
@@ -474,7 +475,7 @@ const upsertVFSMetadata = `-- name: UpsertVFSMetadata :exec
 INSERT INTO
     vfs_metadata (namespace, path, key, value, updated_at)
 VALUES
-    (?, ?, ?, ?, datetime('now'))
+    (?1, ?2, ?3, ?4, CURRENT_TIMESTAMP)
 ON CONFLICT (namespace, path, key) DO UPDATE SET
     value = excluded.value,
     updated_at = excluded.updated_at

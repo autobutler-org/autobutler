@@ -13,10 +13,10 @@ const claimMaintenanceRun = `-- name: ClaimMaintenanceRun :execrows
 UPDATE maintenance_runs
 SET
     owner = ?1,
-    started_at = datetime('now')
+    started_at = CURRENT_TIMESTAMP
 WHERE
     name = ?2
-    AND started_at <= datetime('now', '-' || CAST(?3 AS INTEGER) || ' seconds')
+    AND started_at <= datetime('now', '-' || CAST(?3 AS BIGINT) || ' seconds')
 `
 
 type ClaimMaintenanceRunParams struct {
@@ -42,7 +42,7 @@ const ensureMaintenanceRun = `-- name: EnsureMaintenanceRun :exec
 INSERT INTO
     maintenance_runs (name, owner, started_at)
 VALUES
-    (?, '', datetime('now', '-100 years'))
+    (?1, '', '1970-01-01 00:00:00')
 ON CONFLICT (name) DO NOTHING
 `
 

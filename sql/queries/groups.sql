@@ -2,7 +2,7 @@
 -- 010_path_access; the builtin = 0 guards keep every change away from it.
 
 -- name: ListGroups :many
-SELECT * FROM groups ORDER BY builtin DESC, name COLLATE NOCASE, id;
+SELECT * FROM groups ORDER BY builtin DESC, LOWER(name), id;
 
 -- ListGroupMembers lists every membership with the member's username, for
 -- ListGroups to fold into its groups.
@@ -18,22 +18,22 @@ ORDER BY
     users.username;
 
 -- name: GetGroup :one
-SELECT * FROM groups WHERE id = ? LIMIT 1;
+SELECT * FROM groups WHERE id = sqlc.arg(id) LIMIT 1;
 
 -- name: CreateGroup :one
-INSERT INTO groups (name) VALUES (?) RETURNING *;
+INSERT INTO groups (name) VALUES (sqlc.arg(name)) RETURNING *;
 
 -- name: RenameGroup :one
-UPDATE groups SET name = ? WHERE id = ? AND builtin = 0 RETURNING *;
+UPDATE groups SET name = sqlc.arg(name) WHERE id = sqlc.arg(id) AND builtin = 0 RETURNING *;
 
 -- DeleteGroup drops a group; ON DELETE CASCADE drops its members and grants.
 -- name: DeleteGroup :execrows
-DELETE FROM groups WHERE id = ? AND builtin = 0;
+DELETE FROM groups WHERE id = sqlc.arg(id) AND builtin = 0;
 
 -- AddGroupMember puts an account in a group. Adding a member again changes
 -- nothing and reports no rows.
 -- name: AddGroupMember :execrows
-INSERT INTO group_members (group_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING;
+INSERT INTO group_members (group_id, user_id) VALUES (sqlc.arg(group_id), sqlc.arg(user_id)) ON CONFLICT DO NOTHING;
 
 -- name: RemoveGroupMember :execrows
-DELETE FROM group_members WHERE group_id = ? AND user_id = ?;
+DELETE FROM group_members WHERE group_id = sqlc.arg(group_id) AND user_id = sqlc.arg(user_id);

@@ -14,7 +14,7 @@ SELECT
     chat_channels.created_by,
     chat_channels.created_at,
     chat_channel_members.permissions,
-    CAST(NOT EXISTS (
+    CAST(CASE WHEN NOT EXISTS (
         SELECT
             1
         FROM
@@ -24,7 +24,7 @@ SELECT
             everyone_rows.channel_id = chat_channels.id
             AND groups.name = 'everyone'
             AND groups.builtin = 1
-    ) AS INTEGER) AS is_private
+    ) THEN 1 ELSE 0 END AS BIGINT) AS is_private
 FROM
     chat_channels
     JOIN chat_channel_members ON chat_channel_members.channel_id = chat_channels.id
@@ -49,7 +49,7 @@ WHERE
     )
 ORDER BY
     chat_channels.is_default DESC,
-    chat_channels.name COLLATE NOCASE,
+    LOWER(chat_channels.name),
     chat_channels.id;
 
 -- ListAllChatChannels is every channel on the Quark, for an admin looking
@@ -64,7 +64,7 @@ SELECT
     chat_channels.is_default,
     chat_channels.created_by,
     chat_channels.created_at,
-    CAST(NOT EXISTS (
+    CAST(CASE WHEN NOT EXISTS (
         SELECT
             1
         FROM
@@ -74,12 +74,12 @@ SELECT
             everyone_rows.channel_id = chat_channels.id
             AND groups.name = 'everyone'
             AND groups.builtin = 1
-    ) AS INTEGER) AS is_private
+    ) THEN 1 ELSE 0 END AS BIGINT) AS is_private
 FROM
     chat_channels
 ORDER BY
     chat_channels.is_default DESC,
-    chat_channels.name COLLATE NOCASE,
+    LOWER(chat_channels.name),
     chat_channels.id;
 
 -- ListChatChannelPermsForUser is the set on every row of one channel that
@@ -113,22 +113,22 @@ WHERE
     );
 
 -- name: GetChatChannel :one
-SELECT * FROM chat_channels WHERE id = ? LIMIT 1;
+SELECT * FROM chat_channels WHERE id = sqlc.arg(id) LIMIT 1;
 
 -- CreateChatChannel adds a channel to the Quark's one server.
 -- name: CreateChatChannel :one
 INSERT INTO
     chat_channels (server_id, name, topic, created_by)
 VALUES
-    ((SELECT MIN(id) FROM chat_servers), ?, ?, ?) RETURNING *;
+    ((SELECT MIN(id) FROM chat_servers), sqlc.arg(name), sqlc.arg(topic), sqlc.arg(created_by)) RETURNING *;
 
 -- name: UpdateChatChannel :one
-UPDATE chat_channels SET name = ?, topic = ? WHERE id = ? RETURNING *;
+UPDATE chat_channels SET name = sqlc.arg(name), topic = sqlc.arg(topic) WHERE id = sqlc.arg(id) RETURNING *;
 
 -- DeleteChatChannel drops a channel and, by ON DELETE CASCADE, its members.
 -- The default channel is never deleted.
 -- name: DeleteChatChannel :execrows
-DELETE FROM chat_channels WHERE id = ? AND is_default = 0;
+DELETE FROM chat_channels WHERE id = sqlc.arg(id) AND is_default = 0;
 
 -- ListChatChannelMembers lists a channel's rows with the name of the account
 -- or group each names. The CASTs give sqlc a type for each COALESCE.
@@ -138,16 +138,16 @@ SELECT
     chat_channel_members.group_id,
     chat_channel_members.permissions,
     CAST(COALESCE(users.username, groups.name) AS TEXT) AS name,
-    CAST(COALESCE(groups.builtin, 0) AS INTEGER) AS builtin
+    CAST(COALESCE(groups.builtin, 0) AS BIGINT) AS builtin
 FROM
     chat_channel_members
     LEFT JOIN users ON users.id = chat_channel_members.user_id
     LEFT JOIN groups ON groups.id = chat_channel_members.group_id
 WHERE
-    chat_channel_members.channel_id = ?
+    chat_channel_members.channel_id = sqlc.arg(channel_id)
 ORDER BY
     chat_channel_members.group_id IS NULL,
-    name COLLATE NOCASE;
+    LOWER(COALESCE(users.username, groups.name));
 
 -- ListChatChannelGroupUsers expands each group row on a channel into the
 -- active accounts in it; everyone holds every active account.
@@ -175,9 +175,9 @@ FROM
         )
     )
 WHERE
-    chat_channel_members.channel_id = ?
+    chat_channel_members.channel_id = sqlc.arg(channel_id)
 ORDER BY
-    users.username COLLATE NOCASE;
+    LOWER(users.username);
 
 -- ListChatChannelMemberUsers resolves a channel's rows into the active
 -- accounts they reach: one result row per account and membership row,
@@ -207,9 +207,9 @@ FROM
         )
     )
 WHERE
-    chat_channel_members.channel_id = ?
+    chat_channel_members.channel_id = sqlc.arg(channel_id)
 ORDER BY
-    users.username COLLATE NOCASE,
+    LOWER(users.username),
     users.id;
 
 -- SetChatChannelUserMember gives an account a set on a channel, replacing the
@@ -218,7 +218,7 @@ ORDER BY
 INSERT INTO
     chat_channel_members (channel_id, user_id, permissions)
 VALUES
-    (?, ?, ?) ON CONFLICT (user_id, channel_id)
+    (sqlc.arg(channel_id), sqlc.arg(user_id), sqlc.arg(permissions)) ON CONFLICT (user_id, channel_id)
 WHERE
     user_id IS NOT NULL DO
 UPDATE
@@ -231,7 +231,7 @@ SET
 INSERT INTO
     chat_channel_members (channel_id, group_id, permissions)
 VALUES
-    (?, ?, ?) ON CONFLICT (group_id, channel_id)
+    (sqlc.arg(channel_id), sqlc.arg(group_id), sqlc.arg(permissions)) ON CONFLICT (group_id, channel_id)
 WHERE
     group_id IS NOT NULL DO
 UPDATE
@@ -239,7 +239,7 @@ SET
     permissions = excluded.permissions;
 
 -- name: DeleteChatChannelUserMember :execrows
-DELETE FROM chat_channel_members WHERE channel_id = ? AND user_id = ?;
+DELETE FROM chat_channel_members WHERE channel_id = sqlc.arg(channel_id) AND user_id = sqlc.arg(user_id);
 
 -- name: DeleteChatChannelGroupMember :execrows
-DELETE FROM chat_channel_members WHERE channel_id = ? AND group_id = ?;
+DELETE FROM chat_channel_members WHERE channel_id = sqlc.arg(channel_id) AND group_id = sqlc.arg(group_id);

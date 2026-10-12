@@ -23,7 +23,7 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 
 const createPendingUser = `-- name: CreatePendingUser :one
 INSERT INTO users (username, password_hash, recovery_phrase_hash, auth_key_hash, auth_salt, recovery_key_hash, status)
-VALUES (?, ?, ?, ?, ?, ?, 'pending')
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending')
 RETURNING id, username, password_hash, recovery_phrase_hash, created_at, is_admin, status, auth_salt, auth_key_hash, recovery_key_hash
 `
 
@@ -65,7 +65,7 @@ func (q *Queries) CreatePendingUser(ctx context.Context, arg CreatePendingUserPa
 
 const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (token, user_id, expires_at, last_used_at)
-VALUES (?, ?, ?, ?)
+VALUES (?1, ?2, ?3, ?4)
 RETURNING token, user_id, expires_at, created_at, last_used_at
 `
 
@@ -96,7 +96,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, password_hash, recovery_phrase_hash, auth_key_hash, auth_salt, recovery_key_hash)
-VALUES (?, ?, ?, ?, ?, ?)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6)
 RETURNING id, username, password_hash, recovery_phrase_hash, created_at, is_admin, status, auth_salt, auth_key_hash, recovery_key_hash
 `
 
@@ -135,7 +135,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
-DELETE FROM sessions WHERE expires_at <= datetime('now')
+DELETE FROM sessions WHERE expires_at <= CURRENT_TIMESTAMP
 `
 
 func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
@@ -144,7 +144,7 @@ func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
 }
 
 const deleteOtherUserSessions = `-- name: DeleteOtherUserSessions :exec
-DELETE FROM sessions WHERE user_id = ? AND token != ?
+DELETE FROM sessions WHERE user_id = ?1 AND token != ?2
 `
 
 type DeleteOtherUserSessionsParams struct {
@@ -160,7 +160,7 @@ func (q *Queries) DeleteOtherUserSessions(ctx context.Context, arg DeleteOtherUs
 }
 
 const deletePendingUser = `-- name: DeletePendingUser :execrows
-DELETE FROM users WHERE username = ? AND status = 'pending'
+DELETE FROM users WHERE username = ?1 AND status = 'pending'
 `
 
 // DeletePendingUser denies an account request. Only a pending row matches, so
@@ -174,7 +174,7 @@ func (q *Queries) DeletePendingUser(ctx context.Context, username string) (int64
 }
 
 const deleteSession = `-- name: DeleteSession :exec
-DELETE FROM sessions WHERE token = ?
+DELETE FROM sessions WHERE token = ?1
 `
 
 func (q *Queries) DeleteSession(ctx context.Context, token string) error {
@@ -183,7 +183,7 @@ func (q *Queries) DeleteSession(ctx context.Context, token string) error {
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM users WHERE id = ?
+DELETE FROM users WHERE id = ?1
 `
 
 // Deletes one user. sessions.user_id is ON DELETE CASCADE (001_auth) and
@@ -194,7 +194,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
 }
 
 const deleteUserSessions = `-- name: DeleteUserSessions :exec
-DELETE FROM sessions WHERE user_id = ?
+DELETE FROM sessions WHERE user_id = ?1
 `
 
 func (q *Queries) DeleteUserSessions(ctx context.Context, userID int64) error {
@@ -206,7 +206,7 @@ const getSession = `-- name: GetSession :one
 SELECT s.token, s.user_id, s.expires_at, s.created_at, s.last_used_at, u.username
 FROM sessions s
 JOIN users u ON s.user_id = u.id
-WHERE s.token = ? AND s.expires_at > datetime('now') AND u.status = 'active'
+WHERE s.token = ?1 AND s.expires_at > CURRENT_TIMESTAMP AND u.status = 'active'
 LIMIT 1
 `
 
@@ -236,7 +236,7 @@ func (q *Queries) GetSession(ctx context.Context, token string) (GetSessionRow, 
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin, status, auth_salt, auth_key_hash, recovery_key_hash FROM users WHERE id = ? LIMIT 1
+SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin, status, auth_salt, auth_key_hash, recovery_key_hash FROM users WHERE id = ?1 LIMIT 1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
@@ -258,7 +258,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin, status, auth_salt, auth_key_hash, recovery_key_hash FROM users WHERE username = ? LIMIT 1
+SELECT id, username, password_hash, recovery_phrase_hash, created_at, is_admin, status, auth_salt, auth_key_hash, recovery_key_hash FROM users WHERE username = ?1 LIMIT 1
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
@@ -282,7 +282,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 const listActiveSessionsForUser = `-- name: ListActiveSessionsForUser :many
 SELECT token, user_id, expires_at, created_at, last_used_at
 FROM sessions
-WHERE user_id = ? AND expires_at > datetime('now')
+WHERE user_id = ?1 AND expires_at > CURRENT_TIMESTAMP
 ORDER BY created_at DESC
 `
 
@@ -372,8 +372,8 @@ func (q *Queries) RehashAuthKey(ctx context.Context, arg RehashAuthKeyParams) er
 
 const renewSession = `-- name: RenewSession :exec
 UPDATE sessions
-SET expires_at = ?, last_used_at = ?
-WHERE token = ?
+SET expires_at = ?1, last_used_at = ?2
+WHERE token = ?3
 `
 
 type RenewSessionParams struct {
@@ -391,8 +391,8 @@ func (q *Queries) RenewSession(ctx context.Context, arg RenewSessionParams) erro
 
 const setRecoveryKey = `-- name: SetRecoveryKey :exec
 UPDATE users
-SET recovery_key_hash = ?, recovery_phrase_hash = ''
-WHERE id = ?
+SET recovery_key_hash = ?1, recovery_phrase_hash = ''
+WHERE id = ?2
 `
 
 type SetRecoveryKeyParams struct {
@@ -410,8 +410,8 @@ func (q *Queries) SetRecoveryKey(ctx context.Context, arg SetRecoveryKeyParams) 
 
 const setUserCredentials = `-- name: SetUserCredentials :exec
 UPDATE users
-SET auth_key_hash = ?, auth_salt = ?, password_hash = ''
-WHERE id = ?
+SET auth_key_hash = ?1, auth_salt = ?2, password_hash = ''
+WHERE id = ?3
 `
 
 type SetUserCredentialsParams struct {
@@ -452,8 +452,8 @@ func (q *Queries) SetUserStatus(ctx context.Context, arg SetUserStatusParams) (i
 
 const upgradeToAuthKey = `-- name: UpgradeToAuthKey :execrows
 UPDATE users
-SET auth_key_hash = ?, auth_salt = ?, password_hash = ''
-WHERE id = ? AND auth_key_hash = ''
+SET auth_key_hash = ?1, auth_salt = ?2, password_hash = ''
+WHERE id = ?3 AND auth_key_hash = ''
 `
 
 type UpgradeToAuthKeyParams struct {

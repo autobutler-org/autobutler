@@ -12,7 +12,7 @@ import (
 
 const deletePhotoHash = `-- name: DeletePhotoHash :exec
 DELETE FROM photo_hashes
-WHERE device_serial = ? AND rel_path = ?
+WHERE device_serial = ?1 AND rel_path = ?2
 `
 
 type DeletePhotoHashParams struct {
@@ -132,7 +132,7 @@ func (q *Queries) ListNearDuplicates(ctx context.Context) ([]ListNearDuplicatesR
 }
 
 const listPhotoHashStates = `-- name: ListPhotoHashStates :many
-SELECT device_serial, rel_path, dhash, content_hash IS NOT NULL AS has_content_hash, taken_checked
+SELECT device_serial, rel_path, dhash, CAST(content_hash IS NOT NULL AS BOOLEAN) AS has_content_hash, taken_checked
 FROM photo_hashes
 `
 
@@ -213,8 +213,8 @@ func (q *Queries) ListPhotoTakenAt(ctx context.Context) ([]ListPhotoTakenAtRow, 
 
 const setPhotoTakenAt = `-- name: SetPhotoTakenAt :exec
 UPDATE photo_hashes
-SET taken_at = ?, taken_checked = 1
-WHERE device_serial = ? AND rel_path = ?
+SET taken_at = ?1, taken_checked = TRUE
+WHERE device_serial = ?2 AND rel_path = ?3
 `
 
 type SetPhotoTakenAtParams struct {
@@ -232,14 +232,14 @@ func (q *Queries) SetPhotoTakenAt(ctx context.Context, arg SetPhotoTakenAtParams
 
 const upsertPhotoHash = `-- name: UpsertPhotoHash :exec
 INSERT INTO photo_hashes (device_serial, rel_path, dhash, content_hash, taken_at, taken_checked)
-VALUES (?, ?, ?, ?, ?, ?)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6)
 ON CONFLICT (device_serial, rel_path)
 DO UPDATE SET
     dhash         = excluded.dhash,
     content_hash  = excluded.content_hash,
     taken_at      = CASE WHEN excluded.taken_checked THEN excluded.taken_at ELSE photo_hashes.taken_at END,
     taken_checked = photo_hashes.taken_checked OR excluded.taken_checked,
-    computed_at   = datetime('now')
+    computed_at   = CURRENT_TIMESTAMP
 `
 
 type UpsertPhotoHashParams struct {

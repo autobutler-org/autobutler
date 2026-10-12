@@ -60,7 +60,7 @@ func (q *Queries) CountChatUnreadForUser(ctx context.Context, userID int64) ([]C
 }
 
 const getChatReadMarker = `-- name: GetChatReadMarker :one
-SELECT last_read_message_id FROM chat_read_markers WHERE user_id = ? AND channel_id = ?
+SELECT last_read_message_id FROM chat_read_markers WHERE user_id = ?1 AND channel_id = ?2
 `
 
 type GetChatReadMarkerParams struct {
@@ -78,7 +78,7 @@ func (q *Queries) GetChatReadMarker(ctx context.Context, arg GetChatReadMarkerPa
 const setChatReadMarker = `-- name: SetChatReadMarker :execrows
 
 INSERT INTO chat_read_markers (user_id, channel_id, last_read_message_id)
-VALUES (?, ?, ?)
+VALUES (?1, ?2, ?3)
 ON CONFLICT (user_id, channel_id) DO UPDATE
 SET last_read_message_id = excluded.last_read_message_id
 WHERE excluded.last_read_message_id > chat_read_markers.last_read_message_id

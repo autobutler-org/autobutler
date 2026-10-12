@@ -21,12 +21,14 @@ func (q *Queries) GetInstallID(ctx context.Context) (string, error) {
 }
 
 const rotateInstallID = `-- name: RotateInstallID :exec
-UPDATE install SET install_id = lower(hex(randomblob(16))) WHERE id = 1
+UPDATE install SET install_id = ?1 WHERE id = 1
 `
 
 // For a reset that leaves the database standing (files or devices only): the
 // other instances still have to drop what they hold for the wiped install.
-func (q *Queries) RotateInstallID(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, rotateInstallID)
+// The id is made in Go (db.NewInstallID), so no engine needs a random-bytes
+// function.
+func (q *Queries) RotateInstallID(ctx context.Context, installID string) error {
+	_, err := q.db.ExecContext(ctx, rotateInstallID, installID)
 	return err
 }

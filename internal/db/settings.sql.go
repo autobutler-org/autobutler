@@ -12,7 +12,7 @@ import (
 
 const addAccountRequestDecision = `-- name: AddAccountRequestDecision :exec
 INSERT INTO account_request_history (username, outcome, decided_by, decided_at)
-VALUES (?, ?, ?, ?)
+VALUES (?1, ?2, ?3, ?4)
 ON CONFLICT DO NOTHING
 `
 
@@ -34,7 +34,7 @@ func (q *Queries) AddAccountRequestDecision(ctx context.Context, arg AddAccountR
 }
 
 const addSetting = `-- name: AddSetting :exec
-INSERT INTO settings (key, value) VALUES (?, ?)
+INSERT INTO settings (key, value) VALUES (?1, ?2)
 ON CONFLICT (key) DO NOTHING
 `
 
@@ -69,7 +69,7 @@ func (q *Queries) AddUserSettings(ctx context.Context, arg AddUserSettingsParams
 }
 
 const getSetting = `-- name: GetSetting :one
-SELECT value FROM settings WHERE key = ?
+SELECT value FROM settings WHERE key = ?1
 `
 
 func (q *Queries) GetSetting(ctx context.Context, key string) (string, error) {
@@ -80,7 +80,7 @@ func (q *Queries) GetSetting(ctx context.Context, key string) (string, error) {
 }
 
 const getUserSettings = `-- name: GetUserSettings :one
-SELECT settings FROM user_settings WHERE user_id = ?
+SELECT settings FROM user_settings WHERE user_id = ?1
 `
 
 func (q *Queries) GetUserSettings(ctx context.Context, userID int64) (string, error) {
@@ -94,7 +94,7 @@ const listAccountRequestHistory = `-- name: ListAccountRequestHistory :many
 SELECT username, outcome, decided_by, decided_at
 FROM account_request_history
 ORDER BY id DESC
-LIMIT ?
+LIMIT CAST(?1 AS BIGINT)
 `
 
 type ListAccountRequestHistoryRow struct {
@@ -160,7 +160,7 @@ func (q *Queries) ListSettings(ctx context.Context) ([]Setting, error) {
 }
 
 const setSetting = `-- name: SetSetting :exec
-INSERT INTO settings (key, value) VALUES (?, ?)
+INSERT INTO settings (key, value) VALUES (?1, ?2)
 ON CONFLICT (key) DO UPDATE SET value = excluded.value
 `
 
@@ -175,7 +175,7 @@ func (q *Queries) SetSetting(ctx context.Context, arg SetSettingParams) error {
 }
 
 const setUserSettings = `-- name: SetUserSettings :exec
-INSERT INTO user_settings (user_id, settings) VALUES (?, ?)
+INSERT INTO user_settings (user_id, settings) VALUES (?1, ?2)
 ON CONFLICT (user_id) DO UPDATE SET settings = excluded.settings
 `
 
@@ -191,7 +191,7 @@ func (q *Queries) SetUserSettings(ctx context.Context, arg SetUserSettingsParams
 
 const trimAccountRequestHistory = `-- name: TrimAccountRequestHistory :exec
 DELETE FROM account_request_history
-WHERE id NOT IN (SELECT id FROM account_request_history ORDER BY id DESC LIMIT ?)
+WHERE id NOT IN (SELECT id FROM account_request_history ORDER BY id DESC LIMIT CAST(?1 AS BIGINT))
 `
 
 func (q *Queries) TrimAccountRequestHistory(ctx context.Context, limit int64) error {
