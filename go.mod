@@ -10,7 +10,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.8.2
 	github.com/KononK/resize v0.0.0-20200801203131-21c514740ed6
 	github.com/autobutler-org/sprocket v0.2.1
-	github.com/bep/imagemeta v1.0.1
+	github.com/bep/imagemeta v1.1.0
 	github.com/coder/websocket v1.8.15
 	github.com/gen2brain/heic v0.7.2
 	github.com/gin-contrib/cors v1.7.9
@@ -19,7 +19,7 @@ require (
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.9.2
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/lib/pq v1.12.3
 	github.com/mholt/archiver/v4 v4.0.0-alpha.9
 	github.com/shirou/gopsutil/v4 v4.26.9
@@ -47,7 +47,7 @@ require (
 	github.com/STARRY-S/zip v0.1.0 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20250919150558-7d374ff0d59e // indirect
-	github.com/andybalholm/brotli v1.2.2 // indirect
+	github.com/andybalholm/brotli v1.2.6 // indirect
 	github.com/apache/arrow-go/v18 v18.7.0 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.5.2 // indirect
