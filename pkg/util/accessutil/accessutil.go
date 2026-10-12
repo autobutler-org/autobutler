@@ -405,7 +405,7 @@ func MoveRows(params MoveRowsParams) (MoveRowsResult, error) {
 	}
 
 	var moved int64
-	err := inTx(params.Ctx, params.Database, func(q *db.Queries) error {
+	err := db.InTx(params.Ctx, params.Database.Db, func(q *db.Queries) error {
 		if _, err := q.DeletePathAccessTree(params.Ctx, db.DeletePathAccessTreeParams{
 			DeviceSerial: params.NewSerial,
 			RelPath:      newPath,
@@ -461,7 +461,7 @@ func DeleteRows(params DeleteRowsParams) (DeleteRowsResult, error) {
 
 	var deleted int64
 	changed := make([]string, 0, len(params.Paths))
-	err := inTx(params.Ctx, params.Database, func(q *db.Queries) error {
+	err := db.InTx(params.Ctx, params.Database.Db, func(q *db.Queries) error {
 		for _, p := range params.Paths {
 			rel := Canonical(p)
 			if rel == "" {

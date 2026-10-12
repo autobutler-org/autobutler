@@ -293,26 +293,13 @@ func avatarVersion(dataDir string, userID int64) int64 {
 	return stat.UpdatedAt.UnixMilli()
 }
 
-// inTx runs fn in one transaction, rolling back when it returns an error.
-func inTx(ctx context.Context, database *db.DatabaseSqlc, fn func(*db.Queries) error) error {
-	tx, err := database.Db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	if err := fn(database.Queries.WithTx(tx)); err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-	return tx.Commit()
-}
-
 // keepingAnOwner runs change in one transaction and rolls it back with
 // ErrLastOwner when it takes away the channel's last holder of manage_channel
 // while other members remain (#2422). Admins may do that, since they can
 // manage such a channel, and a channel that had no holder before the change
 // is left to them too.
 func keepingAnOwner(ctx context.Context, database *db.DatabaseSqlc, principal accessutil.Principal, channelID int64, change func(*db.Queries) error) error {
-	return inTx(ctx, database, func(q *db.Queries) error {
+	return db.InTx(ctx, database.Db, func(q *db.Queries) error {
 		if principal.IsAdmin {
 			return change(q)
 		}

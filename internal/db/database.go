@@ -4,6 +4,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"errors"
@@ -22,6 +23,27 @@ import (
 type DatabaseSqlc struct {
 	Db      *sql.DB
 	Queries *Queries
+}
+
+// InTx runs fn against queries bound to one transaction on sqlDB, committing
+// only if fn returns nil. An error from fn rolls the transaction back and comes
+// back as it is, so callers can still match it with errors.Is; a panic in fn
+// rolls back too and keeps unwinding.
+func InTx(ctx context.Context, sqlDB *sql.DB, fn func(*Queries) error) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	// A no-op once Commit has run.
+	defer tx.Rollback()
+
+	if err := fn(New(tx)); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
 }
 
 func (d *DatabaseSqlc) Exec(query string, args ...any) (sql.Result, error) {

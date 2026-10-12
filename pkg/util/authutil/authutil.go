@@ -684,7 +684,7 @@ func Setup(ctx context.Context, params SetupParams) (*SetupResult, error) {
 
 	var userID int64
 	madeDir := ""
-	err = inTx(ctx, params.Database, func(q *db.Queries) error {
+	err = db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
 		user, err := q.CreateUser(ctx, db.CreateUserParams{
 			Username:        params.Username,
 			AuthKeyHash:     authKeyHash,
@@ -775,7 +775,7 @@ func ApproveRequest(ctx context.Context, params ApproveRequestParams) (ApproveRe
 	}
 	var result ApproveRequestResult
 	madeDir := ""
-	err := inTx(ctx, params.Database, func(q *db.Queries) error {
+	err := db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
 		approved, err := q.SetUserStatus(ctx, db.SetUserStatusParams{
 			Username:   params.Username,
 			FromStatus: StatusPending,
@@ -920,7 +920,7 @@ func CreateUser(ctx context.Context, params CreateUserParams) (CreateUserResult,
 
 	var result CreateUserResult
 	madeDir := ""
-	err = inTx(ctx, params.Database, func(q *db.Queries) error {
+	err = db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
 		// An empty recovery key hash is "none yet": nothing matches it, so
 		// recovery fails like a wrong phrase until the client sets one.
 		user, err := q.CreateUser(ctx, db.CreateUserParams{
@@ -1174,7 +1174,7 @@ func SetRecoveryKey(ctx context.Context, database *db.DatabaseSqlc, params SetRe
 	if user.AuthSalt == "" {
 		return SetRecoveryKeyResult{}, ErrNoAuthSalt
 	}
-	err = inTx(ctx, database, func(q *db.Queries) error {
+	err = db.InTx(ctx, database.Db, func(q *db.Queries) error {
 		if err := q.SetRecoveryKey(ctx, db.SetRecoveryKeyParams{RecoveryKeyHash: hash, ID: user.ID}); err != nil {
 			return fmt.Errorf("store the recovery key: %w", err)
 		}
@@ -1221,7 +1221,7 @@ func ChangePassword(ctx context.Context, database *db.DatabaseSqlc, params Chang
 	if !checkAuthKey(ctx, database.Queries, user, params.CurrentAuthKey) {
 		return ChangePasswordResult{}, ErrIncorrectPassword
 	}
-	err = inTx(ctx, database, func(q *db.Queries) error {
+	err = db.InTx(ctx, database.Db, func(q *db.Queries) error {
 		if err := q.SetUserCredentials(ctx, db.SetUserCredentialsParams{
 			ID:          user.ID,
 			AuthKeyHash: hash,
@@ -1270,7 +1270,7 @@ func Recover(ctx context.Context, database *db.DatabaseSqlc, params RecoverParam
 	userID := checked.UserID
 
 	var token string
-	err = inTx(ctx, database, func(q *db.Queries) error {
+	err = db.InTx(ctx, database.Db, func(q *db.Queries) error {
 		user, err := q.GetUserByID(ctx, userID)
 		if err != nil {
 			return fmt.Errorf("look up the account: %w", err)
@@ -1428,7 +1428,7 @@ func DisableUser(ctx context.Context, params DisableUserParams) (DisableUserResu
 	if params.Database == nil {
 		return DisableUserResult{}, errors.New("database not initialized")
 	}
-	err := inTx(ctx, params.Database, func(q *db.Queries) error {
+	err := db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
 		target, err := q.GetUserByUsername(ctx, params.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrUserNotFound
@@ -1494,7 +1494,7 @@ func DeleteUser(ctx context.Context, params DeleteUserParams) (DeleteUserResult,
 		return DeleteUserResult{}, errors.New("database not initialized")
 	}
 	var result DeleteUserResult
-	err := inTx(ctx, params.Database, func(q *db.Queries) error {
+	err := db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
 		target, err := q.GetUserByUsername(ctx, params.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrUserNotFound
