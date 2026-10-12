@@ -12,7 +12,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
-func grantRow(t *testing.T, q *db.Queries, userID int64, rel, level string) {
+func grantRow(t *testing.T, q db.Querier, userID int64, rel, level string) {
 	t.Helper()
 	if err := q.SetUserPathAccess(context.Background(), db.SetUserPathAccessParams{
 		RelPath: rel, UserID: sql.NullInt64{Int64: userID, Valid: true}, Level: level,

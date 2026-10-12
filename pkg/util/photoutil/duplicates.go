@@ -48,7 +48,7 @@ type ListDuplicatesParams struct {
 	// Ctx bounds the database reads.
 	Ctx context.Context
 	// Queries reads the stored content and perceptual hashes.
-	Queries *db.Queries
+	Queries db.Querier
 	// Threshold is the Hamming distance under which two dHashes are grouped.
 	Threshold int
 	// Access drops the photos the caller cannot read from every group, and

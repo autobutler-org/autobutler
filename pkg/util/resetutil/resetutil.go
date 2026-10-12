@@ -21,7 +21,7 @@ const DefaultWatchInterval = 2 * time.Second
 
 // WatchParams configures Watch.
 type WatchParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// Interval is the time between reads; zero means DefaultWatchInterval.
 	Interval time.Duration
 	// OnReset is called once, from Watch's goroutine, when the install id is

@@ -32,7 +32,7 @@ const stagedVaultMaxAge = time.Hour
 // vault_backup.db in targetDir and returns its path. The file is built under a
 // temp name of its own and renamed into place, so a failed export leaves the
 // previous backup whole and two exports never write one file (#3084).
-func ExportVault(ctx context.Context, queries *db.Queries, liveKey []byte, recoveryPassword string, targetDir string) (string, error) {
+func ExportVault(ctx context.Context, queries db.Querier, liveKey []byte, recoveryPassword string, targetDir string) (string, error) {
 	staged, err := stageVaultExport(ctx, queries, liveKey, recoveryPassword, targetDir)
 	if err != nil {
 		return "", err
@@ -47,7 +47,7 @@ func ExportVault(ctx context.Context, queries *db.Queries, liveKey []byte, recov
 // stageVaultExport builds the vault export in targetDir under a temp name no
 // other export shares, and returns that name. [commitStagedVault] puts it in
 // place; nothing is left behind when it fails.
-func stageVaultExport(ctx context.Context, queries *db.Queries, liveKey []byte, recoveryPassword string, targetDir string) (string, error) {
+func stageVaultExport(ctx context.Context, queries db.Querier, liveKey []byte, recoveryPassword string, targetDir string) (string, error) {
 	name := storageutil.WriteTempPrefix + rand.Text() + "-" + backupVaultFilename
 	tmpPath := filepath.Join(targetDir, name)
 	if err := buildVaultBackup(ctx, queries, liveKey, recoveryPassword, tmpPath); err != nil {
@@ -115,7 +115,7 @@ func isStagedVaultName(name string) bool {
 }
 
 // buildVaultBackup writes the export as a new SQLite file at dbPath.
-func buildVaultBackup(ctx context.Context, queries *db.Queries, liveKey []byte, recoveryPassword string, dbPath string) error {
+func buildVaultBackup(ctx context.Context, queries db.Querier, liveKey []byte, recoveryPassword string, dbPath string) error {
 	config, err := queries.GetVaultConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("get vault config: %w", err)

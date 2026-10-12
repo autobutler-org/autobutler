@@ -15,7 +15,7 @@ import (
 // RunPeriodicallyParams describes a periodic maintenance task.
 type RunPeriodicallyParams struct {
 	// Queries reaches the database the instances share. Required.
-	Queries *db.Queries
+	Queries db.Querier
 	// Name identifies the task across instances: two callers with one Name
 	// take turns, so it must be unique to the task.
 	Name string

@@ -22,7 +22,7 @@ import (
 )
 
 // newAuthTestDB opens a database carrying the real migration set.
-func newAuthTestDB(t *testing.T) (*sql.DB, *db.Queries) {
+func newAuthTestDB(t *testing.T) (*sql.DB, db.Querier) {
 	t.Helper()
 	database := dbtest.NewDB(t)
 	return database.Db, database.Queries
@@ -32,7 +32,7 @@ func newAuthTestDB(t *testing.T) (*sql.DB, *db.Queries) {
 // The session Setup created is put on the context as the caller's own, the way
 // requireAuth does. Returns the engine, the db queries handle, and the userID
 // of the created test user.
-func newSessionsTestEngine(t *testing.T) (*gin.Engine, *db.Queries, int64) {
+func newSessionsTestEngine(t *testing.T) (*gin.Engine, db.Querier, int64) {
 	t.Helper()
 	sqlDB, queries := newAuthTestDB(t)
 

@@ -15,7 +15,7 @@ func legacyPath(dataDir string) string {
 }
 
 // add inserts one decision. The same decision twice is one row.
-func add(ctx context.Context, queries *db.Queries, entry Entry) error {
+func add(ctx context.Context, queries db.Querier, entry Entry) error {
 	if err := queries.AddAccountRequestDecision(ctx, db.AddAccountRequestDecisionParams{
 		Username: entry.Username, Outcome: entry.Outcome, DecidedBy: entry.DecidedBy, DecidedAt: entry.DecidedAt,
 	}); err != nil {

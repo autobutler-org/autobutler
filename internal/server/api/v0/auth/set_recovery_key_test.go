@@ -60,7 +60,7 @@ func chatKeysOf(fill byte) chatutil.Keys {
 	}
 }
 
-func userByName(t *testing.T, queries *db.Queries, username string) db.User {
+func userByName(t *testing.T, queries db.Querier, username string) db.User {
 	t.Helper()
 	user, err := queries.GetUserByUsername(context.Background(), username)
 	if err != nil {

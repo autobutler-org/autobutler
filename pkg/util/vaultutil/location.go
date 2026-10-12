@@ -27,9 +27,9 @@ const vaultDBFileName = "vault.db"
 // which device that is lives in the main database.
 type StatusParams struct {
 	// VaultQueries is the vault database.
-	VaultQueries *db.Queries
+	VaultQueries db.Querier
 	// MainQueries is the main database, which records the vault's location.
-	MainQueries *db.Queries
+	MainQueries db.Querier
 	Session     *vaultcrypto.VaultSession
 	Storage     *storageutil.StorageService
 }
@@ -48,7 +48,7 @@ type StatusResult struct {
 type GetLocationParams struct {
 	// MainQueries is the main database, which records the vault's location
 	// and the user's name for the device.
-	MainQueries *db.Queries
+	MainQueries db.Querier
 	Storage     *storageutil.StorageService
 }
 

@@ -113,14 +113,14 @@ func TestBuildTree_OrphanDropped(t *testing.T) {
 
 // newAlbumDB returns queries over a fresh database and an account to own
 // albums.
-func newAlbumDB(t *testing.T) (*db.Queries, int64) {
+func newAlbumDB(t *testing.T) (db.Querier, int64) {
 	t.Helper()
 	q := dbtest.NewDB(t).Queries
 	return q, newOwner(t, q)
 }
 
 // newOwner creates the account the tests' albums belong to.
-func newOwner(t *testing.T, q *db.Queries) int64 {
+func newOwner(t *testing.T, q db.Querier) int64 {
 	t.Helper()
 	user, err := q.CreateUser(context.Background(), db.CreateUserParams{Username: "founder", PasswordHash: "h", RecoveryPhraseHash: "r"})
 	if err != nil {
@@ -306,7 +306,7 @@ func TestListChildAlbums(t *testing.T) {
 
 // --- System album guards (HTTP) ---
 
-func newAlbumEngine(t *testing.T) (*gin.Engine, *db.Queries, int64) {
+func newAlbumEngine(t *testing.T) (*gin.Engine, db.Querier, int64) {
 	t.Helper()
 	database := dbtest.NewDB(t)
 	owner := newOwner(t, database.Queries)

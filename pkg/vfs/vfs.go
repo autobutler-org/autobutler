@@ -270,12 +270,12 @@ type MetaEntry struct {
 type SQLiteMetadataStore struct {
 	// db opens the transaction a multi-key write runs in.
 	db      *sql.DB
-	queries *db.Queries
+	queries db.Querier
 }
 
 // NewSQLiteMetadataStore returns a MetadataStore backed by the given *sql.DB.
 func NewSQLiteMetadataStore(conn *sql.DB) *SQLiteMetadataStore {
-	return &SQLiteMetadataStore{db: conn, queries: db.New(conn)}
+	return &SQLiteMetadataStore{db: conn, queries: db.NewQueries(conn)}
 }
 
 // LocalVFS is a VFS backed by a directory on the host filesystem.
@@ -321,13 +321,13 @@ func NewMemVFS(namespaceID string) *MemVFS {
 // Used for namespaces whose data is virtual (no physical disk backing),
 // such as the photos namespace (albums, playlists).
 type DBVFS struct {
-	queries     *db.Queries
+	queries     db.Querier
 	namespaceID string
 }
 
 // NewDBVFS returns a DBVFS for the given namespace backed by conn.
 func NewDBVFS(conn *sql.DB, namespaceID string) *DBVFS {
-	return &DBVFS{queries: db.New(conn), namespaceID: namespaceID}
+	return &DBVFS{queries: db.NewQueries(conn), namespaceID: namespaceID}
 }
 
 // StorageServiceVFS adapts storageutil.StorageService to the VFS interface

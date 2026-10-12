@@ -47,7 +47,7 @@ func listPhotos(c *gin.Context) *serverutil.Response {
 
 	// Capture dates are read from the database; without one, the taken sort
 	// falls back to the date added.
-	var queries *db.Queries
+	var queries db.Querier
 	if database := deps.Database(); database != nil {
 		queries = database.Queries
 	}

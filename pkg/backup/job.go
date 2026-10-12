@@ -149,7 +149,7 @@ func runSnapshotJob(ctx context.Context, params NewHandlerParams, raw json.RawMe
 // GetSnapshotBackupStatusParams names the backup job to read.
 type GetSnapshotBackupStatusParams struct {
 	Ctx     context.Context
-	Queries *db.Queries
+	Queries db.Querier
 	// JobID is the id [StartSnapshotBackup] returned.
 	JobID string
 }

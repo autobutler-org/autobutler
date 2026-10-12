@@ -448,7 +448,7 @@ type SetRecoveryKeyParams struct {
 	// AfterSet, when set, runs in the transaction that stores the key, with
 	// that transaction's queries and the account's id. An error rolls the key
 	// back. Chat uses it to store the identity re-wrapped under the new phrase.
-	AfterSet func(queries *db.Queries, userID int64) error
+	AfterSet func(queries db.Querier, userID int64) error
 }
 
 // SetRecoveryKeyResult is empty; a stored key has nothing to report.
@@ -468,7 +468,7 @@ type ChangePasswordParams struct {
 	// that transaction's queries and the account's id. An error rolls the key
 	// back. Chat uses it to store the identity re-wrapped under the new
 	// password.
-	AfterChange func(queries *db.Queries, userID int64) error
+	AfterChange func(queries db.Querier, userID int64) error
 }
 
 // ChangePasswordResult is empty; a stored key has nothing to report.
@@ -515,7 +515,7 @@ type RecoverParams struct {
 	// with that transaction's queries and the account's id. An error rolls the
 	// reset back. Chat uses it to store keys re-wrapped under the new password
 	// (#2416), which authutil knows nothing about.
-	AfterReset func(queries *db.Queries, userID int64) error
+	AfterReset func(queries db.Querier, userID int64) error
 }
 
 // SessionInfo is a safe, token-free representation of an active session
@@ -568,7 +568,7 @@ func CheckPassword(secret, hash string) bool {
 // VerifyPasswordParams names the signed-in account and the auth key it gave
 // in the password field the endpoints have always read (#2430).
 type VerifyPasswordParams struct {
-	Queries  *db.Queries
+	Queries  db.Querier
 	Username string
 	Password string
 }
@@ -609,7 +609,7 @@ func GenerateSessionToken() (string, error) {
 }
 
 // IsSetupComplete returns true if at least one user exists.
-func IsSetupComplete(ctx context.Context, queries *db.Queries) (bool, error) {
+func IsSetupComplete(ctx context.Context, queries db.Querier) (bool, error) {
 	count, err := queries.CountUsers(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to count users: %w", err)
@@ -621,7 +621,7 @@ func IsSetupComplete(ctx context.Context, queries *db.Queries) (bool, error) {
 // is valid, the caller's username and admin flag. An invalid or missing token
 // is not an error: the caller is simply anonymous. A token the database could
 // not be asked about is ErrUnavailable, not an anonymous caller.
-func GetAuthStatus(ctx context.Context, queries *db.Queries, params GetAuthStatusParams) (GetAuthStatusResult, error) {
+func GetAuthStatus(ctx context.Context, queries db.Querier, params GetAuthStatusParams) (GetAuthStatusResult, error) {
 	setup, err := IsSetupComplete(ctx, queries)
 	if err != nil {
 		return GetAuthStatusResult{}, err
@@ -684,7 +684,7 @@ func Setup(ctx context.Context, params SetupParams) (*SetupResult, error) {
 
 	var userID int64
 	madeDir := ""
-	err = db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
+	err = db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
 		user, err := q.CreateUser(ctx, db.CreateUserParams{
 			Username:        params.Username,
 			AuthKeyHash:     authKeyHash,
@@ -726,7 +726,7 @@ func Setup(ctx context.Context, params SetupParams) (*SetupResult, error) {
 // before setup, and ErrInvalidUsername, ErrInvalidAuthKey,
 // ErrInvalidRecoveryKey or ErrUsernameTaken for a request that cannot be
 // taken. A pending request holds its username until it is denied.
-func RequestAccount(ctx context.Context, queries *db.Queries, params RequestAccountParams) (RequestAccountResult, error) {
+func RequestAccount(ctx context.Context, queries db.Querier, params RequestAccountParams) (RequestAccountResult, error) {
 	if !params.RequestsEnabled {
 		return RequestAccountResult{}, ErrAccessRequestsOff
 	}
@@ -775,7 +775,7 @@ func ApproveRequest(ctx context.Context, params ApproveRequestParams) (ApproveRe
 	}
 	var result ApproveRequestResult
 	madeDir := ""
-	err := db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
+	err := db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
 		approved, err := q.SetUserStatus(ctx, db.SetUserStatusParams{
 			Username:   params.Username,
 			FromStatus: StatusPending,
@@ -808,7 +808,7 @@ func ApproveRequest(ctx context.Context, params ApproveRequestParams) (ApproveRe
 
 // DenyRequest deletes a pending request, which frees its username at once. It
 // returns ErrRequestNotFound when the username names no pending request.
-func DenyRequest(ctx context.Context, queries *db.Queries, params DenyRequestParams) (DenyRequestResult, error) {
+func DenyRequest(ctx context.Context, queries db.Querier, params DenyRequestParams) (DenyRequestResult, error) {
 	denied, err := queries.DeletePendingUser(ctx, params.Username)
 	if err != nil {
 		return DenyRequestResult{}, fmt.Errorf("deny %q: %w", params.Username, err)
@@ -827,7 +827,7 @@ func DenyRequest(ctx context.Context, queries *db.Queries, params DenyRequestPar
 // Legacy and LegacyRecovery say the account has no auth key or no recovery key
 // yet, which its client moves it to (#2430); an unknown username reads false
 // for both, like an account that has moved to keys.
-func GetSalt(ctx context.Context, queries *db.Queries, params GetSaltParams) (GetSaltResult, error) {
+func GetSalt(ctx context.Context, queries db.Querier, params GetSaltParams) (GetSaltResult, error) {
 	salt, err := deterministicSalt(params.SaltSecret, params.Username)
 	if err != nil {
 		return GetSaltResult{}, err
@@ -864,7 +864,7 @@ func GetSalt(ctx context.Context, queries *db.Queries, params GetSaltParams) (Ge
 // credential being checked, and every wrong username or credential is counted
 // toward a lockout and logged with its address. An account lookup the
 // database could not answer is ErrUnavailable and is not counted.
-func Login(ctx context.Context, queries *db.Queries, params LoginParams) (*LoginResult, error) {
+func Login(ctx context.Context, queries db.Querier, params LoginParams) (*LoginResult, error) {
 	if params.AuthKey == "" {
 		if err := RefuseRawSecrets(params.Password); err != nil {
 			return nil, err
@@ -920,7 +920,7 @@ func CreateUser(ctx context.Context, params CreateUserParams) (CreateUserResult,
 
 	var result CreateUserResult
 	madeDir := ""
-	err = db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
+	err = db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
 		// An empty recovery key hash is "none yet": nothing matches it, so
 		// recovery fails like a wrong phrase until the client sets one.
 		user, err := q.CreateUser(ctx, db.CreateUserParams{
@@ -1018,7 +1018,7 @@ func RepairHomes(ctx context.Context, params RepairHomesParams) (RepairHomesResu
 // A token with no live session behind it is an error. A lookup the database
 // could not answer is ErrUnavailable, which a caller must not treat as a bad
 // token.
-func ValidateSession(ctx context.Context, queries *db.Queries, token string) (string, int64, error) {
+func ValidateSession(ctx context.Context, queries db.Querier, token string) (string, int64, error) {
 	digest := hashToken(token)
 	session, err := queries.GetSession(ctx, digest)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -1040,7 +1040,7 @@ func ValidateSession(ctx context.Context, queries *db.Queries, token string) (st
 // it confirms a signed-in caller's key before one sensitive action. The
 // per-request Basic fallback in requireAuth uses AuthenticateBasic, which is
 // guarded. An account lookup the database could not answer is ErrUnavailable.
-func ValidateBasicAuth(ctx context.Context, queries *db.Queries, username, password string) (string, int64, error) {
+func ValidateBasicAuth(ctx context.Context, queries db.Querier, username, password string) (string, int64, error) {
 	if isRawSecret(password) {
 		return "", 0, ErrAppTooOld
 	}
@@ -1059,7 +1059,7 @@ func ValidateBasicAuth(ctx context.Context, queries *db.Queries, username, passw
 
 // AuthenticateBasicParams is one HTTP Basic credential and where it came from.
 type AuthenticateBasicParams struct {
-	Queries  *db.Queries
+	Queries  db.Querier
 	Username string
 	// Password is the account's auth key, which Basic carries in its password
 	// field (#2430).
@@ -1101,7 +1101,7 @@ func AuthenticateBasic(ctx context.Context, params AuthenticateBasicParams) (Aut
 }
 
 // Logout deletes a session token.
-func Logout(ctx context.Context, queries *db.Queries, token string) error {
+func Logout(ctx context.Context, queries db.Querier, token string) error {
 	return queries.DeleteSession(ctx, hashToken(token))
 }
 
@@ -1116,7 +1116,7 @@ func Logout(ctx context.Context, queries *db.Queries, token string) error {
 // usernames exist or which secret an account takes; a pending or disabled
 // account is refused after the secret, for the same reason Login checks
 // status after the auth key.
-func CheckRecovery(ctx context.Context, queries *db.Queries, params CheckRecoveryParams) (CheckRecoveryResult, error) {
+func CheckRecovery(ctx context.Context, queries db.Querier, params CheckRecoveryParams) (CheckRecoveryResult, error) {
 	if (params.RecoveryPhrase == "") == (params.RecoveryKey == "") {
 		return CheckRecoveryResult{}, ErrRecoverySecretRequired
 	}
@@ -1174,7 +1174,7 @@ func SetRecoveryKey(ctx context.Context, database *db.DatabaseSqlc, params SetRe
 	if user.AuthSalt == "" {
 		return SetRecoveryKeyResult{}, ErrNoAuthSalt
 	}
-	err = db.InTx(ctx, database.Db, func(q *db.Queries) error {
+	err = db.InTx(ctx, database.Db, func(q db.Querier) error {
 		if err := q.SetRecoveryKey(ctx, db.SetRecoveryKeyParams{RecoveryKeyHash: hash, ID: user.ID}); err != nil {
 			return fmt.Errorf("store the recovery key: %w", err)
 		}
@@ -1221,7 +1221,7 @@ func ChangePassword(ctx context.Context, database *db.DatabaseSqlc, params Chang
 	if !checkAuthKey(ctx, database.Queries, user, params.CurrentAuthKey) {
 		return ChangePasswordResult{}, ErrIncorrectPassword
 	}
-	err = db.InTx(ctx, database.Db, func(q *db.Queries) error {
+	err = db.InTx(ctx, database.Db, func(q db.Querier) error {
 		if err := q.SetUserCredentials(ctx, db.SetUserCredentialsParams{
 			ID:          user.ID,
 			AuthKeyHash: hash,
@@ -1270,7 +1270,7 @@ func Recover(ctx context.Context, database *db.DatabaseSqlc, params RecoverParam
 	userID := checked.UserID
 
 	var token string
-	err = db.InTx(ctx, database.Db, func(q *db.Queries) error {
+	err = db.InTx(ctx, database.Db, func(q db.Querier) error {
 		user, err := q.GetUserByID(ctx, userID)
 		if err != nil {
 			return fmt.Errorf("look up the account: %w", err)
@@ -1314,7 +1314,7 @@ func Recover(ctx context.Context, database *db.DatabaseSqlc, params RecoverParam
 // as the opaque session ID exposed to clients. currentID is the id of the
 // session the caller is using, which is marked Current; pass "" when the
 // caller has none.
-func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64, currentID string) ([]SessionInfo, error) {
+func ListActiveSessions(ctx context.Context, queries db.Querier, userID int64, currentID string) ([]SessionInfo, error) {
 	rows, err := queries.ListActiveSessionsForUser(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sessions: %w", err)
@@ -1336,7 +1336,7 @@ func ListActiveSessions(ctx context.Context, queries *db.Queries, userID int64, 
 // RevokeSession deletes the session whose stored digest matches the given id,
 // scoped to the given user. Returns true if a session was deleted, false if
 // no matching session was found.
-func RevokeSession(ctx context.Context, queries *db.Queries, userID int64, id string) (bool, error) {
+func RevokeSession(ctx context.Context, queries db.Querier, userID int64, id string) (bool, error) {
 	rows, err := queries.ListActiveSessionsForUser(ctx, userID)
 	if err != nil {
 		return false, fmt.Errorf("failed to list sessions: %w", err)
@@ -1354,7 +1354,7 @@ func RevokeSession(ctx context.Context, queries *db.Queries, userID int64, id st
 }
 
 // RevokeAllSessions deletes all sessions for the given user.
-func RevokeAllSessions(ctx context.Context, queries *db.Queries, userID int64) error {
+func RevokeAllSessions(ctx context.Context, queries db.Querier, userID int64) error {
 	if err := queries.DeleteUserSessions(ctx, userID); err != nil {
 		return fmt.Errorf("failed to revoke sessions: %w", err)
 	}
@@ -1364,7 +1364,7 @@ func RevokeAllSessions(ctx context.Context, queries *db.Queries, userID int64) e
 // RevokeOtherSessions deletes every session of the given user except keepID,
 // the id of the session the caller is using. With keepID "" there is nothing
 // to keep and every session goes.
-func RevokeOtherSessions(ctx context.Context, queries *db.Queries, userID int64, keepID string) error {
+func RevokeOtherSessions(ctx context.Context, queries db.Querier, userID int64, keepID string) error {
 	if err := queries.DeleteOtherUserSessions(ctx, db.DeleteOtherUserSessionsParams{UserID: userID, Token: keepID}); err != nil {
 		return fmt.Errorf("failed to revoke sessions: %w", err)
 	}
@@ -1374,7 +1374,7 @@ func RevokeOtherSessions(ctx context.Context, queries *db.Queries, userID int64,
 // PurgeExpiredSessions removes all sessions whose expiry has passed. (#1330)
 // GetSession already guards against expired tokens, so this is a housekeeping
 // operation rather than a security gate.
-func PurgeExpiredSessions(ctx context.Context, queries *db.Queries) error {
+func PurgeExpiredSessions(ctx context.Context, queries db.Querier) error {
 	if err := queries.DeleteExpiredSessions(ctx); err != nil {
 		return fmt.Errorf("purge expired sessions: %w", err)
 	}
@@ -1383,7 +1383,7 @@ func PurgeExpiredSessions(ctx context.Context, queries *db.Queries) error {
 
 // IsAdmin returns true if the given username has the admin role.
 // Returns false (not an error) for unknown users.
-func IsAdmin(ctx context.Context, queries *db.Queries, username string) (bool, error) {
+func IsAdmin(ctx context.Context, queries db.Querier, username string) (bool, error) {
 	val, err := queries.IsUserAdmin(ctx, username)
 	if err != nil {
 		return false, fmt.Errorf("check admin: %w", err)
@@ -1393,7 +1393,7 @@ func IsAdmin(ctx context.Context, queries *db.Queries, username string) (bool, e
 
 // IsActive reports whether the account with the given id exists and may sign
 // in. A missing account is not an error; it is simply not active.
-func IsActive(ctx context.Context, queries *db.Queries, userID int64) (bool, error) {
+func IsActive(ctx context.Context, queries db.Querier, userID int64) (bool, error) {
 	user, err := queries.GetUserByID(ctx, userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
@@ -1408,7 +1408,7 @@ func IsActive(ctx context.Context, queries *db.Queries, userID int64) (bool, err
 // in, and is still an admin exactly when isAdmin says so. An open event stream
 // asks this to find out that its account was turned off, deleted, promoted or
 // demoted since it connected. A missing account is not an error.
-func IsActiveAs(ctx context.Context, queries *db.Queries, userID int64, isAdmin bool) (bool, error) {
+func IsActiveAs(ctx context.Context, queries db.Querier, userID int64, isAdmin bool) (bool, error) {
 	user, err := queries.GetUserByID(ctx, userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
@@ -1428,7 +1428,7 @@ func DisableUser(ctx context.Context, params DisableUserParams) (DisableUserResu
 	if params.Database == nil {
 		return DisableUserResult{}, errors.New("database not initialized")
 	}
-	err := db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
+	err := db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
 		target, err := q.GetUserByUsername(ctx, params.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrUserNotFound
@@ -1463,7 +1463,7 @@ func DisableUser(ctx context.Context, params DisableUserParams) (DisableUserResu
 
 // EnableUser turns a disabled account back on. It returns ErrUserNotFound
 // unless the account is disabled.
-func EnableUser(ctx context.Context, queries *db.Queries, params EnableUserParams) (EnableUserResult, error) {
+func EnableUser(ctx context.Context, queries db.Querier, params EnableUserParams) (EnableUserResult, error) {
 	enabled, err := queries.SetUserStatus(ctx, db.SetUserStatusParams{
 		Username:   params.Username,
 		FromStatus: StatusDisabled,
@@ -1494,7 +1494,7 @@ func DeleteUser(ctx context.Context, params DeleteUserParams) (DeleteUserResult,
 		return DeleteUserResult{}, errors.New("database not initialized")
 	}
 	var result DeleteUserResult
-	err := db.InTx(ctx, params.Database.Db, func(q *db.Queries) error {
+	err := db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
 		target, err := q.GetUserByUsername(ctx, params.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrUserNotFound
@@ -1563,7 +1563,7 @@ func DeleteUser(ctx context.Context, params DeleteUserParams) (DeleteUserResult,
 
 // PromoteToAdmin grants admin to the given username. Only an active account
 // can be promoted; any other username returns ErrUserNotFound.
-func PromoteToAdmin(ctx context.Context, queries *db.Queries, username string) error {
+func PromoteToAdmin(ctx context.Context, queries db.Querier, username string) error {
 	if _, err := queries.PromoteToAdmin(ctx, username); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrUserNotFound
@@ -1576,7 +1576,7 @@ func PromoteToAdmin(ctx context.Context, queries *db.Queries, username string) e
 // DemoteFromAdmin removes admin from the given username. It returns
 // ErrLastAdmin when the account is the only active admin, and ErrUserNotFound
 // for a username with no account.
-func DemoteFromAdmin(ctx context.Context, queries *db.Queries, username string) error {
+func DemoteFromAdmin(ctx context.Context, queries db.Querier, username string) error {
 	target, err := queries.GetUserByUsername(ctx, username)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrUserNotFound
@@ -1601,7 +1601,7 @@ func DemoteFromAdmin(ctx context.Context, queries *db.Queries, username string) 
 // treated as "everything", so a truncated or mis-serialized call fails closed.
 type DeleteAccountParams struct {
 	Database *db.DatabaseSqlc
-	Queries  *db.Queries
+	Queries  db.Querier
 	// DataDir is the appliance's own data directory. Production passes
 	// storageutil.GetDataDir(); tests pass a temporary directory.
 	DataDir string

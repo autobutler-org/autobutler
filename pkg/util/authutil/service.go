@@ -53,7 +53,7 @@ var now = time.Now
 // Errors are logged and swallowed rather than returned: the caller is validly
 // authenticated, and failing to extend an expiry is not an authentication
 // failure. The session simply keeps the expiry it already had.
-func renewSession(ctx context.Context, queries *db.Queries, digest string, session db.GetSessionRow) {
+func renewSession(ctx context.Context, queries db.Querier, digest string, session db.GetSessionRow) {
 	t := now()
 	if t.Sub(session.LastUsedAt) < sessionRenewInterval {
 		return
@@ -78,7 +78,7 @@ func renewSession(ctx context.Context, queries *db.Queries, digest string, sessi
 	}
 }
 
-func newSession(ctx context.Context, queries *db.Queries, userID int64) (string, error) {
+func newSession(ctx context.Context, queries db.Querier, userID int64) (string, error) {
 	rawToken, err := GenerateSessionToken()
 	if err != nil {
 		return "", err

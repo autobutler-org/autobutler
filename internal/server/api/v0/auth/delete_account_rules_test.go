@@ -15,7 +15,7 @@ import (
 // nothing, not even the caller's session; accepted when only a pending request
 // remains, which goes too and returns the Quark to setup.
 func TestDeleteAccount_LastAdminRules(t *testing.T) {
-	addOther := func(t *testing.T, queries *db.Queries, status string) {
+	addOther := func(t *testing.T, queries db.Querier, status string) {
 		t.Helper()
 		ctx := context.Background()
 		hash := dbtest.BcryptHash(t, "OtherPassword123!")

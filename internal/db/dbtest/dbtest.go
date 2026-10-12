@@ -51,7 +51,7 @@ func NewDB(t *testing.T) *db.DatabaseSqlc {
 		}
 	})
 
-	database := &db.DatabaseSqlc{Db: sqlDB, Queries: db.New(sqlDB)}
+	database := &db.DatabaseSqlc{Db: sqlDB, Queries: db.NewQueries(sqlDB)}
 	// The file is empty, so the drop half is a no-op and this is just "run
 	// every migration" — the same schema production boots with.
 	if err := db.ResetDatabase(database); err != nil {

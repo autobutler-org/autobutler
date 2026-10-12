@@ -85,7 +85,7 @@ func IsIndexable(path string) bool {
 // previously indexed, its entry is updated. Callers should call ExtractText
 // first and skip calling this function when the result is empty.
 func UpsertContent(ctx context.Context, sqlDB *sql.DB, serial, relPath, extracted string) error {
-	return db.New(sqlDB).UpsertFileContent(ctx, db.UpsertFileContentParams{
+	return db.NewQueries(sqlDB).UpsertFileContent(ctx, db.UpsertFileContentParams{
 		Serial:    serial,
 		RelPath:   relPath,
 		Extracted: extracted,
@@ -94,7 +94,7 @@ func UpsertContent(ctx context.Context, sqlDB *sql.DB, serial, relPath, extracte
 
 // DeleteContent removes the index entry for a specific file.
 func DeleteContent(ctx context.Context, sqlDB *sql.DB, serial, relPath string) error {
-	return db.New(sqlDB).DeleteFileContent(ctx, db.DeleteFileContentParams{
+	return db.NewQueries(sqlDB).DeleteFileContent(ctx, db.DeleteFileContentParams{
 		Serial:  serial,
 		RelPath: relPath,
 	})
@@ -103,7 +103,7 @@ func DeleteContent(ctx context.Context, sqlDB *sql.DB, serial, relPath string) e
 // DeleteContentBySerial removes all index entries for a storage device.
 // Call this when a device is removed.
 func DeleteContentBySerial(ctx context.Context, sqlDB *sql.DB, serial string) error {
-	return db.New(sqlDB).DeleteFileContentBySerial(ctx, serial)
+	return db.NewQueries(sqlDB).DeleteFileContentBySerial(ctx, serial)
 }
 
 // IndexFile extracts the text of the file at relPath in fsys, the files

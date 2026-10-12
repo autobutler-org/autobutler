@@ -24,7 +24,7 @@ import (
 // resolvePerms is ResolvePerms on a Queries, which may be a transaction's.
 // SQLite has no bitwise-OR aggregate, so the rows come back one by one and
 // are joined here.
-func resolvePerms(ctx context.Context, queries *db.Queries, channelID, userID int64) (Perms, error) {
+func resolvePerms(ctx context.Context, queries db.Querier, channelID, userID int64) (Perms, error) {
 	if userID == 0 {
 		return 0, nil
 	}
@@ -44,7 +44,7 @@ func resolvePerms(ctx context.Context, queries *db.Queries, channelID, userID in
 // caller can't tell the channel exists; a set without required gets
 // ErrForbidden. An admin may manage any channel, never read what is in it,
 // which this function never guards; their set is whatever their rows give.
-func authorize(ctx context.Context, queries *db.Queries, principal accessutil.Principal, channelID int64, required Perms) (db.ChatChannel, Perms, error) {
+func authorize(ctx context.Context, queries db.Querier, principal accessutil.Principal, channelID int64, required Perms) (db.ChatChannel, Perms, error) {
 	channel, err := queries.GetChatChannel(ctx, channelID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return db.ChatChannel{}, 0, ErrChannelNotFound
@@ -67,7 +67,7 @@ func authorize(ctx context.Context, queries *db.Queries, principal accessutil.Pr
 
 // memberRow is the set on the row for an account or a group, 0 when it has
 // none.
-func memberRow(ctx context.Context, queries *db.Queries, channelID, userID, groupID int64) (Perms, error) {
+func memberRow(ctx context.Context, queries db.Querier, channelID, userID, groupID int64) (Perms, error) {
 	rows, err := queries.ListChatChannelMembers(ctx, channelID)
 	if err != nil {
 		return 0, err
@@ -86,7 +86,7 @@ func memberRow(ctx context.Context, queries *db.Queries, channelID, userID, grou
 // caller's, unless the caller holds manage_channel; the creator's row is
 // left to admins, whom the caller has already let through, and to the
 // creator themselves.
-func mayDemote(ctx context.Context, queries *db.Queries, principal accessutil.Principal, channel db.ChatChannel, callerPerms Perms, userID int64, row Perms) error {
+func mayDemote(ctx context.Context, queries db.Querier, principal accessutil.Principal, channel db.ChatChannel, callerPerms Perms, userID int64, row Perms) error {
 	if userID != 0 && channel.CreatedBy.Valid && channel.CreatedBy.Int64 == userID && userID != principal.UserID {
 		return ErrCreatorRow
 	}
@@ -119,7 +119,7 @@ func validate(name, topic string) (string, string, error) {
 }
 
 // ensurePrincipal checks that an account is active or that a group exists.
-func ensurePrincipal(ctx context.Context, queries *db.Queries, userID, groupID int64) error {
+func ensurePrincipal(ctx context.Context, queries db.Querier, userID, groupID int64) error {
 	if userID != 0 {
 		user, err := queries.GetUserByID(ctx, userID)
 		if errors.Is(err, sql.ErrNoRows) || (err == nil && user.Status != authutil.StatusActive) {
@@ -135,7 +135,7 @@ func ensurePrincipal(ctx context.Context, queries *db.Queries, userID, groupID i
 }
 
 // isEveryone reports whether a group is the built-in everyone group.
-func isEveryone(ctx context.Context, queries *db.Queries, groupID int64) (bool, error) {
+func isEveryone(ctx context.Context, queries db.Querier, groupID int64) (bool, error) {
 	group, err := queries.GetGroup(ctx, groupID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
@@ -144,7 +144,7 @@ func isEveryone(ctx context.Context, queries *db.Queries, groupID int64) (bool, 
 }
 
 // isPrivate reports whether everyone has no row on a channel.
-func isPrivate(ctx context.Context, queries *db.Queries, channelID int64) (bool, error) {
+func isPrivate(ctx context.Context, queries db.Querier, channelID int64) (bool, error) {
 	rows, err := queries.ListChatChannelMembers(ctx, channelID)
 	if err != nil {
 		return false, err
@@ -176,7 +176,7 @@ func channelFromRow(row db.ChatChannel, perms Perms, private bool) Channel {
 // memberUsers is every active account a channel's rows reach, with its
 // effective set, by username. The query returns one row per account and
 // membership row; this unions them.
-func memberUsers(ctx context.Context, queries *db.Queries, channelID int64) ([]ResolvedUser, error) {
+func memberUsers(ctx context.Context, queries db.Querier, channelID int64) ([]ResolvedUser, error) {
 	rows, err := queries.ListChatChannelMemberUsers(ctx, channelID)
 	if err != nil {
 		return nil, err
@@ -194,7 +194,7 @@ func memberUsers(ctx context.Context, queries *db.Queries, channelID int64) ([]R
 
 // memberIDs lists the active accounts a channel's rows reach: everyone who
 // sees it.
-func memberIDs(ctx context.Context, queries *db.Queries, channelID int64) ([]int64, error) {
+func memberIDs(ctx context.Context, queries db.Querier, channelID int64) ([]int64, error) {
 	users, err := memberUsers(ctx, queries, channelID)
 	ids := make([]int64, 0, len(users))
 	for _, user := range users {
@@ -208,7 +208,7 @@ func memberIDs(ctx context.Context, queries *db.Queries, channelID int64) ([]int
 // or rotate, and returns the members as they now stand. The ask goes out here
 // rather than waiting on WatchKeyNeeds (#2624), which stays as the fallback
 // for changes that don't come through SetMember or RemoveMember.
-func afterMembershipChange(ctx context.Context, queries *db.Queries, bus *eventbus.Bus, channelID int64, before []int64, dataDir string,
+func afterMembershipChange(ctx context.Context, queries db.Querier, bus *eventbus.Bus, channelID int64, before []int64, dataDir string,
 	kind string, actor int64, payload memberEventPayload) (ListMembersResult, error) {
 	after, err := memberIDs(ctx, queries, channelID)
 	if err != nil {
@@ -241,7 +241,7 @@ func publish(bus *eventbus.Bus, channelID int64, audience []int64) {
 }
 
 // listMembers reads a channel's rows and folds each group's accounts into it.
-func listMembers(ctx context.Context, queries *db.Queries, channelID int64, dataDir string) (ListMembersResult, error) {
+func listMembers(ctx context.Context, queries db.Querier, channelID int64, dataDir string) (ListMembersResult, error) {
 	rows, err := queries.ListChatChannelMembers(ctx, channelID)
 	if err != nil {
 		return ListMembersResult{}, err
@@ -298,8 +298,8 @@ func avatarVersion(dataDir string, userID int64) int64 {
 // while other members remain (#2422). Admins may do that, since they can
 // manage such a channel, and a channel that had no holder before the change
 // is left to them too.
-func keepingAnOwner(ctx context.Context, database *db.DatabaseSqlc, principal accessutil.Principal, channelID int64, change func(*db.Queries) error) error {
-	return db.InTx(ctx, database.Db, func(q *db.Queries) error {
+func keepingAnOwner(ctx context.Context, database *db.DatabaseSqlc, principal accessutil.Principal, channelID int64, change func(db.Querier) error) error {
+	return db.InTx(ctx, database.Db, func(q db.Querier) error {
 		if principal.IsAdmin {
 			return change(q)
 		}
@@ -320,7 +320,7 @@ func keepingAnOwner(ctx context.Context, database *db.DatabaseSqlc, principal ac
 
 // ownerCount is how many active accounts hold manage_channel on a channel,
 // directly or through a group, out of how many members it has.
-func ownerCount(ctx context.Context, queries *db.Queries, channelID int64) (int, int, error) {
+func ownerCount(ctx context.Context, queries db.Querier, channelID int64) (int, int, error) {
 	users, err := memberUsers(ctx, queries, channelID)
 	count := 0
 	for _, user := range users {
@@ -350,7 +350,7 @@ func keysFromRow(row db.UserChatKey) Keys {
 // read_messages on the channel. Admins get no pass here: grants, events and
 // messages are for members, and anyone else, a delegated manager included,
 // gets ErrChannelNotFound.
-func requireMember(ctx context.Context, queries *db.Queries, principal accessutil.Principal, channelID int64) error {
+func requireMember(ctx context.Context, queries db.Querier, principal accessutil.Principal, channelID int64) error {
 	_, err := memberPerms(ctx, queries, principal, channelID)
 	return err
 }
@@ -358,7 +358,7 @@ func requireMember(ctx context.Context, queries *db.Queries, principal accessuti
 // memberPerms is the caller's effective set on a channel they read, which
 // holds read_messages; anyone else, delegated managers and admins included,
 // gets ErrChannelNotFound.
-func memberPerms(ctx context.Context, queries *db.Queries, principal accessutil.Principal, channelID int64) (Perms, error) {
+func memberPerms(ctx context.Context, queries db.Querier, principal accessutil.Principal, channelID int64) (Perms, error) {
 	perms, err := resolvePerms(ctx, queries, channelID, principal.UserID)
 	if err != nil {
 		return 0, err
@@ -370,7 +370,7 @@ func memberPerms(ctx context.Context, queries *db.Queries, principal accessutil.
 }
 
 // callerSignKey is the caller's published Ed25519 key, or ErrKeysNotFound.
-func callerSignKey(ctx context.Context, queries *db.Queries, principal accessutil.Principal) ([]byte, error) {
+func callerSignKey(ctx context.Context, queries db.Querier, principal accessutil.Principal) ([]byte, error) {
 	row, err := queries.GetUserChatPublicKeys(ctx, principal.UserID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrKeysNotFound
@@ -397,7 +397,7 @@ func grantSigned(signKey []byte, channelID int64, g GrantUpload) bool {
 }
 
 // loadKeyState reads a channel's versions, members and grants.
-func loadKeyState(ctx context.Context, queries *db.Queries, channelID int64) (keyState, error) {
+func loadKeyState(ctx context.Context, queries db.Querier, channelID int64) (keyState, error) {
 	keys, err := queries.ListChatChannelKeys(ctx, channelID)
 	if err != nil {
 		return keyState{}, err
@@ -451,7 +451,7 @@ func loadKeyState(ctx context.Context, queries *db.Queries, channelID int64) (ke
 
 // notifyChannel publishes chat_key_needed for one channel when it has pending
 // grants or needs rotating, and reports whether it did.
-func notifyChannel(ctx context.Context, queries *db.Queries, bus *eventbus.Bus, channelID int64) (bool, error) {
+func notifyChannel(ctx context.Context, queries db.Querier, bus *eventbus.Bus, channelID int64) (bool, error) {
 	state, err := loadKeyState(ctx, queries, channelID)
 	if err != nil {
 		return false, err
@@ -469,7 +469,7 @@ func notifyChannel(ctx context.Context, queries *db.Queries, bus *eventbus.Bus, 
 
 // insertGrant stores a grant unless the recipient already has that version,
 // and returns whichever is stored.
-func insertGrant(ctx context.Context, queries *db.Queries, channelID int64, g GrantUpload, granter int64, signKey []byte) (db.ChatKeyGrant, error) {
+func insertGrant(ctx context.Context, queries db.Querier, channelID int64, g GrantUpload, granter int64, signKey []byte) (db.ChatKeyGrant, error) {
 	recipient := sql.NullInt64{Int64: g.UserID, Valid: true}
 	err := queries.InsertChatKeyGrant(ctx, db.InsertChatKeyGrantParams{
 		ChannelID:      channelID,
@@ -488,7 +488,7 @@ func insertGrant(ctx context.Context, queries *db.Queries, channelID int64, g Gr
 
 // recordEvent writes a system event with a JSON payload, for the actor to
 // sign.
-func recordEvent(ctx context.Context, queries *db.Queries, channelID int64, kind string, actor int64, payload any) (ChannelEvent, error) {
+func recordEvent(ctx context.Context, queries db.Querier, channelID int64, kind string, actor int64, payload any) (ChannelEvent, error) {
 	text, err := json.Marshal(payload)
 	if err != nil {
 		return ChannelEvent{}, err
@@ -506,7 +506,7 @@ func recordEvent(ctx context.Context, queries *db.Queries, channelID int64, kind
 }
 
 // memberPayload describes the account or group a member event is about.
-func memberPayload(ctx context.Context, queries *db.Queries, userID, groupID int64, perms Perms) (memberEventPayload, error) {
+func memberPayload(ctx context.Context, queries db.Querier, userID, groupID int64, perms Perms) (memberEventPayload, error) {
 	payload := memberEventPayload{UserID: userID, GroupID: groupID, Permissions: perms}
 	if userID != 0 {
 		user, err := queries.GetUserByID(ctx, userID)
@@ -585,7 +585,7 @@ func messageFromRow(row db.ChatMessage) Message {
 
 // publishMessage tells a channel's readers about a message: the whole row
 // when it was created, only its id when deleted.
-func publishMessage(ctx context.Context, queries *db.Queries, bus *eventbus.Bus, kind eventbus.EventKind, message Message) error {
+func publishMessage(ctx context.Context, queries db.Querier, bus *eventbus.Bus, kind eventbus.EventKind, message Message) error {
 	if bus == nil {
 		return nil
 	}
@@ -603,7 +603,7 @@ func publishMessage(ctx context.Context, queries *db.Queries, bus *eventbus.Bus,
 
 // readers is the accounts holding read_messages on a channel, the audience of
 // anything carrying ciphertext: never a delegated manager (#2418).
-func readers(ctx context.Context, queries *db.Queries, channelID int64) ([]int64, error) {
+func readers(ctx context.Context, queries db.Querier, channelID int64) ([]int64, error) {
 	users, err := memberUsers(ctx, queries, channelID)
 	if err != nil {
 		return nil, err
@@ -621,7 +621,7 @@ func readers(ctx context.Context, queries *db.Queries, channelID int64) ([]int64
 // the messages after its read marker that someone else wrote and nobody
 // deleted. It covers every channel, readable or not; callers keep only the
 // channels the account reads.
-func unreadCounts(ctx context.Context, queries *db.Queries, userID int64) (map[int64]int64, error) {
+func unreadCounts(ctx context.Context, queries db.Querier, userID int64) (map[int64]int64, error) {
 	rows, err := queries.CountChatUnreadForUser(ctx, userID)
 	counts := make(map[int64]int64, len(rows))
 	for _, row := range rows {
@@ -631,7 +631,7 @@ func unreadCounts(ctx context.Context, queries *db.Queries, userID int64) (map[i
 }
 
 // attachUnread sets UnreadCount on each channel the account reads.
-func attachUnread(ctx context.Context, queries *db.Queries, userID int64, channels []Channel) error {
+func attachUnread(ctx context.Context, queries db.Querier, userID int64, channels []Channel) error {
 	unread, err := unreadCounts(ctx, queries, userID)
 	if err != nil {
 		return err
@@ -647,7 +647,7 @@ func attachUnread(ctx context.Context, queries *db.Queries, userID int64, channe
 // readableMessage is a message and the caller's set on its channel, or
 // ErrMessageNotFound when either the message doesn't exist or the caller
 // doesn't hold read_messages there.
-func readableMessage(ctx context.Context, queries *db.Queries, principal accessutil.Principal, messageID int64) (db.ChatMessage, Perms, error) {
+func readableMessage(ctx context.Context, queries db.Querier, principal accessutil.Principal, messageID int64) (db.ChatMessage, Perms, error) {
 	message, err := queries.GetChatMessage(ctx, messageID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return db.ChatMessage{}, 0, ErrMessageNotFound
@@ -675,7 +675,7 @@ func reactionFromRow(row db.ChatReaction) Reaction {
 
 // attachReactions fills in the reactions of messages, one page of a
 // channel's messages sorted by id.
-func attachReactions(ctx context.Context, queries *db.Queries, channelID int64, messages []Message) error {
+func attachReactions(ctx context.Context, queries db.Querier, channelID int64, messages []Message) error {
 	if len(messages) == 0 {
 		return nil
 	}
@@ -696,7 +696,7 @@ func attachReactions(ctx context.Context, queries *db.Queries, channelID int64, 
 
 // publishReaction tells a channel's readers a reaction on messageID was added,
 // with the stored row, or removed, with reaction nil.
-func publishReaction(ctx context.Context, queries *db.Queries, bus *eventbus.Bus, channelID, messageID, reactionID int64, reaction *Reaction) error {
+func publishReaction(ctx context.Context, queries db.Querier, bus *eventbus.Bus, channelID, messageID, reactionID int64, reaction *Reaction) error {
 	if bus == nil {
 		return nil
 	}

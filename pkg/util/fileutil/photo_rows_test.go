@@ -20,7 +20,7 @@ import (
 )
 
 // photoOwner creates an account to own favorites and albums.
-func photoOwner(t *testing.T, q *db.Queries, username string) int64 {
+func photoOwner(t *testing.T, q db.Querier, username string) int64 {
 	t.Helper()
 	user, err := q.CreateUser(context.Background(), db.CreateUserParams{Username: username, PasswordHash: "h", RecoveryPhraseHash: "r"})
 	if err != nil {
@@ -30,7 +30,7 @@ func photoOwner(t *testing.T, q *db.Queries, username string) int64 {
 }
 
 // favoriteKeys lists an account's favorites as "serial|path", sorted.
-func favoriteKeys(t *testing.T, q *db.Queries, userID int64) []string {
+func favoriteKeys(t *testing.T, q db.Querier, userID int64) []string {
 	t.Helper()
 	rows, err := q.ListFavorites(context.Background(), userID)
 	if err != nil {
@@ -45,7 +45,7 @@ func favoriteKeys(t *testing.T, q *db.Queries, userID int64) []string {
 }
 
 // albumKeys lists an album's items as "serial|path", sorted.
-func albumKeys(t *testing.T, q *db.Queries, albumID int64) []string {
+func albumKeys(t *testing.T, q db.Querier, albumID int64) []string {
 	t.Helper()
 	rows, err := q.ListAlbumItems(context.Background(), albumID)
 	if err != nil {
@@ -59,7 +59,7 @@ func albumKeys(t *testing.T, q *db.Queries, albumID int64) []string {
 	return keys
 }
 
-func favorite(t *testing.T, q *db.Queries, userID int64, serial, relPath string) {
+func favorite(t *testing.T, q db.Querier, userID int64, serial, relPath string) {
 	t.Helper()
 	if _, err := favoritesutil.ToggleFavorite(context.Background(), q, userID, serial, relPath); err != nil {
 		t.Fatalf("ToggleFavorite(%q): %v", relPath, err)
@@ -238,7 +238,7 @@ func TestDeleteFilesForgetsFavoritesAndAlbumItems(t *testing.T) {
 }
 
 // hashKeys lists every stored photo hash as "serial|path", sorted.
-func hashKeys(t *testing.T, q *db.Queries) []string {
+func hashKeys(t *testing.T, q db.Querier) []string {
 	t.Helper()
 	rows, err := q.ListNearDuplicates(context.Background())
 	if err != nil {
@@ -252,7 +252,7 @@ func hashKeys(t *testing.T, q *db.Queries) []string {
 	return keys
 }
 
-func hashPhoto(t *testing.T, q *db.Queries, serial, relPath string) {
+func hashPhoto(t *testing.T, q db.Querier, serial, relPath string) {
 	t.Helper()
 	if err := q.UpsertPhotoHash(context.Background(), db.UpsertPhotoHashParams{
 		DeviceSerial: serial,

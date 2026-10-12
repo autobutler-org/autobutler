@@ -18,7 +18,7 @@ var statusKey, statusRecoveryKey = authKeyOf(5), authKeyOf(6)
 
 // mkStatusUser creates an account with statusKey and statusRecoveryKey, then
 // moves it to status.
-func mkStatusUser(t *testing.T, q *db.Queries, name, status string) {
+func mkStatusUser(t *testing.T, q db.Querier, name, status string) {
 	t.Helper()
 	ctx := context.Background()
 	keyHash, err := authutil.HashKey(statusKey)
@@ -35,7 +35,7 @@ func mkStatusUser(t *testing.T, q *db.Queries, name, status string) {
 	setStatus(t, q, name, authutil.StatusActive, status)
 }
 
-func setStatus(t *testing.T, q *db.Queries, name, from, to string) {
+func setStatus(t *testing.T, q db.Querier, name, from, to string) {
 	t.Helper()
 	if from == to {
 		return

@@ -27,7 +27,7 @@ func setupFounder(t *testing.T, database *db.DatabaseSqlc, files vfs.VFS) {
 
 // request asks for username with the auth key of password and the recovery
 // key of "<username>-phrase".
-func request(q *db.Queries, username, password string) (authutil.RequestAccountResult, error) {
+func request(q db.Querier, username, password string) (authutil.RequestAccountResult, error) {
 	return authutil.RequestAccount(context.Background(), q, authutil.RequestAccountParams{
 		Username:        username,
 		AuthKey:         dbtest.AuthKey(password),

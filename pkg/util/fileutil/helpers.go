@@ -22,7 +22,7 @@ func dbRelPath(p string) string {
 // movePhotoRows points favorites and album items at a moved file, or at
 // everything under a moved folder. A row whose destination already exists is
 // left behind by the update and dropped afterwards: the file it named is gone.
-func movePhotoRows(ctx context.Context, q *db.Queries, oldSerial, oldPath, newSerial, newPath string) error {
+func movePhotoRows(ctx context.Context, q db.Querier, oldSerial, oldPath, newSerial, newPath string) error {
 	oldPath, newPath = dbRelPath(oldPath), dbRelPath(newPath)
 	if oldPath == "" || newPath == "" || (oldSerial == newSerial && oldPath == newPath) {
 		return nil

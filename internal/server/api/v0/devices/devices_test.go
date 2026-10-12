@@ -19,13 +19,13 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func newDevicesTestDB(t *testing.T) (*sql.DB, *db.Queries) {
+func newDevicesTestDB(t *testing.T) (*sql.DB, db.Querier) {
 	t.Helper()
 	database := dbtest.NewDB(t)
 	return database.Db, database.Queries
 }
 
-func newDevicesEngine(t *testing.T, sqlDB *sql.DB, queries *db.Queries) *gin.Engine {
+func newDevicesEngine(t *testing.T, sqlDB *sql.DB, queries db.Querier) *gin.Engine {
 	t.Helper()
 	deps := deputil.NewDependencies().WithDatabase(&db.DatabaseSqlc{Db: sqlDB, Queries: queries})
 	gin.SetMode(gin.TestMode)

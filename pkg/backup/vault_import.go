@@ -14,7 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func ImportVault(ctx context.Context, liveTx *db.Queries, liveKey []byte, recoveryPassword string, backupDir string) (*VaultImportResult, error) {
+func ImportVault(ctx context.Context, liveTx db.Querier, liveKey []byte, recoveryPassword string, backupDir string) (*VaultImportResult, error) {
 	dbPath := filepath.Join(backupDir, backupVaultFilename)
 	if _, err := os.Stat(dbPath); err != nil {
 		return nil, fmt.Errorf("vault_backup.db not found on device: %w", err)

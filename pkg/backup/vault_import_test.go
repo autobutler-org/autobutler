@@ -12,7 +12,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func setupLiveAndBackup(t *testing.T) (liveDB *sql.DB, liveQueries *db.Queries, liveKey []byte, backupDir string) {
+func setupLiveAndBackup(t *testing.T) (liveDB *sql.DB, liveQueries db.Querier, liveKey []byte, backupDir string) {
 	t.Helper()
 
 	masterPw := "master-pw"

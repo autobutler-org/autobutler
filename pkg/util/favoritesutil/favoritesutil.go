@@ -27,7 +27,7 @@ var ErrFavoritesNameTaken = errors.New("a user album named Favorites blocks the 
 // it if it doesn't exist. Every account has its own. Safe to call concurrently
 // — if two goroutines race to create the album, the loser re-fetches the
 // winner's row.
-func EnsureFavoritesAlbum(ctx context.Context, q *db.Queries, userID int64) (db.PhotoAlbum, error) {
+func EnsureFavoritesAlbum(ctx context.Context, q db.Querier, userID int64) (db.PhotoAlbum, error) {
 	album, err := q.GetFavoritesAlbum(ctx, userID)
 	if err == nil {
 		return album, nil
@@ -55,7 +55,7 @@ func EnsureFavoritesAlbum(ctx context.Context, q *db.Queries, userID int64) (db.
 
 // ToggleFavorite adds or removes a photo from the account's favorites and syncs
 // its Favorites smart album. Returns true if the photo is now favorited.
-func ToggleFavorite(ctx context.Context, q *db.Queries, userID int64, deviceSerial, relPath string) (bool, error) {
+func ToggleFavorite(ctx context.Context, q db.Querier, userID int64, deviceSerial, relPath string) (bool, error) {
 	isFav, err := q.IsFavorite(ctx, db.IsFavoriteParams{
 		UserID:       userID,
 		DeviceSerial: deviceSerial,

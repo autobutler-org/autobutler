@@ -86,7 +86,7 @@ const MaxBufferedSourceBytes int64 = 64 << 20
 // entry: which file, at which size, and how stale the entry may be.
 type PrepareParams struct {
 	// Queries reads the user's server-side rotation for the photo.
-	Queries *db.Queries
+	Queries db.Querier
 	// Serial is the device serial the file belongs to, empty for local files.
 	Serial string
 	// RelPath is the path used for database lookups (no leading slash).
@@ -119,7 +119,7 @@ type GenerateParams struct {
 	// Ctx bounds the namespace reads and the video probe.
 	Ctx context.Context
 	// Queries stores a photo's hashes for duplicate detection. Nil skips them.
-	Queries *db.Queries
+	Queries db.Querier
 	// FS is the namespace of the device the file is on.
 	FS vfs.VFS
 	// Serial and RelPath name the file: RelPath is its path in FS, and both
@@ -145,7 +145,7 @@ type GenerateParams struct {
 type GenerateFromReaderParams struct {
 	// Queries stores the photo's hashes for duplicate detection. Nil skips
 	// them, as an archive entry does: it is not a library photo.
-	Queries *db.Queries
+	Queries db.Querier
 	// Serial and RelPath identify the photo the hashes belong to.
 	Serial  string
 	RelPath string
@@ -172,7 +172,7 @@ type GenerateResult struct {
 // JPEG, long edge 400, rotation applied.
 type StoreClientThumbnailParams struct {
 	// Queries stores a photo's hashes for duplicate detection. Nil skips them.
-	Queries *db.Queries
+	Queries db.Querier
 	// Serial and RelPath name the file, as a request spells them.
 	Serial  string
 	RelPath string
@@ -194,7 +194,7 @@ type StoreClientThumbnailResult struct {
 // thumbnail a client uploaded for it.
 type FromClientThumbnailParams struct {
 	// Queries reads the user's rotation for the photo.
-	Queries *db.Queries
+	Queries db.Querier
 	// Serial and RelPath identify the file.
 	Serial  string
 	RelPath string
@@ -217,7 +217,7 @@ type FromClientThumbnailResult struct {
 // StoreClientThumbnailsParams attaches the "thumbnail" part of a multipart
 // body to an existing file. Other parts are skipped.
 type StoreClientThumbnailsParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// Registry holds one namespace per device; the file is found in Serial's.
 	Registry vfs.Registry
 	// Serial and RelPath name the file, as the request did.

@@ -91,7 +91,7 @@ type VerifyResult struct {
 }
 
 type VaultExportParams struct {
-	Queries          *db.Queries
+	Queries          db.Querier
 	LiveKey          []byte
 	RecoveryPassword string
 }
@@ -129,14 +129,14 @@ type SnapshotBackupParams struct {
 	IOSemaphore *iosemutil.Semaphore // throttles file copies to yield to interactive requests
 	// Queries is the database a completed snapshot is recorded in for
 	// [LastSnapshot]. Nil records nothing.
-	Queries *db.Queries
+	Queries db.Querier
 }
 
 type SyncWorker struct {
 	mu       sync.Mutex
 	bus      *eventbus.Bus
 	registry vfs.Registry
-	queries  *db.Queries
+	queries  db.Querier
 	unsub    func()
 	cancel   context.CancelFunc
 	running  bool
@@ -153,7 +153,7 @@ type SyncWorkerParams struct {
 	// Registry holds the internal drive's files namespace and the
 	// default-storage drive's, the two live sync copies between.
 	Registry    vfs.Registry
-	Queries     *db.Queries
+	Queries     db.Querier
 	IOSemaphore *iosemutil.Semaphore // optional; throttles background file copies
 }
 

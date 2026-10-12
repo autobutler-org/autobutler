@@ -23,7 +23,7 @@ func callerID(c *gin.Context) (int64, error) {
 
 // callerQueries returns the database the /settings/me routes keep an
 // account's settings in.
-func callerQueries(c *gin.Context) (*db.Queries, error) {
+func callerQueries(c *gin.Context) (db.Querier, error) {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok || deps.Database() == nil {
 		return nil, errors.New("database unavailable")

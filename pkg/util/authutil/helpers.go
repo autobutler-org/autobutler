@@ -25,7 +25,7 @@ import (
 // ensureAnotherActiveAdmin returns ErrLastAdmin when target is the only active
 // admin, so demoting, disabling or deleting it would leave the Quark with none
 // (#1909). Any other target passes, including a non-admin or a disabled admin.
-func ensureAnotherActiveAdmin(ctx context.Context, queries *db.Queries, target db.User) error {
+func ensureAnotherActiveAdmin(ctx context.Context, queries db.Querier, target db.User) error {
 	if target.IsAdmin == 0 || target.Status != StatusActive {
 		return nil
 	}
@@ -83,7 +83,7 @@ func homeRelPath(username string) string {
 // Written straight to the table rather than through accessutil: that grants on
 // behalf of a caller, and the caller here is an admin or the Quark itself,
 // neither of which needs a row.
-func grantHome(ctx context.Context, queries *db.Queries, username string, userID int64) error {
+func grantHome(ctx context.Context, queries db.Querier, username string, userID int64) error {
 	if err := queries.SetUserPathAccess(ctx, db.SetUserPathAccessParams{
 		RelPath: homeRelPath(username),
 		UserID:  sql.NullInt64{Int64: userID, Valid: true},
@@ -107,7 +107,7 @@ func grantHome(ctx context.Context, queries *db.Queries, username string, userID
 // admin may make users/<name> and fill it before the account exists, and
 // whoever gets that name gets that folder. madeDir is empty for an adopted
 // home, so a failed creation never removes a folder it did not make.
-func createHome(ctx context.Context, queries *db.Queries, files vfs.VFS, username string, userID int64) (relPath, madeDir string, err error) {
+func createHome(ctx context.Context, queries db.Querier, files vfs.VFS, username string, userID int64) (relPath, madeDir string, err error) {
 	// The username is validated, so it is one path segment and cannot climb
 	// out of the files root.
 	home := homeRelPath(username)
@@ -228,7 +228,7 @@ var errUpgradeFailed error = serverutil.NewHttpError(http.StatusInternalServerEr
 // password hash in the same write. A write that matches no row is a second
 // sign-in having upgraded the account first. Every failure is logged and
 // returned as errUpgradeFailed, so the cause stays out of the response.
-func upgradeToAuthKey(ctx context.Context, queries *db.Queries, user db.User, authKey string, saltSecret func() ([]byte, error)) error {
+func upgradeToAuthKey(ctx context.Context, queries db.Querier, user db.User, authKey string, saltSecret func() ([]byte, error)) error {
 	err := func() error {
 		salt, err := deterministicSalt(saltSecret, user.Username)
 		if err != nil {
@@ -307,7 +307,7 @@ var errNotAKey = errors.New("only the base64 of 32 bytes is hashed as a key")
 // next check is fast (#2765). The write matches only the hash that was just
 // verified, so a credential changed in the meantime is left alone, and a
 // failed one is logged, not returned: the key was right.
-func checkAuthKey(ctx context.Context, queries *db.Queries, user db.User, authKey string) bool {
+func checkAuthKey(ctx context.Context, queries db.Querier, user db.User, authKey string) bool {
 	if !CheckPassword(authKey, user.AuthKeyHash) {
 		return false
 	}
@@ -334,7 +334,7 @@ func checkAuthKey(ctx context.Context, queries *db.Queries, user db.User, authKe
 //
 // A lookup the database could not answer is ErrUnavailable. It is not a wrong
 // guess, so it is not counted: a database error must not lock an account out.
-func guardedAccount(ctx context.Context, queries *db.Queries, guard *ratelimitutil.LoginGuard, attempt ratelimitutil.LoginAttempt, authKey, password string) (db.User, error) {
+func guardedAccount(ctx context.Context, queries db.Querier, guard *ratelimitutil.LoginGuard, attempt ratelimitutil.LoginAttempt, authKey, password string) (db.User, error) {
 	if wait := guard.Check(attempt).RetryAfter; wait > 0 {
 		return db.User{}, &TooManyAttemptsError{RetryAfter: wait}
 	}

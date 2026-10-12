@@ -112,7 +112,7 @@ func BufferSource(r io.Reader) (io.ReadSeeker, error) {
 
 // storeHashes records a photo's hashes for duplicate detection. A failure is
 // logged rather than returned: it must not cost the caller its thumbnail.
-func storeHashes(queries *db.Queries, serial, relPath, dhash string, source io.ReadSeeker) {
+func storeHashes(queries db.Querier, serial, relPath, dhash string, source io.ReadSeeker) {
 	if _, err := photoutil.StorePhotoHashes(photoutil.StorePhotoHashesParams{
 		Ctx: context.Background(), Queries: queries,
 		Serial: serial, RelPath: relPath, DHash: dhash, Source: source,

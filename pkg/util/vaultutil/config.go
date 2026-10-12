@@ -18,7 +18,7 @@ const defaultAutoLockSeconds = 300
 
 // SetupParams initializes a vault with its first master password.
 type SetupParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	// Session is unlocked on success, so setup leaves the vault usable.
 	Session        *vaultcrypto.VaultSession
 	MasterPassword string
@@ -33,7 +33,7 @@ type SetupResult struct {
 // UnlockParams derives the vault key from a master password and holds it in
 // the session until the auto-lock timeout.
 type UnlockParams struct {
-	Queries        *db.Queries
+	Queries        db.Querier
 	Session        *vaultcrypto.VaultSession
 	MasterPassword string
 }
@@ -182,7 +182,7 @@ func ChangePassword(ctx context.Context, params ChangePasswordParams) (ChangePas
 	// Re-encrypt all entries inside a transaction so a partial failure
 	// doesn't leave some entries on the old key and some on the new.
 	reEncrypted := 0
-	err = db.InTx(ctx, params.VaultDB.Db, func(qtx *db.Queries) error {
+	err = db.InTx(ctx, params.VaultDB.Db, func(qtx db.Querier) error {
 		entries, err := qtx.ListAllVaultEntriesForReEncrypt(ctx)
 		if err != nil {
 			return fmt.Errorf("list entries for re-encrypt: %w", err)

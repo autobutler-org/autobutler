@@ -326,7 +326,7 @@ func TestRecover_WrongPhrase(t *testing.T) {
 }
 
 // createUserWithKeys adds a second account the way Setup stores the first.
-func createUserWithKeys(t *testing.T, queries *db.Queries, username, password, phrase string) {
+func createUserWithKeys(t *testing.T, queries db.Querier, username, password, phrase string) {
 	t.Helper()
 	keyHash, err := authutil.HashKey(dbtest.AuthKey(password))
 	if err != nil {

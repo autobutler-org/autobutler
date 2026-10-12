@@ -97,7 +97,8 @@ func ValidateThemeColor(themeColor string) error {
 // parsed. Binding anyway would start the Quark on defaults: account requests
 // open, and a new salt secret.
 func Bind(database *db.DatabaseSqlc) error {
-	store.Store(database.Queries)
+	queries := database.Queries
+	store.Store(&queries)
 	if err := importFile(settingsPath()); err != nil {
 		store.Store(nil)
 		return err
@@ -306,7 +307,7 @@ func ResetForTesting(path string) {
 		panic(fmt.Sprintf("settingsutil: open test database: %v", err))
 	}
 	testDB = sqlDB
-	database := &db.DatabaseSqlc{Db: sqlDB, Queries: db.New(sqlDB)}
+	database := &db.DatabaseSqlc{Db: sqlDB, Queries: db.NewQueries(sqlDB)}
 	// On a new file this only runs the migrations, and on one an earlier call
 	// made it keeps the settings, as every reset does.
 	if err := db.ResetDatabase(database); err != nil {

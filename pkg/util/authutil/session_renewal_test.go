@@ -30,14 +30,14 @@ import (
 // SQLite's canonical UTC format, so that sorts correctly at any resolution --
 // the day-either-side margin these cases use is no longer required, only
 // habit.
-func newRenewalTestDB(t *testing.T) (*sql.DB, *db.Queries) {
+func newRenewalTestDB(t *testing.T) (*sql.DB, db.Querier) {
 	t.Helper()
 	database := dbtest.NewDB(t)
 	return database.Db, database.Queries
 }
 
 // newSignedInUser sets up the first user and returns their raw session token.
-func newSignedInUser(t *testing.T, sqlDB *sql.DB, queries *db.Queries) string {
+func newSignedInUser(t *testing.T, sqlDB *sql.DB, queries db.Querier) string {
 	t.Helper()
 	res, err := authutil.Setup(context.Background(), authutil.SetupParams{
 		Database: &db.DatabaseSqlc{Db: sqlDB, Queries: queries},

@@ -53,7 +53,7 @@ func folderRelPath(name string) string {
 // grantFolder gives a group write on its folder: one row, so membership alone
 // decides who reaches it. Written straight to the table for the reason
 // authutil.grantHome gives.
-func grantFolder(ctx context.Context, queries *db.Queries, name string, groupID int64) error {
+func grantFolder(ctx context.Context, queries db.Querier, name string, groupID int64) error {
 	if err := queries.SetGroupPathAccess(ctx, db.SetGroupPathAccessParams{
 		RelPath: folderRelPath(name),
 		GroupID: sql.NullInt64{Int64: groupID, Valid: true},
@@ -67,7 +67,7 @@ func grantFolder(ctx context.Context, queries *db.Queries, name string, groupID 
 // createFolder makes a group's folder in files and grants it. An existing
 // folder is adopted; madeDir is the directory this call made, empty for an
 // adopted one, so a caller whose transaction fails removes only that.
-func createFolder(ctx context.Context, queries *db.Queries, files vfs.VFS, name string, groupID int64) (madeDir string, err error) {
+func createFolder(ctx context.Context, queries db.Querier, files vfs.VFS, name string, groupID int64) (madeDir string, err error) {
 	// The name is validated, so it is one path segment.
 	rel := folderRelPath(name)
 	made, err := authutil.MakeFolder(ctx, files, rel)
@@ -145,7 +145,7 @@ func renameFolder(ctx context.Context, params RenameGroupParams, files vfs.VFS, 
 
 // changeableGroup loads a group an admin may change: ErrGroupNotFound when
 // there is none, ErrBuiltinGroup when it is everyone.
-func changeableGroup(ctx context.Context, queries *db.Queries, groupID int64) (db.Group, error) {
+func changeableGroup(ctx context.Context, queries db.Querier, groupID int64) (db.Group, error) {
 	group, err := queries.GetGroup(ctx, groupID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return db.Group{}, ErrGroupNotFound

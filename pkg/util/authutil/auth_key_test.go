@@ -25,7 +25,7 @@ func authKeyOf(fill byte) string {
 	return base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{fill}, 32))
 }
 
-func saltOf(t *testing.T, queries *db.Queries, username string) authutil.GetSaltResult {
+func saltOf(t *testing.T, queries db.Querier, username string) authutil.GetSaltResult {
 	t.Helper()
 	result, err := authutil.GetSalt(context.Background(), queries, authutil.GetSaltParams{Username: username, SaltSecret: saltSecret})
 	if err != nil {
@@ -34,12 +34,12 @@ func saltOf(t *testing.T, queries *db.Queries, username string) authutil.GetSalt
 	return result
 }
 
-func login(queries *db.Queries, username, authKey string) error {
+func login(queries db.Querier, username, authKey string) error {
 	_, err := authutil.Login(context.Background(), queries, authutil.LoginParams{Username: username, AuthKey: authKey})
 	return err
 }
 
-func userRow(t *testing.T, queries *db.Queries, username string) db.User {
+func userRow(t *testing.T, queries db.Querier, username string) db.User {
 	t.Helper()
 	user, err := queries.GetUserByUsername(context.Background(), username)
 	if err != nil {
@@ -61,7 +61,7 @@ func setupAda(t *testing.T) *db.DatabaseSqlc {
 
 // addLegacy adds "old", an account from before auth keys: the hashes of the
 // password "old-password" and the phrase "old-phrase", and no keys.
-func addLegacy(t *testing.T, queries *db.Queries) {
+func addLegacy(t *testing.T, queries db.Querier) {
 	t.Helper()
 	if _, err := queries.CreateUser(context.Background(), db.CreateUserParams{Username: "old", PasswordHash: dbtest.BcryptHash(t, "old-password"), RecoveryPhraseHash: dbtest.BcryptHash(t, "old-phrase")}); err != nil {
 		t.Fatal(err)
@@ -400,7 +400,7 @@ func TestRecover_NewAuthKey(t *testing.T) {
 // addBcryptKeyed adds username, an account whose auth key and recovery key
 // were stored before keys took SHA-256 (#2765): the bcrypt hashes of
 // authKeyOf(3) and authKeyOf(4). It returns the auth key hash it stored.
-func addBcryptKeyed(t *testing.T, queries *db.Queries, username string) string {
+func addBcryptKeyed(t *testing.T, queries db.Querier, username string) string {
 	t.Helper()
 	hash := dbtest.BcryptHash(t, authKeyOf(3))
 	if _, err := queries.CreateUser(context.Background(), db.CreateUserParams{Username: username, AuthKeyHash: hash, AuthSalt: "AAAAAAAAAAAAAAAAAAAAAA==", RecoveryKeyHash: dbtest.BcryptHash(t, authKeyOf(4))}); err != nil {

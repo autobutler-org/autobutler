@@ -24,7 +24,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func newMiddlewareTestDB(t *testing.T) (*sql.DB, *db.Queries) {
+func newMiddlewareTestDB(t *testing.T) (*sql.DB, db.Querier) {
 	t.Helper()
 	database := dbtest.NewDB(t)
 	return database.Db, database.Queries

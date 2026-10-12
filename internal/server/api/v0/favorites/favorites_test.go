@@ -21,13 +21,13 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func newFavoritesTestDB(t *testing.T) (*sql.DB, *db.Queries) {
+func newFavoritesTestDB(t *testing.T) (*sql.DB, db.Querier) {
 	t.Helper()
 	database := dbtest.NewDB(t)
 	return database.Db, database.Queries
 }
 
-func newFavoritesEngine(t *testing.T, sqlDB *sql.DB, queries *db.Queries) *gin.Engine {
+func newFavoritesEngine(t *testing.T, sqlDB *sql.DB, queries db.Querier) *gin.Engine {
 	t.Helper()
 	deps := deputil.NewDependencies().WithDatabase(&db.DatabaseSqlc{Db: sqlDB, Queries: queries})
 	founder, err := queries.CreateUser(context.Background(), db.CreateUserParams{Username: "founder", PasswordHash: "h", RecoveryPhraseHash: "r"})

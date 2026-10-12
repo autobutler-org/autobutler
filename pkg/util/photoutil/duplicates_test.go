@@ -16,7 +16,7 @@ import (
 
 type hashRow struct{ serial, path, dhash, content string }
 
-func seedHashes(t *testing.T, q *db.Queries, rows []hashRow) {
+func seedHashes(t *testing.T, q db.Querier, rows []hashRow) {
 	t.Helper()
 	for _, row := range rows {
 		if err := q.UpsertPhotoHash(context.Background(), db.UpsertPhotoHashParams{

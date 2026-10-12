@@ -12,7 +12,7 @@ import (
 // ListFoldersParams lists the vault's folders. Folder names are stored in the
 // clear, so no key is needed.
 type ListFoldersParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 }
 
 // ListFoldersResult carries the folders in storage order.
@@ -22,7 +22,7 @@ type ListFoldersResult struct {
 
 // CreateFolderParams creates one folder.
 type CreateFolderParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	Fields  FolderFields
 }
 
@@ -33,7 +33,7 @@ type CreateFolderResult struct {
 
 // UpdateFolderParams renames or re-parents one folder.
 type UpdateFolderParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	ID      int64
 	Fields  FolderFields
 }
@@ -45,7 +45,7 @@ type UpdateFolderResult struct {
 
 // DeleteFolderParams removes one folder.
 type DeleteFolderParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	ID      int64
 }
 

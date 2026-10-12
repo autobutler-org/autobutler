@@ -152,7 +152,7 @@ func TestGenerateFromReaderRejectsUndecodableSource(t *testing.T) {
 }
 
 // photoRow reads the one photo_hashes row a test expects.
-func photoRow(t *testing.T, q *db.Queries) db.ListNearDuplicatesRow {
+func photoRow(t *testing.T, q db.Querier) db.ListNearDuplicatesRow {
 	t.Helper()
 	rows, err := q.ListNearDuplicates(context.Background())
 	if err != nil {

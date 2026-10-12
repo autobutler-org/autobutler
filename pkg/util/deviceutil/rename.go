@@ -17,7 +17,7 @@ type RenameParams struct {
 	// Ctx bounds the write.
 	Ctx context.Context
 	// Queries holds the device_names rows.
-	Queries *db.Queries
+	Queries db.Querier
 	// Serial identifies the device, empty for the internal one.
 	Serial string
 	// Name is the requested display name, before trimming.

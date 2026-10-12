@@ -19,7 +19,7 @@ import (
 
 // addUser makes an account, which a user_settings row needs, and returns its
 // id.
-func addUser(t *testing.T, queries *db.Queries, username string) int64 {
+func addUser(t *testing.T, queries db.Querier, username string) int64 {
 	t.Helper()
 	user, err := queries.CreateUser(context.Background(), db.CreateUserParams{Username: username, PasswordHash: "h", RecoveryPhraseHash: "r"})
 	if err != nil {
@@ -28,7 +28,7 @@ func addUser(t *testing.T, queries *db.Queries, username string) int64 {
 	return user.ID
 }
 
-func save(t *testing.T, queries *db.Queries, userID int64, settings usersettingsutil.Settings) {
+func save(t *testing.T, queries db.Querier, userID int64, settings usersettingsutil.Settings) {
 	t.Helper()
 	saved, err := usersettingsutil.Save(context.Background(), usersettingsutil.SaveParams{Queries: queries, UserID: userID, Settings: settings})
 	if err != nil || !reflect.DeepEqual(saved.Settings, settings) {
@@ -36,7 +36,7 @@ func save(t *testing.T, queries *db.Queries, userID int64, settings usersettings
 	}
 }
 
-func load(t *testing.T, queries *db.Queries, userID int64) usersettingsutil.Settings {
+func load(t *testing.T, queries db.Querier, userID int64) usersettingsutil.Settings {
 	t.Helper()
 	got, err := usersettingsutil.Load(context.Background(), usersettingsutil.LoadParams{Queries: queries, UserID: userID})
 	if err != nil {
@@ -47,7 +47,7 @@ func load(t *testing.T, queries *db.Queries, userID int64) usersettingsutil.Sett
 
 // stored returns an account's row as it sits in the table, and whether it has
 // one.
-func stored(t *testing.T, queries *db.Queries, userID int64) (string, bool) {
+func stored(t *testing.T, queries db.Querier, userID int64) (string, bool) {
 	t.Helper()
 	row, err := queries.GetUserSettings(context.Background(), userID)
 	if errors.Is(err, sql.ErrNoRows) {

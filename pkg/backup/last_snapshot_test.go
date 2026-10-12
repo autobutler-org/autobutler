@@ -13,7 +13,7 @@ import (
 )
 
 // lastSnapshot is LastSnapshot, failing the test on an error.
-func lastSnapshot(t *testing.T, queries *db.Queries) time.Time {
+func lastSnapshot(t *testing.T, queries db.Querier) time.Time {
 	t.Helper()
 	at, err := LastSnapshot(context.Background(), queries)
 	if err != nil {

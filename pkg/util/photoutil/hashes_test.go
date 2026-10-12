@@ -39,7 +39,7 @@ func photoJPEG(t *testing.T, seed int) []byte {
 }
 
 // hashRows lists the photo_hashes rows that have a dHash, keyed by path.
-func hashRows(t *testing.T, q *db.Queries) map[string]db.ListNearDuplicatesRow {
+func hashRows(t *testing.T, q db.Querier) map[string]db.ListNearDuplicatesRow {
 	t.Helper()
 	rows, err := q.ListNearDuplicates(context.Background())
 	if err != nil {

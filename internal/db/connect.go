@@ -73,10 +73,10 @@ const maxOpenConns = 16
 // one connection and asks for a second (a query run while iterating another's
 // rows, or outside a transaction from inside it) waits for a free one, so
 // keep such nesting off hot paths.
-func pooledQueries(sqlDB *sql.DB) *Queries {
+func pooledQueries(sqlDB *sql.DB) Querier {
 	sqlDB.SetMaxOpenConns(maxOpenConns)
 	// Idle connections are kept, not closed: the default of two would reopen a
 	// connection, and rerun its pragmas, on most requests under load.
 	sqlDB.SetMaxIdleConns(maxOpenConns)
-	return New(sqlDB)
+	return NewQueries(sqlDB)
 }

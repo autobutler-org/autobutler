@@ -63,7 +63,7 @@ type Reminder struct {
 
 // ListRemindersParams lists the reminders falling due in [From, To).
 type ListRemindersParams struct {
-	Queries *db.Queries
+	Queries db.Querier
 	From    time.Time
 	To      time.Time
 }

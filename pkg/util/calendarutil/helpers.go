@@ -121,7 +121,7 @@ func checkRange(from, to time.Time) error {
 
 // listEvents is ListEvents without the range rules, which ListReminders has
 // already applied to a narrower range than the one it reads.
-func listEvents(ctx context.Context, queries *db.Queries, from, to time.Time) ([]Event, error) {
+func listEvents(ctx context.Context, queries db.Querier, from, to time.Time) ([]Event, error) {
 	calendar, err := queries.GetDefaultCalendar(ctx)
 	if err != nil {
 		return nil, err
