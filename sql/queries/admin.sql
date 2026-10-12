@@ -10,6 +10,17 @@ SELECT COUNT(*) FROM users WHERE is_admin = 1 AND status = 'active';
 -- name: CountOtherActiveAdmins :one
 SELECT COUNT(*) FROM users WHERE is_admin = 1 AND status = 'active' AND id != sqlc.arg(id);
 
+-- LockActiveAdmins changes nothing: it is a no-op UPDATE run for the row locks
+-- it takes, as the first statement of a transaction that may take away an
+-- active admin (#3171). PostgreSQL makes a second such transaction wait here
+-- until the first commits, so its count of the admins sees what the first did;
+-- without the lock two of them at READ COMMITTED each count the other's admin
+-- as still there. On SQLite it takes the write lock before the transaction has
+-- read anything, so a second one waits under busy_timeout, where a
+-- transaction that read first fails as soon as it tries to write.
+-- name: LockActiveAdmins :exec
+UPDATE users SET is_admin = is_admin WHERE is_admin = 1 AND status = 'active';
+
 -- GetOldestActiveAdmin is the longest-standing active admin other than one
 -- account: the heir of an account that deletes itself (#1909).
 -- name: GetOldestActiveAdmin :one

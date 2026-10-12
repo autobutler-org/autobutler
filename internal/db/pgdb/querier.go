@@ -348,6 +348,26 @@ type Querier interface {
 	ListVaultEntries(ctx context.Context) ([]ListVaultEntriesRow, error)
 	ListVaultEntriesWithoutHost(ctx context.Context) ([]ListVaultEntriesWithoutHostRow, error)
 	ListVaultFolders(ctx context.Context) ([]VaultFolder, error)
+	// LockActiveAdmins changes nothing: it is a no-op UPDATE run for the row locks
+	// it takes, as the first statement of a transaction that may take away an
+	// active admin (#3171). PostgreSQL makes a second such transaction wait here
+	// until the first commits, so its count of the admins sees what the first did;
+	// without the lock two of them at READ COMMITTED each count the other's admin
+	// as still there. On SQLite it takes the write lock before the transaction has
+	// read anything, so a second one waits under busy_timeout, where a
+	// transaction that read first fails as soon as it tries to write.
+	LockActiveAdmins(ctx context.Context) error
+	// LockChatChannel changes nothing: it is a no-op UPDATE run for the row lock it
+	// takes, as the first statement of a transaction that changes a channel's
+	// members (#3171). PostgreSQL makes a second such transaction on the channel
+	// wait here until the first commits, so its count of the holders of
+	// manage_channel sees what the first did; without the lock two of them at
+	// READ COMMITTED each count the other's holder as still there. On SQLite it
+	// takes the write lock before the transaction has read anything, so a second
+	// one waits under busy_timeout, where a transaction that read first fails as
+	// soon as it tries to write. name is not a key column, so on PostgreSQL the
+	// lock does not hold up an insert that references the channel.
+	LockChatChannel(ctx context.Context, id int64) error
 	MoveAlbum(ctx context.Context, arg MoveAlbumParams) (PhotoAlbum, error)
 	// MoveAlbumItems points album rows at a moved file, or at everything under a
 	// moved folder. The count guard skips a row whose destination the album already

@@ -298,8 +298,15 @@ func avatarVersion(dataDir string, userID int64) int64 {
 // while other members remain (#2422). Admins may do that, since they can
 // manage such a channel, and a channel that had no holder before the change
 // is left to them too.
+//
+// The transaction locks the channel's row before anything else, an admin's
+// too, so two changes to one channel's members run one after the other and
+// the second counts what the first left (#3171).
 func keepingAnOwner(ctx context.Context, database *db.DatabaseSqlc, principal accessutil.Principal, channelID int64, change func(db.Querier) error) error {
 	return db.InTx(ctx, database.Db, func(q db.Querier) error {
+		if err := q.LockChatChannel(ctx, channelID); err != nil {
+			return err
+		}
 		if principal.IsAdmin {
 			return change(q)
 		}

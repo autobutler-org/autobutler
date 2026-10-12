@@ -141,9 +141,11 @@ The schema and the queries are held equal by the tests. These are not, and code 
   rows made in the same second tying, or on a time read back being equal to the second.
 - **A sequence does not give an id back.** A refused insert still uses one up.
 - **There is no single writer.** A guard that counts and then changes is exact on SQLite and can race on
-  PostgreSQL at `READ COMMITTED`. The ones that exist are listed in
-  [`docs/architecture/data.md`](../../docs/architecture/data.md#what-behaves-differently) and tracked in #2964;
-  do not add another without a lock or a constraint behind it.
+  PostgreSQL at `READ COMMITTED` unless it takes a row lock first. The last-admin and last-channel-owner guards
+  do: `LockActiveAdmins` and `LockChatChannel`, a no-op `UPDATE` as the transaction's first statement (#3171).
+  A new count-then-change guard does the same, or puts a constraint behind it. The one still open is the
+  `ClaimJob` lane limit, listed in
+  [`docs/architecture/data.md`](../../docs/architecture/data.md#what-behaves-differently) and tracked in #2964.
 
 ## Generated code
 

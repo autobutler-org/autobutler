@@ -161,6 +161,23 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
 	return items, nil
 }
 
+const lockActiveAdmins = `-- name: LockActiveAdmins :exec
+UPDATE users SET is_admin = is_admin WHERE is_admin = 1 AND status = 'active'
+`
+
+// LockActiveAdmins changes nothing: it is a no-op UPDATE run for the row locks
+// it takes, as the first statement of a transaction that may take away an
+// active admin (#3171). PostgreSQL makes a second such transaction wait here
+// until the first commits, so its count of the admins sees what the first did;
+// without the lock two of them at READ COMMITTED each count the other's admin
+// as still there. On SQLite it takes the write lock before the transaction has
+// read anything, so a second one waits under busy_timeout, where a
+// transaction that read first fails as soon as it tries to write.
+func (q *Queries) LockActiveAdmins(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, lockActiveAdmins)
+	return err
+}
+
 const promoteToAdmin = `-- name: PromoteToAdmin :one
 UPDATE users SET is_admin = 1 WHERE username = ?1 AND status = 'active' RETURNING id, username, is_admin, created_at
 `

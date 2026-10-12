@@ -269,7 +269,7 @@ func TestRepairHomes_GivesEveryActiveAccountItsHome(t *testing.T) {
 	}
 	// The admin's home is dormant while they are an admin and is what they are
 	// left with the moment they are not.
-	if err := authutil.DemoteFromAdmin(ctx, f.database.Queries, "cy"); err != nil {
+	if err := authutil.DemoteFromAdmin(ctx, f.database, "cy"); err != nil {
 		t.Fatal(err)
 	}
 	if !ownsHome(t, f, otherAdmin, "cy") {
@@ -338,7 +338,7 @@ func TestSetup_FoundingAdminGetsAHome(t *testing.T) {
 	if err := authutil.PromoteToAdmin(ctx, f.database.Queries, "second"); err != nil {
 		t.Fatal(err)
 	}
-	if err := authutil.DemoteFromAdmin(ctx, f.database.Queries, "admin"); err != nil {
+	if err := authutil.DemoteFromAdmin(ctx, f.database, "admin"); err != nil {
 		t.Fatalf("demote the founder: %v", err)
 	}
 	if !ownsHome(t, f, admin.ID, "admin") {

@@ -1425,10 +1425,7 @@ func IsActiveAs(ctx context.Context, queries db.Querier, userID int64, isAdmin b
 // admin's own account, ErrUserNotFound unless the account is active, and
 // ErrLastAdmin for the only active admin.
 func DisableUser(ctx context.Context, params DisableUserParams) (DisableUserResult, error) {
-	if params.Database == nil {
-		return DisableUserResult{}, errors.New("database not initialized")
-	}
-	err := db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
+	err := guardingAdmins(ctx, params.Database, func(q db.Querier) error {
 		target, err := q.GetUserByUsername(ctx, params.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrUserNotFound
@@ -1490,11 +1487,8 @@ func EnableUser(ctx context.Context, queries db.Querier, params EnableUserParams
 // pending requests are left, they are deleted too and the Quark returns to
 // setup. A username with no account returns ErrUserNotFound.
 func DeleteUser(ctx context.Context, params DeleteUserParams) (DeleteUserResult, error) {
-	if params.Database == nil {
-		return DeleteUserResult{}, errors.New("database not initialized")
-	}
 	var result DeleteUserResult
-	err := db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
+	err := guardingAdmins(ctx, params.Database, func(q db.Querier) error {
 		target, err := q.GetUserByUsername(ctx, params.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrUserNotFound
@@ -1575,25 +1569,28 @@ func PromoteToAdmin(ctx context.Context, queries db.Querier, username string) er
 
 // DemoteFromAdmin removes admin from the given username. It returns
 // ErrLastAdmin when the account is the only active admin, and ErrUserNotFound
-// for a username with no account.
-func DemoteFromAdmin(ctx context.Context, queries db.Querier, username string) error {
-	target, err := queries.GetUserByUsername(ctx, username)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrUserNotFound
-	}
-	if err != nil {
-		return fmt.Errorf("look up %q: %w", username, err)
-	}
-	if err := ensureAnotherActiveAdmin(ctx, queries, target); err != nil {
-		return err
-	}
-	if _, err := queries.DemoteFromAdmin(ctx, username); err != nil {
+// for a username with no account. The check and the change are one
+// transaction.
+func DemoteFromAdmin(ctx context.Context, database *db.DatabaseSqlc, username string) error {
+	return guardingAdmins(ctx, database, func(q db.Querier) error {
+		target, err := q.GetUserByUsername(ctx, username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrUserNotFound
 		}
-		return fmt.Errorf("demote %q: %w", username, err)
-	}
-	return nil
+		if err != nil {
+			return fmt.Errorf("look up %q: %w", username, err)
+		}
+		if err := ensureAnotherActiveAdmin(ctx, q, target); err != nil {
+			return err
+		}
+		if _, err := q.DemoteFromAdmin(ctx, username); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrUserNotFound
+			}
+			return fmt.Errorf("demote %q: %w", username, err)
+		}
+		return nil
+	})
 }
 
 // DeleteAccountParams selects what a delete-account request wipes. All three

@@ -33,7 +33,12 @@ type fixture struct {
 
 func newFixture(t *testing.T) fixture {
 	t.Helper()
-	database := dbtest.NewDB(t)
+	return newFixtureOn(t, dbtest.NewDB(t))
+}
+
+// newFixtureOn is newFixture on a database the test opened itself.
+func newFixtureOn(t *testing.T, database *db.DatabaseSqlc) fixture {
+	t.Helper()
 	f := fixture{database: database, bus: eventbus.New(), users: map[string]int64{}, fills: map[string]byte{}}
 	for _, name := range []string{"admin", "bob", "carol", "dave"} {
 		user, err := database.Queries.CreateUser(context.Background(), db.CreateUserParams{Username: name, PasswordHash: "h", RecoveryPhraseHash: "r"})
