@@ -961,3 +961,37 @@ Quark holds an earlier version of it.
 - A refusal shows as a sentence in the sheet, where a snack bar would be hidden: restoring into a folder the
   account can only read, for one.
 - Comparing two versions, retention settings and the space versions use are not built yet (#2992).
+
+---
+
+### JN-FB-047: Resume a video where you left off, and mark it watched
+
+**Preconditions:** A video several minutes long exists in Files. The account has not played it before.
+
+**Steps:**
+
+1. Open the video (JN-FB-016), let it play for a minute or so, and go back to Files.
+2. Open the same video again.
+3. Play or seek to the last few seconds, pause, and go back.
+4. Open the video a third time, open **More options** and tap **Mark as unwatched**.
+5. Open **More options** again and tap **Mark as watched**.
+
+**Expected result:**
+
+- The second time, the video opens at the position it was left at instead of the start.
+- A video left in its last 5% counts as watched: the third time it opens from the start, and **More options**
+  offers **Mark as unwatched**.
+- **Mark as unwatched** forgets both the watched state and the saved position, and the menu then offers **Mark
+  as watched**. **Mark as watched** sets it back, and the video opens from the start next time.
+- The position and the watched state belong to the signed-in account. Another account opening the same video
+  starts from the beginning with it unwatched.
+
+**Notes:**
+
+- The position is saved every few seconds while the video plays, when it is paused and when the viewer closes.
+  A save that fails is silent and never interrupts playback; a failed **Mark as watched** or **Mark as
+  unwatched** shows a snack bar.
+- The Quark stores the state against the file's path, with `GET` and `PUT /api/v0/playback` and
+  `PUT /api/v0/playback/watched`. Moving or renaming the video starts it over.
+- A watched video stays watched while it is played again, until **Mark as unwatched**.
+- A "Continue watching" row, a theater library, subtitles and chapters are not built yet (#2985).

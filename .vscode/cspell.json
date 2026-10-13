@@ -429,6 +429,7 @@
     "pgrep",
     "pgtype",
     "photoutil",
+    "playbackutil",
     "PHPicker",
     "pinia",
     "pipefail",
