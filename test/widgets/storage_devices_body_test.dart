@@ -65,8 +65,21 @@ void main() {
     role: 'snapshot-backup',
   );
 
+  const builtIn = StorageDevice(
+    name: 'Built-in',
+    devicePath: '/dev/mmcblk0p1',
+    mountPoint: '/data',
+    fileSystem: 'ext4',
+    totalBytes: 0,
+    usedBytes: 0,
+    availableBytes: 0,
+    isInternal: true,
+    isEnabled: true,
+  );
+
   Future<void> pumpBody(
     WidgetTester tester, {
+    List<StorageDevice> devices = const [unmounted, backupDrive],
     ValueChanged<StorageDevice>? onMount,
     ValueChanged<StorageDevice>? onSetRole,
     ValueChanged<StorageDevice>? onBackup,
@@ -80,7 +93,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: StorageDevicesBody(
-            devices: const [unmounted, backupDrive],
+            devices: devices,
             error: null,
             mounting: const {},
             vaultDeviceSerial: '',
@@ -127,5 +140,29 @@ void main() {
       expect(find.text(label), findsNothing, reason: '$label is offered');
     }
     expect(tester.takeException(), isNull);
+  });
+
+  // #3194: built-in storage can take the default storage role back, so an
+  // admin is offered Set Role on it too.
+  testWidgets('an admin can set the role of built-in storage', (tester) async {
+    final actions = <String>[];
+    await pumpBody(
+      tester,
+      devices: const [builtIn],
+      onSetRole: (d) => actions.add('role "${d.serial}"'),
+    );
+
+    await tester.tap(find.text('Set Role'));
+
+    expect(actions, ['role ""']);
+  });
+
+  testWidgets('a non-admin gets no Set Role on built-in storage', (
+    tester,
+  ) async {
+    await pumpBody(tester, devices: const [builtIn]);
+
+    expect(find.text('Built-in'), findsOneWidget);
+    expect(find.text('Set Role'), findsNothing);
   });
 }

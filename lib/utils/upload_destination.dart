@@ -17,9 +17,12 @@ Future<List<StorageDevice>> listDevicesFresh() {
 /// the view is filtered to, null when it shows several: that device is the
 /// destination without asking. Otherwise a device listed alone is the
 /// destination, and [pick] chooses between several, starting on `initial`:
-/// the device chosen last time when it can still be chosen, the first that
-/// can otherwise. What [pick] answers is kept in [AppSettings] for next time
-/// (#3192).
+/// the default storage device an admin set (#3194), else the device chosen
+/// last time, else the first, each only when it can be chosen. What [pick]
+/// answers is kept in [AppSettings] for next time (#3192).
+///
+/// With no default storage device set, or with that drive not enabled or
+/// not connected, nothing says so: the picker only starts somewhere else.
 ///
 /// A drive that is connected but not enabled is passed to [pick] as an
 /// unavailable target, so the user sees it and what enables it: one beside
@@ -55,10 +58,11 @@ Future<String?> resolveUploadSerial({
   final settings = AppSettings.instance;
   final picked = await pick(
     targets,
-    enabled.firstWhere(
-      (target) => target.serial == settings.lastUploadSerial,
-      orElse: () => enabled.first,
-    ),
+    enabled.where((target) => target.isDefault).firstOrNull ??
+        enabled.firstWhere(
+          (target) => target.serial == settings.lastUploadSerial,
+          orElse: () => enabled.first,
+        ),
   );
   if (picked != null) await settings.setLastUploadSerial(picked.serial);
   return picked?.serial;

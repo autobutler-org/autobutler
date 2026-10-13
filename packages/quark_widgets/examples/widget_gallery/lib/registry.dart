@@ -2333,7 +2333,7 @@ final List<GalleryEntry> registry = [
       onClose: () => log('QuarkSheet.onClose'),
       child: UploadTargetPicker(
         targets: _galleryTargets,
-        selected: _galleryTargets.first,
+        selected: _galleryTargets[1],
         onSelected: (t) => log('UploadTargetPicker.onSelected(${t.name})'),
         onCancel: () => log('UploadTargetPicker.onCancel'),
         onConfirm: () => log('UploadTargetPicker.onConfirm'),
@@ -2964,11 +2964,16 @@ const List<AlbumItem> _galleryAlbumList = [
   ),
 ];
 
-/// The fake upload targets: the built-in disk, a plugged-in drive, and one
-/// that is plugged in but cannot be chosen.
+/// The fake upload targets: the built-in disk, a plugged-in drive that is the
+/// default storage device, and one that is plugged in but cannot be chosen.
 const List<UploadTarget> _galleryTargets = [
   UploadTarget(serial: '', name: '', mountPoint: '/data', isInternal: true),
-  UploadTarget(serial: 'usb-1', name: 'Backup drive', mountPoint: '/mnt/usb'),
+  UploadTarget(
+    serial: 'usb-1',
+    name: 'Backup drive',
+    mountPoint: '/mnt/usb',
+    isDefault: true,
+  ),
   UploadTarget(
     serial: 'usb-2',
     name: 'Old drive',

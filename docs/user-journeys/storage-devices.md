@@ -1,6 +1,6 @@
 # Storage Devices Journeys
 
-Covers the System page's Storage tab (`/system/storage`) — listing, mounting, renaming, and backing up storage devices connected to the quark.
+Covers the System page's Storage tab (`/system/storage`) — listing, mounting, renaming, assigning roles to, and backing up storage devices connected to the quark.
 
 ---
 
@@ -183,3 +183,38 @@ including one that is not mounted.
 - Every drive action is admin-only on the Quark (#1899). The page hides the buttons (#1928), and the Quark still
   refuses the requests.
 - The drawer has no Vault entry for this account either (see JN-VT-000 in vault.md).
+
+---
+
+### JN-SD-011: Set a device's role
+
+**Preconditions:** User is signed in as an admin. Built-in storage and at least one mounted USB drive are listed.
+
+**Steps:**
+
+1. Navigate to `/system/storage`.
+2. Tap **Set Role** on a device.
+3. Choose **Default Storage**, **Snapshot Backup** or **Unassigned**.
+4. Confirm your credentials.
+
+**Expected result:**
+
+- A snack bar names the new role and the device's badge changes. Only one device holds **Default Storage**: giving
+  it to one takes it from the other.
+- With more than one enabled device, the **Upload to device** sheet (JN-FB-006, JN-PH-006) and the one New folder
+  opens start on the default storage device, and its row reads **Default**. The sheet is still shown, and any
+  other enabled device can be chosen.
+- **Set Role** on built-in storage offers **Default Storage** and **Unassigned** only, which is how built-in
+  storage takes the role back from a USB drive.
+
+**Notes:**
+
+- With no device holding the role, built-in storage is where a request naming no device lands, but no row reads
+  **Default** and the sheet starts on the device chosen last time, then on the first one listed.
+- When the default storage drive is not enabled it is listed as unavailable, still reading **Default**, and the
+  sheet starts on the fallback above. When it is unplugged it is not listed at all and nothing says it is missing.
+- A view filtered to one device still uploads to that device without asking (JN-FB-006).
+- A USB drive holding **Default Storage** is also what live sync copies built-in storage onto. Files uploaded
+  straight to that drive are not copied back, and get no version history.
+- The role is the upload sheet's starting point only: a request that names no device still writes to built-in
+  storage.

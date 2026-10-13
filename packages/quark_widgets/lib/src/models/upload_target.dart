@@ -12,6 +12,7 @@ class UploadTarget {
     required this.name,
     this.mountPoint = '',
     this.isInternal = false,
+    this.isDefault = false,
     this.unavailableReason,
   });
 
@@ -28,6 +29,10 @@ class UploadTarget {
   /// Whether the device is built into the server rather than plugged in.
   final bool isInternal;
 
+  /// Whether an admin made this the default storage device, which is where
+  /// the picker starts. Its row is labeled "Default".
+  final bool isDefault;
+
   /// Why an upload cannot go to this device, in words the caller wrote for a
   /// user to read — a drive that is plugged in but not enabled, say. Null
   /// when the device can be chosen.
@@ -41,9 +46,16 @@ class UploadTarget {
           other.name == name &&
           other.mountPoint == mountPoint &&
           other.isInternal == isInternal &&
+          other.isDefault == isDefault &&
           other.unavailableReason == unavailableReason;
 
   @override
-  int get hashCode =>
-      Object.hash(serial, name, mountPoint, isInternal, unavailableReason);
+  int get hashCode => Object.hash(
+    serial,
+    name,
+    mountPoint,
+    isInternal,
+    isDefault,
+    unavailableReason,
+  );
 }

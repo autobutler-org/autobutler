@@ -2,6 +2,7 @@ package storageutil
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -119,9 +120,11 @@ func (d *detector) DetectDevices() ([]Device, error) {
 }
 
 // DetectRoots returns the volumes DetectDevices would, with DevicePath,
-// MountPoint, IsInternal and Name set. One `diskutil list` stands in for the
-// `diskutil info` per volume and the categorization walk, since it names each
-// volume and each whole disk's location and whether it is a disk image (#2195).
+// MountPoint, IsInternal, UsbInfo and Name set. One `diskutil list` stands in
+// for the `diskutil info` per volume and the categorization walk, since it
+// names each volume and each whole disk's location and whether it is a disk
+// image (#2195). Only a volume that is not internal still costs a
+// `diskutil info`: its serial is the volume UUID, which the list leaves out.
 func (d *detector) DetectRoots() ([]Device, error) {
 	volumes, err := listDfVolumes()
 	if err != nil {
@@ -148,10 +151,19 @@ func (d *detector) DetectRoots() ([]Device, error) {
 			continue
 		}
 		seenContainers[containerID] = true
+		var usbInfo UsbDevice
+		if !disk.isInternal {
+			// A failure leaves the volume without a serial, as an unreadable
+			// UUID does.
+			if info, err := exec.Command("diskutil", "info", volume.devicePath).Output(); err == nil {
+				usbInfo = diskutilUsbInfo(string(info))
+			}
+		}
 		devices = append(devices, Device{
 			DevicePath: volume.devicePath,
 			MountPoint: volume.mountPoint,
 			IsInternal: disk.isInternal,
+			UsbInfo:    usbInfo,
 			// The same fallbacks getDeviceInfo applies to a volume diskutil
 			// leaves unnamed. A file listing reports this name (#2195).
 			Name: volumeName(disks.name(volume.devicePath), volume.mountPoint),
@@ -197,6 +209,8 @@ func (d *detector) getDeviceInfo(devicePath string) (*Device, error) {
 	deviceLocation := extractValue(info, "Device Location:")
 	if deviceLocation == "Internal" {
 		device.IsInternal = true
+	} else {
+		device.UsbInfo = diskutilUsbInfo(info)
 	}
 
 	// Parse sizes
@@ -347,6 +361,23 @@ func shouldSkipVolume(mountPoint string) bool {
 // isDiskImage reports whether diskutil info text describes a mounted disk image.
 func isDiskImage(info string) bool {
 	return extractValue(info, "Protocol:") == "Disk Image"
+}
+
+// diskutilUsbInfo builds the USB descriptor of a volume that is not internal
+// from its `diskutil info` text. The serial is the volume UUID, or the
+// partition UUID for a filesystem that has none: both survive a rename, which
+// the mount point does not, and database rows are keyed by serial. It returns
+// nil when diskutil reports neither, leaving the volume without a serial.
+func diskutilUsbInfo(info string) UsbDevice {
+	serial := cmp.Or(extractValue(info, "Volume UUID:"), extractValue(info, "Disk / Partition UUID:"))
+	if serial == "" {
+		return nil
+	}
+	return &usbDevice{
+		Serial:    serial,
+		MountPath: extractValue(info, "Mount Point:"),
+		Product:   cmp.Or(extractValue(info, "Device / Media Name:"), extractValue(info, "Volume Name:")),
+	}
 }
 
 func extractValue(info, key string) string {

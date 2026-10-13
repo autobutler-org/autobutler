@@ -28,6 +28,7 @@ void main() {
     String name, {
     String serial = '',
     bool isEnabled = true,
+    String role = 'unassigned',
   }) => StorageDevice(
     name: name,
     devicePath: '/dev/$name',
@@ -39,6 +40,7 @@ void main() {
     isInternal: serial.isEmpty,
     isEnabled: isEnabled,
     serial: serial,
+    role: role,
   );
 
   final builtIn = device('Built-in');
@@ -243,5 +245,108 @@ void main() {
         expect(startedOn, ['Built-in']);
       },
     );
+  });
+
+  group('the default storage device (#3194)', () {
+    final defaultStick = device(
+      'Stick',
+      serial: 'USB1',
+      role: 'default-storage',
+    );
+    final other = device('Other', serial: 'USB2');
+
+    test('starts the picker, over the device chosen last time', () async {
+      await AppSettings.instance.setLastUploadSerial('USB2');
+
+      await resolveUploadSerial(
+        pick: picker((_) => null),
+        listDevices: () async => [builtIn, defaultStick, other],
+      );
+
+      expect(startedOn, ['Stick']);
+      expect(offered.single.map((t) => t.isDefault), [false, true, false]);
+    });
+
+    test('is still asked about, never chosen without the picker', () async {
+      final serial = await resolveUploadSerial(
+        pick: picker((targets) => targets.first),
+        listDevices: () async => [builtIn, defaultStick],
+      );
+
+      expect(serial, '');
+      expect(offered, hasLength(1));
+    });
+
+    test('built-in storage holding the role starts the picker', () async {
+      await AppSettings.instance.setLastUploadSerial('USB1');
+
+      await resolveUploadSerial(
+        pick: picker((_) => null),
+        listDevices: () async => [
+          device('Built-in', role: 'default-storage'),
+          stick,
+        ],
+      );
+
+      expect(startedOn, ['Built-in']);
+    });
+
+    test('not enabled, the picker starts on the device chosen last '
+        'time', () async {
+      await AppSettings.instance.setLastUploadSerial('USB2');
+
+      await resolveUploadSerial(
+        pick: picker((_) => null),
+        listDevices: () async => [
+          builtIn,
+          device(
+            'Stick',
+            serial: 'USB1',
+            role: 'default-storage',
+            isEnabled: false,
+          ),
+          other,
+        ],
+      );
+
+      expect(startedOn, ['Other']);
+    });
+
+    test('not connected, the picker starts on the device chosen last time, '
+        'then on the first', () async {
+      Future<void> ask() => resolveUploadSerial(
+        pick: picker((_) => null),
+        listDevices: () async => [builtIn, other],
+      );
+
+      await ask();
+      await AppSettings.instance.setLastUploadSerial('USB2');
+      await ask();
+
+      expect(startedOn, ['Built-in', 'Other']);
+    });
+
+    test('does not move an upload out of the one device in view', () async {
+      final serial = await resolveUploadSerial(
+        pick: picker((targets) => targets.first),
+        viewedSerial: 'USB2',
+        listDevices: () async => [builtIn, defaultStick, other],
+      );
+
+      expect(serial, 'USB2');
+      expect(offered, isEmpty);
+    });
+
+    test('does not replace the last choice when the picker is '
+        'dismissed', () async {
+      await AppSettings.instance.setLastUploadSerial('USB2');
+
+      await resolveUploadSerial(
+        pick: picker((_) => null),
+        listDevices: () async => [builtIn, defaultStick, other],
+      );
+
+      expect(AppSettings.instance.lastUploadSerial, 'USB2');
+    });
   });
 }

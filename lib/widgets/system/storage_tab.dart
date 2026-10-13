@@ -100,7 +100,8 @@ class _StorageTabState extends State<StorageTab>
   Future<void> _showRoleDialog(StorageDevice device) async {
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => RoleDialog(currentRole: device.role),
+      builder: (ctx) =>
+          RoleDialog(currentRole: device.role, isInternal: device.isInternal),
     );
     if (result == null || result == device.role || !mounted) return;
 
