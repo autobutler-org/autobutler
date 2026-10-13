@@ -144,7 +144,7 @@ func TestValidateSession_DebouncesRenewal(t *testing.T) {
 }
 
 // "Stay signed in" must not mean "signed in forever": renewal is clamped to
-// sessionMaxLifetime past creation, so a leaked token still dies on schedule.
+// SessionMaxLifetime past creation, so a leaked token still dies on schedule.
 func TestValidateSession_ClampsRenewalToMaxLifetime(t *testing.T) {
 	sqlDB, queries := newRenewalTestDB(t)
 	token := newSignedInUser(t, sqlDB, queries)

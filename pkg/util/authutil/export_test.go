@@ -5,7 +5,6 @@ import "time"
 // Test hooks for the external authutil_test package.
 const (
 	SessionDuration      = sessionDuration
-	SessionMaxLifetime   = sessionMaxLifetime
 	SessionRenewInterval = sessionRenewInterval
 )
 

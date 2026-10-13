@@ -56,8 +56,8 @@ Covers first-boot setup, login, logout, and password recovery.
 **Expected result:**
 
 - App navigates to `/files`, which says "Welcome back" once (JN-FB-042).
-- Session token is stored; subsequent navigation does not require re-login.
-  Quark
+- Session token is stored; subsequent navigation does not require re-login. The web app served by the Quark stores
+  no token: the browser keeps the session in an HttpOnly cookie (#2156).
 
 ---
 
@@ -162,7 +162,7 @@ Covers first-boot setup, login, logout, and password recovery.
 
 **Expected result:**
 
-- Session token is cleared.
+- Session token is cleared, and on web the session cookie with it.
 - App redirects to `/login`.
 - Navigating back does not bypass the login page.
 

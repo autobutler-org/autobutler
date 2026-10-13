@@ -205,7 +205,8 @@ func trackDevice(deps deputil.Dependencies) gin.HandlerFunc {
 //
 // Precedence (highest to lowest):
 //  1. Bearer token (Authorization: Bearer <token>)
-//  2. Session cookie
+//  2. Session cookie, unless the request is a cross-origin write; see
+//     crossOriginWrite (#2156)
 //  3. Query parameter (?token=)
 //  4. Download token (?downloadToken=, downloadTokenPaths only)
 //  5. HTTP Basic Auth (Authorization: Basic <base64>), whose password is the
@@ -275,15 +276,23 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		// already privileged (video/audio streaming, file downloads). Accepting
 		// it on all endpoints would leak session tokens into browser history,
 		// HTTP proxy logs, and Gin's access log. (#1332)
-		var tokens []string
+		//
+		// The cookie is the one credential here a browser attaches by itself, to
+		// any request that reaches this origin, so it only counts on a request
+		// crossOriginWrite lets through (#2156).
+		type candidate struct {
+			token   string
+			ambient bool
+		}
+		var candidates []candidate
 		if auth := c.GetHeader("Authorization"); strings.HasPrefix(auth, "Bearer ") {
-			tokens = append(tokens, strings.TrimPrefix(auth, "Bearer "))
+			candidates = append(candidates, candidate{token: strings.TrimPrefix(auth, "Bearer ")})
 		}
 		if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
-			tokens = append(tokens, cookie)
+			candidates = append(candidates, candidate{token: cookie, ambient: true})
 		}
 		if q := c.Query("token"); q != "" && queryTokenAllowed(path) {
-			tokens = append(tokens, q)
+			candidates = append(candidates, candidate{token: q})
 		}
 
 		// A lookup the database could not answer says nothing about the
@@ -294,13 +303,23 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 		// check is worth what it always was. But when none checks out, the
 		// answer is 503, not 401: the one that could not be checked may be
 		// valid, and only the database can say it is not.
+		//
+		// A valid cookie on a cross-origin write does not end the chain either:
+		// the page may hold a token of its own, as the Flutter dev server's
+		// does. When nothing else checks out the answer is 403, not the 401
+		// that would sign a browser out of a session that is still good.
 		unavailable := false
-		for _, t := range tokens {
-			username, userID, err := authutil.ValidateSession(ctx, db.Queries, t)
+		forged := false
+		for _, candidate := range candidates {
+			username, userID, err := authutil.ValidateSession(ctx, db.Queries, candidate.token)
 			if err == nil {
+				if candidate.ambient && crossOriginWrite(c.Request) {
+					forged = true
+					continue
+				}
 				// Which session this is, so the session routes can mark it
 				// current and spare it from "sign out everywhere else" (#1663).
-				c = ctxutil.With(c, "sessionID", authutil.SessionID(t))
+				c = ctxutil.With(c, "sessionID", authutil.SessionID(candidate.token))
 				authenticated(c, db.Queries, username, userID)
 				return
 			}
@@ -371,9 +390,39 @@ func requireAuth(deps deputil.Dependencies) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "service unavailable"})
 			return
 		}
+		if forged {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "cross-origin request refused"})
+			return
+		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
 		c.Abort()
 	}
+}
+
+// crossOriginWrite reports whether a browser sent r from a page on another
+// origin and r can change something: a method that is not safe, or a WebSocket
+// upgrade, which CORS does not cover and the events route accepts from any
+// origin. It is the CSRF check on the session cookie (#2156). SameSite=Strict
+// already keeps the cookie off cross-site requests, but a site is wider than
+// an origin: another port on this host, or a sibling subdomain, is same-site.
+//
+// The browser's own verdict in Sec-Fetch-Site decides when it is sent, and
+// otherwise Origin has to name the host the request was addressed to. A
+// request with neither did not come from a browser, so nothing rode along on
+// it uninvited.
+//
+// ponytail: Origin is compared with the Host header, so a reverse proxy that
+// rewrites Host in front of a plain-HTTP Quark, where browsers send no
+// Sec-Fetch-Site, would be refused. Read X-Forwarded-Host from
+// QUARK_TRUSTED_PROXIES if one ever does.
+func crossOriginWrite(r *http.Request) bool {
+	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+		// Check exempts safe methods, and an upgrade is a GET.
+		upgrade := *r
+		upgrade.Method = http.MethodPost
+		r = &upgrade
+	}
+	return http.NewCrossOriginProtection().Check(r) != nil
 }
 
 // authenticated puts the validated caller on the context and runs the rest of

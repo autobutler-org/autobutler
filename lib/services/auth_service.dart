@@ -225,7 +225,7 @@ class AuthService {
   /// this app holds a session, who is signed in.
   static Future<AuthStatus> checkStatus() async {
     final uri = _baseUri.resolve('/api/v0/auth/status');
-    final token = AppSettings.instance.sessionToken;
+    final token = AppSettings.instance.bearerToken;
     final response = await authHttpClientFactory()
         .get(
           uri,
@@ -815,7 +815,7 @@ class AuthService {
         .put(
           _baseUri.resolve('/api/v0/auth/password'),
           headers: {
-            'Authorization': 'Bearer ${session.token}',
+            'Authorization': ?session.authorization,
             'Content-Type': 'application/json',
           },
           body: jsonEncode({
@@ -838,28 +838,43 @@ class AuthService {
     }
   }
 
-  /// The stored session and the account it is for, which a request that
-  /// re-confirms the password needs. Throws [UnauthorizedException] without
-  /// either.
-  static Future<({String token, String username})> _sessionAccount() async {
-    final token = AppSettings.instance.sessionToken;
-    if (token == null) throw const UnauthorizedException();
+  /// The `Authorization` header value for the stored session, null when the
+  /// request carries none: signed out, or a cookie session.
+  static String? get _authorization {
+    final token = AppSettings.instance.bearerToken;
+    return token == null ? null : 'Bearer $token';
+  }
+
+  /// The stored session's `Authorization` header value (null for a cookie
+  /// session) and the account it is for, which a request that re-confirms the
+  /// password needs. Throws [UnauthorizedException] when signed out or the
+  /// account is unknown.
+  static Future<({String? authorization, String username})>
+  _sessionAccount() async {
+    if (AppSettings.instance.sessionToken == null) {
+      throw const UnauthorizedException();
+    }
+    final authorization = _authorization;
     // A session that predates the app recording its username asks the Quark.
     final username =
         AppSettings.instance.username ?? (await checkStatus()).username;
     if (username == null) throw const UnauthorizedException();
-    return (token: token, username: username);
+    return (authorization: authorization, username: username);
   }
 
   /// Logs out — clears the in-memory session token and notifies the server.
+  ///
+  /// A cookie session has no token to send, and the request still goes out:
+  /// it is what ends the session on the Quark and clears the cookie.
   static Future<void> logout() async {
-    final token = AppSettings.instance.sessionToken;
+    final signedIn = AppSettings.instance.sessionToken != null;
+    final authorization = _authorization;
     await AppSettings.instance.setSessionToken(null);
-    if (token == null) return;
+    if (!signedIn) return;
     try {
       final uri = _baseUri.resolve('/api/v0/auth/logout');
       await authHttpClientFactory()
-          .post(uri, headers: {'Authorization': 'Bearer $token'})
+          .post(uri, headers: {'Authorization': ?authorization})
           .timeout(kAuthRequestTimeout);
     } catch (_) {
       // Best-effort — token is already cleared locally.
@@ -929,7 +944,7 @@ class AuthService {
     required Map<String, String> aspects,
     required String context,
   }) async {
-    final (:token, :username) = await _sessionAccount();
+    final (:authorization, :username) = await _sessionAccount();
     final secret = await AuthSecret.resolve(
       username: username,
       password: password,
@@ -942,7 +957,7 @@ class AuthService {
         .delete(
           uri,
           headers: {
-            'Authorization': 'Bearer $token',
+            'Authorization': ?authorization,
             'Content-Type': 'application/json',
           },
           body: jsonEncode({'password': secret.authKey}),

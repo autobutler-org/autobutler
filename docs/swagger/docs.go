@@ -2127,7 +2127,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Invalidates the current session",
+                "description": "Invalidates the session the request carries, as a bearer token, the session cookie, or both, and clears the cookie",
                 "produces": [
                     "application/json"
                 ],

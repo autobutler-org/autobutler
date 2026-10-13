@@ -125,7 +125,40 @@ curl http://localhost:8080/api/v0/some-endpoint \
   -H "Authorization: Bearer <your-token>"
 ```
 
-Or it gets set automatically as a cookie if you're going through the browser.
+### In the browser: the session cookie
+
+Every response that carries a new session token (`/auth/login`, `/auth/setup`, `/auth/recover`) also sets it as a
+cookie, and the Quark accepts that cookie wherever it accepts the bearer token (#2156):
+
+```text
+Set-Cookie: session=<token>; Path=/; Max-Age=7776000; HttpOnly; SameSite=Strict   (+ Secure over TLS)
+```
+
+- **`HttpOnly`** keeps the token away from scripts, so an XSS on the Quark's origin cannot read it.
+- **`Secure`** is set when the request arrived over TLS, or through a trusted proxy that says it did. A Quark on
+  plain HTTP has to leave it off, or the browser would never send the cookie back.
+- **`SameSite=Strict`** keeps the cookie off requests another site starts.
+- **`Max-Age`** is 90 days, the longest a renewed session can live. The Quark still decides when a session ends.
+- No `Domain`, so the cookie belongs to the one host that set it.
+
+The web app served by the Quark relies on the cookie alone. It keeps no token: what it stores for that Quark is a
+marker that says "signed in", it sends no `Authorization` header, and it puts no `?token=` in a media or WebSocket
+URL, because the browser attaches the cookie to those itself. Native apps and the browser extension are unchanged:
+they keep the token from the response body (in the platform's secure storage) and send it as a bearer.
+
+**CSRF.** A cookie rides along on any request the browser makes to the Quark, so a request the cookie authenticates
+is refused with 403 when it is a cross-origin write: a method other than `GET`, `HEAD` or `OPTIONS`, or a WebSocket
+upgrade, sent from a page on another origin. `SameSite=Strict` alone stops other sites, but another port on the same
+host is the same site, and this check stops that too. The Quark trusts the browser's `Sec-Fetch-Site` when it is
+sent, and otherwise requires `Origin` to name the host the request was addressed to. A request with neither header
+is not from a browser and passes, as does any request that carries its own bearer or `?token=`: a page that holds
+the token is not borrowing the cookie.
+
+**Developing the web app.** `make serve/frontend` serves the app from its own port, a different origin from the
+backend on `:8080`. CORS allows any origin but never credentials, so the cookie does not travel there, and a debug
+web build keeps doing what it did before: it holds the token, saves it in `localStorage`, and sends it as a bearer.
+The same goes for a second Quark added by address in the web app. Only the Quark that serves the page gets the
+cookie session.
 
 ## Logging out
 
@@ -134,7 +167,8 @@ curl -X POST http://localhost:8080/api/v0/auth/logout \
   -H "Authorization: Bearer <your-token>"
 ```
 
-This kills the session server-side. The cookie gets cleared too.
+This kills the session server-side, whether it arrived as the bearer token, the cookie, or both, and clears the
+cookie.
 
 ## Forgot your password?
 

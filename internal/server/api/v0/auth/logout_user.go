@@ -1,6 +1,8 @@
 package v0_auth
 
 import (
+	"strings"
+
 	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
@@ -9,7 +11,7 @@ import (
 
 // logoutUser godoc
 // @Summary Logout
-// @Description Invalidates the current session
+// @Description Invalidates the session the request carries, as a bearer token, the session cookie, or both, and clears the cookie
 // @Tags auth
 // @Produce json
 // @Success 200 {object} object
@@ -21,15 +23,15 @@ func logoutUser(c *gin.Context) *serverutil.Response {
 		return serverutil.Ok()
 	}
 
-	token := ""
-	if auth := c.GetHeader("Authorization"); len(auth) > 7 && auth[:7] == "Bearer " {
-		token = auth[7:]
-	} else if cookie, err := c.Cookie(sessionCookieName); err == nil {
-		token = cookie
+	// End every session the request names. A browser can send a leftover
+	// bearer beside its cookie, and requireAuth may have let the request in on
+	// either (#2156).
+	queries := (*deps).Database().Queries
+	if token, ok := strings.CutPrefix(c.GetHeader("Authorization"), "Bearer "); ok && token != "" {
+		_ = authutil.Logout(c.Request.Context(), queries, token)
 	}
-
-	if token != "" {
-		_ = authutil.Logout(c.Request.Context(), (*deps).Database().Queries, token)
+	if cookie, err := c.Cookie(sessionCookieName); err == nil && cookie != "" {
+		_ = authutil.Logout(c.Request.Context(), queries, cookie)
 	}
 
 	clearSessionCookie(c)
