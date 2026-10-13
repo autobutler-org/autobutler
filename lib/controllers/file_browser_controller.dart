@@ -169,13 +169,17 @@ class FileBrowserController {
     return promptForFolderName(context);
   }
 
+  /// Creates [folderName] in [currentPath] on the device with [serial], or on
+  /// built-in storage when it is null.
   Future<void> createFolder({
     required String currentPath,
     required String folderName,
+    String? serial,
   }) {
     return createFolderAtCurrentPath(
       currentPath: currentPath,
       folderName: folderName,
+      serial: serial,
     );
   }
 
