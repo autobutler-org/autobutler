@@ -110,10 +110,11 @@ test-results/stress/
 ## developer, and per agent they chose, so it is not shared state.
 .config/dart_skills/
 
-## Claude Code workspace (agents are shared; everything else is per-developer)
+## Claude Code workspace (agents, skills and the shared settings are committed; everything else is per-developer)
 .claude/*
 !.claude/agents/
 !.claude/skills/
+!.claude/settings.json
 .claude/skills/dart-*
 .claude/skills/flutter-*
 

@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "autobutler-org": {
+      "source": {
+        "source": "github",
+        "repo": "autobutler-org/agent-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "autobutler@autobutler-org": true
+  }
+}

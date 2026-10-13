@@ -15,6 +15,20 @@ make setup
 This runs `setup/gotools`, `setup/air`, `setup/sqlc`, `setup/swag`, and `setup/flutter` in one shot. If you only
 need the backend (no Flutter), run `make setup/gotools setup/air setup/sqlc setup/swag` instead.
 
+### Shared agent skills
+
+Skills that are not specific to Quark — `autobutler:resolve-issue`, `autobutler:gh-stack` — live in
+[autobutler-org/agent-plugins](https://github.com/autobutler-org/agent-plugins), a Claude Code plugin shared by
+every repository in the org. `.claude/settings.json` names the marketplace and enables the plugin, so Claude Code
+offers to install it the first time you open the repository; accept the prompt. To install it by hand:
+
+```text
+/plugin marketplace add autobutler-org/agent-plugins
+/plugin install autobutler@autobutler-org
+```
+
+Skills about this codebase (`architecture`, the `quark-widgets-*` pair) stay in `.claude/skills/`.
+
 ## Clone and build
 
 ```bash
