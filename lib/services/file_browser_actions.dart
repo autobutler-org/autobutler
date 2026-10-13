@@ -25,8 +25,13 @@ Future<void> uploadMultipartFilesToCurrentPath({
 Future<void> createFolderAtCurrentPath({
   required String currentPath,
   required String folderName,
+  String? serial,
 }) {
-  return FilesService.createFolder(toRootDir(currentPath), folderName);
+  return FilesService.createFolder(
+    toRootDir(currentPath),
+    folderName,
+    serial: serial,
+  );
 }
 
 Future<String?> downloadNode({required FileNode node}) {

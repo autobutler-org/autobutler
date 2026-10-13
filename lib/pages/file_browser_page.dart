@@ -41,9 +41,9 @@ import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/file_browser_drag_config.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/safe_set_state_mixin.dart';
+import 'package:quark/utils/upload_destination.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:quark/widgets/device_upload_picker.dart';
-import 'package:quark/utils/quark_widget_items.dart';
 import 'package:quark/widgets/file_browser/archive_text_preview.dart';
 import 'package:quark/widgets/file_browser/file_browser_create_fab.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
@@ -838,34 +838,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    // Resolve target device serial before starting upload.
-    // Prefer the already-loaded _allDevices list to avoid a redundant network
-    // call; fall back to StorageService.listDevices() only if the list is
-    // empty for some reason (#1022).
-    String? targetSerial;
-    try {
-      final devices =
-          (_allDevices.isNotEmpty
-                  ? _allDevices
-                  : await StorageService.listDevices())
-              .where((d) => d.isEnabled)
-              .toList();
-      if (devices.length > 1) {
-        if (!mounted) return;
-        final picked = await showDeviceUploadPicker(context, [
-          for (final device in devices) device.toUploadTarget(),
-        ]);
-        if (picked == null) return; // user cancelled
-        targetSerial = picked.serial.isNotEmpty ? picked.serial : null;
-      } else if (devices.length == 1) {
-        targetSerial = devices.first.serial.isNotEmpty
-            ? devices.first.serial
-            : null;
-      }
-    } catch (e) {
-      debugPrint('[file_browser_page.dart] Failed to list devices: $e');
-      // Fall through with null serial (default device)
-    }
+    final serial = await _destinationSerial('upload your files');
+    if (serial == null) return;
 
     // Handed off rather than run here: an upload outlives the folder the user
     // started it from, so it cannot be owned by this State. Progress arrives
@@ -873,9 +847,37 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     UploadManager.instance.enqueue(
       uploads: pending,
       uploadPath: uploadPath,
-      serial: targetSerial,
+      serial: serialOrNull(serial),
       note: note,
     );
+  }
+
+  /// The serial of the one device the view is filtered to, or null when it
+  /// shows every device.
+  String? _viewedSerial() {
+    if (_allDevices.length < 2 || _activeDevicePaths.length != 1) return null;
+    return _allDevices
+        .where((d) => d.devicePath == _activeDevicePaths.single)
+        .firstOrNull
+        ?.serial;
+  }
+
+  /// The serial of the device an upload or a new folder goes to — `''` for
+  /// built-in storage — or null when there is none: the user dismissed the
+  /// picker, or the devices could not be listed and a message says it
+  /// "Couldn't [action]" (#3191).
+  Future<String?> _destinationSerial(String action) async {
+    try {
+      return await resolveUploadSerial(
+        pick: (targets) async =>
+            mounted ? showDeviceUploadPicker(context, targets) : null,
+        viewedSerial: _viewedSerial(),
+      );
+    } catch (e) {
+      debugPrint('[file_browser_page.dart] Failed to list devices: $e');
+      if (mounted) _showMessage(Errors.message(e, action));
+      return null;
+    }
   }
 
   Future<void> _handleUploadFolderPressed() async {
@@ -1106,6 +1108,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
+    // The same destination an upload from here would take (#3191).
+    final serial = await _destinationSerial('create the folder');
+    if (serial == null) {
+      return;
+    }
+
     final snapshot = _cachedFiles;
     setState(() {
       _isCreatingFolder = true;
@@ -1118,6 +1126,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       await _controller.createFolder(
         currentPath: _currentPath,
         folderName: folderName,
+        serial: serialOrNull(serial),
       );
 
       if (!mounted) {

@@ -546,18 +546,31 @@ class FilesService with AuthenticatedService {
     }
   }
 
-  static Future<void> createFolder(String folderPath, String folderName) async {
+  /// Creates [folderName] inside [folderPath] on the device with [serial],
+  /// or on built-in storage when it is null or empty.
+  static Future<void> createFolder(
+    String folderPath,
+    String folderName, {
+    String? serial,
+  }) async {
     final trimmedFolderPath = folderPath.trim();
     final endpointPath = trimmedFolderPath.isEmpty
         ? '/api/v0/files/folder/'
         : _joinPaths('/api/v0/files/folder', trimmedFolderPath);
-    final endpointUri = apiBaseUri.resolve(endpointPath);
+    final trimmedSerial = serial?.trim() ?? '';
+    final endpointUri = apiBaseUri
+        .resolve(endpointPath)
+        .replace(
+          queryParameters: trimmedSerial.isEmpty
+              ? null
+              : {'serial': trimmedSerial},
+        );
 
     final request = http.MultipartRequest('POST', endpointUri);
     request.fields['folderName'] = folderName;
     request.headers.addAll(_authHeaders);
 
-    final response = await request.send();
+    final response = await instance.httpClient.send(request);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to create folder');
     }
