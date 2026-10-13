@@ -207,13 +207,18 @@ class FileBrowserController {
         return FileMenuActionOutcome(message: downloadedMessage(node));
       case FileMenuAction.moveRename:
         final startPath = parentPath(node.apiPath);
-        // Fetch devices for cross-device move support.
-        // Use ALL devices (not just isEnabled) so the picker shows even
-        // when mount state is stale — the user can still select a drive
-        // that they know is mounted.
-        List<StorageDevice> allDevices = [];
+        final nodeSerial = node.deviceSerial.trim();
+        // Fetch devices for cross-device move support. Only mounted drives
+        // are destinations — moving to any other answers 404 — plus the
+        // item's own drive, so the picker always has where it is now. Mount
+        // state is fresh: mounting and unmounting invalidate the device
+        // cache (#1042).
+        List<StorageDevice> devices = [];
         try {
-          allDevices = await StorageService.listDevices();
+          devices = [
+            for (final d in await StorageService.listDevices())
+              if (d.isEnabled || d.serial == nodeSerial) d,
+          ];
         } catch (_) {
           // Fall through with empty list — dialog will skip device picker
         }
@@ -222,7 +227,8 @@ class FileBrowserController {
           context,
           startPath: startPath,
           initialName: node.name,
-          devices: allDevices,
+          devices: devices,
+          deviceSerial: nodeSerial,
         );
         if (!context.mounted) {
           return null;
@@ -235,13 +241,17 @@ class FileBrowserController {
           currentPath: startPath,
           nodeApiPath: node.apiPath,
           targetInput: targetInput,
+          currentDeviceSerial: nodeSerial,
+          targetDeviceSerial: moveResult.deviceSerial,
         );
         if (targetPath == null) {
           return null;
         }
 
-        // Prevent moving a directory into itself or its own subtree
-        if (node.isDir) {
+        // Prevent moving a directory into itself or its own subtree. On
+        // another drive the same path is a different folder.
+        if (node.isDir &&
+            (moveResult.deviceSerial ?? nodeSerial) == nodeSerial) {
           final normalizedOld = normalizePath(node.apiPath);
           final normalizedTarget = normalizePath(targetPath);
           if (normalizedTarget == normalizedOld ||
@@ -351,17 +361,26 @@ class FileBrowserController {
         FileMenuAction.openAsPresentation => 'import the presentation',
       });
 
+  /// The path a move of [nodeApiPath] to [targetInput] lands on, or null when
+  /// there is nothing to do: the path and the device are both unchanged.
+  ///
+  /// [targetDeviceSerial] is the destination drive, empty for the internal
+  /// one; null means none was chosen, which is [currentDeviceSerial].
   String? resolveMoveRenameTargetPath({
     required String currentPath,
     required String nodeApiPath,
     required String targetInput,
+    String currentDeviceSerial = '',
+    String? targetDeviceSerial,
   }) {
     final oldPath = normalizePath(nodeApiPath);
     final targetPath = targetInput.startsWith('/')
         ? normalizePath(targetInput)
         : joinPath(currentPath, targetInput);
+    final sameDevice =
+        (targetDeviceSerial ?? currentDeviceSerial) == currentDeviceSerial;
 
-    if (targetPath.isEmpty || targetPath == oldPath) {
+    if (targetPath.isEmpty || (targetPath == oldPath && sameDevice)) {
       return null;
     }
 

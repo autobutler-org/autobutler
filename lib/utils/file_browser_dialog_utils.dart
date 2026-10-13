@@ -48,12 +48,15 @@ Future<String?> promptForFolderName(BuildContext context) async {
 
 // startPath should be the current folder of the item being moved; returns a
 // [MoveRenameResult] with the path and optional destination device serial.
-// When [devices] has more than one entry a device picker dropdown is shown.
+// When [devices] has more than one entry a device picker dropdown is shown,
+// starting on the device whose serial is [deviceSerial] — the one the item is
+// on, empty for the internal drive.
 Future<MoveRenameResult?> promptForMoveRenamePath(
   BuildContext context, {
   String startPath = '',
   String? initialName,
   List<StorageDevice> devices = const [],
+  String deviceSerial = '',
 }) async {
   await Future<void>.delayed(Duration.zero);
   if (!context.mounted) return null;
@@ -87,7 +90,10 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
 
   // Only show device picker when there are multiple devices
   final showDevicePicker = devices.length > 1;
-  StorageDevice? selectedDevice = devices.isNotEmpty ? devices.first : null;
+  // Starts on the item's own device, so a plain rename stays put (#3193).
+  StorageDevice? selectedDevice =
+      devices.where((d) => d.serial == deviceSerial).firstOrNull ??
+      devices.firstOrNull;
 
   final result = await QuarkWidget.showDialog<MoveRenameResult?>(
     context,
@@ -277,14 +283,12 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
                           } else {
                             out = '$rel/$name';
                           }
-                          final serial = selectedDevice?.serial;
+                          // The internal drive's serial is empty, and that
+                          // is a choice: only "no device offered" is null.
                           Navigator.of(dialogContext).pop(
                             MoveRenameResult(
                               targetInput: out,
-                              deviceSerial:
-                                  (serial != null && serial.isNotEmpty)
-                                  ? serial
-                                  : null,
+                              deviceSerial: selectedDevice?.serial,
                             ),
                           );
                         },
