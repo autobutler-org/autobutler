@@ -1,10 +1,29 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/upload_destination.dart';
 import 'package:quark_widgets/quark_widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// #3191: which device an upload or a new folder goes to.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  const secureStorage = MethodChannel(
+    'plugins.it_nomads.com/flutter_secure_storage',
+  );
+
+  setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, (_) async => null);
+  });
+
+  tearDownAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, null);
+  });
+
   StorageDevice device(
     String name, {
     String serial = '',
@@ -25,16 +44,24 @@ void main() {
   final builtIn = device('Built-in');
   final stick = device('Stick', serial: 'USB1');
 
-  /// A picker that records what it was offered and answers [choose].
+  /// A picker that records what it was offered and where it started, and
+  /// answers [choose].
   late List<List<UploadTarget>> offered;
-  Future<UploadTarget?> Function(List<UploadTarget>) picker(
+  late List<String> startedOn;
+  Future<UploadTarget?> Function(List<UploadTarget>, UploadTarget) picker(
     UploadTarget? Function(List<UploadTarget>) choose,
-  ) => (targets) async {
+  ) => (targets, initial) async {
     offered.add(targets);
+    startedOn.add(initial.name);
     return choose(targets);
   };
 
-  setUp(() => offered = []);
+  setUp(() async {
+    offered = [];
+    startedOn = [];
+    SharedPreferences.setMockInitialValues({});
+    await AppSettings.instance.load();
+  });
 
   test('several enabled devices ask, and the answer is the serial', () async {
     final serial = await resolveUploadSerial(
@@ -120,5 +147,49 @@ void main() {
     expect(await resolveUploadSerial(pick: pick, listDevices: list), '');
     devices = [builtIn, stick];
     expect(await resolveUploadSerial(pick: pick, listDevices: list), 'USB1');
+  });
+
+  group('the last destination (#3192)', () {
+    test('the picker starts on the first device until one is chosen', () async {
+      await resolveUploadSerial(
+        pick: picker((_) => null),
+        listDevices: () async => [builtIn, stick],
+      );
+
+      expect(startedOn, ['Built-in']);
+    });
+
+    test('a chosen device is kept and starts the picker next time', () async {
+      Future<String?> ask(UploadTarget? Function(List<UploadTarget>) choose) =>
+          resolveUploadSerial(
+            pick: picker(choose),
+            listDevices: () async => [builtIn, stick],
+          );
+
+      await ask((targets) => targets.last);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('lastUploadSerial'), 'USB1');
+
+      // Dismissing keeps what was chosen before.
+      await ask((_) => null);
+      await ask((targets) => targets.first);
+      await ask((_) => null);
+
+      expect(startedOn, ['Built-in', 'Stick', 'Stick', 'Built-in']);
+    });
+
+    test(
+      'a kept device that is no longer offered starts on the first',
+      () async {
+        await AppSettings.instance.setLastUploadSerial('USB9');
+
+        await resolveUploadSerial(
+          pick: picker((_) => null),
+          listDevices: () async => [builtIn, stick],
+        );
+
+        expect(startedOn, ['Built-in']);
+      },
+    );
   });
 }

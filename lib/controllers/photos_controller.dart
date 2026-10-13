@@ -27,6 +27,7 @@ import 'package:quark/utils/file_kind.dart';
 import 'package:quark/utils/photo_grid_config.dart';
 import 'package:quark/utils/photo_month_sections.dart';
 import 'package:quark/utils/quark_widget_items.dart';
+import 'package:quark/utils/upload_destination.dart';
 import 'package:quark/utils/upload_tree_utils.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -142,8 +143,7 @@ class PhotosController extends ChangeNotifier {
         })
         listAlbumItems =
         AlbumService.listAlbumItems,
-    Future<List<StorageDevice>> Function() listDevices =
-        StorageService.listDevices,
+    Future<List<StorageDevice>> Function() listDevices = listDevicesFresh,
     Future<List<String>> Function(
           String uploadPath,
           List<http.MultipartFile> files, {
@@ -1420,19 +1420,16 @@ class PhotosController extends ChangeNotifier {
 
   // ── Uploads ────────────────────────────────────────────────────────────────
 
-  /// The enabled devices an upload can go to. Empty when they cannot be
-  /// listed, which uploads to the default device.
-  Future<List<UploadTarget>> uploadTargets() async {
-    try {
-      return [
-        for (final device in await _listDevices())
-          if (device.isEnabled) device.toUploadTarget(),
-      ];
-    } catch (e) {
-      debugPrint('[photos_controller.dart] Error listing devices: $e');
-      return const [];
-    }
-  }
+  /// The serial of the device an upload goes to, as [resolveUploadSerial]
+  /// works it out: `''` for built-in storage, null when [pick] was dismissed.
+  /// Throws when the devices cannot be listed, which stops the upload (#3192).
+  Future<String?> uploadSerial({
+    required Future<UploadTarget?> Function(
+      List<UploadTarget> targets,
+      UploadTarget initial,
+    )
+    pick,
+  }) => resolveUploadSerial(pick: pick, listDevices: _listDevices);
 
   /// Uploads [files] to the device with [serial], or the default device when
   /// null. Throws what the upload threw.
