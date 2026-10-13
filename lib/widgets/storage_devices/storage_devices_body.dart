@@ -103,7 +103,8 @@ class StorageDevicesBody extends StatelessWidget {
           isMounting: mounting.contains(device.serial),
           isVaultDevice: isVaultDevice,
           onMount: onMount != null && isUsb ? () => onMount(device) : null,
-          onSetRole: onSetRole != null && isUsb
+          // Built-in storage too: it can take default storage back (#3194).
+          onSetRole: onSetRole != null && (isUsb || device.isInternal)
               ? () => onSetRole(device)
               : null,
           onBackup: onBackup != null && isBackupDrive

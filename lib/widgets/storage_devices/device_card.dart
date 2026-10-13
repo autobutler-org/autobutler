@@ -191,8 +191,10 @@ class DeviceCard extends StatelessWidget {
               ),
             ],
 
-            // Role + backup actions for enabled external devices
-            if (device.isEnabled && !device.isInternal) ...[
+            // Role + backup actions for enabled external devices, and the
+            // role alone for built-in storage (#3194)
+            if (device.isEnabled &&
+                (!device.isInternal || onSetRole != null)) ...[
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,

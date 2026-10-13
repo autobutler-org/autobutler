@@ -11,7 +11,9 @@ import '../theme/quark_tokens.dart';
 /// A radio list of [targets] with cancel and upload buttons. The choice is the
 /// caller's: [selected] in, [onSelected] out, and [onConfirm] fires when the
 /// user commits to it. A target with an [UploadTarget.unavailableReason] is
-/// listed with that reason under its name and cannot be chosen (#3191).
+/// listed with that reason under its name and cannot be chosen (#3191). The
+/// one with [UploadTarget.isDefault] set reads "Default" under its name, which
+/// is why the caller started on it (#3194).
 ///
 /// Key prefixes: `upload_target_<index>` on each radio row (by position, since
 /// a default device may have no serial), `upload_target_cancel` and
@@ -77,6 +79,7 @@ class UploadTargetPicker extends StatelessWidget {
                     [
                       if (target.mountPoint.isNotEmpty) target.mountPoint,
                       if (target.isInternal) 'Internal',
+                      if (target.isDefault) 'Default',
                       ?target.unavailableReason,
                     ].join(' · '),
                   ),

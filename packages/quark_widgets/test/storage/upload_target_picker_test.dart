@@ -75,4 +75,43 @@ void main() {
 
     expect(events, ['select:usb-1']);
   });
+
+  // #3194: the picker starts on the default storage device, so its row says
+  // why.
+  testBothViewports('the default storage device is labeled', (
+    tester,
+    size,
+  ) async {
+    const usbDefault = UploadTarget(
+      serial: 'usb-1',
+      name: 'Backup drive',
+      mountPoint: '/mnt/usb',
+      isDefault: true,
+    );
+    await pumpInSheet(
+      tester,
+      UploadTargetPicker(
+        targets: const [_internal, usbDefault],
+        selected: usbDefault,
+        onSelected: (_) {},
+        onCancel: () {},
+        onConfirm: () {},
+      ),
+      size: size,
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('/mnt/usb · Default'), findsOneWidget);
+    expect(find.text('/data · Internal'), findsOneWidget);
+    expect(
+      usbDefault,
+      isNot(
+        const UploadTarget(
+          serial: 'usb-1',
+          name: 'Backup drive',
+          mountPoint: '/mnt/usb',
+        ),
+      ),
+    );
+  });
 }

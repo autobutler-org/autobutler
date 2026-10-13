@@ -38,12 +38,14 @@ extension PhotoAlbumsToPickerItems on Iterable<PhotoAlbum> {
 extension StorageDeviceToTarget on StorageDevice {
   /// The package's view of this device as somewhere to upload to. A device
   /// that is connected but not enabled is unavailable, and says what enables
-  /// it (#3191).
+  /// it (#3191). The one an admin gave the default storage role is the
+  /// default (#3194).
   UploadTarget toUploadTarget() => UploadTarget(
     serial: serial,
     name: name,
     mountPoint: mountPoint,
     isInternal: isInternal,
+    isDefault: role == 'default-storage',
     unavailableReason: isEnabled
         ? null
         : 'Not enabled. Mount it under System > Storage.',
