@@ -179,7 +179,8 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 2. Select **Move**.
 3. Choose a destination folder in the picker.
 4. With more than one mounted storage device, optionally choose a **Destination device**; the picker starts on
-   the device the item is on.
+   the device the item is on. The folder list shows that device's folders, and goes to its top level when it
+   has no folder at the path being browsed.
 5. Confirm.
 
 **Expected result:**

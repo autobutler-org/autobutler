@@ -68,6 +68,24 @@ class FileBrowserController {
     return FilesService.getFiles(currentPath, serials: serials);
   }
 
+  /// What [currentPath] holds on the one drive whose serial is [serial] —
+  /// empty for the internal drive.
+  ///
+  /// The Quark reads an empty serial filter as every drive, so the internal
+  /// drive is the merged listing less what sits on another drive. That is
+  /// exact: the merged listing reports a folder on several drives once, as the
+  /// internal drive's when it has one.
+  Future<List<FileNode>> fetchDeviceFiles(
+    String currentPath,
+    String serial,
+  ) async {
+    if (serial.isNotEmpty) return fetchFiles(currentPath, serials: [serial]);
+    return [
+      for (final node in await fetchFiles(currentPath))
+        if (node.deviceSerial.isEmpty) node,
+    ];
+  }
+
   /// Picks one or more files for upload.
   ///
   /// On web and desktop, multiple file selection is supported.
