@@ -178,12 +178,15 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 1. Open the context menu on a file or folder.
 2. Select **Move**.
 3. Choose a destination folder in the picker.
-4. Confirm.
+4. With more than one mounted storage device, optionally choose a **Destination device**; the picker starts on
+   the device the item is on.
+5. Confirm.
 
 **Expected result:**
 
 - Item disappears from the source directory listing.
-- Item appears in the destination directory.
+- Item appears in the destination directory, on the chosen device.
+- The same folder on another device is a move; the same folder on the same device changes nothing.
 
 ---
 

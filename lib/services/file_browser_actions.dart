@@ -42,6 +42,9 @@ Future<String?> downloadNode({required FileNode node}) {
   );
 }
 
+/// Moves or renames [node] to [targetInput], a path relative to its folder or
+/// an absolute one. [newDeviceSerial] is the destination drive — empty for the
+/// internal one — and null keeps the item on the drive it is on.
 Future<void> moveRenameNode({
   required FileNode node,
   required String targetInput,
@@ -58,7 +61,9 @@ Future<void> moveRenameNode({
     oldPath,
     targetPath,
     oldDeviceSerial: serial,
-    newDeviceSerial: newDeviceSerial ?? serial,
+    newDeviceSerial: newDeviceSerial == null
+        ? serial
+        : serialOrNull(newDeviceSerial),
   );
 }
 
