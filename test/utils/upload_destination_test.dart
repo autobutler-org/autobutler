@@ -91,17 +91,69 @@ void main() {
     expect(serial, isNull);
   });
 
-  test('one enabled device is the destination without asking', () async {
+  test('one device is the destination without asking', () async {
     final serial = await resolveUploadSerial(
       pick: picker((targets) => targets.first),
-      listDevices: () async => [
-        device('Off', serial: 'USB0', isEnabled: false),
-        stick,
-      ],
+      listDevices: () async => [stick],
     );
 
     expect(serial, 'USB1');
     expect(offered, isEmpty);
+  });
+
+  group('a drive that is connected but not enabled (#3191)', () {
+    final off = device('Off', serial: 'USB0', isEnabled: false);
+
+    test('is offered as unavailable beside the one enabled device, which '
+        'the picker starts on', () async {
+      final serial = await resolveUploadSerial(
+        pick: picker((targets) => targets.last),
+        listDevices: () async => [off, stick],
+      );
+
+      expect(serial, 'USB1');
+      expect(offered.single.map((t) => (t.name, t.unavailableReason != null)), [
+        ('Off', true),
+        ('Stick', false),
+      ]);
+      expect(startedOn, ['Stick']);
+    });
+
+    test('is never where the picker starts, even when it was chosen last '
+        'time', () async {
+      await AppSettings.instance.setLastUploadSerial('USB0');
+
+      await resolveUploadSerial(
+        pick: picker((_) => null),
+        listDevices: () async => [off, builtIn, stick],
+      );
+
+      expect(startedOn, ['Built-in']);
+    });
+
+    test('is not a destination because the view shows it', () async {
+      final serial = await resolveUploadSerial(
+        pick: picker((targets) => targets.last),
+        viewedSerial: 'USB0',
+        listDevices: () async => [off, stick],
+      );
+
+      expect(serial, 'USB1');
+      expect(offered, hasLength(1));
+    });
+
+    test(
+      'alone is not a destination: built-in storage, without asking',
+      () async {
+        final serial = await resolveUploadSerial(
+          pick: picker((targets) => targets.first),
+          listDevices: () async => [off],
+        );
+
+        expect(serial, '');
+        expect(offered, isEmpty);
+      },
+    );
   });
 
   test('the one device the view shows is the destination', () async {

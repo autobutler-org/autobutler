@@ -1651,11 +1651,17 @@ void main() {
   });
 
   group('uploads', () {
-    test('one enabled device is the destination without asking', () async {
+    test('the destination is the device the picker answers', () async {
+      final offered = <String>[];
       final serial = await _FakeQuark().controller().uploadSerial(
-        pick: (_, _) async => fail('asked'),
+        pick: (targets, initial) async {
+          offered.addAll(targets.map((t) => t.serial));
+          return initial;
+        },
       );
 
+      // The drive that is not enabled is shown, and is not where it starts.
+      expect(offered, ['a', 'b']);
       expect(serial, 'a');
     });
 

@@ -12,6 +12,7 @@ class UploadTarget {
     required this.name,
     this.mountPoint = '',
     this.isInternal = false,
+    this.unavailableReason,
   });
 
   /// The device's serial, which is what an upload names. May be empty for the
@@ -27,6 +28,11 @@ class UploadTarget {
   /// Whether the device is built into the server rather than plugged in.
   final bool isInternal;
 
+  /// Why an upload cannot go to this device, in words the caller wrote for a
+  /// user to read — a drive that is plugged in but not enabled, say. Null
+  /// when the device can be chosen.
+  final String? unavailableReason;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -34,8 +40,10 @@ class UploadTarget {
           other.serial == serial &&
           other.name == name &&
           other.mountPoint == mountPoint &&
-          other.isInternal == isInternal;
+          other.isInternal == isInternal &&
+          other.unavailableReason == unavailableReason;
 
   @override
-  int get hashCode => Object.hash(serial, name, mountPoint, isInternal);
+  int get hashCode =>
+      Object.hash(serial, name, mountPoint, isInternal, unavailableReason);
 }

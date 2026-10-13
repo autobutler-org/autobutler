@@ -36,11 +36,16 @@ extension PhotoAlbumsToPickerItems on Iterable<PhotoAlbum> {
 
 /// Maps an app [StorageDevice] onto the package's [UploadTarget].
 extension StorageDeviceToTarget on StorageDevice {
-  /// The package's view of this device as somewhere to upload to.
+  /// The package's view of this device as somewhere to upload to. A device
+  /// that is connected but not enabled is unavailable, and says what enables
+  /// it (#3191).
   UploadTarget toUploadTarget() => UploadTarget(
     serial: serial,
     name: name,
     mountPoint: mountPoint,
     isInternal: isInternal,
+    unavailableReason: isEnabled
+        ? null
+        : 'Not enabled. Mount it under System > Storage.',
   );
 }
