@@ -6,18 +6,21 @@ import 'package:quark_widgets/quark_widgets.dart';
 ///
 /// Pops with the selected [UploadTarget], or with `null` on cancel.
 class DeviceUploadPicker extends StatefulWidget {
-  /// Creates the picker over [targets], starting on the first.
-  const DeviceUploadPicker({required this.targets, super.key});
+  /// Creates the picker over [targets], starting on [initial].
+  const DeviceUploadPicker({required this.targets, this.initial, super.key});
 
   /// The devices to choose between. Must not be empty.
   final List<UploadTarget> targets;
+
+  /// The device chosen when the sheet opens; null starts on the first.
+  final UploadTarget? initial;
 
   @override
   State<DeviceUploadPicker> createState() => _DeviceUploadPickerState();
 }
 
 class _DeviceUploadPickerState extends State<DeviceUploadPicker> {
-  late UploadTarget _selected = widget.targets.first;
+  late UploadTarget _selected = widget.initial ?? widget.targets.first;
 
   @override
   Widget build(BuildContext context) {

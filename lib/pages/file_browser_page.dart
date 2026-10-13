@@ -869,8 +869,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   Future<String?> _destinationSerial(String action) async {
     try {
       return await resolveUploadSerial(
-        pick: (targets) async =>
-            mounted ? showDeviceUploadPicker(context, targets) : null,
+        pick: (targets, initial) async => mounted
+            ? showDeviceUploadPicker(context, targets, initial: initial)
+            : null,
         viewedSerial: _viewedSerial(),
       );
     } catch (e) {

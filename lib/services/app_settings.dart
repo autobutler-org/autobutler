@@ -327,6 +327,7 @@ class AppSettings {
   static const _photoSortFieldKey = 'photoSortField';
   static const _photoSortOrderKey = 'photoSortOrder';
   static const _albumSortKey = 'albumSort';
+  static const _lastUploadSerialKey = 'lastUploadSerial';
   static const _fileListColumnsKey = 'fileListColumns';
 
   /// Holds a JSON object of host key -> username. Absent for a session that
@@ -1090,6 +1091,15 @@ class AppSettings {
       _fileListColumnsKey,
       columns.map((shown) => shown.name).toList(),
     );
+  }
+
+  /// The serial of the device the user last chose in the upload picker —
+  /// `''` for built-in storage — or null before any choice (#3192).
+  String? get lastUploadSerial => _prefs?.getString(_lastUploadSerialKey);
+
+  /// Persists [serial] as the device the user last chose to upload to.
+  Future<void> setLastUploadSerial(String serial) async {
+    await _prefs?.setString(_lastUploadSerialKey, serial);
   }
 
   /// Sets the order of the Photos sidebar's albums and persists it (#2510).

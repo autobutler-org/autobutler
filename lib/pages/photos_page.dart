@@ -345,8 +345,6 @@ class PhotosPageState extends State<PhotosPage>
       final picked = await FilePicker.pickFiles(type: FileType.image);
       if (picked.isEmpty || !mounted) return;
 
-      final serial = await _pickUploadSerial();
-      if (serial == null) return;
       // A user album showing takes the upload too (#2240). System albums and
       // Favorites are filled by the Quark or by starring, so those stay a
       // plain library upload.
@@ -354,6 +352,8 @@ class PhotosPageState extends State<PhotosPage>
       final album = showing == null || showing.isSystemAlbum ? null : showing;
 
       try {
+        final serial = await _uploadSerial();
+        if (serial == null) return;
         final outcome = await _controller.uploadPhotos(
           picked,
           serial: serial.isNotEmpty ? serial : null,
@@ -397,10 +397,9 @@ class PhotosPageState extends State<PhotosPage>
       return;
     }
 
-    final serial = await _pickUploadSerial();
-    if (serial == null || !mounted) return;
-
     try {
+      final serial = await _uploadSerial();
+      if (serial == null || !mounted) return;
       final uploaded = await _controller.uploadDroppedPhotos(
         photos,
         serial: serial.isNotEmpty ? serial : null,
@@ -416,18 +415,14 @@ class PhotosPageState extends State<PhotosPage>
     }
   }
 
-  /// The serial of the device an upload goes to — `''` for the default
-  /// device — or null when the user dismissed the device picker.
-  Future<String?> _pickUploadSerial() async {
-    final targets = await _controller.uploadTargets();
-    UploadTarget? target = targets.length == 1 ? targets.first : null;
-    if (targets.length > 1) {
-      if (!mounted) return null;
-      target = await showDeviceUploadPicker(context, targets);
-      if (target == null) return null;
-    }
-    return target?.serial ?? '';
-  }
+  /// The serial of the device an upload goes to — `''` for built-in
+  /// storage — or null when the user dismissed the device picker. Throws
+  /// when the devices cannot be listed (#3192).
+  Future<String?> _uploadSerial() => _controller.uploadSerial(
+    pick: (targets, initial) async => mounted
+        ? showDeviceUploadPicker(context, targets, initial: initial)
+        : null,
+  );
 
   // ── Selection ──────────────────────────────────────────────────────────────
 

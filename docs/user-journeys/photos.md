@@ -95,8 +95,12 @@ Covers the Photos page (`/photos`), including Quark photos, mobile device photos
 
 **Expected result:**
 
+- With more than one enabled storage device, an **Upload to device** sheet asks where the photos go, starting on
+  the device chosen last time (in Files or Photos) when it is still offered; dismissing it uploads nothing.
+- If the storage devices cannot be listed, nothing is uploaded and a message says so.
 - Upload progress is shown.
-- After completion, the uploaded photo(s) appear in the Quark category.
+- After completion, the uploaded photo(s) appear in the Quark category. They land in the top level of the chosen
+  device.
 
 ---
 
@@ -324,8 +328,8 @@ Covers the Photos page (`/photos`), including Quark photos, mobile device photos
 **Expected result:**
 
 - The page highlights while the drag is over it.
-- The photos upload on drop the same way as the upload button (JN-PH-006), including the device choice when
-  more than one device is enabled, and appear in the grid.
+- The photos upload on drop the same way as the upload button (JN-PH-006) — the same device choice with more
+  than one device enabled, and the same stop when the devices cannot be listed — and appear in the grid.
 - A dropped file that is not a photo is left out, and a message says how many were not uploaded. A drop with
   no photos in it uploads nothing and shows only that message.
 

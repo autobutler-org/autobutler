@@ -1651,18 +1651,24 @@ void main() {
   });
 
   group('uploads', () {
-    test('offers enabled devices only', () async {
-      final targets = await _FakeQuark().controller().uploadTargets();
+    test('one enabled device is the destination without asking', () async {
+      final serial = await _FakeQuark().controller().uploadSerial(
+        pick: (_, _) async => fail('asked'),
+      );
 
-      expect(targets.map((t) => t.serial), ['a']);
+      expect(serial, 'a');
     });
 
-    test('devices that cannot be listed upload to the default', () async {
+    // #3192: this used to upload to built-in storage.
+    test('devices that cannot be listed stop the upload', () async {
       final controller = PhotosController(
         listDevices: () async => throw const ApiException(500),
       );
 
-      expect(await controller.uploadTargets(), isEmpty);
+      await expectLater(
+        controller.uploadSerial(pick: (_, _) async => fail('asked')),
+        throwsA(isA<ApiException>()),
+      );
     });
 
     test('without an album, uploads and adds nothing', () async {

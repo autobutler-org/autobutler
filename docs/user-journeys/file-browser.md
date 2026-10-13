@@ -97,8 +97,9 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 
 - Upload progress indicator is shown.
 - On completion, the file appears in the current directory listing.
-- With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes; dismissing
-  it uploads nothing. A view filtered to one device uploads to that device without asking.
+- With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes, starting on
+  the device chosen last time when it is still offered; dismissing it uploads nothing. A view filtered to one
+  device uploads to that device without asking.
 - If the storage devices cannot be listed, nothing is uploaded and a message says so.
 
 ---
@@ -116,8 +117,9 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 
 - Drop zone highlights when file is hovered over it.
 - File uploads on drop.
-- With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes; dismissing
-  it uploads nothing. A view filtered to one device uploads to that device without asking.
+- With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes, starting on
+  the device chosen last time when it is still offered; dismissing it uploads nothing. A view filtered to one
+  device uploads to that device without asking.
 - If the storage devices cannot be listed, nothing is uploaded and a message says so.
 - File appears in the listing after upload completes.
 
@@ -455,8 +457,9 @@ it, so what changed while the client was away shows without a manual refresh.
 
 - The Photos library opens, not the Files app.
 - Selected items upload to the current directory.
-- With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes; dismissing
-  it uploads nothing. A view filtered to one device uploads to that device without asking.
+- With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes, starting on
+  the device chosen last time when it is still offered; dismissing it uploads nothing. A view filtered to one
+  device uploads to that device without asking.
 - If the storage devices cannot be listed, nothing is uploaded and a message says so.
 - **Upload files** remains available as a separate source for documents.
 
