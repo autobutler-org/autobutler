@@ -78,15 +78,7 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
   // the name does not start a new request and paint the previous rows.
   Future<List<FileNode>>? filesFuture;
   String? listedPath;
-
-  Future<List<FileNode>> listingFor(String path) {
-    final current = filesFuture;
-    if (listedPath != path || current == null) {
-      listedPath = path;
-      return filesFuture = controller.fetchFiles(path);
-    }
-    return current;
-  }
+  StorageDevice? listedDevice;
 
   // Only show device picker when there are multiple devices
   final showDevicePicker = devices.length > 1;
@@ -94,6 +86,36 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
   StorageDevice? selectedDevice =
       devices.where((d) => d.serial == deviceSerial).firstOrNull ??
       devices.firstOrNull;
+
+  // The folders on the destination, not every drive's merged (#3193). With no
+  // picker there is no destination to choose and the listing is as it was.
+  Future<List<FileNode>> filesOn(StorageDevice? device, String path) =>
+      showDevicePicker && device != null
+      ? controller.fetchDeviceFiles(path, device.serial)
+      : controller.fetchFiles(path);
+
+  Future<List<FileNode>> listingFor(String path) {
+    final current = filesFuture;
+    if (listedPath != path ||
+        listedDevice != selectedDevice ||
+        current == null) {
+      listedPath = path;
+      listedDevice = selectedDevice;
+      return filesFuture = filesOn(selectedDevice, path);
+    }
+    return current;
+  }
+
+  // Whether [device] has the folder [path]: it is listed in its parent there.
+  Future<bool> hasFolder(StorageDevice device, String path) async {
+    if (path.isEmpty) return true;
+    try {
+      final siblings = await filesOn(device, parentPath(path));
+      return siblings.any((n) => n.isDir && normalizePath(n.apiPath) == path);
+    } catch (_) {
+      return false;
+    }
+  }
 
   final result = await QuarkWidget.showDialog<MoveRenameResult?>(
     context,
@@ -193,8 +215,18 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
                               ),
                             )
                             .toList(),
-                        onChanged: (v) {
-                          if (v != null) setState(() => selectedDevice = v);
+                        onChanged: (v) async {
+                          if (v == null || v == selectedDevice) return;
+                          // The folder being browsed may not exist on the
+                          // other drive; start from its root when it does not.
+                          final path = await hasFolder(v, currentAbsolutePath)
+                              ? currentAbsolutePath
+                              : '';
+                          if (!dialogContext.mounted) return;
+                          setState(() {
+                            selectedDevice = v;
+                            currentAbsolutePath = path;
+                          });
                         },
                       ),
                       const SizedBox(height: 12),
@@ -209,7 +241,10 @@ Future<MoveRenameResult?> promptForMoveRenamePath(
                     SizedBox(
                       height: 300,
                       child: FileBrowserView(
-                        key: ValueKey(currentAbsolutePath),
+                        key: ValueKey((
+                          selectedDevice?.devicePath,
+                          currentAbsolutePath,
+                        )),
                         filesFuture: listingFor(currentAbsolutePath),
                         onFileMenuAction: (node, action) async {},
                         onOpenDirectory: openDirectory,

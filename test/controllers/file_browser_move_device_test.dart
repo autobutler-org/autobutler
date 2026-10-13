@@ -41,9 +41,50 @@ void main() {
   late List<Map<String, Object?>> devices;
   late List<Map<String, dynamic>> moves;
 
+  /// The folders on each drive, by serial. A listing is answered from this
+  /// the way the Quark answers it: no `serial` is every drive merged, with a
+  /// folder on several drives reported once as the first drive's.
+  late Map<String, Set<String>> folders;
+
+  http.Response listing(Uri url) {
+    final rootDir = url.queryParameters['rootDir'] ?? '';
+    final asked = url.queryParametersAll['serial'] ?? const <String>[];
+    final seen = <String>{};
+    final rows = [
+      for (final MapEntry(key: serial, value: paths) in folders.entries)
+        if (asked.isEmpty || asked.contains(serial))
+          for (final path in paths)
+            if ((path.contains('/')
+                        ? path.substring(0, path.lastIndexOf('/'))
+                        : '') ==
+                    rootDir &&
+                seen.add(path))
+              {
+                'name': path.split('/').last,
+                'isDir': true,
+                'dirPath': path,
+                'deviceSerial': serial,
+              },
+    ];
+    final exists =
+        rootDir.isEmpty ||
+        folders.entries.any(
+          (e) =>
+              (asked.isEmpty || asked.contains(e.key)) &&
+              e.value.contains(rootDir),
+        );
+    return exists
+        ? http.Response(jsonEncode(rows), 200)
+        : http.Response('{"error":"folder not found"}', 404);
+  }
+
   setUp(() {
     devices = [device('Built-in'), device('Stick', serial: 'USB1')];
     moves = [];
+    folders = {
+      '': {'Docs'},
+      'USB1': {'Docs'},
+    };
     StorageService.invalidateDeviceCache();
     sharedHttpClientFactory = () => MockClient((request) async {
       if (request.url.path.endsWith('/storage/devices/status')) {
@@ -53,6 +94,7 @@ void main() {
         moves.add(jsonDecode(request.body) as Map<String, dynamic>);
         return http.Response('{}', 202);
       }
+      if (request.url.path == '/api/v0/files') return listing(request.url);
       return http.Response('[]', 200);
     });
   });
@@ -196,5 +238,73 @@ void main() {
     await open(tester, node('Docs/a.txt', serial: 'USB2'));
 
     expect(find.text('Unplugged'), findsOneWidget);
+  });
+
+  testWidgets("the folder list is the selected drive's folders", (
+    tester,
+  ) async {
+    folders = {
+      '': {'OnBuiltIn'},
+      'USB1': {'OnStick'},
+    };
+    await open(tester, node('a.txt'));
+
+    expect(find.text('OnBuiltIn'), findsOneWidget);
+    expect(find.text('OnStick'), findsNothing);
+
+    await pickDevice(tester, 'Stick');
+
+    expect(find.text('OnStick'), findsOneWidget);
+    expect(find.text('OnBuiltIn'), findsNothing);
+
+    await pickDevice(tester, 'Built-in (Internal)');
+
+    expect(find.text('OnBuiltIn'), findsOneWidget);
+    expect(find.text('OnStick'), findsNothing);
+  });
+
+  testWidgets('a folder the other drive lacks falls back to its root', (
+    tester,
+  ) async {
+    folders = {
+      '': {'Docs'},
+      'USB1': {'Other'},
+    };
+    final outcome = await open(tester, node('Docs/a.txt'));
+    await pickDevice(tester, 'Stick');
+
+    expect(find.text('Other'), findsOneWidget);
+
+    await save(tester);
+
+    expect((await outcome)?.shouldRefresh, isTrue);
+    expect(moves, [
+      {
+        'oldFilePath': '/Docs/a.txt',
+        'newFilePath': '/a.txt',
+        'newDeviceSerial': 'USB1',
+      },
+    ]);
+  });
+
+  testWidgets('a folder only a USB drive has is not on built-in storage', (
+    tester,
+  ) async {
+    folders = {
+      '': <String>{},
+      'USB1': {'Docs'},
+    };
+    final outcome = await open(tester, node('Docs/a.txt', serial: 'USB1'));
+    await pickDevice(tester, 'Built-in (Internal)');
+    await save(tester);
+
+    expect((await outcome)?.shouldRefresh, isTrue);
+    expect(moves, [
+      {
+        'oldFilePath': '/Docs/a.txt',
+        'newFilePath': '/a.txt',
+        'oldDeviceSerial': 'USB1',
+      },
+    ]);
   });
 }
