@@ -36,6 +36,7 @@ import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_kind.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
+import 'package:quark/utils/markdown_viewer_files.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/file_browser_drag_config.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
@@ -1533,6 +1534,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _goToEditor(node.apiPath, AppRoutes.codeViewerPath(node.apiPath));
       return;
     }
+    // Markdown opens rendered (#2987).
+    if (opensInMarkdownViewer(node.name)) {
+      _goToEditor(node.apiPath, AppRoutes.markdownViewerPath(node.apiPath));
+      return;
+    }
     switch (kind) {
       // Navigate into archives as virtual directories.
       case FileKind.archive:
@@ -1958,6 +1964,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // matching what clicking the row does.
     if (opensInCodeViewer(fileName)) {
       _goToEditor(filePath, AppRoutes.codeViewerPath(filePath));
+      return;
+    }
+    // Markdown opens rendered (#2987).
+    if (opensInMarkdownViewer(fileName)) {
+      _goToEditor(filePath, AppRoutes.markdownViewerPath(filePath));
       return;
     }
 

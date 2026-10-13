@@ -22,8 +22,7 @@ void main() {
     );
   });
 
-  test('a /view link to prose still opens the plaintext editor', () {
-    expect(viewFileRedirect('notes/readme.md', null), '/edit/notes/readme.md');
+  test('a /view link to plain prose still opens the plaintext editor', () {
     expect(viewFileRedirect('notes/todo.txt', null), '/edit/notes/todo.txt');
   });
 }

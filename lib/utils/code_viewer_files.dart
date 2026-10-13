@@ -8,8 +8,8 @@ const _codeFileNames = {'dockerfile', 'makefile'};
 /// (#2991) and not the plaintext editor: source and config files, and logs.
 ///
 /// A log is [FileKind.text], but it is read, not written, and it is the file
-/// most likely to be too large to load whole. Prose (`.txt`, `.md`) keeps
-/// opening in the editor.
+/// most likely to be too large to load whole. Plain prose (`.txt`) keeps
+/// opening in the editor; Markdown has its own viewer (#2987).
 bool opensInCodeViewer(String name) {
   final base = name.substring(name.lastIndexOf('/') + 1).toLowerCase();
   return fileKindForName(base) == FileKind.code ||

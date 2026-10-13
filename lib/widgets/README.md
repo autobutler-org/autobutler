@@ -105,6 +105,15 @@ lib/widgets/
                                 button that expands the host list
     host_switcher.dart          ActiveHostCard plus the inline HostManager,
                                 shared by the login and setup pages
+  markdown_viewer/
+    markdown_viewer_body.dart   QuarkMarkdownView fed from a
+                                MarkdownViewerController; reads AppSettings
+                                for the disconnected state and writes its
+                                sentences with Errors
+    markdown_viewer_image.dart  an image in a Markdown file: calls
+                                FilesService for one on the Quark, and holds
+                                a remote one behind a "Load remote image"
+                                button
   notifications/
     notification_copy.dart      the title, body and Settings label of each
                                 notification type; the Quark sends no text
