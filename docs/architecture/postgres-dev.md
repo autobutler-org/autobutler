@@ -54,7 +54,8 @@ URL, stops it with a message naming what to set.
 
 With `DB_BACKEND=sqlite` it sets neither, so a SQLite run is the same command it was before the switch existed.
 `serve/docker` passes the same two with the host `postgres` in place of `127.0.0.1`, because a container
-reaches the database over the compose network rather than the host's loopback.
+reaches the database over the compose network rather than the host's loopback. Its port is always 5432:
+`POSTGRES_PORT` moves the port published on the host, not the one inside that network.
 
 If `DB_BACKEND=postgres` and nothing is listening on `127.0.0.1:5432`, the target stops before it builds
 anything and prints the fix: `make serve/postgres`, or start Docker first. `make check/db DB_BACKEND=postgres`
@@ -66,7 +67,9 @@ runs that check on its own.
 
 - user, password and database are all `quark`. The credentials are throwaway on purpose.
 - the port is published on `127.0.0.1:5432` only, so nothing else on your network can reach it.
-- data lives in the `quark_postgres` Docker volume and survives a restart.
+- data lives in the `quark_postgres` Docker volume and survives a restart. The volume is mounted at
+  `/var/lib/postgresql` and `PGDATA` is set to `/var/lib/postgresql/pgdata`, a layout images 17 and 18 both
+  accept.
 - `pg_trgm`, which filename search needs, ships in the image. The migration that adds filename search enables
   it (#2958), so there is no init script here to keep in step with the migrations.
 
@@ -79,8 +82,33 @@ runs that check on its own.
 To reset the database, run `make clean/postgres/data` and then `make serve/postgres`. `make clean` stops the
 database too, and keeps its data.
 
-If port 5432 is already taken by a PostgreSQL of your own, `make serve/postgres` fails to bind it. Stop the other
-one; the port is fixed so that the Makefile, the compose file and this page agree on one URL.
+### Image and port
+
+Two variables change what runs. Pass them on the `make` command line, export them, or put them in `.env`, which
+both the Makefile and `docker compose` read.
+
+| Variable         | Default       | What it sets                                             |
+| ---------------- | ------------- | -------------------------------------------------------- |
+| `POSTGRES_IMAGE` | `postgres:18` | the image `compose.yaml` runs                            |
+| `POSTGRES_PORT`  | `5432`        | the host port, for the container, the URL and `check/db` |
+
+```bash
+make serve/postgres POSTGRES_IMAGE=postgres:17
+make serve/postgres POSTGRES_PORT=55432
+make serve/backend DB_BACKEND=postgres POSTGRES_PORT=55432
+```
+
+`POSTGRES_PORT` has to reach every target that uses the database, not only `serve/postgres`, which is what
+`.env` is for. If port 5432 is already taken by a PostgreSQL of your own, `make serve/postgres` fails to bind
+it: set `POSTGRES_PORT` to a free one.
+
+The default image is written once, in `compose.yaml`, so Renovate can move it. A data directory belongs to the
+major version that created it, and PostgreSQL will not start on another's: after changing the major, whether
+through `POSTGRES_IMAGE` or a Renovate bump, run `make clean/postgres/data` to start empty.
+
+An image at 17 or older also gets an empty anonymous volume at `/var/lib/postgresql/data`, which those images
+declare for themselves. Nothing is stored in it, and `make clean/postgres` leaves it behind; `docker volume
+prune` clears those.
 
 ## What runs on PostgreSQL today
 

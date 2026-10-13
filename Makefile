@@ -34,18 +34,22 @@ DB_BACKEND ?= sqlite
 ifeq ($(filter sqlite postgres,$(DB_BACKEND)),)
 $(error DB_BACKEND=$(DB_BACKEND) is not a database backend. Use DB_BACKEND=sqlite or DB_BACKEND=postgres)
 endif
-POSTGRES_PORT := 5432
-POSTGRES_URL = postgres://quark:quark@$(1):$(POSTGRES_PORT)/quark?sslmode=disable
+# The host port compose.yaml publishes PostgreSQL on. Exported so compose.yaml, the URL
+# below and check/db all read this one value. The image is POSTGRES_IMAGE, which has no
+# default here: compose.yaml holds it, where Renovate can see the pin.
+export POSTGRES_PORT ?= 5432
+POSTGRES_URL = postgres://quark:quark@$(1):$(2)/quark?sslmode=disable
 DB_ENV :=
 DOCKER_DB_ARGS :=
 ifeq ($(DB_BACKEND),postgres)
 export QUARK_DB_BACKEND := postgres
-export QUARK_DATABASE_URL := $(call POSTGRES_URL,127.0.0.1)
+export QUARK_DATABASE_URL := $(call POSTGRES_URL,127.0.0.1,$(POSTGRES_PORT))
 DB_ENV := QUARK_DB_BACKEND=$(QUARK_DB_BACKEND) QUARK_DATABASE_URL='$(QUARK_DATABASE_URL)'
 # serve/docker: a container cannot reach the host's loopback, where compose.yaml publishes
-# PostgreSQL, so it joins the compose network and uses the service name instead.
+# PostgreSQL, so it joins the compose network and uses the service name instead. The port
+# is the container's own 5432 there: POSTGRES_PORT only moves the one published on the host.
 DOCKER_DB_ARGS := --network quark_default -e QUARK_DB_BACKEND=postgres \
-	-e QUARK_DATABASE_URL='$(call POSTGRES_URL,postgres)'
+	-e QUARK_DATABASE_URL='$(call POSTGRES_URL,postgres,5432)'
 endif
 
 # Keep git's per-invocation environment out of recipes. When make runs from a git
@@ -985,7 +989,7 @@ serve/docker: check/docker check/db ## Serve the container image on :$(DOCKER_PO
 .PHONY: serve/postgres
 serve/postgres: check/docker/compose ## Start the development PostgreSQL in the background (stop: clean/postgres, reset: clean/postgres/data)
 	docker compose up --detach --wait postgres
-	echo "PostgreSQL is at $(call POSTGRES_URL,127.0.0.1)"
+	echo "PostgreSQL is at $(call POSTGRES_URL,127.0.0.1,$(POSTGRES_PORT))"
 	echo "  Use it:  make serve/backend DB_BACKEND=postgres"
 
 .PHONY: serve/frontend
