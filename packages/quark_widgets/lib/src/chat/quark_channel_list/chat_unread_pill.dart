@@ -4,28 +4,40 @@ import '../../theme/quark_tokens.dart';
 
 /// The count of unread messages on a channel's row: a small filled pill
 /// reading the number, or `99+` above 99, in the theme's primary color.
+/// With [isMention] it counts the unread messages that mention the reader
+/// instead, and reads the number after an `@`.
 ///
 /// A screen reader and a hover get [labelFor] instead of the bare number.
 /// It is decoration on the row, not a control, so it takes no callbacks.
 ///
-/// A part of `ChatChannelTile`, which keys it `channel_unread_<id>`, and
-/// tested through `QuarkChannelList`.
+/// A part of `ChatChannelTile`, which keys it `channel_unread_<id>` or
+/// `channel_mention_<id>`, and tested through `QuarkChannelList`.
 class ChatUnreadPill extends StatelessWidget {
-  /// Creates the pill for [count] unread messages.
-  const ChatUnreadPill({required this.count, super.key});
+  /// Creates the pill for [count] unread messages, or unread mentions with
+  /// [isMention].
+  const ChatUnreadPill({
+    required this.count,
+    this.isMention = false,
+    super.key,
+  });
 
   /// How many messages are unread. Above 99 the pill reads `99+`.
   final int count;
 
+  /// Whether [count] is of the unread messages that mention the reader.
+  final bool isMention;
+
   /// What the pill says aloud and on hover: `1 unread message`,
-  /// `3 unread messages`.
-  static String labelFor(int count) =>
-      count == 1 ? '1 unread message' : '$count unread messages';
+  /// `3 unread messages`, or `1 unread mention` with [isMention].
+  static String labelFor(int count, {bool isMention = false}) {
+    final noun = isMention ? 'mention' : 'message';
+    return count == 1 ? '1 unread $noun' : '$count unread ${noun}s';
+  }
 
   @override
   Widget build(BuildContext context) {
     final tokens = QuarkTokens.of(context);
-    final label = labelFor(count);
+    final label = labelFor(count, isMention: isMention);
 
     return Tooltip(
       message: label,
@@ -41,7 +53,7 @@ class ChatUnreadPill extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: tokens.spacingSm),
             child: Text(
-              count > 99 ? '99+' : '$count',
+              '${isMention ? '@' : ''}${count > 99 ? '99+' : count}',
               maxLines: 1,
               style: TextStyle(
                 color: tokens.primaryForeground,

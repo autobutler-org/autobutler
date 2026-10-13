@@ -10,7 +10,9 @@ import 'quark_channel_list/chat_channel_tile.dart';
 /// A chat server's channels under the server's name, the open one
 /// highlighted, the private ones marked with a lock, and each one with a
 /// [ChatChannelItem.unreadCount] above zero in bold with the count in a pill
-/// at its end (`99+` above 99). [otherChannels], the
+/// at its end (`99+` above 99), after an `@` pill counting the ones that
+/// mention the signed-in account when [ChatChannelItem.mentionCount] is above
+/// zero. [otherChannels], the
 /// ones an admin manages without being in them, follow under their own
 /// heading.
 ///
@@ -21,8 +23,9 @@ import 'quark_channel_list/chat_channel_tile.dart';
 ///
 /// Key prefixes: `channel_list_header` on the server name,
 /// `channel_list_other_header` on the other channels' heading,
-/// `channel_tile_<id>` on each channel, and `channel_unread_<id>` on a
-/// channel's unread count.
+/// `channel_tile_<id>` on each channel, `channel_unread_<id>` on a
+/// channel's unread count, and `channel_mention_<id>` on its unread
+/// mentions.
 ///
 /// ```dart
 /// QuarkChannelList(

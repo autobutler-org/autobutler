@@ -16,6 +16,7 @@ class ChatChannelItem {
     this.isPrivate = false,
     this.permissions,
     this.unreadCount = 0,
+    this.mentionCount = 0,
   });
 
   /// The channel's id on the Quark, and what callbacks carry.
@@ -36,6 +37,10 @@ class ChatChannelItem {
   /// 0 shows nothing.
   final int unreadCount;
 
+  /// How many of those unread messages mention this account; 0 shows
+  /// nothing.
+  final int mentionCount;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -44,6 +49,7 @@ class ChatChannelItem {
           other.name == name &&
           other.isPrivate == isPrivate &&
           other.unreadCount == unreadCount &&
+          other.mentionCount == mentionCount &&
           setEquals(other.permissions, permissions);
 
   @override
@@ -52,6 +58,7 @@ class ChatChannelItem {
     name,
     isPrivate,
     unreadCount,
+    mentionCount,
     Object.hashAllUnordered(permissions ?? const <ChatPermission>{}),
   );
 }

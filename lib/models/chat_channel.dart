@@ -156,6 +156,34 @@ class ChatMember {
   );
 }
 
+/// What a channel's member rows say about its accounts.
+extension ChatMemberNames on List<ChatMember> {
+  /// The names an `@mention` in the channel resolves to (#2623): every
+  /// account that reads it, alone or through a group, in alphabetical order.
+  /// A mention is only the text `@name` inside the encrypted message, so
+  /// this list is all that decides what counts as one.
+  List<String> get mentionNames => {
+    for (final m in this)
+      if (m.permissions.contains(ChatPermission.readMessages))
+        ...m.userId != null ? [m.name] : m.users.map((u) => u.username),
+  }.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+  /// Account [userId]'s name as it is in [mentionNames], or null when it is
+  /// not among the members.
+  String? nameOfUser(int? userId) {
+    for (final m in this) {
+      if (m.userId != null) {
+        if (m.userId == userId) return m.name;
+        continue;
+      }
+      for (final u in m.users) {
+        if (u.id == userId) return u.username;
+      }
+    }
+    return null;
+  }
+}
+
 /// An account listed under a group in [ChatMember.users].
 class ChatMemberUser {
   /// Builds one explicitly; tests use it.
