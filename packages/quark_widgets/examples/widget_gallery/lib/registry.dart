@@ -2964,10 +2964,16 @@ const List<AlbumItem> _galleryAlbumList = [
   ),
 ];
 
-/// The fake upload targets: the built-in disk and a plugged-in drive.
+/// The fake upload targets: the built-in disk, a plugged-in drive, and one
+/// that is plugged in but cannot be chosen.
 const List<UploadTarget> _galleryTargets = [
   UploadTarget(serial: '', name: '', mountPoint: '/data', isInternal: true),
   UploadTarget(serial: 'usb-1', name: 'Backup drive', mountPoint: '/mnt/usb'),
+  UploadTarget(
+    serial: 'usb-2',
+    name: 'Old drive',
+    unavailableReason: 'Not enabled. Mount it under System > Storage.',
+  ),
 ];
 
 /// The fake SSH keys: one with a comment, one without.

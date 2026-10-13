@@ -100,6 +100,9 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 - With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes, starting on
   the device chosen last time when it is still offered; dismissing it uploads nothing. A view filtered to one
   device uploads to that device without asking.
+- A drive that is connected but not enabled is listed in that sheet as unavailable, with a note to mount it
+  under System > Storage, and cannot be chosen. One such drive beside a single enabled device is enough for the
+  sheet to open.
 - If the storage devices cannot be listed, nothing is uploaded and a message says so.
 
 ---
@@ -120,6 +123,9 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 - With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes, starting on
   the device chosen last time when it is still offered; dismissing it uploads nothing. A view filtered to one
   device uploads to that device without asking.
+- A drive that is connected but not enabled is listed in that sheet as unavailable, with a note to mount it
+  under System > Storage, and cannot be chosen. One such drive beside a single enabled device is enough for the
+  sheet to open.
 - If the storage devices cannot be listed, nothing is uploaded and a message says so.
 - File appears in the listing after upload completes.
 
@@ -460,6 +466,9 @@ it, so what changed while the client was away shows without a manual refresh.
 - With more than one enabled storage device, an **Upload to device** sheet asks where the upload goes, starting on
   the device chosen last time when it is still offered; dismissing it uploads nothing. A view filtered to one
   device uploads to that device without asking.
+- A drive that is connected but not enabled is listed in that sheet as unavailable, with a note to mount it
+  under System > Storage, and cannot be chosen. One such drive beside a single enabled device is enough for the
+  sheet to open.
 - If the storage devices cannot be listed, nothing is uploaded and a message says so.
 - **Upload files** remains available as a separate source for documents.
 

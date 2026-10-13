@@ -15,10 +15,17 @@ Future<List<StorageDevice>> listDevicesFresh() {
 ///
 /// Only enabled devices are destinations. [viewedSerial] is the one device
 /// the view is filtered to, null when it shows several: that device is the
-/// destination without asking. Otherwise a single enabled device is the
+/// destination without asking. Otherwise a device listed alone is the
 /// destination, and [pick] chooses between several, starting on `initial`:
-/// the device chosen last time when it is still offered, the first otherwise.
-/// What [pick] answers is kept in [AppSettings] for next time (#3192).
+/// the device chosen last time when it can still be chosen, the first that
+/// can otherwise. What [pick] answers is kept in [AppSettings] for next time
+/// (#3192).
+///
+/// A drive that is connected but not enabled is passed to [pick] as an
+/// unavailable target, so the user sees it and what enables it: one beside
+/// a single enabled device is enough to ask. [listDevices] answers only
+/// with devices the Quark detects, so a drive that is not connected is not
+/// listed at all.
 ///
 /// Throws what [listDevices] threw. A destination that cannot be worked out
 /// is not built-in storage; the caller stops and says so (#3191).
@@ -32,20 +39,25 @@ Future<String?> resolveUploadSerial({
   Future<List<StorageDevice>> Function() listDevices = listDevicesFresh,
 }) async {
   final targets = [
-    for (final device in await listDevices())
-      if (device.isEnabled) device.toUploadTarget(),
+    for (final device in await listDevices()) device.toUploadTarget(),
   ];
-  if (targets.any((target) => target.serial == viewedSerial)) {
+  final enabled = [
+    for (final target in targets)
+      if (target.unavailableReason == null) target,
+  ];
+  if (enabled.any((target) => target.serial == viewedSerial)) {
     return viewedSerial;
   }
-  if (targets.length < 2) return targets.firstOrNull?.serial ?? '';
+  if (enabled.isEmpty || targets.length == 1) {
+    return enabled.firstOrNull?.serial ?? '';
+  }
 
   final settings = AppSettings.instance;
   final picked = await pick(
     targets,
-    targets.firstWhere(
+    enabled.firstWhere(
       (target) => target.serial == settings.lastUploadSerial,
-      orElse: () => targets.first,
+      orElse: () => enabled.first,
     ),
   );
   if (picked != null) await settings.setLastUploadSerial(picked.serial);
