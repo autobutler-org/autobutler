@@ -228,3 +228,44 @@ func TestIsDiskImage(t *testing.T) {
 		})
 	}
 }
+
+// TestDiskutilUsbInfo checks the serial a volume that is not internal is
+// addressed by: without one it is indistinguishable from the internal drive.
+func TestDiskutilUsbInfo(t *testing.T) {
+	const header = `   Device Identifier:         disk4s1
+   Device / Media Name:       Flash Drive
+   Volume Name:               USB
+   Mount Point:               /Volumes/USB
+   Protocol:                  USB
+`
+	const volumeUUID = "   Volume UUID:               6483C8B8-7F39-379F-9C50-6DB3DB4A6183\n"
+	const partitionUUID = "   Disk / Partition UUID:     0F4A1C2E-9B7D-4E55-A1C3-2D8E6F7A9B10\n"
+	const footer = "   Device Location:           External\n"
+
+	tests := []struct {
+		name       string
+		info       string
+		wantSerial string
+	}{
+		{"volume UUID", header + volumeUUID + partitionUUID + footer, "6483C8B8-7F39-379F-9C50-6DB3DB4A6183"},
+		{"partition UUID only", header + partitionUUID + footer, "0F4A1C2E-9B7D-4E55-A1C3-2D8E6F7A9B10"},
+		{"neither", header + footer, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := diskutilUsbInfo(tt.info)
+			if tt.wantSerial == "" {
+				if got != nil {
+					t.Errorf("diskutilUsbInfo() = %+v, want nil", got)
+				}
+				return
+			}
+			if got == nil {
+				t.Fatal("diskutilUsbInfo() = nil, want a descriptor")
+			}
+			if got.GetSerial() != tt.wantSerial || got.GetMountPath() != "/Volumes/USB" || got.GetProduct() != "Flash Drive" {
+				t.Errorf("diskutilUsbInfo() = %+v, want serial %q at /Volumes/USB named Flash Drive", got, tt.wantSerial)
+			}
+		})
+	}
+}
