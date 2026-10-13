@@ -122,22 +122,6 @@ At runtime the app keeps its sign-in in the desktop keyring through the Secret S
 KWallet has to be running and unlocked. Without one the app still opens, but signing in fails with a message
 saying the keyring is missing.
 
-## Running Quark as a Linux desktop app
-
-`make install/frontend/linux` builds the release bundle and installs it for your user, with no `sudo`. Quark then
-shows up in the launcher (Super and type "quark" on Omarchy, or the GNOME and KDE app grids) and opens in its own
-window with its icon.
-
-```bash
-make install/frontend/linux      # bundle in ~/.local/share/quark-app, launcher entry and icons under ~/.local/share
-make uninstall/frontend/linux    # removes all of it
-```
-
-Run it again to upgrade in place. Set `PREFIX=<dir>` to install somewhere other than `~/.local`. A `quark`
-symlink goes in `$PREFIX/bin`, and the launcher entry points at it by absolute path, so `~/.local/bin` does not
-have to be on your `PATH`. The window class is `org.autobutler.quark`, which `linux/quark.desktop` carries as
-`StartupWMClass` so Hyprland and docks match the window to its launcher entry.
-
 ## Lint and test
 
 ```bash
