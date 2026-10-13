@@ -724,7 +724,9 @@ widgets and reads in one screen.
   how it was tested
 - One focused commit per PR — this repository keeps a linear history — and commits are signed
 - **Work with independently reviewable parts is stacked, not one big PR.** Split it with `gh stack` (the
-  `gh-stack` skill); step 5 of the `resolve-issue` skill has the triggers
+  `autobutler:gh-stack` skill); step 5 of the `autobutler:resolve-issue` skill has the triggers. Both come from
+  the org's shared plugin, [agent-plugins](https://github.com/autobutler-org/agent-plugins), which
+  `.claude/settings.json` enables — edit them there, not here
 - **A backend API change is stacked with the frontend that consumes it.** CI skips jobs whose paths a PR does
   not touch (`.github/path-filters.yml`), so a backend-only PR never builds or tests the client against its new
   contract. This covers a new endpoint and a structural change to an existing response: a field added,
