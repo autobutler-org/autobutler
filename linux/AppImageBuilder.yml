@@ -1,0 +1,92 @@
+# appimage-builder recipe for the Linux desktop app, after
+# https://appimage-builder.readthedocs.io/en/latest/examples/flutter.html.
+# `make build/frontend/linux/appimage` runs it and sets APP_VERSION, which
+# {{APP_VERSION}} reads from the environment.
+version: 1
+
+# $SOURCE_DIR is this file's directory and $TARGET_APPDIR the AppDir being assembled.
+# The Flutter bundle goes to the AppDir root unchanged, because the binary finds its
+# lib/ and data/ beside itself. The launcher entry and the icons are the ones in this
+# directory; the entry is renamed because appimage-builder looks for <id>.desktop.
+script:
+  - rm -rf "$TARGET_APPDIR"
+  - mkdir -p "$TARGET_APPDIR/usr/share/applications" "$TARGET_APPDIR/usr/share/icons"
+  - cp -a "$SOURCE_DIR/../build/linux/x64/release/bundle/." "$TARGET_APPDIR/"
+  - cp "$SOURCE_DIR/quark.desktop" "$TARGET_APPDIR/usr/share/applications/org.autobutler.quark.desktop"
+  - cp -a "$SOURCE_DIR/icons/hicolor" "$TARGET_APPDIR/usr/share/icons/"
+
+AppDir:
+  app_info:
+    id: org.autobutler.quark
+    name: Quark
+    icon: quark
+    version: '{{APP_VERSION}}'
+    exec: quark
+    exec_args: $@
+
+  apt:
+    arch: amd64
+    # Must name the release the bundle was built on -- the CI runner image, Ubuntu
+    # 22.04 -- because these are the libraries the binary was linked against. The key is the Ubuntu archive signing key (2018).
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ jammy main universe'
+        key_url: 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C'
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ jammy-updates main universe'
+      - sourceline: 'deb [arch=amd64] http://security.ubuntu.com/ubuntu/ jammy-security main universe'
+    # Each with its dependencies. GTK 3 is what the Flutter runner links; libsecret is
+    # flutter_secure_storage; libmpv is media_kit (video and audio playback); the FFmpeg
+    # libraries and libjpeg are fc_native_video_thumbnail. CI's build-linux job prints
+    # what the bundle links, so a new plugin's library shows up in its log.
+    include:
+      - libgtk-3-0
+      - libsecret-1-0
+      - libmpv1
+      - libavformat58
+      - libavcodec58
+      - libavutil56
+      - libswscale5
+      - libjpeg-turbo8
+    exclude:
+      - adwaita-icon-theme
+      - humanity-icon-theme
+      - hicolor-icon-theme
+      - ubuntu-mono
+
+  files:
+    exclude:
+      - usr/share/man
+      - usr/share/doc/*/README.*
+      - usr/share/doc/*/changelog.*
+      - usr/share/doc/*/NEWS.*
+      - usr/share/doc/*/TODO.*
+
+  # Not run by the make target (--skip-tests): each case starts a Docker container
+  # against the host's X server, which a CI runner does not have. They are here for running appimage-builder by hand on a Linux desktop.
+  test:
+    fedora:
+      image: appimagecrafters/tests-env:fedora-30
+      command: ./AppRun
+      use_host_x: true
+    debian:
+      image: appimagecrafters/tests-env:debian-stable
+      command: ./AppRun
+      use_host_x: true
+    arch:
+      image: appimagecrafters/tests-env:archlinux-latest
+      command: ./AppRun
+      use_host_x: true
+    centos:
+      image: appimagecrafters/tests-env:centos-7
+      command: ./AppRun
+      use_host_x: true
+    ubuntu:
+      image: appimagecrafters/tests-env:ubuntu-xenial
+      command: ./AppRun
+      use_host_x: true
+
+AppImage:
+  arch: x86_64
+  file_name: 'quark-v{{APP_VERSION}}-x86_64.AppImage'
+  # Where AppImageUpdate looks for a newer build: the .zsync file release-linux.yml
+  # attaches to the latest GitHub release next to the AppImage.
+  update-information: 'gh-releases-zsync|autobutler-org|quark|latest|quark-v*-x86_64.AppImage.zsync'
