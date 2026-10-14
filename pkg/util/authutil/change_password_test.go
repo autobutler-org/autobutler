@@ -11,14 +11,25 @@ import (
 
 // TestChangePassword pins what replaces an account's auth key: only the
 // current key, a well-formed new one, and a transaction step that succeeds.
-// Every refusal leaves the key as it was (#3022).
+// Every refusal leaves the key as it was (#3022), and a change signs out every
+// session but the caller's (#3181).
 func TestChangePassword(t *testing.T) {
 	ctx := context.Background()
 	database := setupWithKeys(t)
 	ada := userRow(t, database.Queries, "ada")
-	change := func(userID int64, current, next string, after func(db.Querier, int64) error) error {
+	login := func() string {
+		t.Helper()
+		result, err := authutil.Login(ctx, database.Queries, authutil.LoginParams{Username: "ada", AuthKey: authKeyOf(1)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return result.SessionToken
+	}
+	current, other := login(), login()
+	change := func(userID int64, currentKey, next string, after func(db.Querier, int64) error) error {
 		_, err := authutil.ChangePassword(ctx, database, authutil.ChangePasswordParams{
-			UserID: userID, CurrentAuthKey: current, NewAuthKey: next, AfterChange: after,
+			UserID: userID, CurrentAuthKey: currentKey, NewAuthKey: next, AfterChange: after,
+			KeepSessionID: authutil.SessionID(current),
 		})
 		return err
 	}
@@ -44,6 +55,9 @@ func TestChangePassword(t *testing.T) {
 		if row := userRow(t, database.Queries, "ada"); row.AuthKeyHash != ada.AuthKeyHash {
 			t.Fatalf("%s changed the auth key", tc.name)
 		}
+		if _, _, err := authutil.ValidateSession(ctx, database.Queries, other); err != nil {
+			t.Fatalf("%s signed out another session: %v", tc.name, err)
+		}
 	}
 
 	stepRan := false
@@ -59,5 +73,11 @@ func TestChangePassword(t *testing.T) {
 	}
 	if row.AuthSalt != ada.AuthSalt || row.RecoveryKeyHash != ada.RecoveryKeyHash {
 		t.Error("change touched the salt or the recovery key")
+	}
+	if _, _, err := authutil.ValidateSession(ctx, database.Queries, current); err != nil {
+		t.Errorf("change signed out the caller's session: %v", err)
+	}
+	if _, _, err := authutil.ValidateSession(ctx, database.Queries, other); err == nil {
+		t.Error("change left another session signed in")
 	}
 }

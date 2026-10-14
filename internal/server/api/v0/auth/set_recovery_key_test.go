@@ -30,6 +30,12 @@ func putRecoveryKey(t *testing.T, database *db.DatabaseSqlc, caller db.User, bod
 // signed-in one; a zero user sends it with no caller.
 func putAs(t *testing.T, database *db.DatabaseSqlc, caller db.User, path string, body any) *httptest.ResponseRecorder {
 	t.Helper()
+	return putAsSession(t, database, caller, "", path, body)
+}
+
+// putAsSession is putAs from the session whose raw token is session.
+func putAsSession(t *testing.T, database *db.DatabaseSqlc, caller db.User, session, path string, body any) *httptest.ResponseRecorder {
+	t.Helper()
 	deps := deputil.NewDependencies().WithDatabase(database)
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
@@ -38,6 +44,9 @@ func putAs(t *testing.T, database *db.DatabaseSqlc, caller db.User, path string,
 		if caller.ID != 0 {
 			c = ctxutil.With(c, "userID", caller.ID)
 			c = ctxutil.With(c, "username", caller.Username)
+		}
+		if session != "" {
+			c = ctxutil.With(c, "sessionID", authutil.SessionID(session))
 		}
 		c.Next()
 	})
