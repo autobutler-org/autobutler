@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -6,6 +9,8 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:quark/pages/pdf_viewer_page.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark_widgets/quark_widgets.dart';
+
+import '../support/fake_file_picker_platform.dart';
 
 // These run off web, where the page uses pdfrx. The browser's own viewer is
 // an iframe in a platform view, which `flutter test` cannot build.
@@ -163,7 +168,11 @@ void main() {
   }
 
   group('when the PDF is gone from the Quark', () {
+    late Directory saveDir;
     setUp(() {
+      // A desktop download asks where to save before it downloads (#3150).
+      saveDir = Directory.systemTemp.createTempSync('pdf_viewer_save');
+      FilePickerPlatform.instance = FakeFilePickerPlatform(saveDir);
       sharedHttpClientFactory = () =>
           MockClient((_) async => http.Response('', 404));
       resetSharedHttpClient();
@@ -171,6 +180,7 @@ void main() {
     tearDown(() {
       sharedHttpClientFactory = buildLocalTrustHttpClient;
       resetSharedHttpClient();
+      saveDir.deleteSync(recursive: true);
     });
 
     for (final (key, sentence) in [
@@ -181,7 +191,8 @@ void main() {
         await pumpViewer(tester);
 
         await tester.tap(find.byKey(ValueKey(key)));
-        // The fake client answers in microtasks; no real I/O to wait on.
+        // The fake client and save dialog answer in microtasks; no real I/O
+        // to wait on.
         await tester.pump();
         await tester.pump();
 

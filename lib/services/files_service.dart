@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io' show File;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/models/duplicate_group.dart';
 import 'package:quark/models/file_node.dart';
@@ -14,6 +13,7 @@ import 'package:quark/models/transcode_format.dart';
 import 'package:quark/models/trim_result.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/services/file_save.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_kind.dart';
 import 'package:quark/utils/web_download_stub.dart'
@@ -768,34 +768,22 @@ class FilesService with AuthenticatedService {
     return _saveThroughDialog(uri, fileName: fileName, fallbackPath: filePath);
   }
 
-  /// Streams [uri] to a temp file and offers it to the platform save dialog.
+  /// Streams [uri] to a temp file and saves it through the platform's save
+  /// dialog. It used to arrive as bodyBytes and then be copied again by
+  /// Uint8List.fromList, costing twice the file's size in RAM before the
+  /// dialog even opened (#1723).
   static Future<String?> _saveThroughDialog(
     Uri uri, {
     String? fileName,
     required String fallbackPath,
-  }) async {
-    // Everywhere but the web the download streams to a temp file and the save
-    // dialog copies from there. It used to arrive as bodyBytes and then be copied
-    // again by Uint8List.fromList, costing twice the file's size in RAM
-    // before the dialog even opened (#1723).
-    final downloaded = await instance.authenticatedDownload(uri);
-    try {
-      // Awaited, not just returned: the finally below deletes the temp file, and
-      // an unawaited future would let that race the dialog reading it.
-      return await FlutterFileDialog.saveFile(
-        params: SaveFileDialogParams(
-          sourceFilePath: downloaded.path,
-          fileName: _resolveDownloadFileName(
-            downloaded.headers['content-disposition'],
-            preferredName: fileName,
-            fallbackPath: fallbackPath,
-          ),
-        ),
-      );
-    } finally {
-      await downloaded.delete();
-    }
-  }
+  }) => saveDownloadThroughDialog(
+    fileNameFor: (headers) => _resolveDownloadFileName(
+      headers['content-disposition'],
+      preferredName: fileName,
+      fallbackPath: fallbackPath,
+    ),
+    download: () => instance.authenticatedDownload(uri),
+  );
 
   /// Streams a file onto disk under [fileName], for handing to another app,
   /// and returns where it landed. The body never enters memory: it used to
@@ -831,8 +819,7 @@ class FilesService with AuthenticatedService {
     if (kIsWeb) {
       return web_download.saveBytesForDownload(bytes, fileName);
     }
-    final params = SaveFileDialogParams(data: bytes, fileName: fileName);
-    return FlutterFileDialog.saveFile(params: params);
+    return saveBytesThroughDialog(bytes, fileName);
   }
 
   /// Downloads a single file from inside an archive without extracting to disk.
