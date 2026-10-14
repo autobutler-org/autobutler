@@ -1205,12 +1205,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         final entryPath = archive.subPath.isEmpty
             ? node.name
             : '${archive.subPath}/${node.name}';
-        await FilesService.saveArchiveFile(
+        final message = await _controller.saveArchiveEntry(
           archive.archivePath,
           entryPath,
-          fileName: node.name,
+          name: node.name,
         );
-        if (mounted) _showMessage('Downloaded ${node.name}');
+        if (mounted && message != null) _showMessage(message);
       } catch (e) {
         if (mounted) {
           _showMessage(_controller.failureMessage(FileMenuAction.download, e));
@@ -1579,12 +1579,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       if (!mayPreview) {
         // Nothing to preview, so stream it to disk instead of fetching the
         // whole entry into memory first (#2226).
-        await FilesService.saveArchiveFile(
+        final message = await _controller.saveArchiveEntry(
           archive.archivePath,
           entryPath,
-          fileName: node.name,
+          name: node.name,
         );
-        if (mounted) _showMessage('Downloaded ${node.name}');
+        if (mounted && message != null) _showMessage(message);
         return;
       }
 
@@ -1620,8 +1620,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       }
 
       // An image nothing could decode: its bytes are already here.
-      await FilesService.saveBytesToFile(bytes, node.name);
-      if (mounted) _showMessage('Downloaded ${node.name}');
+      final message = await _controller.saveBytes(bytes, node.name);
+      if (mounted && message != null) _showMessage(message);
     } catch (e) {
       if (mounted) _showMessage(Errors.message(e, 'open the file'));
     }

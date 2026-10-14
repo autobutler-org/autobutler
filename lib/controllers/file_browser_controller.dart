@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -43,7 +45,23 @@ class FileBrowserController {
     this.listTranscodeFormats = FilesService.listTranscodeFormats,
     this.transcodeVideo = FilesService.transcodeVideo,
     this.importPowerPoint = SlidesService.importPowerPoint,
+    this.saveNode = downloadNode,
+    this.saveArchiveFile = FilesService.saveArchiveFile,
+    this.saveBytesToFile = FilesService.saveBytesToFile,
   });
+
+  /// The saves behind Download, injectable so a test can fake them. Each
+  /// answers null when the user canceled the save dialog (#3212).
+  final Future<String?> Function({required FileNode node}) saveNode;
+  final Future<String?> Function(
+    String archivePath,
+    String entryPath, {
+    String? serial,
+    String? fileName,
+  })
+  saveArchiveFile;
+  final Future<String?> Function(Uint8List bytes, String fileName)
+  saveBytesToFile;
 
   /// The batch delete call, injectable so a test can see the batches.
   final DeleteFilesFn deleteFiles;
@@ -237,10 +255,8 @@ class FileBrowserController {
   }) async {
     switch (action) {
       case FileMenuAction.download:
-        final savedPath = await downloadNode(node: node);
-        if (savedPath == null) {
-          return const FileMenuActionOutcome(message: 'Download canceled');
-        }
+        final savedPath = await saveNode(node: node);
+        if (savedPath == null) return null;
         return FileMenuActionOutcome(message: downloadedMessage(node));
       case FileMenuAction.moveRename:
         final startPath = parentPath(node.apiPath);
@@ -446,5 +462,23 @@ class FileBrowserController {
 
   String downloadedMessage(FileNode node) {
     return 'Downloaded ${trimTrailingSlashes(node.name)}';
+  }
+
+  /// Saves the archive entry [entryPath] and answers the message to show, or
+  /// null when the user canceled the save.
+  Future<String?> saveArchiveEntry(
+    String archivePath,
+    String entryPath, {
+    required String name,
+  }) async {
+    final saved = await saveArchiveFile(archivePath, entryPath, fileName: name);
+    return saved == null ? null : 'Downloaded $name';
+  }
+
+  /// Saves [bytes] as [name] and answers the message to show, or null when
+  /// the user canceled the save.
+  Future<String?> saveBytes(Uint8List bytes, String name) async {
+    final saved = await saveBytesToFile(bytes, name);
+    return saved == null ? null : 'Downloaded $name';
   }
 }
