@@ -135,19 +135,63 @@ class _CalendarPageState extends State<CalendarPage>
   }
 
   /// Moves [item] to [start] and [end], a drag or a key press on the
-  /// timeline, and says so when the Quark would not save it.
+  /// timeline. A repeating event moves as a whole series, so that asks first.
+  /// The move then says where the event went, with an Undo (#3184).
   Future<void> _reschedule(
+    CalendarEventItem item,
+    DateTime start,
+    DateTime end,
+  ) async {
+    if (item.repeat != CalendarRepeat.none) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => CalendarMoveSeriesDialog(
+          title: item.title,
+          onConfirm: () => Navigator.of(ctx).pop(true),
+          onCancel: () => Navigator.of(ctx).pop(false),
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+    if (!await _move(item, start, end) || !mounted) return;
+    final use24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
+    final moved = item.rescheduled(start, end);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            start == item.start
+                ? 'Now ends at ${CalendarLabels.time(end, use24Hour: use24Hour)}'
+                : 'Moved to ${CalendarLabels.weekdayShort(start.weekday)} '
+                      '${CalendarLabels.time(start, use24Hour: use24Hour)}',
+          ),
+          action: SnackBarAction(
+            key: const ValueKey('calendar_move_undo'),
+            label: 'Undo',
+            onPressed: () => unawaited(_move(moved, item.start, item.end)),
+          ),
+        ),
+      );
+  }
+
+  /// Moves [item] to [start] and [end], and says so when the Quark would not
+  /// save it. Returns whether it saved.
+  Future<bool> _move(
     CalendarEventItem item,
     DateTime start,
     DateTime end,
   ) async {
     try {
       await _calendar.reschedule(item, start, end);
+      return true;
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Errors.message(e, 'move the event'))),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'move the event'))),
+        );
+      }
+      return false;
     }
   }
 

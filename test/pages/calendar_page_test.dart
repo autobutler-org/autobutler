@@ -27,6 +27,12 @@ void main() {
   /// What the Quark answers a save over an existing event with.
   var updateStatus = 200;
 
+  /// How the plumber's visit, event 1, repeats.
+  var plumberRepeat = 'none';
+
+  /// The plumber's visit as the last save left it, or null for as it began.
+  Map<String, Object?>? plumberSaved;
+
   /// Today at [hour], in UTC as the Quark sends it.
   String todayAt(int hour) => DateTime(
     today.year,
@@ -41,6 +47,7 @@ void main() {
     int hour, {
     String owner = 'me',
     bool mine = true,
+    String repeat = 'none',
   }) => {
     'owner': owner,
     'mine': mine,
@@ -53,10 +60,13 @@ void main() {
     'end': todayAt(hour + 1),
     'allDay': false,
     'timeZone': '',
-    'repeat': 'none',
+    'repeat': repeat,
     'reminderMinutes': null,
     'colorIndex': 0,
   };
+
+  Map<String, Object?> plumber() =>
+      plumberSaved ?? event(1, 'Plumber visit', 9, repeat: plumberRepeat);
 
   Future<void> clearHosts() async {
     while (settings.hosts.isNotEmpty) {
@@ -67,6 +77,8 @@ void main() {
   setUp(() async {
     requests.clear();
     updateStatus = 200;
+    plumberRepeat = 'none';
+    plumberSaved = null;
     resetSharedHttpClient();
     sharedHttpClientFactory = () => MockClient((request) async {
       requests.add(request);
@@ -81,10 +93,13 @@ void main() {
         );
       }
       if (request.url.path == '/api/v0/calendar/events/1') {
-        return http.Response(
-          jsonEncode(event(1, 'Plumber visit', 9)),
-          updateStatus,
-        );
+        if (request.method == 'PUT' && updateStatus == 200) {
+          plumberSaved = {
+            ...plumber(),
+            ...jsonDecode(request.body) as Map<String, dynamic>,
+          };
+        }
+        return http.Response(jsonEncode(plumber()), updateStatus);
       }
       if (request.url.path == '/api/v0/calendar/events') {
         if (request.method == 'POST') {
@@ -93,7 +108,7 @@ void main() {
         return http.Response(
           jsonEncode({
             'events': [
-              event(1, 'Plumber visit', 9),
+              plumber(),
               event(2, 'Soccer practice', 13, owner: 'sam', mine: false),
             ],
           }),
@@ -394,6 +409,59 @@ void main() {
       // The swipe that steps a week did not take the drag.
       expect(at(r), '/calendar/week');
       expect(tester.takeException(), isNull);
+    }, variant: TargetPlatformVariant.desktop());
+
+    testWidgets('a drag says where the event went, and Undo puts it back '
+        '(#3184)', (tester) async {
+      await pumpCalendar(
+        tester,
+        AppRoutes.calendarView(CalendarView.week),
+        const Size(1280, 800),
+      );
+      await dragADay(tester);
+      final beside = DateTime(today.year, today.month, today.day + way, 9);
+      expect(
+        find.text(
+          'Moved to ${CalendarLabels.weekdayShort(beside.weekday)} '
+          '9:00 AM',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('calendar_move_undo')));
+      await tester.pumpAndSettle();
+      final saves = requests.where((r) => r.method == 'PUT').toList();
+      expect(saves, hasLength(2));
+      final body = jsonDecode(saves.last.body) as Map<String, dynamic>;
+      expect(body['start'], todayAt(9));
+      expect(body['end'], todayAt(10));
+    }, variant: TargetPlatformVariant.desktop());
+
+    testWidgets('a repeating event asks before its whole series moves '
+        '(#3184)', (tester) async {
+      plumberRepeat = 'weekly';
+      await pumpCalendar(
+        tester,
+        AppRoutes.calendarView(CalendarView.week),
+        const Size(1280, 800),
+      );
+      await dragADay(tester);
+      expect(
+        find.byKey(const ValueKey('calendar_move_series_confirm')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('calendar_move_series_cancel')),
+      );
+      await tester.pumpAndSettle();
+      expect(requests.where((r) => r.method == 'PUT'), isEmpty);
+
+      await dragADay(tester);
+      await tester.tap(
+        find.byKey(const ValueKey('calendar_move_series_confirm')),
+      );
+      await tester.pumpAndSettle();
+      expect(requests.where((r) => r.method == 'PUT'), hasLength(1));
     }, variant: TargetPlatformVariant.desktop());
 
     testWidgets('a move the Quark refuses says so and goes back', (

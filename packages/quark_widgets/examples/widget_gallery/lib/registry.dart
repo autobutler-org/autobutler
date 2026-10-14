@@ -2784,6 +2784,15 @@ final List<GalleryEntry> registry = [
     ),
   ),
   GalleryEntry(
+    name: 'CalendarMoveSeriesDialog',
+    group: 'Calendar',
+    build: (context, log) => CalendarMoveSeriesDialog(
+      title: 'Soccer practice',
+      onConfirm: () => log('CalendarMoveSeriesDialog.onConfirm'),
+      onCancel: () => log('CalendarMoveSeriesDialog.onCancel'),
+    ),
+  ),
+  GalleryEntry(
     name: 'CalendarMonthGrid',
     group: 'Calendar',
     build: (context, log) => Wrap(
