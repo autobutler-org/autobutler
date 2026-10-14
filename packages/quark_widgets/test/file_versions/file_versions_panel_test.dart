@@ -212,8 +212,58 @@ void main() {
     )) {
       expect(iconButton.tooltip, isNotNull, reason: 'an icon says nothing');
     }
-    expect(find.byTooltip('Preview'), findsNWidgets(versions.length));
-    expect(find.byTooltip('Restore'), findsNWidgets(versions.length));
+  });
+
+  testBothViewports('names each button after its version', (
+    tester,
+    size,
+  ) async {
+    await pumpPanel(tester, size: size, onPreview: (_) {}, onRestore: (_) {});
+
+    String tooltip(String key) => button(tester, key).tooltip!;
+    expect(
+      tooltip('file_version_restore_v2'),
+      startsWith('Restore Final draft, '),
+    );
+    expect(
+      tooltip('file_version_preview_v2'),
+      startsWith('Preview Final draft, '),
+    );
+    expect(
+      tooltip('file_version_restore_v1'),
+      startsWith('Restore version from '),
+    );
+    final names = {
+      for (final version in versions)
+        tooltip('file_version_restore_${version.id}'),
+    };
+    expect(
+      names,
+      hasLength(versions.length),
+      reason: 'no two rows sound alike',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testBothViewports('announces the error and the notice', (tester, size) async {
+    await pumpPanel(
+      tester,
+      size: size,
+      error: 'Read-only.',
+      notice: 'Restored.',
+    );
+
+    for (final text in ['Read-only.', 'Restored.']) {
+      final live = find.ancestor(
+        of: find.text(text),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.liveRegion == true,
+        ),
+      );
+      expect(live, findsOneWidget, reason: '$text is a live region');
+    }
+    expect(tester.takeException(), isNull);
   });
 
   for (final (label, brightness) in [
