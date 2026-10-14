@@ -118,9 +118,21 @@ sudo apt-get install ninja-build libgtk-3-dev libsecret-1-dev clang cmake pkg-co
 The first build downloads PDFium (for `pdfrx`) and compiles libsodium (for `sodium`), so it needs network access
 and takes a few minutes; later builds reuse both.
 
-At runtime the app keeps its sign-in in the desktop keyring through the Secret Service, so GNOME Keyring or
-KWallet has to be running and unlocked. Without one the app still opens, but signing in fails with a message
-saying the keyring is missing.
+The run-time packages are listed under [Linux runtime dependencies](#linux-runtime-dependencies).
+
+## Linux runtime dependencies
+
+The build packages above are for compiling. Running the bundle also needs these on the machine:
+
+1. **libmpv**, for video and audio playback. Arch: `mpv`. Debian / Ubuntu: `libmpv-dev`.
+2. **xdg-desktop-portal plus a desktop backend** (`xdg-desktop-portal-gtk`, `-kde`, `-gnome` or `-hyprland`).
+   `file_picker`'s Linux save dialog uses only the XDG FileChooser portal, with no zenity or kdialog fallback, so
+   without one saving a file shows "Couldn't download the file".
+3. **xdg-utils** (`xdg-open`), for "Open with".
+4. **avahi-daemon**, running, so the app can find Quarks on your network. Typing the address works without it.
+5. **GNOME Keyring or KWallet**, running and unlocked. The app keeps its sign-in in the desktop keyring through
+   the Secret Service. Without one the app still opens signed out, and signing in explains that the keyring is
+   needed.
 
 ## Lint and test
 
