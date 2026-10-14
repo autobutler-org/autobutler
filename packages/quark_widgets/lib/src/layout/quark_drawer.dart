@@ -75,8 +75,9 @@ const _manageSections = {
 /// The rows come in two groups (#2046). The pages a household opens every day
 /// lead: Files, Photos, Calendar, Docs, Sheets, Slides, Books, Chat and Vault.
 /// The pages for looking after the Quark follow under a "Manage" label: Trash,
-/// System, Users and Settings. The label is drawn only when one of its rows
-/// is.
+/// System, Users and Settings. The everyday pages sit under a "Household"
+/// label, so a screen reader can jump to either group as a heading (#3187).
+/// Each label is drawn only when one of its rows is.
 ///
 /// The drawer navigates nothing itself. Each row calls back and the page
 /// routes, so the package stays free of the router.
@@ -102,7 +103,7 @@ const _manageSections = {
 ///
 /// Key prefixes: `drawer_<section>` on each row, for example `drawer_photos`
 /// and `drawer_users`; `drawer_chat_unread` on the Chat row's unread dot;
-/// `drawer_group_manage` on the "Manage" label;
+/// `drawer_group_household` and `drawer_group_manage` on the group labels;
 /// `drawer_host` on the header when it names a Quark;
 /// `drawer_host_header` on the button that opens the switcher, and
 /// `drawer_host_<index>` on each Quark in it.
@@ -274,8 +275,13 @@ class QuarkDrawer extends StatelessWidget {
         onTapSettings,
       ),
     ];
-    final firstManaged = rows
-        .where((row) => row.$4 != null && _manageSections.contains(row.$1))
+    final shown = rows.where((row) => row.$4 != null);
+    final firstHousehold = shown
+        .where((row) => !_manageSections.contains(row.$1))
+        .firstOrNull
+        ?.$1;
+    final firstManaged = shown
+        .where((row) => _manageSections.contains(row.$1))
         .firstOrNull
         ?.$1;
 
@@ -299,6 +305,12 @@ class QuarkDrawer extends StatelessWidget {
               ),
               for (final (section, icon, label, onTap) in rows)
                 if (onTap != null) ...[
+                  if (section == firstHousehold)
+                    const QuarkDrawerGroupLabel(
+                      key: ValueKey('drawer_group_household'),
+                      label: 'Household',
+                      divider: false,
+                    ),
                   if (section == firstManaged)
                     const QuarkDrawerGroupLabel(
                       key: ValueKey('drawer_group_manage'),
