@@ -99,7 +99,7 @@ make serve/frontend/mobile
 Linux desktop:
 
 ```bash
-make build/frontend/linux                  # release bundle
+make build/frontend/linux LINUX_ARCH=x64  # release bundle; LINUX_ARCH=arm64 for aarch64
 ./build/linux/x64/release/bundle/quark
 flutter run -d linux                       # or run it with hot reload
 ```
@@ -123,28 +123,33 @@ The run-time packages are listed under [Linux runtime dependencies](#linux-runti
 ## Building the Linux AppImage
 
 The AppImage is the release bundle and the libraries it links, in one executable file that runs without an
-install. A tagged release builds it in the `release-linux` job and attaches it to the GitHub release; the
-`build-linux` job builds it on every pull request that touches the Linux app and keeps it as the `linux-appimage`
-artifact.
+install. A tagged release builds it for x86_64 and aarch64 in the `release-linux` job, one runner per
+architecture, and attaches both to the GitHub release; the `build-linux` job builds both on every pull request
+that touches the Linux app and keeps them as the `linux-appimage-x64` and `linux-appimage-arm64` artifacts.
 
 ```bash
-make build/frontend/linux/appimage   # build/appimage/quark-v<version>-x86_64.AppImage and its .zsync
+make build/frontend/linux/appimage LINUX_ARCH=x64   # build/appimage/quark-v<version>-x86_64.AppImage and its .zsync
+make build/frontend/linux/appimage LINUX_ARCH=arm64 # build/appimage/quark-v<version>-aarch64.AppImage and its .zsync
 ```
 
-The version is the most recent git tag, or `BUILD_NAME=X.Y.Z`. The output is always x86_64.
+The version is the most recent git tag, or `BUILD_NAME=X.Y.Z`. `LINUX_ARCH` is required: `x64` or `arm64`.
 
 The target builds with [appimage-builder](https://appimage-builder.readthedocs.io), which
 `make setup/appimage-builder` installs at the pinned version into `~/.local/bin` (`PREFIX=<dir>` puts it in `<dir>/bin`). The build has to happen on
-Ubuntu 22.04 x86_64: the recipe, `linux/AppImageBuilder.yml`, fills the AppImage with libraries from that
+Ubuntu 22.04 of the target architecture: the recipe, `linux/AppImageBuilder.yml`, fills the AppImage with libraries from that
 release's apt archive, and they have to be the ones the binary was linked against. Where it runs depends on the
 host:
 
-- **Ubuntu 22.04 x86_64** builds natively. That is the runner CI uses.
+- **Ubuntu 22.04 of the same architecture** builds natively. That is what CI's runners are, one per
+  architecture. `make setup/appimage-builder` installs the release AppImage on x86_64; on aarch64, which that
+  release has no AppImage for, it installs the same version from PyPI into a venv, hash-locked by
+  `linux/appimage-builder-requirements.txt`.
 - **macOS** builds in Docker, so Docker Desktop has to be running. The same command builds the image from
   `linux/Dockerfile` (Ubuntu 22.04 with the packages in `linux/apt-packages.txt`, the Flutter version
-  `pubspec.yaml` pins, and appimage-builder), copies the working tree into a container and runs the same target
+  `pubspec.yaml` pins, and appimage-builder) for `LINUX_ARCH`'s platform, copies the working tree into a container and runs the same target
   there. Only `build/appimage/` is shared with the container, so nothing else in your checkout changes.
-  On Apple silicon the container is emulated x86_64, and every run compiles from scratch, so expect it to be slow.
+  On Apple silicon an arm64 container runs natively and an x64 one is emulated, so expect x64 to be slow; every
+  run compiles from scratch.
 - **Any other Linux** stops with an explanation; take the artifact from a pull request instead.
 
 What the AppImage carries, so the host does not need it: GTK 3, libsecret, libmpv, the FFmpeg libraries, and
@@ -250,8 +255,8 @@ Run `make help` to see everything. The most common ones:
 | `make serve/frontend/mobile`    | Flutter mobile (after `make emulate`) |
 | `make emulate/android`          | Launch Android emulator               |
 | `make emulate/ios`              | Launch iOS simulator                  |
-| `make build/frontend/linux`     | Linux desktop release bundle          |
-| `make build/frontend/linux/appimage` | Linux AppImage (Ubuntu 22.04 x86_64) |
+| `make build/frontend/linux LINUX_ARCH=x64\|arm64` | Linux desktop release bundle |
+| `make build/frontend/linux/appimage LINUX_ARCH=x64\|arm64` | Linux AppImage (Ubuntu 22.04) |
 | `make build`                    | Build everything                      |
 | `make generate`                 | Regenerate sqlc + swagger             |
 | `make generate/backend/sqlc`    | Regenerate DB layer only              |

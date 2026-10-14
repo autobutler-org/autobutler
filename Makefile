@@ -346,47 +346,98 @@ FLUTTER_BUILD_MODE ?= debug
 build/frontend/android: generate/frontend/sbom ## Build Android app
 	flutter build apk --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
 
+# The architecture a native `flutter build linux` produces here, empty on anything but Linux.
+# Defined above build/frontend/linux, whose ifneq reads it while the Makefile is parsed.
+LINUX_HOST_ARCH := $(if $(filter Linux,$(UNAME_S)),$(if $(filter x86_64,$(UNAME_M)),x64,$(if $(filter aarch64,$(UNAME_M)),arm64)))
+# The same architecture as Debian and Docker name it, and as the kernel (uname -m) does.
+LINUX_DEB_ARCH = $(if $(filter arm64,$(LINUX_ARCH)),arm64,amd64)
+LINUX_MACHINE = $(if $(filter arm64,$(LINUX_ARCH)),aarch64,x86_64)
+LINUX_DOCKER_PLATFORM = linux/$(LINUX_DEB_ARCH)
+
 # Release by default, unlike the mobile targets: a debug Linux bundle is only useful to
 # `flutter run`, and the bundle this produces is the one a desktop user runs. A
 # FLUTTER_BUILD_MODE on the command line still wins over this target-specific value.
+#
+# LINUX_ARCH is the architecture to build for, x64 or arm64, named the way Flutter names
+# build/linux/<arch>. A Linux host of that architecture builds natively; anything else
+# (macOS, or the other architecture) builds in linux/Dockerfile's image for that platform.
 .PHONY: build/frontend/linux
 build/frontend/linux: FLUTTER_BUILD_MODE = release
-build/frontend/linux: generate/frontend/sbom ## Build the Linux desktop bundle (build/linux/x64/<mode>/bundle)
+build/frontend/linux: check/linux-arch generate/frontend/sbom ## Build the Linux desktop bundle, LINUX_ARCH=x64|arm64 (build/linux/<arch>/<mode>/bundle)
+ifneq ($(LINUX_ARCH),$(LINUX_HOST_ARCH))
+build/frontend/linux: check/docker
+	$(call IN_LINUX_DOCKER,build/frontend/linux FLUTTER_BUILD_MODE=$(FLUTTER_BUILD_MODE),$(CURDIR)/build/linux/$(LINUX_ARCH)/$(FLUTTER_BUILD_MODE),rm -rf /out/bundle && cp -a build/linux/$(LINUX_ARCH)/$(FLUTTER_BUILD_MODE)/bundle /out/)
+	ls -d "$(CURDIR)/build/linux/$(LINUX_ARCH)/$(FLUTTER_BUILD_MODE)/bundle"
+else
 	flutter build linux --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
+endif
+
+LINUX_DOCKER_IMAGE ?= quark-linux-builder
+# Runs make target $(1), with any variables it needs, for $(LINUX_ARCH) inside
+# linux/Dockerfile's image with host directory $(2) mounted at /out, then runs $(3) in the
+# container to copy the results there. The tree
+# goes in as a tar stream of what git tracks plus what is untracked and not ignored, not as a
+# bind mount: this Mac's .dart_tool, build/ and plugin symlinks are for another platform and
+# hold host paths, and a container building in place would rewrite them. BUILD_NAME is passed
+# because the stream carries no .git.
+define IN_LINUX_DOCKER
+	docker build --platform $(LINUX_DOCKER_PLATFORM) -t $(LINUX_DOCKER_IMAGE):$(LINUX_ARCH) \
+		--build-arg FLUTTER_VERSION=$(FLUTTER_VERSION) \
+		--build-arg APPIMAGE_BUILDER_VERSION=$(APPIMAGE_BUILDER_VERSION) \
+		--build-arg APPIMAGE_BUILDER_SHA256=$(APPIMAGE_BUILDER_SHA256) linux
+	mkdir -p "$(2)"
+	git ls-files -z --cached --others --exclude-standard \
+		| COPYFILE_DISABLE=1 tar --null --no-recursion -T - -cf - \
+		| docker run --rm -i --platform $(LINUX_DOCKER_PLATFORM) -v "$(2):/out" $(LINUX_DOCKER_IMAGE):$(LINUX_ARCH) \
+			bash -ec 'tar -xf - && make $(1) LINUX_ARCH=$(LINUX_ARCH) BUILD_NAME=$(BUILD_NAME) && $(3)'
+endef
 
 # The AppImage is the Linux bundle plus the libraries linux/AppImageBuilder.yml pulls from
-# Ubuntu 22.04's apt archive, so it has to be built on Ubuntu 22.04 x86_64: that is the
-# release the recipe's sources name and CI's runner image. On macOS the target runs
-# itself inside linux/Dockerfile's image, which is that release.
+# Ubuntu 22.04's apt archive, so it has to be built on Ubuntu 22.04 of the architecture it
+# is for: that is the release the recipe's sources name and CI's runner image. On macOS the
+# target runs itself inside linux/Dockerfile's image, which is that release.
 #
-# appimage-builder is taken from its own release AppImage, pinned and checksum-verified:
-# `pip install appimage-builder` no longer resolves on a current Python, and 1.1.0 is the
-# last tagged release.
+# appimage-builder for x86_64 is taken from its own release AppImage, pinned and
+# checksum-verified: `pip install appimage-builder` no longer resolves on a current Python,
+# and 1.1.0 is the last tagged release. That release ships no aarch64 AppImage, so for
+# arm64 the same version comes from PyPI on 22.04's Python 3.10, through
+# linux/appimage-builder-requirements.txt.
 APPIMAGE_BUILDER_VERSION := 1.1.0
 APPIMAGE_BUILDER_SHA256 := 4b4f99cae9291d78ba12dbdabca7c0a67c72aa61eb2e5d424089171a9485e96f
 APPIMAGE_OUT_DIR = $(CURDIR)/build/appimage
 APPIMAGE_WORK_DIR = $(CURDIR)/build/appimage-work
-APPIMAGE_DOCKER_IMAGE ?= quark-appimage-builder
+# Ubuntu serves amd64 from its main archive and every other architecture from ports.
+APPIMAGE_APT_MIRROR = $(if $(filter arm64,$(LINUX_ARCH)),http://ports.ubuntu.com/ubuntu-ports/,http://archive.ubuntu.com/ubuntu/)
 # Where setup/appimage-builder puts the tool, under bin/. Per user, so no sudo.
 PREFIX ?= $(HOME)/.local
 # Both targets stop here on any other host, before downloading or building anything.
 define REQUIRE_APPIMAGE_HOST
-	if [ "$$(uname -sm)" != "Linux x86_64" ] || ! command -v apt-get >/dev/null 2>&1; then
-		echo "Error: the AppImage recipe bundles Ubuntu 22.04 x86_64 packages through apt-get,"
+	if [ "$$(uname -sm)" != "Linux $(LINUX_MACHINE)" ] || ! command -v apt-get >/dev/null 2>&1; then
+		echo "Error: the AppImage recipe bundles Ubuntu 22.04 $(LINUX_MACHINE) packages through apt-get,"
 		echo "  and this is $$(uname -sm) $$(. /etc/os-release 2>/dev/null; echo "$${PRETTY_NAME:-}")."
-		echo "  Fix: build on Ubuntu 22.04 x86_64 (on macOS, make build/frontend/linux/appimage does"
-		echo "       that in Docker), or download the linux-appimage artifact from the build-linux"
+		echo "  Fix: build on Ubuntu 22.04 $(LINUX_MACHINE) (on macOS, make build/frontend/linux/appimage does"
+		echo "       that in Docker), or download the linux-appimage-$(LINUX_ARCH) artifact from the build-linux"
 		echo "       job of a pull request."
 		exit 1
 	fi
 endef
 
 .PHONY: setup/appimage-builder
-setup/appimage-builder: ## Install the pinned appimage-builder into $(PREFIX)/bin (Ubuntu x86_64)
+# A tool for the host, so it installs for the host's architecture whatever LINUX_ARCH says:
+# the release AppImage on x86_64, and on aarch64, which that release has no AppImage for,
+# the same version from PyPI into a venv, hash-locked by linux/appimage-builder-requirements.txt.
+setup/appimage-builder: override LINUX_ARCH = $(or $(LINUX_HOST_ARCH),x64)
+setup/appimage-builder: ## Install the pinned appimage-builder into $(PREFIX)/bin (Ubuntu x86_64 or aarch64)
 	$(REQUIRE_APPIMAGE_HOST)
 	dest="$(PREFIX)/bin/appimage-builder"
 	mkdir -p "$(PREFIX)/bin"
-	if ! echo "$(APPIMAGE_BUILDER_SHA256)  $$dest" | sha256sum -c --status 2>/dev/null; then
+	if [ "$(LINUX_ARCH)" = arm64 ]; then
+		venv="$(PREFIX)/lib/appimage-builder"
+		rm -rf "$$venv"
+		python3 -m venv "$$venv"
+		"$$venv/bin/pip" install --no-cache-dir --require-hashes -r linux/appimage-builder-requirements.txt
+		ln -sf "$$venv/bin/appimage-builder" "$$dest"
+	elif ! echo "$(APPIMAGE_BUILDER_SHA256)  $$dest" | sha256sum -c --status 2>/dev/null; then
 		curl -fsSL -o "$$dest" "https://github.com/AppImageCrafters/appimage-builder/releases/download/v$(APPIMAGE_BUILDER_VERSION)/appimage-builder-$(APPIMAGE_BUILDER_VERSION)-x86_64.AppImage"
 		echo "$(APPIMAGE_BUILDER_SHA256)  $$dest" | sha256sum -c -
 	fi
@@ -397,25 +448,13 @@ setup/appimage-builder: ## Install the pinned appimage-builder into $(PREFIX)/bi
 ifeq ($(UNAME_S),Darwin)
 build/frontend/linux/appimage: check/docker
 endif
-build/frontend/linux/appimage: check/build-name ## Build the Linux AppImage (build/appimage/quark-v<version>-x86_64.AppImage); in Docker on macOS
+build/frontend/linux/appimage: check/linux-arch check/build-name ## Build the Linux AppImage, LINUX_ARCH=x64|arm64 (build/appimage/quark-v<version>-<x86_64|aarch64>.AppImage); in Docker on macOS
 ifeq ($(UNAME_S),Darwin)
-	# The same target, run in the container. The tree goes in as a tar stream of what git
-	# tracks plus what is untracked and not ignored, not as a bind mount: this Mac's
-	# .dart_tool, build/ and plugin symlinks are for another platform and hold host
-	# paths, and a container building in place would rewrite them. Only the output
-	# directory is mounted. BUILD_NAME is passed because the stream carries no .git.
-	# The image already holds appimage-builder; linux/Dockerfile says why.
-	docker build --platform linux/amd64 -t $(APPIMAGE_DOCKER_IMAGE) \
-		--build-arg FLUTTER_VERSION=$(FLUTTER_VERSION) \
-		--build-arg APPIMAGE_BUILDER_VERSION=$(APPIMAGE_BUILDER_VERSION) \
-		--build-arg APPIMAGE_BUILDER_SHA256=$(APPIMAGE_BUILDER_SHA256) linux
-	mkdir -p "$(APPIMAGE_OUT_DIR)"
-	rm -f "$(APPIMAGE_OUT_DIR)"/*.AppImage "$(APPIMAGE_OUT_DIR)"/*.AppImage.zsync
-	git ls-files -z --cached --others --exclude-standard \
-		| COPYFILE_DISABLE=1 tar --null --no-recursion -T - -cf - \
-		| docker run --rm -i --platform linux/amd64 -v "$(APPIMAGE_OUT_DIR):/out" $(APPIMAGE_DOCKER_IMAGE) \
-			bash -ec 'tar -xf - && make build/frontend/linux/appimage BUILD_NAME=$(BUILD_NAME) && cp build/appimage/*.AppImage build/appimage/*.AppImage.zsync /out/'
-	ls -lh "$(APPIMAGE_OUT_DIR)"/*.AppImage
+	# The same target, run in the container, which already holds appimage-builder;
+	# linux/Dockerfile says why.
+	rm -f "$(APPIMAGE_OUT_DIR)"/*-$(LINUX_MACHINE).AppImage "$(APPIMAGE_OUT_DIR)"/*-$(LINUX_MACHINE).AppImage.zsync
+	$(call IN_LINUX_DOCKER,build/frontend/linux/appimage,$(APPIMAGE_OUT_DIR),cp build/appimage/*.AppImage build/appimage/*.AppImage.zsync /out/)
+	ls -lh "$(APPIMAGE_OUT_DIR)"/*-$(LINUX_MACHINE).AppImage
 else
 	$(REQUIRE_APPIMAGE_HOST)
 	builder="$$(command -v appimage-builder || echo "$(PREFIX)/bin/appimage-builder")"
@@ -424,19 +463,22 @@ else
 		echo "  Fix: make setup/appimage-builder   (puts $(APPIMAGE_BUILDER_VERSION) in $(PREFIX)/bin)"
 		exit 1
 	fi
-	$(MAKE) build/frontend/linux
+	$(MAKE) build/frontend/linux LINUX_ARCH=$(LINUX_ARCH)
 	# appimage-builder writes the AppImage and its .zsync into the working directory.
 	# APPIMAGE_EXTRACT_AND_RUN because appimage-builder is itself an AppImage, and CI
 	# runners have no FUSE to mount it with. --skip-tests because the recipe's tests
-	# start Docker containers against a host X server.
+	# start Docker containers against a host X server. The recipe reads its {{...}}
+	# values from these environment variables.
 	mkdir -p "$(APPIMAGE_OUT_DIR)"
 	cd "$(APPIMAGE_OUT_DIR)"
-	rm -f ./*.AppImage ./*.AppImage.zsync
-	APP_VERSION=$(BUILD_NAME) APPIMAGE_EXTRACT_AND_RUN=1 "$$builder" \
+	rm -f ./*-$(LINUX_MACHINE).AppImage ./*-$(LINUX_MACHINE).AppImage.zsync
+	APP_VERSION=$(BUILD_NAME) LINUX_ARCH=$(LINUX_ARCH) LINUX_DEB_ARCH=$(LINUX_DEB_ARCH) \
+		LINUX_MACHINE=$(LINUX_MACHINE) APPIMAGE_APT_MIRROR=$(APPIMAGE_APT_MIRROR) \
+		APPIMAGE_EXTRACT_AND_RUN=1 "$$builder" \
 		--recipe "$(CURDIR)/linux/AppImageBuilder.yml" \
 		--appdir "$(APPIMAGE_WORK_DIR)/AppDir" --build-dir "$(APPIMAGE_WORK_DIR)/cache" \
 		--skip-tests
-	ls -lh ./*.AppImage
+	ls -lh ./*-$(LINUX_MACHINE).AppImage
 endif
 
 .PHONY: build/frontend/ios
@@ -887,6 +929,14 @@ check/build-name: ## Check that there is a version to build (a git tag, or BUILD
 		echo "  The version comes from the most recent tag, for example v0.36.2."
 		echo "  Fix: git fetch --tags"
 		echo "       or pass BUILD_NAME=X.Y.Z explicitly."
+		exit 1
+	fi
+
+.PHONY: check/linux-arch
+check/linux-arch: ## Check that LINUX_ARCH names an architecture to build the Linux app for
+	if [ "$(LINUX_ARCH)" != x64 ] && [ "$(LINUX_ARCH)" != arm64 ]; then
+		echo "Error: LINUX_ARCH is '$(LINUX_ARCH)'; the Linux build needs x64 or arm64."
+		echo "  Fix: pass it, e.g. make build/frontend/linux LINUX_ARCH=x64   (or arm64)"
 		exit 1
 	fi
 

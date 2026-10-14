@@ -156,10 +156,19 @@ jobs:
   build-linux:
     needs: changes
     if: needs.changes.outputs.linux != 'false'
+    # The same legs release-linux.yml builds, so a pull request proves both runners.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-22.04
+          - arch: arm64
+            runner: ubuntu-22.04-arm
     # Pinned, not ubuntu-latest: linux/AppImageBuilder.yml bundles libraries from
     # this release's apt archive, so the runner has to be the release its `sources` name.
-    # release-linux.yml uses the same one.
-    runs-on: ubuntu-22.04
+    # release-linux.yml uses the same ones.
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -181,12 +190,12 @@ jobs:
           make tidy/flutter
       - name: Build [linux]
         run: |
-          make build/frontend/linux
+          make build/frontend/linux LINUX_ARCH=${{ matrix.arch }}
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linux-bundle
-          path: build/linux/x64/release/bundle
+          name: linux-bundle-${{ matrix.arch }}
+          path: build/linux/${{ matrix.arch }}/release/bundle
           if-no-files-found: error
           retention-days: 7
       # The same target release-linux.yml runs on a tag. That workflow cannot run before
@@ -196,17 +205,17 @@ jobs:
           make setup/appimage-builder
       - name: Build [AppImage]
         run: |
-          make build/frontend/linux/appimage
+          make build/frontend/linux/appimage LINUX_ARCH=${{ matrix.arch }}
       # For keeping the include list in linux/AppImageBuilder.yml honest: a
       # plugin that starts linking a new library shows up here.
       - name: List the shared libraries the bundle links
         run: |
-          find build/linux/x64/release/bundle -type f \( -name quark -o -name '*.so' \) -exec readelf -d {} + \
+          find build/linux/${{ matrix.arch }}/release/bundle -type f \( -name quark -o -name '*.so' \) -exec readelf -d {} + \
             | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p' | sort -u
       - name: Upload AppImage artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linux-appimage
+          name: linux-appimage-${{ matrix.arch }}
           path: |
             build/appimage/*.AppImage
             build/appimage/*.AppImage.zsync
