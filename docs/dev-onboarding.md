@@ -96,6 +96,32 @@ make emulate/android  # or emulate/ios
 make serve/frontend/mobile
 ```
 
+Linux desktop:
+
+```bash
+make build/frontend/linux                  # release bundle
+./build/linux/x64/release/bundle/quark
+flutter run -d linux                       # or run it with hot reload
+```
+
+The bundle is the `quark` binary plus its `lib/` and `data/` directories; move them together. The build needs
+Ninja, CMake, Clang, pkg-config, and the GTK 3 and libsecret development files:
+
+```bash
+# Arch / Omarchy: gtk3, libsecret, clang, cmake and pkg-config are usually already installed
+sudo pacman -S --needed ninja gtk3 libsecret clang cmake pkgconf
+
+# Debian / Ubuntu
+sudo apt-get install ninja-build libgtk-3-dev libsecret-1-dev clang cmake pkg-config
+```
+
+The first build downloads PDFium (for `pdfrx`) and compiles libsodium (for `sodium`), so it needs network access
+and takes a few minutes; later builds reuse both.
+
+At runtime the app keeps its sign-in in the desktop keyring through the Secret Service, so GNOME Keyring or
+KWallet has to be running and unlocked. Without one the app still opens, but signing in fails with a message
+saying the keyring is missing.
+
 ## Lint and test
 
 ```bash
@@ -177,6 +203,7 @@ Run `make help` to see everything. The most common ones:
 | `make serve/frontend/mobile`    | Flutter mobile (after `make emulate`) |
 | `make emulate/android`          | Launch Android emulator               |
 | `make emulate/ios`              | Launch iOS simulator                  |
+| `make build/frontend/linux`     | Linux desktop release bundle          |
 | `make build`                    | Build everything                      |
 | `make generate`                 | Regenerate sqlc + swagger             |
 | `make generate/backend/sqlc`    | Regenerate DB layer only              |

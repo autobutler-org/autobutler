@@ -60,6 +60,9 @@ web:
 android:
   - *flutter
   - android/**
+linux:
+  - *flutter
+  - linux/**
 ios:
   - *flutter
   - ios/**

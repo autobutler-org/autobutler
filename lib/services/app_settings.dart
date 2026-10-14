@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 // flutter_secure_storage requires a secure context (HTTPS) on web.
 // We only use it on native platforms; on web we fall back to in-memory only.
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -14,6 +15,7 @@ import 'package:quark/models/file_list_column.dart';
 import 'package:quark/models/photo_sort.dart';
 import 'package:quark/services/local_trust.dart';
 import 'package:quark/utils/emulator_loopback.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/session_cookie.dart';
 import 'package:quark_widgets/quark_widgets.dart'
     show AlbumSort, QuarkThemeColor;
@@ -441,7 +443,7 @@ class AppSettings {
         // On web, use shared_preferences (localStorage) — flutter_secure_storage
         // requires HTTPS and will fail over plain HTTP during development.
         ? _prefs!.getString(_sessionTokenKey)
-        : await _secureStorage.read(key: _sessionTokenKey);
+        : await _readSessionTokens();
 
     final storedTermsHosts = _prefs!.getStringList(_acceptedTermsHostsKey);
     _acceptedTermsHosts = storedTermsHosts?.toSet() ?? {};
@@ -551,16 +553,30 @@ class AppSettings {
   /// With no host configured there is nothing to attribute a token to, so
   /// storage is left alone — but the notifier still publishes the null that
   /// [sessionToken] now reports.
+  ///
+  /// A token that could not be persisted is dropped again before the error
+  /// propagates, so a failed sign-in never leaves a session behind in memory.
   Future<void> setSessionToken(String? token) async {
     final host = activeHost;
-    if (host != null && token != sessionToken) {
-      if (token != null) {
-        _sessionTokens[_hostKey(host)] = token;
-        _markCookieSessions();
-      } else {
-        _sessionTokens.remove(_hostKey(host));
+    final previous = sessionToken;
+    if (host != null && token != previous) {
+      final key = _hostKey(host);
+      void put(String? value) {
+        if (value == null) {
+          _sessionTokens.remove(key);
+        } else {
+          _sessionTokens[key] = value;
+          _markCookieSessions();
+        }
       }
-      await _persistSessionTokens();
+
+      put(token);
+      try {
+        await _persistSessionTokens();
+      } catch (_) {
+        put(previous);
+        rethrow;
+      }
     }
     sessionTokenNotifier.value = sessionToken;
   }
@@ -714,14 +730,37 @@ class AppSettings {
     return held.isNotEmpty;
   }
 
+  /// Reads the raw token store from secure storage, or null when the platform
+  /// cannot reach it.
+  ///
+  /// A Linux desktop with no Secret Service running (no GNOME Keyring or
+  /// KWallet) fails every call (#3148). Treating that as "no session" lets the
+  /// app start and send the user to login, where storing the session reports
+  /// [Errors.keyringUnavailable], rather than failing launch.
+  Future<String?> _readSessionTokens() async {
+    try {
+      return await _secureStorage.read(key: _sessionTokenKey);
+    } on PlatformException catch (e) {
+      debugPrint('[app_settings.dart] Secure storage unreadable: $e');
+      return null;
+    }
+  }
+
+  /// Throws a [MessageException] carrying [Errors.keyringUnavailable] when
+  /// secure storage cannot be written (#3148).
   Future<void> _persistSessionTokens() async {
     final encoded = jsonEncode(_sessionTokens);
     if (kIsWeb) {
       // Use shared_preferences (localStorage) on web — flutter_secure_storage
       // requires HTTPS and fails over plain HTTP in development.
       await _prefs?.setString(_sessionTokenKey, encoded);
-    } else {
+      return;
+    }
+    try {
       await _secureStorage.write(key: _sessionTokenKey, value: encoded);
+    } on PlatformException catch (e) {
+      debugPrint('[app_settings.dart] Secure storage write failed: $e');
+      throw const MessageException(Errors.keyringUnavailable);
     }
   }
 

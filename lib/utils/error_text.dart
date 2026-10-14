@@ -74,6 +74,15 @@ abstract final class Errors {
       "The app can't reach your Quark right now. Check your internet "
       "connection, or try again when you're home.";
 
+  /// The device has nowhere safe to keep a sign-in. On a Linux desktop that
+  /// is a Secret Service (GNOME Keyring, KWallet) that is missing or locked
+  /// (#3148); the Quark accepted the password, so this is not a credentials
+  /// error.
+  static const String keyringUnavailable =
+      "Couldn't save your sign-in on this computer. Quark keeps it in the "
+      "system keyring, so check that one (like GNOME Keyring or KWallet) is "
+      'installed and unlocked, then try again.';
+
   /// Headline above a [message], where a page has room for both.
   static const String somethingWentWrong = 'Something went wrong';
 
