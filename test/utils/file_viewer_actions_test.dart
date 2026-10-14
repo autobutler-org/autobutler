@@ -30,6 +30,7 @@ Future<void> _pumpAndDownload(
   await tester.pump();
 }
 
+/// The Download action's snack bar: a canceled save says nothing (#3160).
 void main() {
   testWidgets('a canceled save shows no message', (tester) async {
     await _pumpAndDownload(tester, (path, {serial, fileName}) async => null);
@@ -52,6 +53,7 @@ void main() {
       (path, {serial, fileName}) async => throw Exception('boom'),
     );
     expect(find.textContaining('Downloaded'), findsNothing);
+    expect(find.textContaining('boom'), findsNothing);
     expect(find.byType(SnackBar), findsOneWidget);
   });
 }
