@@ -3,11 +3,14 @@ runs:
   using: composite
   steps:
     # Installs nothing: it only works out the SDK's cache key and path for the steps below.
+    # Flutter publishes no Linux arm64 release archive, so on an arm64 runner the channel
+    # is main, which flutter-action clones with git and checks out at the pinned version;
+    # the clone fetches the arm64 Dart SDK and engine on first run.
     - name: Resolve flutter SDK
       id: resolve
       uses: subosito/flutter-action@v2
       with:
-        channel: stable
+        channel: ${{ runner.os == 'Linux' && runner.arch == 'ARM64' && 'main' || 'stable' }}
         flutter-version-file: pubspec.yaml
         dry-run: true
     # Not flutter-action's own `cache: true`, which saves on every ref that misses. A
@@ -26,7 +29,7 @@ runs:
     - name: Install flutter SDK
       uses: subosito/flutter-action@v2
       with:
-        channel: stable
+        channel: ${{ runner.os == 'Linux' && runner.arch == 'ARM64' && 'main' || 'stable' }}
         flutter-version-file: pubspec.yaml
         pub-cache: true
     - name: Save flutter SDK
