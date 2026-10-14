@@ -354,6 +354,91 @@ build/frontend/linux: FLUTTER_BUILD_MODE = release
 build/frontend/linux: generate/frontend/sbom ## Build the Linux desktop bundle (build/linux/x64/<mode>/bundle)
 	flutter build linux --$(FLUTTER_BUILD_MODE) $(if $(BUILD_NAME),--build-name=$(BUILD_NAME),)
 
+# The AppImage is the Linux bundle plus the libraries linux/AppImageBuilder.yml pulls from
+# Ubuntu 22.04's apt archive, so it has to be built on Ubuntu 22.04 x86_64: that is the
+# release the recipe's sources name and CI's runner image. On macOS the target runs
+# itself inside linux/Dockerfile's image, which is that release.
+#
+# appimage-builder is taken from its own release AppImage, pinned and checksum-verified:
+# `pip install appimage-builder` no longer resolves on a current Python, and 1.1.0 is the
+# last tagged release.
+APPIMAGE_BUILDER_VERSION := 1.1.0
+APPIMAGE_BUILDER_SHA256 := 4b4f99cae9291d78ba12dbdabca7c0a67c72aa61eb2e5d424089171a9485e96f
+APPIMAGE_OUT_DIR = $(CURDIR)/build/appimage
+APPIMAGE_WORK_DIR = $(CURDIR)/build/appimage-work
+APPIMAGE_DOCKER_IMAGE ?= quark-appimage-builder
+# Where setup/appimage-builder puts the tool, under bin/. Per user, so no sudo.
+PREFIX ?= $(HOME)/.local
+# Both targets stop here on any other host, before downloading or building anything.
+define REQUIRE_APPIMAGE_HOST
+	if [ "$$(uname -sm)" != "Linux x86_64" ] || ! command -v apt-get >/dev/null 2>&1; then
+		echo "Error: the AppImage recipe bundles Ubuntu 22.04 x86_64 packages through apt-get,"
+		echo "  and this is $$(uname -sm) $$(. /etc/os-release 2>/dev/null; echo "$${PRETTY_NAME:-}")."
+		echo "  Fix: build on Ubuntu 22.04 x86_64 (on macOS, make build/frontend/linux/appimage does"
+		echo "       that in Docker), or download the linux-appimage artifact from the build-linux"
+		echo "       job of a pull request."
+		exit 1
+	fi
+endef
+
+.PHONY: setup/appimage-builder
+setup/appimage-builder: ## Install the pinned appimage-builder into $(PREFIX)/bin (Ubuntu x86_64)
+	$(REQUIRE_APPIMAGE_HOST)
+	dest="$(PREFIX)/bin/appimage-builder"
+	mkdir -p "$(PREFIX)/bin"
+	if ! echo "$(APPIMAGE_BUILDER_SHA256)  $$dest" | sha256sum -c --status 2>/dev/null; then
+		curl -fsSL -o "$$dest" "https://github.com/AppImageCrafters/appimage-builder/releases/download/v$(APPIMAGE_BUILDER_VERSION)/appimage-builder-$(APPIMAGE_BUILDER_VERSION)-x86_64.AppImage"
+		echo "$(APPIMAGE_BUILDER_SHA256)  $$dest" | sha256sum -c -
+	fi
+	chmod +x "$$dest"
+	echo "appimage-builder $(APPIMAGE_BUILDER_VERSION) is at $$dest"
+
+.PHONY: build/frontend/linux/appimage
+ifeq ($(UNAME_S),Darwin)
+build/frontend/linux/appimage: check/docker
+endif
+build/frontend/linux/appimage: check/build-name ## Build the Linux AppImage (build/appimage/quark-v<version>-x86_64.AppImage); in Docker on macOS
+ifeq ($(UNAME_S),Darwin)
+	# The same target, run in the container. The tree goes in as a tar stream of what git
+	# tracks plus what is untracked and not ignored, not as a bind mount: this Mac's
+	# .dart_tool, build/ and plugin symlinks are for another platform and hold host
+	# paths, and a container building in place would rewrite them. Only the output
+	# directory is mounted. BUILD_NAME is passed because the stream carries no .git.
+	# The image already holds appimage-builder; linux/Dockerfile says why.
+	docker build --platform linux/amd64 -t $(APPIMAGE_DOCKER_IMAGE) \
+		--build-arg FLUTTER_VERSION=$(FLUTTER_VERSION) \
+		--build-arg APPIMAGE_BUILDER_VERSION=$(APPIMAGE_BUILDER_VERSION) \
+		--build-arg APPIMAGE_BUILDER_SHA256=$(APPIMAGE_BUILDER_SHA256) linux
+	mkdir -p "$(APPIMAGE_OUT_DIR)"
+	rm -f "$(APPIMAGE_OUT_DIR)"/*.AppImage "$(APPIMAGE_OUT_DIR)"/*.AppImage.zsync
+	git ls-files -z --cached --others --exclude-standard \
+		| COPYFILE_DISABLE=1 tar --null --no-recursion -T - -cf - \
+		| docker run --rm -i --platform linux/amd64 -v "$(APPIMAGE_OUT_DIR):/out" $(APPIMAGE_DOCKER_IMAGE) \
+			bash -ec 'tar -xf - && make build/frontend/linux/appimage BUILD_NAME=$(BUILD_NAME) && cp build/appimage/*.AppImage build/appimage/*.AppImage.zsync /out/'
+	ls -lh "$(APPIMAGE_OUT_DIR)"/*.AppImage
+else
+	$(REQUIRE_APPIMAGE_HOST)
+	builder="$$(command -v appimage-builder || echo "$(PREFIX)/bin/appimage-builder")"
+	if [ ! -x "$$builder" ]; then
+		echo "Error: appimage-builder is not installed."
+		echo "  Fix: make setup/appimage-builder   (puts $(APPIMAGE_BUILDER_VERSION) in $(PREFIX)/bin)"
+		exit 1
+	fi
+	$(MAKE) build/frontend/linux
+	# appimage-builder writes the AppImage and its .zsync into the working directory.
+	# APPIMAGE_EXTRACT_AND_RUN because appimage-builder is itself an AppImage, and CI
+	# runners have no FUSE to mount it with. --skip-tests because the recipe's tests
+	# start Docker containers against a host X server.
+	mkdir -p "$(APPIMAGE_OUT_DIR)"
+	cd "$(APPIMAGE_OUT_DIR)"
+	rm -f ./*.AppImage ./*.AppImage.zsync
+	APP_VERSION=$(BUILD_NAME) APPIMAGE_EXTRACT_AND_RUN=1 "$$builder" \
+		--recipe "$(CURDIR)/linux/AppImageBuilder.yml" \
+		--appdir "$(APPIMAGE_WORK_DIR)/AppDir" --build-dir "$(APPIMAGE_WORK_DIR)/cache" \
+		--skip-tests
+	ls -lh ./*.AppImage
+endif
+
 .PHONY: build/frontend/ios
 build/frontend/ios: generate/frontend/sbom ## Build iOS app
 	flutter build ios --$(FLUTTER_BUILD_MODE) --no-codesign \
@@ -795,8 +880,8 @@ check/db: ## Check that the DB_BACKEND database is reachable (sqlite needs nothi
 	fi
 	exit 1
 
-.PHONY: build/docker
-build/docker: check/docker ## Build the container image for a released version
+.PHONY: check/build-name
+check/build-name: ## Check that there is a version to build (a git tag, or BUILD_NAME)
 	if [ -z "$(BUILD_NAME)" ]; then
 		echo "Error: no git tag found to derive the Quark version from."
 		echo "  The version comes from the most recent tag, for example v0.36.2."
@@ -804,6 +889,9 @@ build/docker: check/docker ## Build the container image for a released version
 		echo "       or pass BUILD_NAME=X.Y.Z explicitly."
 		exit 1
 	fi
+
+.PHONY: build/docker
+build/docker: check/build-name check/docker ## Build the container image for a released version
 	echo "Building $(DOCKER_IMAGE):$(BUILD_NAME)"
 	docker build --build-arg VERSION=$(BUILD_NAME) -t $(DOCKER_IMAGE):$(BUILD_NAME) .
 

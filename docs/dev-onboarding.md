@@ -105,14 +105,14 @@ flutter run -d linux                       # or run it with hot reload
 ```
 
 The bundle is the `quark` binary plus its `lib/` and `data/` directories; move them together. The build needs
-Ninja, CMake, Clang, pkg-config, and the GTK 3 and libsecret development files:
+Ninja, CMake, Clang, pkg-config, and the development files of GTK 3, libsecret, libmpv, FFmpeg and libjpeg:
 
 ```bash
 # Arch / Omarchy: gtk3, libsecret, clang, cmake and pkg-config are usually already installed
-sudo pacman -S --needed ninja gtk3 libsecret clang cmake pkgconf
+sudo pacman -S --needed ninja gtk3 libsecret mpv ffmpeg libjpeg-turbo clang cmake pkgconf
 
-# Debian / Ubuntu
-sudo apt-get install ninja-build libgtk-3-dev libsecret-1-dev clang cmake pkg-config
+# Debian / Ubuntu: linux/apt-packages.txt is the list CI installs, the AppImage tools included
+xargs sudo apt-get install < linux/apt-packages.txt
 ```
 
 The first build downloads PDFium (for `pdfrx`) and compiles libsodium (for `sodium`), so it needs network access
@@ -120,9 +120,44 @@ and takes a few minutes; later builds reuse both.
 
 The run-time packages are listed under [Linux runtime dependencies](#linux-runtime-dependencies).
 
+## Building the Linux AppImage
+
+The AppImage is the release bundle and the libraries it links, in one executable file that runs without an
+install. A tagged release builds it in the `release-linux` job and attaches it to the GitHub release; the
+`build-linux` job builds it on every pull request that touches the Linux app and keeps it as the `linux-appimage`
+artifact.
+
+```bash
+make build/frontend/linux/appimage   # build/appimage/quark-v<version>-x86_64.AppImage and its .zsync
+```
+
+The version is the most recent git tag, or `BUILD_NAME=X.Y.Z`. The output is always x86_64.
+
+The target builds with [appimage-builder](https://appimage-builder.readthedocs.io), which
+`make setup/appimage-builder` installs at the pinned version into `~/.local/bin` (`PREFIX=<dir>` puts it in `<dir>/bin`). The build has to happen on
+Ubuntu 22.04 x86_64: the recipe, `linux/AppImageBuilder.yml`, fills the AppImage with libraries from that
+release's apt archive, and they have to be the ones the binary was linked against. Where it runs depends on the
+host:
+
+- **Ubuntu 22.04 x86_64** builds natively. That is the runner CI uses.
+- **macOS** builds in Docker, so Docker Desktop has to be running. The same command builds the image from
+  `linux/Dockerfile` (Ubuntu 22.04 with the packages in `linux/apt-packages.txt`, the Flutter version
+  `pubspec.yaml` pins, and appimage-builder), copies the working tree into a container and runs the same target
+  there. Only `build/appimage/` is shared with the container, so nothing else in your checkout changes.
+  On Apple silicon the container is emulated x86_64, and every run compiles from scratch, so expect it to be slow.
+- **Any other Linux** stops with an explanation; take the artifact from a pull request instead.
+
+What the AppImage carries, so the host does not need it: GTK 3, libsecret, libmpv, the FFmpeg libraries, and
+everything those depend on down to glibc. What it still takes from the host: the graphics stack (Mesa or the
+vendor's GL driver, X11 or Wayland), fonts, and the services in the list below other than libmpv.
+xdg-desktop-portal, `xdg-open`, avahi-daemon and a keyring are programs the app talks to, not libraries it can
+bring along. The recipe's `test:` cases start the AppImage in Docker containers against a local X server; the make
+target skips them, and they are there for running `appimage-builder` by hand on a Linux desktop.
+
 ## Linux runtime dependencies
 
-The build packages above are for compiling. Running the bundle also needs these on the machine:
+The build packages above are for compiling. Running the bundle also needs these on the machine. The
+[AppImage](#building-the-linux-appimage) brings its own libmpv and needs the rest:
 
 1. **libmpv**, for video and audio playback. Arch: `mpv`. Debian / Ubuntu: `libmpv-dev`.
 2. **xdg-desktop-portal plus a desktop backend** (`xdg-desktop-portal-gtk`, `-kde`, `-gnome` or `-hyprland`).
@@ -216,6 +251,7 @@ Run `make help` to see everything. The most common ones:
 | `make emulate/android`          | Launch Android emulator               |
 | `make emulate/ios`              | Launch iOS simulator                  |
 | `make build/frontend/linux`     | Linux desktop release bundle          |
+| `make build/frontend/linux/appimage` | Linux AppImage (Ubuntu 22.04 x86_64) |
 | `make build`                    | Build everything                      |
 | `make generate`                 | Regenerate sqlc + swagger             |
 | `make generate/backend/sqlc`    | Regenerate DB layer only              |

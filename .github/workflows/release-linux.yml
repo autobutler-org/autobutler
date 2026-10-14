@@ -1,0 +1,84 @@
+name: Linux Release
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Attach the AppImage to the GitHub release of the tag this runs on. Uncheck to build only."
+        required: false
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      upload:
+        required: false
+        type: boolean
+        default: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release-linux:
+    # Pinned, not ubuntu-latest: linux/AppImageBuilder.yml bundles libraries from
+    # this release's apt archive, so the runner has to be the release its `sources` name.
+    # build-linux in build.yml uses the same one.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    permissions:
+      # gh release upload writes to the release GoReleaser created for the tag.
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # The version comes from the most recent tag. The default checkout is shallow
+          # and fetches none, which would leave the build with no version at all.
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          xargs sudo apt-get install -y < linux/apt-packages.txt
+
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+
+      - name: Setup appimage-builder
+        run: make setup/appimage-builder
+
+      - name: Build AppImage
+        run: make build/frontend/linux/appimage
+
+      # Uploaded before the release step, so a failed attach still leaves the AppImage
+      # downloadable from the run and a retry needs no rebuild.
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-appimage
+          path: |
+            build/appimage/*.AppImage
+            build/appimage/*.AppImage.zsync
+          if-no-files-found: error
+          retention-days: 14
+
+      # The .zsync goes up with the AppImage: the update information embedded in the
+      # AppImage points AppImageUpdate at that file on the latest release. --clobber so
+      # re-running the job for a tag replaces the assets instead of failing on them.
+      - name: Attach to the GitHub release
+        if: ${{ inputs.upload }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" != tag ]]; then
+            echo "Error: ${GITHUB_REF_NAME} is a ${GITHUB_REF_TYPE}, not a tag, so there is no release to attach to."
+            echo "  Fix: run this workflow from a release tag, or uncheck 'upload' to build only."
+            exit 1
+          fi
+          gh release upload "${GITHUB_REF_NAME}" \
+            build/appimage/*.AppImage build/appimage/*.AppImage.zsync --clobber
