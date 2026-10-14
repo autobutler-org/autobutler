@@ -361,11 +361,31 @@ class AppSettings {
     const {},
   );
 
-  /// Notifies when a certificate is pinned or forgotten, or a saved Quark
-  /// presents one that does not match its pin.
+  /// Holds a JSON object of [_certificateKey] -> forgotten certificate SHA-256.
+  static const _forgottenCertificatesKey = 'forgottenHostCertificates';
+
+  /// The pin each saved Quark had when the user chose Forget certificate,
+  /// keyed by [_certificateKey] (#3182). While a Quark is here, the next
+  /// certificate it presents is not pinned on first use but held in
+  /// [_pendingCertificates] until the user compares and trusts it. Persisted,
+  /// so a restart does not turn that next certificate into a blind pin.
+  final ValueNotifier<Map<String, String>> _forgottenCertificates =
+      ValueNotifier(const {});
+
+  /// The certificate each forgotten Quark presented since, waiting for
+  /// [confirmCertificate]. Not persisted: the next handshake presents it
+  /// again.
+  final ValueNotifier<Map<String, String>> _pendingCertificates = ValueNotifier(
+    const {},
+  );
+
+  /// Notifies when a certificate is pinned, forgotten or waiting for
+  /// confirmation, or a saved Quark presents one that does not match its pin.
   late final Listenable certificatesChanged = Listenable.merge([
     _certificates,
     _certificateMismatches,
+    _forgottenCertificates,
+    _pendingCertificates,
   ]);
 
   /// Pre-#1623 key: a single app-wide "terms accepted" bool. Read once on
@@ -457,6 +477,10 @@ class AppSettings {
       _prefs!.getString(_hostCertificatesKey),
     );
     _certificateMismatches.value = const {};
+    _forgottenCertificates.value = _decodeHostMap(
+      _prefs!.getString(_forgottenCertificatesKey),
+    );
+    _pendingCertificates.value = const {};
     _quarkThemeColor.value = null;
     _userThemeColor.value = null;
 
@@ -869,10 +893,17 @@ class AppSettings {
   /// Trust on first use: the first certificate a saved Quark presents is
   /// pinned and accepted; after that only the same certificate is, and any
   /// other is refused and reported by [certificateChangedFor] until
-  /// [forgetCertificate]. An address that is not saved has nothing to pin
-  /// against and is accepted — probing an address before saving it — so the
-  /// caller must already have decided the host may present a self-signed
-  /// certificate at all.
+  /// [forgetCertificate]. After that, a new certificate is refused and held
+  /// for [confirmCertificate] rather than pinned (#3182). An address that is
+  /// not saved has nothing to pin against and is accepted — probing an
+  /// address before saving it — so the caller must already have decided the
+  /// host may present a self-signed certificate at all.
+  ///
+  /// Pinning runs only inside a `badCertificateCallback`, which the platform
+  /// calls only for a certificate that failed chain verification. A
+  /// certificate a public CA vouches for is never compared with the pin, and
+  /// an expired pinned certificate still matches; both are fine for the
+  /// self-signed certificates a Quark serves.
   ///
   /// Synchronous, because a `badCertificateCallback` is; the pin is written to
   /// storage in the background.
@@ -888,8 +919,17 @@ class AppSettings {
       presented: sha256,
     )) {
       case CertificatePinCheck.firstUse:
-        _certificates.value = {..._certificates.value, key: sha256};
-        unawaited(_persistCertificates());
+        final forgotten = _forgottenCertificates.value[key];
+        if (forgotten != null && forgotten != sha256) {
+          if (_pendingCertificates.value[key] != sha256) {
+            _pendingCertificates.value = {
+              ..._pendingCertificates.value,
+              key: sha256,
+            };
+          }
+          return false;
+        }
+        unawaited(_pinCertificateKey(key, sha256));
         return true;
       case CertificatePinCheck.match:
         return true;
@@ -900,18 +940,15 @@ class AppSettings {
   }
 
   /// [trustCertificate] for a client that was not built for one Quark, which
-  /// knows only the [host] and [port] the TLS layer reports.
-  ///
-  /// A saved authority is held to its own pin. Anything else — iOS can report
-  /// the mDNS-resolved address instead of the saved name — is never pinned,
-  /// since it cannot be attributed to a Quark: it is accepted when it presents
-  /// a certificate some saved Quark is pinned to, or while the Quark in use
-  /// has no pin to compare with.
+  /// knows only the [host] and [port] the TLS layer reports. A saved Quark's
+  /// address is held to its own pin. Any other address — which on iOS can be
+  /// the address a saved Quark's name resolved to — is accepted only with a
+  /// certificate some saved Quark is pinned to (#3182), so with nothing
+  /// pinned it is refused.
   bool trustReportedCertificate(String host, int port, String sha256) {
     final key = _certificateKey(host, port);
     if (_isSavedCertificateKey(key)) return _trustCertificateKey(key, sha256);
-    return _certificates.value.containsValue(sha256) ||
-        !hasCertificateFor(activeHost);
+    return _certificates.value.containsValue(sha256);
   }
 
   /// Whether a certificate is pinned for the Quark at [hostAddress].
@@ -919,26 +956,78 @@ class AppSettings {
       _certificates.value.containsKey(_certificateKeyOf(hostAddress));
 
   /// Whether the Quark at [hostAddress] presented a certificate other than
-  /// its pin, so the app refuses to connect to it.
+  /// its pin, and is being refused for it.
   bool certificateChangedFor(String? hostAddress) =>
       _certificateMismatches.value.contains(_certificateKeyOf(hostAddress));
 
-  /// Forgets the certificate pinned for the Quark at [hostAddress], so the
-  /// next connection pins whatever it presents — for a Quark that was reset
-  /// or re-issued its certificate.
-  Future<void> forgetCertificate(String hostAddress) =>
-      _forgetCertificateKey(_certificateKeyOf(hostAddress));
+  /// The SHA-256 of the certificate the Quark at [hostAddress] was pinned to
+  /// before [forgetCertificate], while no new one has been trusted.
+  String? forgottenCertificateFor(String? hostAddress) =>
+      _forgottenCertificates.value[_certificateKeyOf(hostAddress)];
 
-  Future<void> _forgetCertificateKey(String? key) async {
+  /// The SHA-256 of the certificate the forgotten Quark at [hostAddress]
+  /// presented, refused until [confirmCertificate].
+  String? pendingCertificateFor(String? hostAddress) =>
+      _pendingCertificates.value[_certificateKeyOf(hostAddress)];
+
+  /// Forgets the certificate pinned for the Quark at [hostAddress] — for a
+  /// Quark that was reset or re-issued its certificate. The next certificate
+  /// it presents is refused and held by [pendingCertificateFor] until the
+  /// user compares its fingerprint and calls [confirmCertificate] (#3182).
+  Future<void> forgetCertificate(String hostAddress) async {
+    final key = _certificateKeyOf(hostAddress);
+    if (key == null) return;
+    final pinned = _certificates.value[key];
+    if (pinned != null) {
+      _forgottenCertificates.value = {
+        ..._forgottenCertificates.value,
+        key: pinned,
+      };
+      await _persistForgottenCertificates();
+    }
+    await _dropCertificateKey(key, keepForgotten: true);
+  }
+
+  /// Pins the certificate the Quark at [hostAddress] presented after
+  /// [forgetCertificate], once the user has compared its fingerprint. Does
+  /// nothing when none is waiting.
+  Future<void> confirmCertificate(String hostAddress) async {
+    final key = _certificateKeyOf(hostAddress);
+    final pending = _pendingCertificates.value[key];
+    if (key == null || pending == null) return;
+    await _pinCertificateKey(key, pending);
+  }
+
+  /// Pins [sha256] for [key] and drops anything forgotten or waiting for it.
+  Future<void> _pinCertificateKey(String key, String sha256) async {
+    _certificates.value = {..._certificates.value, key: sha256};
+    await _dropCertificateKey(key, keepPin: true);
+  }
+
+  /// Drops every record of [key]: its pin unless [keepPin], what was
+  /// forgotten for it unless [keepForgotten], and any mismatch or waiting
+  /// certificate.
+  Future<void> _dropCertificateKey(
+    String key, {
+    bool keepPin = false,
+    bool keepForgotten = false,
+  }) async {
+    Map<String, String> without(Map<String, String> m) => {
+      for (final e in m.entries)
+        if (e.key != key) e.key: e.value,
+    };
     _certificateMismatches.value = {
       for (final k in _certificateMismatches.value)
         if (k != key) k,
     };
-    if (!_certificates.value.containsKey(key)) return;
-    _certificates.value = {
-      for (final e in _certificates.value.entries)
-        if (e.key != key) e.key: e.value,
-    };
+    _pendingCertificates.value = without(_pendingCertificates.value);
+    if (!keepForgotten && _forgottenCertificates.value.containsKey(key)) {
+      _forgottenCertificates.value = without(_forgottenCertificates.value);
+      await _persistForgottenCertificates();
+    }
+    if (!keepPin && _certificates.value.containsKey(key)) {
+      _certificates.value = without(_certificates.value);
+    }
     await _persistCertificates();
   }
 
@@ -949,19 +1038,28 @@ class AppSettings {
     );
   }
 
+  Future<void> _persistForgottenCertificates() async {
+    await _prefs?.setString(
+      _forgottenCertificatesKey,
+      jsonEncode(_forgottenCertificates.value),
+    );
+  }
+
   Future<void> _saveHosts() async {
     await _prefs?.setString(
       'hosts',
       jsonEncode(_hosts.map((e) => e.toJson()).toList()),
     );
     // A pin belongs to a saved address: removing a Quark, or moving it to a
-    // new address, drops the pin and any mismatch reported against it.
+    // new address, drops the pin and everything else recorded against it.
     final stale = {
       ..._certificates.value.keys,
       ..._certificateMismatches.value,
+      ..._forgottenCertificates.value.keys,
+      ..._pendingCertificates.value.keys,
     }.where((key) => !_isSavedCertificateKey(key)).toList();
     for (final key in stale) {
-      await _forgetCertificateKey(key);
+      await _dropCertificateKey(key);
     }
     await _prefs?.setInt('activeHostIndex', _activeIndex);
     _publishActiveHost();

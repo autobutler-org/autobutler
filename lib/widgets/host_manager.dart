@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/local_trust.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/widgets/host_dialog.dart';
@@ -11,11 +12,18 @@ import 'package:quark_widgets/quark_widgets.dart';
 ///
 /// A Quark that presented a certificate other than its pin says so under its
 /// address, since the app refuses to connect to it until the pin is
-/// forgotten.
+/// forgotten. Forget asks first, and the certificate the Quark presents next
+/// is pinned only once the user has compared its fingerprint, beside the old
+/// one, and trusted it (#3182).
 ///
 /// Keys: `host_row_<index>`, `host_menu_<index>`, `host_action_edit_<index>`,
-/// `host_action_remove_<index>`, `host_action_forget_certificate_<index>` and
-/// `host_certificate_changed_<index>` (the mismatch notice).
+/// `host_action_remove_<index>`, `host_action_forget_certificate_<index>`,
+/// `host_action_review_certificate_<index>`,
+/// `host_certificate_changed_<index>` (the mismatch notice),
+/// `host_certificate_unconfirmed_<index>` (the waiting-certificate notice),
+/// and the dialog buttons `forget_certificate_cancel`,
+/// `forget_certificate_confirm`, `review_certificate_cancel` and
+/// `review_certificate_trust`.
 ///
 /// Shared by Settings and the login page so a user pointed at a Quark they
 /// can't reach can still change hosts without getting past the auth gate
@@ -113,9 +121,13 @@ class _HostManagerState extends State<HostManager> {
       QuarkMenuEntry(
         key: ValueKey('host_action_forget_certificate_$index'),
         label: 'Forget certificate',
-        onSelected: () => AppSettings.instance.forgetCertificate(
-          AppSettings.instance.hosts[index].hostAddress,
-        ),
+        onSelected: () => _forgetCertificate(index),
+      ),
+    if (AppSettings.instance.pendingCertificateFor(_address(index)) != null)
+      QuarkMenuEntry(
+        key: ValueKey('host_action_review_certificate_$index'),
+        label: 'Review certificate',
+        onSelected: () => _reviewCertificate(index),
       ),
     QuarkMenuEntry(
       key: ValueKey('host_action_remove_$index'),
@@ -125,10 +137,90 @@ class _HostManagerState extends State<HostManager> {
     ),
   ];
 
+  String _address(int index) => AppSettings.instance.hosts[index].hostAddress;
+
   bool _hasCertificate(int index) {
-    final address = AppSettings.instance.hosts[index].hostAddress;
+    final address = _address(index);
     return AppSettings.instance.hasCertificateFor(address) ||
         AppSettings.instance.certificateChangedFor(address);
+  }
+
+  Future<void> _forgetCertificate(int index) async {
+    final confirm = await QuarkWidget.showDialog<bool>(
+      context,
+      builder: (context) => QuarkWidget.alertDialog(
+        title: const Text('Forget certificate'),
+        content: const Text(
+          "Only do this if you reset or reinstalled your Quark. The app will "
+          'show you the next certificate it presents, so you can check it '
+          'before the app trusts it.',
+        ),
+        actions: [
+          TextButton(
+            key: const ValueKey('forget_certificate_cancel'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const ValueKey('forget_certificate_confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Forget'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await AppSettings.instance.forgetCertificate(_address(index));
+  }
+
+  /// Shows the certificate the forgotten Quark at [index] presented, beside
+  /// the one it used to be pinned to, and pins it only if the user trusts it.
+  Future<void> _reviewCertificate(int index) async {
+    final address = _address(index);
+    final presented = AppSettings.instance.pendingCertificateFor(address);
+    if (presented == null) return;
+    final previous = AppSettings.instance.forgottenCertificateFor(address);
+    final confirm = await QuarkWidget.showDialog<bool>(
+      context,
+      builder: (context) => QuarkWidget.alertDialog(
+        title: const Text('Review certificate'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Trust this certificate only if its fingerprint matches the "
+                "one your Quark shows. If it doesn't, you may be on a network "
+                'that is impersonating your Quark.',
+              ),
+              const SizedBox(height: 12),
+              const Text('New fingerprint (SHA-256)'),
+              SelectableText(formatCertificateFingerprint(presented)),
+              if (previous != null) ...[
+                const SizedBox(height: 12),
+                const Text('Previous fingerprint'),
+                SelectableText(formatCertificateFingerprint(previous)),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            key: const ValueKey('review_certificate_cancel'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const ValueKey('review_certificate_trust'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Trust'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await AppSettings.instance.confirmCertificate(address);
   }
 
   Future<void> _remove(int index) async {
@@ -176,6 +268,20 @@ class _HostManagerState extends State<HostManager> {
             children: hosts.asMap().entries.map((e) {
               final idx = e.key;
               final host = e.value;
+              final (
+                notice,
+                noticeKey,
+              ) = AppSettings.instance.certificateChangedFor(host.hostAddress)
+                  ? (Errors.certificateChanged, 'host_certificate_changed_$idx')
+                  : AppSettings.instance.pendingCertificateFor(
+                          host.hostAddress,
+                        ) !=
+                        null
+                  ? (
+                      Errors.certificateUnconfirmed,
+                      'host_certificate_unconfirmed_$idx',
+                    )
+                  : (null, null);
               // A right-click on the row opens the same menu as its button
               // (#2276).
               return GestureDetector(
@@ -198,19 +304,14 @@ class _HostManagerState extends State<HostManager> {
                     child: ListTile(
                       leading: ExcludeSemantics(child: Radio<int>(value: idx)),
                       title: Text(host.name),
-                      subtitle:
-                          AppSettings.instance.certificateChangedFor(
-                            host.hostAddress,
-                          )
+                      subtitle: notice != null
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(host.hostAddress),
                                 Text(
-                                  Errors.certificateChanged,
-                                  key: ValueKey(
-                                    'host_certificate_changed_$idx',
-                                  ),
+                                  notice,
+                                  key: ValueKey(noticeKey!),
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.error,
                                   ),

@@ -128,18 +128,98 @@ void main() {
     expect(await stored(), isEmpty);
   });
 
-  test('forgetting the certificate lets a re-issued Quark be pinned', () async {
-    await load();
-    settings.trustCertificate(home, first);
-    settings.trustCertificate(home, other);
+  group('after Forget certificate (#3182)', () {
+    test('a new certificate is held for confirmation, not pinned', () async {
+      await load();
+      settings.trustCertificate(home, first);
+      settings.trustCertificate(home, other);
 
-    await settings.forgetCertificate(home);
+      await settings.forgetCertificate(home);
 
-    expect(settings.certificateChangedFor(home), isFalse);
-    expect(settings.hasCertificateFor(home), isFalse);
-    expect(await stored(), isEmpty);
-    expect(settings.trustCertificate(home, other), isTrue);
-    expect(await stored(), {'home.local:443': other});
+      expect(settings.certificateChangedFor(home), isFalse);
+      expect(settings.hasCertificateFor(home), isFalse);
+      expect(settings.forgottenCertificateFor(home), first);
+      expect(await stored(), isEmpty);
+
+      expect(settings.trustCertificate(home, other), isFalse);
+      expect(settings.pendingCertificateFor(home), other);
+      expect(settings.hasCertificateFor(home), isFalse);
+      expect(await stored(), isEmpty, reason: 'nothing is pinned blind');
+    });
+
+    test('confirming pins the certificate that was presented', () async {
+      await load();
+      settings.trustCertificate(home, first);
+      await settings.forgetCertificate(home);
+      settings.trustCertificate(home, other);
+
+      await settings.confirmCertificate(home);
+
+      expect(await stored(), {'home.local:443': other});
+      expect(settings.pendingCertificateFor(home), isNull);
+      expect(settings.forgottenCertificateFor(home), isNull);
+      expect(settings.trustCertificate(home, other), isTrue);
+      expect(settings.trustCertificate(home, first), isFalse);
+    });
+
+    test('confirming with nothing presented pins nothing', () async {
+      await load();
+      settings.trustCertificate(home, first);
+      await settings.forgetCertificate(home);
+
+      await settings.confirmCertificate(home);
+
+      expect(await stored(), isEmpty);
+      expect(settings.trustCertificate(home, other), isFalse);
+    });
+
+    test(
+      'a restart does not turn the next certificate into a blind pin',
+      () async {
+        await load();
+        settings.trustCertificate(home, first);
+        await settings.forgetCertificate(home);
+
+        await load({
+          'hostCertificates': (await SharedPreferences.getInstance()).getString(
+            'hostCertificates',
+          )!,
+          'forgottenHostCertificates': (await SharedPreferences.getInstance())
+              .getString('forgottenHostCertificates')!,
+        });
+
+        expect(settings.trustCertificate(home, other), isFalse);
+        expect(settings.pendingCertificateFor(home), other);
+      },
+    );
+
+    test('the forgotten certificate itself is trusted again', () async {
+      await load();
+      settings.trustCertificate(home, first);
+      await settings.forgetCertificate(home);
+
+      expect(settings.trustCertificate(home, first), isTrue);
+      expect(await stored(), {'home.local:443': first});
+      expect(settings.forgottenCertificateFor(home), isNull);
+    });
+
+    test('removing the Quark drops what was forgotten', () async {
+      await load();
+      settings.trustCertificate(home, first);
+      await settings.forgetCertificate(home);
+      settings.trustCertificate(home, other);
+
+      await settings.removeHost(0);
+      await settings.addHost(HostEntry(name: 'Home', hostAddress: home));
+
+      expect(settings.pendingCertificateFor(home), isNull);
+      expect(settings.forgottenCertificateFor(home), isNull);
+      expect(
+        settings.trustCertificate(home, other),
+        isTrue,
+        reason: 'first use',
+      );
+    });
   });
 
   test('removing a Quark drops its pin', () async {
@@ -185,12 +265,40 @@ void main() {
       expect(settings.certificateChangedFor(home), isTrue);
     });
 
-    test('is accepted unpinned while the Quark in use has no pin', () async {
+    test('is refused when nothing is pinned (#3182)', () async {
       await load();
 
-      expect(settings.trustReportedCertificate('10.0.0.7', 443, other), isTrue);
+      expect(
+        settings.trustReportedCertificate('10.0.0.7', 443, other),
+        isFalse,
+      );
       expect(await stored(), isEmpty);
     });
+
+    test(
+      'is refused while the Quark in use is reached without a pin (#3182)',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'hosts': jsonEncode([
+            {'name': 'Home', 'hostAddress': 'http://home.local'},
+            {'name': 'Cabin', 'hostAddress': 'https://192.168.1.9:8443'},
+          ]),
+          'activeHostIndex': 0,
+        });
+        await settings.load();
+        settings.trustCertificate('https://192.168.1.9:8443', first);
+
+        expect(
+          settings.trustReportedCertificate('10.0.0.7', 443, other),
+          isFalse,
+        );
+        expect(
+          settings.trustReportedCertificate('10.0.0.7', 443, first),
+          isTrue,
+          reason: 'a certificate some saved Quark is pinned to',
+        );
+      },
+    );
 
     test(
       'must present a pinned certificate once the Quark in use has one',
@@ -230,5 +338,20 @@ void main() {
         );
       },
     );
+
+    test('asks for confirmation while a new certificate waits', () async {
+      await load();
+      settings.trustCertificate(home, first);
+      await settings.forgetCertificate(home);
+      settings.trustCertificate(home, other);
+
+      expect(
+        Errors.message(
+          const HandshakeException('CERTIFICATE_VERIFY_FAILED'),
+          'sign in',
+        ),
+        Errors.certificateUnconfirmed,
+      );
+    });
   });
 }

@@ -152,4 +152,8 @@ void main() {
       expect(overrides.trusts('quark.local'), isFalse);
     });
   });
+
+  test('a fingerprint reads as colon-separated uppercase pairs (#3182)', () {
+    expect(formatCertificateFingerprint('ba7816bf'), 'BA:78:16:BF');
+  });
 }

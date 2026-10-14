@@ -36,6 +36,9 @@ abstract final class Errors {
     if (settings.certificateChangedFor(settings.activeHost)) {
       return certificateChanged;
     }
+    if (settings.pendingCertificateFor(settings.activeHost) != null) {
+      return certificateUnconfirmed;
+    }
     if (isQuarkUnreachableError(error)) return quarkDisconnectedInline;
     return couldNot(action);
   }
@@ -48,6 +51,14 @@ abstract final class Errors {
       'connect to it. If you reset or reinstalled your Quark, choose Forget '
       "certificate from its menu under Backend hosts, then try again. If you "
       "didn't, you may be on a network that is impersonating it.";
+
+  /// After Forget certificate, the Quark presented a new certificate that the
+  /// app holds back until the user compares its fingerprint and trusts it
+  /// (#3182). Names where to do that.
+  static const String certificateUnconfirmed =
+      'This Quark presented a new security certificate. Choose Review '
+      'certificate from its menu under Backend hosts, check the fingerprint '
+      'matches the one your Quark shows, then trust it and try again.';
 
   /// The Quark writes its own copy in lowercase fragments — "server busy,
   /// please retry". Reshape it so it reads like the rest of the app's text.

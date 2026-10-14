@@ -10,6 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// #2721: a saved Quark with a pinned certificate offers Forget certificate,
 /// and one that presented a different certificate says so in its row.
+/// #3182: Forget asks first, and the next certificate is pinned only once the
+/// user has compared its fingerprint and trusted it.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -19,6 +21,10 @@ void main() {
   const home = 'https://home.local';
   const forget = ValueKey('host_action_forget_certificate_0');
   const changed = ValueKey('host_certificate_changed_0');
+  const unconfirmed = ValueKey('host_certificate_unconfirmed_0');
+  const review = ValueKey('host_action_review_certificate_0');
+  const old = 'aa11';
+  const fresh = 'bb22';
   const viewports = {'narrow': Size(360, 640), 'wide': Size(1280, 800)};
   final settings = AppSettings.instance;
 
@@ -68,12 +74,10 @@ void main() {
       expect(find.byKey(forget), findsNothing);
     });
 
-    testWidgets('Forget certificate re-trusts a refused Quark ($name)', (
-      tester,
-    ) async {
+    testWidgets('Forget certificate asks first ($name)', (tester) async {
       await pumpManager(tester, viewport);
-      settings.trustCertificate(home, 'aa11');
-      settings.trustCertificate(home, 'bb22');
+      settings.trustCertificate(home, old);
+      settings.trustCertificate(home, fresh);
       await tester.pump();
 
       expect(find.byKey(changed), findsOneWidget);
@@ -92,10 +96,63 @@ void main() {
       await openMenu(tester, 0);
       await tester.tap(find.byKey(forget));
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('forget_certificate_cancel')));
+      await tester.pumpAndSettle();
+
+      expect(settings.hasCertificateFor(home), isTrue, reason: 'canceled');
+      expect(find.byKey(changed), findsOneWidget);
+
+      await openMenu(tester, 0);
+      await tester.tap(find.byKey(forget));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('forget_certificate_confirm')),
+      );
+      await tester.pumpAndSettle();
 
       expect(find.byKey(changed), findsNothing);
       expect(settings.hasCertificateFor(home), isFalse);
-      expect(settings.trustCertificate(home, 'bb22'), isTrue);
+      expect(
+        settings.trustCertificate(home, fresh),
+        isFalse,
+        reason: 'not pinned until the user trusts it',
+      );
+    });
+
+    testWidgets('a new certificate is pinned only once trusted ($name)', (
+      tester,
+    ) async {
+      await pumpManager(tester, viewport);
+      settings.trustCertificate(home, old);
+      await settings.forgetCertificate(home);
+      settings.trustCertificate(home, fresh);
+      await tester.pump();
+
+      expect(find.byKey(unconfirmed), findsOneWidget);
+      expect(find.text(Errors.certificateUnconfirmed), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'the notice fits');
+
+      await openMenu(tester, 0);
+      await tester.tap(find.byKey(review));
+      await tester.pumpAndSettle();
+
+      expect(find.text('BB:22'), findsOneWidget, reason: 'the new one');
+      expect(find.text('AA:11'), findsOneWidget, reason: 'the old one');
+      expect(tester.takeException(), isNull, reason: 'the dialog fits');
+
+      await tester.tap(find.byKey(const ValueKey('review_certificate_cancel')));
+      await tester.pumpAndSettle();
+      expect(settings.hasCertificateFor(home), isFalse, reason: 'canceled');
+
+      await openMenu(tester, 0);
+      await tester.tap(find.byKey(review));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('review_certificate_trust')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(unconfirmed), findsNothing);
+      expect(settings.hasCertificateFor(home), isTrue);
+      expect(settings.trustCertificate(home, fresh), isTrue);
     });
   }
 }
