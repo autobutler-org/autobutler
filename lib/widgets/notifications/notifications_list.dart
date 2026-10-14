@@ -11,7 +11,8 @@ import 'package:quark_widgets/quark_widgets.dart';
 ///
 /// Rebuilds as [controller] changes. Until the first answer it shows a
 /// loader, or the failure with a way to try again. After that the rows stay
-/// up while a refresh runs, and a list that came back empty says so.
+/// up while a refresh runs, and a list that came back empty says so. Under
+/// the rows a line says where the reminders are switched off.
 ///
 /// Keys: `notification_tile_<type>` on each row, where `<type>` is the
 /// type as the API spells it (`notification_tile_backup_due`), and
@@ -79,6 +80,15 @@ class NotificationsList extends StatelessWidget {
                 trailing: const Icon(QuarkIcons.chevron_right),
                 onTap: () => onOpen(notification),
               ),
+            Padding(
+              padding: EdgeInsets.only(top: tokens.spacingSm),
+              child: Text(
+                'Turn reminders off in Settings → General.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: tokens.secondaryForeground,
+                ),
+              ),
+            ),
           ],
         );
       },

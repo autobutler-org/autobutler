@@ -84,6 +84,13 @@ void main() {
         find.descendant(of: find.byType(Badge), matching: find.text('1')),
         findsOneWidget,
       );
+      final handle = tester.ensureSemantics();
+      expect(
+        find.semantics.byLabel('1'),
+        findsNothing,
+        reason: 'the badge is not read on its own',
+      );
+      handle.dispose();
 
       await tester.tap(find.byKey(bell));
       await tester.pumpAndSettle();
@@ -91,6 +98,11 @@ void main() {
       expect(listCalls, 2, reason: 'opening the list asks again');
       expect(find.text('Your backup is out of date'), findsOneWidget);
       expect(find.textContaining('Sep 1, 2026'), findsOneWidget);
+      expect(
+        find.text('Turn reminders off in Settings → General.'),
+        findsOneWidget,
+        reason: 'the sheet says how to silence a reminder',
+      );
 
       await tester.tap(
         find.byKey(const ValueKey('notification_tile_backup_stale')),
