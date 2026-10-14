@@ -111,6 +111,13 @@ dependencies:
   # The in-app PDF viewer (#1184), built on PDFium. Its web WASM ships in the
   # app bundle, so the viewer works with no internet connection.
   pdfrx: ^2.6.5
+  # video_player has no Linux implementation (#3151). video_player_media_kit
+  # plays through libmpv instead, and media_kit_libs_linux links the system
+  # libmpv into the Linux runner. Registered for Linux only, by
+  # lib/services/video_playback_backend.dart, so Android, iOS and web keep
+  # their own video_player backends.
+  video_player_media_kit: ^2.0.0
+  media_kit_libs_linux: ^1.2.1
 
 # Patched desktop_drop: upstream's web handler calls webkitGetAsEntry()! on every
 # item in a drag, but that returns null for the string items a drag carries

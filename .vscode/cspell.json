@@ -327,6 +327,7 @@
     "libheif",
     "libimage",
     "libmp",
+    "libmpv",
     "libopus",
     "libsecret",
     "libsodium",
