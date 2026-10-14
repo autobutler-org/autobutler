@@ -1,12 +1,15 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 
 import '../../models/calendar_event_item.dart';
 import '../calendar_dates.dart';
 import '../calendar_event_chip.dart';
+import '../calendar_labels.dart';
 
 /// Lets one event block on `CalendarTimeGrid` be moved and resized, by a drag
 /// or from the keyboard (#2526).
@@ -27,7 +30,12 @@ import '../calendar_event_chip.dart';
 ///
 /// With the block focused, Alt and an arrow do the same: up and down move it
 /// a step, left and right a day, and with Shift held up and down move its
-/// end. Each press calls [onReschedule] at once.
+/// end. Each press calls [onReschedule] at once. A screen reader gets the
+/// same moves as custom actions ("Move 15 minutes later", "Move to the next
+/// day", "Extend by 15 minutes", and their opposites; no day moves on a
+/// single date), the keys as the event's hint, and the new times announced
+/// after each (#3185). A mouse hovering the event is told the keys in a
+/// tooltip.
 ///
 /// Nothing here animates: the preview jumps from step to step, so reduced
 /// motion has nothing to drop. It is stateful only for the drag in flight.
@@ -76,6 +84,11 @@ class TimeGridEventMover extends StatefulWidget {
 
   /// The minutes one step of a drag or one key press moves an event.
   static const int step = 15;
+
+  /// The keys, as the event's tooltip and its hint to a screen reader.
+  static const String keysHint =
+      'Alt+Up or Down moves it $step minutes, Alt+Left or Right a day, '
+      'Alt+Shift+Up or Down its end';
 
   /// [item] moved [dayShift] dates and [minutes] minutes later, or with
   /// [resize] its end alone moved [minutes] later. Negative is earlier.
@@ -184,7 +197,25 @@ class _TimeGridEventMoverState extends State<TimeGridEventMover> {
       minutes: minutes,
       resize: resize,
     );
-    if (moved != widget.item) widget.onReschedule(moved, fromKeyboard: true);
+    if (moved == widget.item) return;
+    widget.onReschedule(moved, fromKeyboard: true);
+    final range = CalendarLabels.timeRange(
+      moved.start,
+      moved.end,
+      use24Hour: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
+    unawaited(
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        [
+          moved.title,
+          if (!CalendarDates.isSameDay(moved.start, widget.item.start))
+            CalendarLabels.dayTitleShort(moved.start),
+          range,
+        ].join(', '),
+        Directionality.of(context),
+      ),
+    );
   }
 
   @override
@@ -200,7 +231,7 @@ class _TimeGridEventMoverState extends State<TimeGridEventMover> {
         : (d) => _update(d.globalPosition);
     final GestureDragEndCallback? dragEnd = touch ? null : (_) => _end();
 
-    return CallbackShortcuts(
+    final mover = CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.arrowUp, alt: true): () =>
             _nudge(minutes: -step),
@@ -261,6 +292,35 @@ class _TimeGridEventMoverState extends State<TimeGridEventMover> {
           ],
         ),
       ),
+    );
+
+    return Semantics(
+      hint: TimeGridEventMover.keysHint,
+      customSemanticsActions: {
+        const CustomSemanticsAction(label: 'Move $step minutes earlier'): () =>
+            _nudge(minutes: -step),
+        const CustomSemanticsAction(label: 'Move $step minutes later'): () =>
+            _nudge(minutes: step),
+        if (widget.days.length > 1) ...{
+          const CustomSemanticsAction(label: 'Move to the previous day'): () =>
+              _nudge(days: -1),
+          const CustomSemanticsAction(label: 'Move to the next day'): () =>
+              _nudge(days: 1),
+        },
+        const CustomSemanticsAction(label: 'Shorten by $step minutes'): () =>
+            _nudge(minutes: -step, resize: true),
+        const CustomSemanticsAction(label: 'Extend by $step minutes'): () =>
+            _nudge(minutes: step, resize: true),
+      },
+      // A touch's hold is the drag, so only a mouse's hover shows the keys.
+      child: touch
+          ? mover
+          : Tooltip(
+              message: TimeGridEventMover.keysHint,
+              triggerMode: TooltipTriggerMode.manual,
+              excludeFromSemantics: true,
+              child: mover,
+            ),
     );
   }
 }
