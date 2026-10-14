@@ -244,7 +244,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('markdown_viewer_edit')));
     await tester.pumpAndSettle();
 
-    expect(location(router), '/edit/notes/trip/readme.md');
+    expect(
+      location(router),
+      '/edit/notes/trip/readme.md?from=/markdown/notes/trip/readme.md',
+    );
   });
 
   testWidgets('a file past the cap says how much is rendered, and is not '

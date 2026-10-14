@@ -24,7 +24,7 @@ void main() {
     );
   });
 
-  test('a /view link to Markdown opens the viewer, other prose the editor', () {
+  test('a /view link to Markdown opens its viewer, .txt the code viewer', () {
     expect(
       viewFileRedirect('notes/readme.md', null),
       '/markdown/notes/readme.md',
@@ -33,7 +33,7 @@ void main() {
       viewFileRedirect('notes/readme.markdown', 's1'),
       '/markdown/notes/readme.markdown?serial=s1',
     );
-    expect(viewFileRedirect('notes/todo.txt', null), '/edit/notes/todo.txt');
+    expect(viewFileRedirect('notes/todo.txt', null), '/code/notes/todo.txt');
   });
 
   group('resolveMarkdownLink', () {
