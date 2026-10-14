@@ -558,25 +558,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
-  /// Converts the selected devicePaths into the serial values the backend expects.
-  /// Returns an empty list when all devices are selected (backend interprets
-  /// empty serials as "no filter — show all").
-  List<String> _serialsForActiveDevices() {
-    final allPaths = _allDevices.map((d) => d.devicePath).toSet();
-    // If every known device is selected, pass no filter rather than an explicit
-    // serial list. This avoids the edge case where count matches but content
-    // differs (e.g. a device was added/removed between loads), and also avoids
-    // sending serial='' for the internal device which confuses the backend.
-    if (_activeDevicePaths.containsAll(allPaths) &&
-        allPaths.containsAll(_activeDevicePaths)) {
-      return const [];
-    }
-    return _allDevices
-        .where((d) => _activeDevicePaths.contains(d.devicePath))
-        .map((d) => d.serial)
-        .where((s) => s.isNotEmpty) // never send blank serial as a filter
-        .toList();
-  }
+  /// The `serial` filter for the selected device chips; null for all.
+  List<String>? _serialsForActiveDevices() =>
+      FileBrowserController.serialFilter(_allDevices, _activeDevicePaths);
 
   @override
   void didChangeDependencies() {
@@ -661,13 +645,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       fetchFuture = FilesService.listArchiveEntries(
         archive.archivePath,
         subPath: archive.subPath,
-        serial: serials.isNotEmpty ? serials.first : null,
+        serial: serials?.firstOrNull,
       );
     } else {
-      fetchFuture = _controller.fetchFiles(
-        listPath,
-        serials: serials.isEmpty ? null : serials,
-      );
+      fetchFuture = _controller.fetchFiles(listPath, serials: serials);
     }
 
     _filesFuture = fetchFuture.then((files) {
@@ -1718,7 +1699,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
     setState(() {
       _isSearchMode = true;
-      _searchFuture = FilesService.searchFiles(query);
+      _searchFuture = FilesService.searchFiles(
+        query,
+        serials: _serialsForActiveDevices(),
+      );
       _searchQuery = query;
       // Keep the draft on the query this search is for, so a completed future
       // does not leave the banner pending.
@@ -2035,7 +2019,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           filePath,
           AppRoutes.viewFilePath(
             filePath,
-            serial: _serialsForActiveDevices().firstOrNull,
+            serial: _serialsForActiveDevices()?.firstOrNull,
           ),
         );
         return;
@@ -2315,7 +2299,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           // What users, groups and groups/everyone are for (#2476).
           if (!searchActive && _archiveContext == null && !_noHostSelected)
             FolderExplainer(
-              serial: _serialsForActiveDevices().firstOrNull ?? '',
+              serial: _serialsForActiveDevices()?.firstOrNull ?? '',
               path: _currentPath,
             ),
 
