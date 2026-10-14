@@ -9,7 +9,7 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// address (#2312). Tapping one hands its entry to [onSelect].
 ///
 /// Browses while mounted and stops when disposed. Renders nothing where the
-/// platform cannot browse — the web and desktop — so typing the address is
+/// platform cannot browse — the web, macOS and Windows — so typing the address is
 /// the only way in there.
 class NearbyQuarks extends StatefulWidget {
   const NearbyQuarks({super.key, required this.onSelect, this.browse});
