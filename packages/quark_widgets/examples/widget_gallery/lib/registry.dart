@@ -10,6 +10,7 @@ import 'widgets/chat_demo_data.dart';
 import 'widgets/chat_layout_demo.dart';
 import 'widgets/duplicate_group_list_demo.dart';
 import 'widgets/framed_viewport.dart';
+import 'widgets/model_viewer_demo.dart';
 import 'widgets/password_strength_demo.dart';
 import 'widgets/split_view_demo.dart';
 import 'widgets/token_swatches.dart';
@@ -1299,6 +1300,35 @@ final List<GalleryEntry> registry = [
           height: 220,
           child: QuarkMarkdownView(document: QuarkMarkdownDocument.empty()),
         ),
+      ],
+    ),
+  ),
+
+  // ── 3D models ─────────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'QuarkModelViewer',
+    group: '3D models',
+    build: (context, log) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 16,
+      children: [
+        SizedBox(height: 480, child: ModelViewerDemo(log: log)),
+        const Text('Loading'),
+        const SizedBox(
+          height: 160,
+          child: QuarkModelViewer(mesh: null, isLoading: true),
+        ),
+        const Text('Failed to load'),
+        SizedBox(
+          height: 260,
+          child: QuarkModelViewer(
+            mesh: null,
+            error: "Couldn't load the model.",
+            onRetry: () => log('QuarkModelViewer.onRetry'),
+          ),
+        ),
+        const Text('Nothing to draw'),
+        const SizedBox(height: 220, child: QuarkModelViewer(mesh: null)),
       ],
     ),
   ),
