@@ -111,7 +111,7 @@ The app does not show these yet. The bell, the list and the toggle for each type
 push delivery is #1150. A Quark whose last backup predates the record reads as never backed up until its next
 snapshot.
 
-<!-- cspell:ignore protectionutil sda -->
+<!-- cspell:ignore libexec protectionutil sda smartctl -->
 
 ## How protected the files are
 
@@ -129,8 +129,9 @@ counts; assigning it the snapshot-backup role is already refused.
 | protected    | two or more such drives                                                                                             |
 
 The 30 days are `protectionutil.StaleAfter`, the same window as `backup_stale`. A drive counts only when its role
-is snapshot-backup and it has a completed snapshot-backup job inside that window. A failed job, a job that has
-not completed, and a completion older than the window do not count. Quark does not store the result of a verify,
+is snapshot-backup, its health verdict is not Replace soon, and it has a completed snapshot-backup job inside
+that window. A failed job, a job that has not completed, a completion older than the window, and a Replace soon
+drive do not count. Watch and Unknown still follow the 30-day rule. Quark does not store the result of a verify,
 so a completed job is the success signal.
 
 Two partitions of one physical disk count once. The whole-disk key comes from `Device.DevicePath`: `/dev/disk3s5`
@@ -148,3 +149,36 @@ snapshot-backup drive still counts when the rules above say so.
 
 When a snapshot backup completes or fails, `SnapshotBackup` publishes `backup_completed` or `backup_failed`.
 An open client should refetch protection status on either one.
+
+## Drive health
+
+Every managed drive gets a verdict on `GET /api/v0/storage/devices/status`, in `health` on each device. The
+verdict is `healthy`, `watch`, `replace-soon`, or `unknown`, and `reason` is one sentence. `unknown` is what a
+failed read returns, including when the health tool is not installed. A failed read is never `healthy`.
+
+On Linux the read is `smartctl` JSON. `quark install` writes `/usr/local/libexec/quark/drive-health` and a
+sudoers entry so the service can run it as root. The script accepts only a whole-disk path, tries the disk,
+then tries SATA passthrough for USB bridges (`smartctl -d sat`). It does not install `smartctl`. When that
+binary is missing the script exits 127 and every drive is `unknown` with a reason that says the health tool is
+not installed; the device list still loads. Without the helper, the service runs `smartctl` itself the same
+way and treats a missing binary the same. On macOS the verdict comes from the `SMART Status` line of
+`diskutil info`: Verified is healthy, Failing is replace soon, and Not Supported or a missing line is unknown.
+
+Age is power-on hours, not a manufacture year. A drive with 40000 hours or more is `watch`, and the sentence
+says it is heavily used. Reallocated sectors are `watch`. Sectors waiting to be reallocated, a failed SMART
+status, or a solid-state drive that has used up its rated life are `replace-soon`.
+
+`health` is nil until the device list reads it, then cached for 15 minutes. `worseThanDefault` is set when a
+drive's verdict is worse than the current default-storage drive. The order is healthy, then watch, then
+unknown, then replace soon.
+
+Assigning `default-storage` or `snapshot-backup`, and starting a snapshot backup onto a drive that already has
+that role, refuses a `replace-soon` drive with 409 unless the body sets `acknowledgeHealth`. Watch does not
+block. Unknown does not count as healthy and does not block. Switching default storage onto a drive in worse
+health than the current one uses a stronger 409 sentence. Acknowledging leaves files already on the drive in
+place. A snapshot copies onto the target and removes only the temp files that copy, and the vault and chat
+exports, create for themselves (`SnapshotBackup` writes through `vfs.CopyBetween`, which lands a file under its
+real name only once the copy is whole). It does not erase the rest of the drive.
+
+Any later format or erase of a drive has to use this same acknowledgment. A `replace-soon` drive must not be
+wiped, or chosen as the only remaining copy, without the caller passing it.

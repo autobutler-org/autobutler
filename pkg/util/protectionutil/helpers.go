@@ -55,8 +55,9 @@ func collectDrives(params StatusParams) []backupDrive {
 			completedAt:  at,
 			hasCompleted: has,
 			diskKey:      groupKey(role.Serial, device.DevicePath),
+			replaceSoon:  device.ReplaceSoon,
 		}
-		drive.qualifies = !internal && has && now.Sub(at) < StaleAfter
+		drive.qualifies = !internal && !device.ReplaceSoon && has && now.Sub(at) < StaleAfter
 		drives = append(drives, drive)
 	}
 	slices.SortFunc(drives, func(a, b backupDrive) int {
@@ -104,7 +105,7 @@ func chooseNextStep(groups int, drives []backupDrive) NextStep {
 		}
 	}
 	for _, drive := range drives {
-		if drive.internal || drive.qualifies || counted[drive.diskKey] {
+		if drive.internal || drive.qualifies || drive.replaceSoon || counted[drive.diskKey] {
 			continue
 		}
 		return NextStepStartBackup
@@ -164,6 +165,9 @@ func reportDrive(drive backupDrive, reps map[string]string) DriveStatus {
 func reasonFor(drive backupDrive, reps map[string]string) string {
 	if drive.internal {
 		return ReasonInternal
+	}
+	if drive.replaceSoon {
+		return ReasonReplaceSoon
 	}
 	if !drive.qualifies {
 		if drive.hasCompleted {

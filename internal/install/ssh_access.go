@@ -1,3 +1,5 @@
+// cspell:words smartctl
+
 package install
 
 import (
@@ -9,6 +11,7 @@ import (
 
 	"github.com/autobutler-org/quark/pkg/util/hostnameutil"
 	"github.com/autobutler-org/quark/pkg/util/sshutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 const (
@@ -102,18 +105,22 @@ esac
 )
 
 // sudoersContent is the whole of /etc/sudoers.d/quark: the mount rule, the
-// one entry that lets the service run the SSH helper, and the one for the
-// hostname helper. The "" on the last lets sudo run that helper with no
-// arguments only: the new name goes in on stdin.
+// SSH helper, the hostname helper, and the drive-health helper. The "" on
+// the hostname entry lets sudo run that helper with no arguments only: the
+// new name goes in on stdin. The drive-health entry takes the device path;
+// the script accepts only a whole-disk name and then runs a fixed smartctl
+// read, so the sudoers line does not list every disk.
 func sudoersContent() string {
 	mountsDir := filepath.Join(serviceDataDir, "data", "mounts")
 	return fmt.Sprintf(
 		"%s ALL=(root) NOPASSWD: /bin/mount * %s/*, /bin/umount %s/*\n"+
 			"%s ALL=(root) NOPASSWD: %s\n"+
-			"%s ALL=(root) NOPASSWD: %s \"\"\n",
+			"%s ALL=(root) NOPASSWD: %s \"\"\n"+
+			"%s ALL=(root) NOPASSWD: %s\n",
 		serviceUserName, mountsDir, mountsDir,
 		serviceUserName, sshutil.HelperPath,
 		serviceUserName, hostnameutil.HelperPath,
+		serviceUserName, storageutil.HelperPath,
 	)
 }
 

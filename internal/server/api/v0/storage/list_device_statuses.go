@@ -11,7 +11,7 @@ import (
 
 // listDeviceStatuses godoc
 // @Summary List storage device statuses
-// @Description Returns statuses for all known storage devices
+// @Description Returns statuses for all known storage devices. Each device's health object is verdict (healthy, watch, replace-soon, or unknown), reason (one sentence), and when a read succeeded smartStatus, reallocatedSectors, pendingSectors, powerOnHours, temperatureCelsius, media (spinning or solid-state), and linkSpeed. worseThanDefault is true when the verdict is worse than the current default-storage drive (healthy, then watch, then unknown, then replace-soon). health is omitted until a read is attempted. Unknown is never reported as healthy, including when the health tool is not installed. Age is power-on hours; a heavily used drive does not claim a manufacture year.
 // @Tags storage
 // @Produce json
 // @Success 200 {object} object

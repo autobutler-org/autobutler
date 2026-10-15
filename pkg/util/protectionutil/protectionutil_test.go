@@ -140,6 +140,63 @@ func TestStatus_InternalDriveIgnored(t *testing.T) {
 	}
 }
 
+func TestStatus_ReplaceSoonDoesNotCount(t *testing.T) {
+	now := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+	fresh := now.Add(-time.Hour)
+	got := protectionutil.Status(protectionutil.StatusParams{
+		Now: now,
+		Roles: []protectionutil.Role{
+			{Serial: "worn", Role: "snapshot-backup"},
+			{Serial: "good", Role: "snapshot-backup"},
+		},
+		Devices: []protectionutil.Device{
+			{Serial: "worn", Name: "Worn", DevicePath: "/dev/sdb1", ReplaceSoon: true},
+			{Serial: "good", Name: "Good", DevicePath: "/dev/sdc1"},
+		},
+		Completions: []protectionutil.Completion{
+			{Serial: "worn", CompletedAt: fresh},
+			{Serial: "good", CompletedAt: fresh},
+		},
+	})
+	if got.Level != protectionutil.LevelBasic {
+		t.Errorf("level = %s, want basic", got.Level)
+	}
+	if got.NextStep != protectionutil.NextStepAssignRole {
+		t.Errorf("next = %s, want assign-backup-role", got.NextStep)
+	}
+	bySerial := map[string]protectionutil.DriveStatus{}
+	for _, drive := range got.Drives {
+		bySerial[drive.Serial] = drive
+	}
+	if bySerial["worn"].Counts || bySerial["worn"].Reason != protectionutil.ReasonReplaceSoon {
+		t.Errorf("worn = %+v, want it not to count", bySerial["worn"])
+	}
+	if !bySerial["good"].Counts {
+		t.Errorf("good = %+v, want it to count inside 30 days", bySerial["good"])
+	}
+}
+
+func TestStatus_ReplaceSoonAloneIsUnprotected(t *testing.T) {
+	now := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+	got := protectionutil.Status(protectionutil.StatusParams{
+		Now:   now,
+		Roles: []protectionutil.Role{{Serial: "worn", Role: "snapshot-backup"}},
+		Devices: []protectionutil.Device{{
+			Serial: "worn", Name: "Worn", DevicePath: "/dev/sdb1", ReplaceSoon: true,
+		}},
+		Completions: []protectionutil.Completion{{Serial: "worn", CompletedAt: now.Add(-time.Hour)}},
+	})
+	if got.Level != protectionutil.LevelUnprotected {
+		t.Errorf("level = %s, want unprotected", got.Level)
+	}
+	if got.NextStep != protectionutil.NextStepAssignRole {
+		t.Errorf("next = %s, want another drive rather than a backup onto this one", got.NextStep)
+	}
+	if len(got.Drives) != 1 || got.Drives[0].Counts || got.Drives[0].Reason != protectionutil.ReasonReplaceSoon {
+		t.Fatalf("drives = %+v", got.Drives)
+	}
+}
+
 func TestStatus_StaleJob(t *testing.T) {
 	now := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
 	// A backup exactly StaleAfter old is stale, matching backup_stale.

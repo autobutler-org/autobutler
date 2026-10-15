@@ -16,4 +16,5 @@ type backupDrive struct {
 	hasCompleted bool
 	diskKey      string
 	qualifies    bool
+	replaceSoon  bool
 }

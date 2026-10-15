@@ -32,6 +32,13 @@ type SetRoleParams struct {
 	// skips the match check.
 	SessionUsername string
 	SessionKnown    bool
+	// AcknowledgeHealth lets a Replace soon drive take default storage or the
+	// snapshot-backup role. Files already on the drive are left in place.
+	// Watch and Unknown do not need it.
+	AcknowledgeHealth bool
+	// Health, when set, reports a drive's verdict instead of reading SMART.
+	// Tests pass a fake. Nil reads through storageutil.
+	Health func(storageutil.Device) *storageutil.DiskHealth
 }
 
 // SetRoleResult reports the role that was written.
@@ -63,30 +70,23 @@ func SetRole(params SetRoleParams) (SetRoleResult, error) {
 		return SetRoleResult{}, unauthorized(errors.New("invalid credentials"))
 	}
 
-	// For non-unassigned roles, verify the device is actually connected.
+	// For non-unassigned roles, verify the device is actually connected, and
+	// that a Replace soon drive is only committed to with an acknowledgment.
 	if params.Role != RoleUnassigned {
 		statuses, err := params.Storage.GetDeviceStatuses()
 		if err != nil {
 			return SetRoleResult{}, fmt.Errorf("failed to list devices: %w", err)
 		}
-		found := false
-		isInternal := false
-		for _, s := range statuses {
-			if params.Serial == "" && s.IsInternal {
-				found = true
-				isInternal = true
-				break
-			}
-			if s.UsbInfo != nil && s.UsbInfo.GetSerial() == params.Serial {
-				found = true
-				break
-			}
-		}
+		device, found := deviceBySerial(statuses, params.Serial)
 		if !found {
 			return SetRoleResult{}, invalidf("device with serial %q not found", params.Serial)
 		}
-		if isInternal && params.Role == "snapshot-backup" {
+		if device.IsInternal && params.Role == "snapshot-backup" {
 			return SetRoleResult{}, invalid(errors.New("internal device cannot be assigned as snapshot-backup"))
+		}
+		stronger := params.Role == "default-storage" && worseDefault(params, statuses, device)
+		if err := refuseReplaceSoon(healthFor(params.Ctx, params.Health, device), params.AcknowledgeHealth, stronger); err != nil {
+			return SetRoleResult{}, err
 		}
 	}
 
@@ -105,4 +105,33 @@ func SetRole(params SetRoleParams) (SetRoleResult, error) {
 	}
 
 	return SetRoleResult{Serial: params.Serial, Role: params.Role}, nil
+}
+
+// worseDefault reports whether device is in worse health than the drive that
+// currently holds default storage. A missing role list skips the comparison;
+// the Replace soon gate still applies.
+func worseDefault(params SetRoleParams, statuses []*storageutil.DeviceStatus, device storageutil.Device) bool {
+	roles, err := params.Queries.GetAllDeviceRoles(params.Ctx)
+	if err != nil {
+		return false
+	}
+	currentSerial := ""
+	haveCurrent := false
+	for _, role := range roles {
+		if role.Role == "default-storage" {
+			currentSerial = role.DeviceSerial
+			haveCurrent = true
+			break
+		}
+	}
+	if !haveCurrent || currentSerial == deviceSerial(device) {
+		return false
+	}
+	current, found := deviceBySerial(statuses, currentSerial)
+	if !found {
+		return false
+	}
+	targetRank := storageutil.HealthRank(verdictOf(healthFor(params.Ctx, params.Health, device)))
+	currentRank := storageutil.HealthRank(verdictOf(healthFor(params.Ctx, params.Health, current)))
+	return targetRank > currentRank
 }
