@@ -41,6 +41,29 @@
 // image block marked external that names no part. A hyperlink survives only
 // with an http, https or mailto target. Headers, footers and comments are
 // left out with a warning.
+//
+// # ODT
+//
+// The ODT reader opens the package through officezip and streams
+// content.xml, whose automatic styles come before its body. styles.xml is
+// read first and held, bounded as DOCX's parts are; the style names and
+// list styles of both parts together are bounded by [Limits.MaxDefinitions].
+// Headings come from text:h and the Title and Heading styles, lists from
+// text:list and their list styles with their markers counted, and tables
+// carry table:number-columns-spanned and table:number-rows-spanned, with a
+// repeated row or cell written out as many times as it repeats, up to a
+// bound. White space collapses as ODF says it does. Tracked changes read as
+// accepted. A note's body is not held: once the body is written,
+// content.xml is read a second time for the bodies of the notes it cited,
+// which follow under a "Notes" heading.
+//
+// As with DOCX, nothing is executed or fetched: scripts and event listeners
+// are never read, embedded objects, charts, formulas and shapes become
+// omitted blocks, a picture linked from outside the package becomes an
+// external image block, and a document whose content is encrypted is
+// refused. A text box's paragraphs are shown where the box sits, since that
+// is how a captioned picture is written. Headers, footers and comments are
+// left out with a warning.
 package docreadutil
 
 // cspell:ignore DOCM docm
@@ -65,6 +88,8 @@ const (
 	// FormatDOCM is a macro-enabled Word document, read as a DOCX whose
 	// macros are never opened.
 	FormatDOCM Format = "docm"
+	// FormatODT is an OpenDocument text document.
+	FormatODT Format = "odt"
 )
 
 // Output chooses what [Convert] writes.
@@ -257,6 +282,8 @@ func FormatForName(name string) (Format, bool) {
 		return FormatDOCX, true
 	case ".docm":
 		return FormatDOCM, true
+	case ".odt":
+		return FormatODT, true
 	}
 	return "", false
 }
@@ -271,11 +298,13 @@ func Convert(params ConvertParams) (result ConvertResult, err error) {
 	if params.Source == nil || params.Out == nil {
 		return ConvertResult{}, errors.New("docreadutil: Convert needs a Source and an Out")
 	}
-	// Each format's reader; the ODT and RTF readers join here.
+	// Each format's reader; the RTF reader joins here.
 	var read func(e *emitter, src io.ReaderAt, size int64) error
 	switch params.Format {
 	case FormatDOCX, FormatDOCM:
 		read = readDocx
+	case FormatODT:
+		read = readOdt
 	default:
 		return ConvertResult{}, fmt.Errorf("%w: %q", ErrUnsupportedFormat, params.Format)
 	}

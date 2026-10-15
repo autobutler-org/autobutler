@@ -201,8 +201,8 @@ func TestABadTitleIsNoTitle(t *testing.T) {
 
 func TestConvertRefusesWhatItCannotRead(t *testing.T) {
 	data := testDoc{body: para("x")}.zip(t)
-	if _, err := Convert(ConvertParams{Source: bytes.NewReader(data), Size: int64(len(data)), Format: "odt", Out: io.Discard}); !errors.Is(err, ErrUnsupportedFormat) {
-		t.Errorf("odt: err = %v, want ErrUnsupportedFormat", err)
+	if _, err := Convert(ConvertParams{Source: bytes.NewReader(data), Size: int64(len(data)), Format: "wpd", Out: io.Discard}); !errors.Is(err, ErrUnsupportedFormat) {
+		t.Errorf("wpd: err = %v, want ErrUnsupportedFormat", err)
 	}
 	if _, err := Convert(ConvertParams{Format: FormatDOCX, Out: io.Discard}); err == nil {
 		t.Error("no Source: want an error")
