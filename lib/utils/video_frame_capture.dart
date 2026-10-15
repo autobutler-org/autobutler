@@ -8,7 +8,7 @@ import 'package:video_player/video_player.dart';
 /// Grabs the frame [controller] is showing as PNG bytes, on the device doing
 /// the playing: the Quark never decodes video (#2380).
 ///
-/// On iOS and Android the player draws into a texture, and [frameKey] is the
+/// On iOS, Android and Linux (untried on Linux) the player draws into a texture, and [frameKey] is the
 /// `RepaintBoundary` around it, rasterized at the video's own resolution. On
 /// the web the player is a `<video>` element, drawn onto a canvas.
 Future<Uint8List> captureVideoFrame(
