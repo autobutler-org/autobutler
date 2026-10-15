@@ -4,6 +4,7 @@ package docreadutil
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -280,6 +281,11 @@ func (r *docxReader) paragraph() error {
 	})
 	if !ready && err == nil {
 		err = r.setUp(p, paraProps{outline: -1})
+	}
+	// A paragraph a limit cut short is still placed, with what it has; one
+	// that failed is not.
+	if err != nil && !errors.Is(err, errTruncated) {
+		return err
 	}
 	if cerr := r.closeParagraph(p); err == nil {
 		err = cerr
@@ -666,7 +672,11 @@ func (r *docxReader) table() error {
 	err := children(r.src, child)
 	r.tableDepth--
 	r.cell = outer
-	// A table a limit cut short is still placed, with the rows it has.
+	// A table a limit cut short is still placed, with the rows it has; one
+	// that failed is not.
+	if err != nil && !errors.Is(err, errTruncated) {
+		return err
+	}
 	if placeErr := r.put(Block{Type: BlockTable, Rows: t.rows}); err == nil {
 		err = placeErr
 	}

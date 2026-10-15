@@ -76,7 +76,8 @@ func readStyles(pkg *officezip.Package, part string, limits Limits) (*docxStyles
 			if _, dup := s.byID[id]; !dup {
 				s.byID[id] = st
 			}
-			if st.kind == "paragraph" && onOff(attr(c, "default")) == optOn && s.defaultPara == "" {
+			// Unlike a property, an absent w:default is off.
+			if def := attr(c, "default"); st.kind == "paragraph" && def != "" && onOff(def) == optOn && s.defaultPara == "" {
 				s.defaultPara = id
 			}
 			return nil

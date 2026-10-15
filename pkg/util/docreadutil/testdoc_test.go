@@ -185,6 +185,13 @@ func para(text ...string) string {
 // rezip copies a zip, keeping the entries keep says to.
 func rezip(t testing.TB, data []byte, keep func(name string) bool) []byte {
 	t.Helper()
+	return rezipWith(t, data, keep, "", "")
+}
+
+// rezipWith copies a zip, keeping the entries keep says to, and adds an
+// entry when name is not empty.
+func rezipWith(t testing.TB, data []byte, keep func(name string) bool, name, body string) []byte {
+	t.Helper()
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		t.Fatal(err)
@@ -196,6 +203,15 @@ func rezip(t testing.TB, data []byte, keep func(name string) bool) []byte {
 			continue
 		}
 		if err := zw.Copy(f); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if name != "" {
+		w, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := io.WriteString(w, body); err != nil {
 			t.Fatal(err)
 		}
 	}
