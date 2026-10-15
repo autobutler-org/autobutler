@@ -280,19 +280,25 @@ type noteMarks struct {
 	next  int
 }
 
+// blockPlacer places the blocks a reader reads: into the table cell being
+// read, or out through the emitter. Every reader embeds one.
+type blockPlacer struct {
+	e *emitter
+	// cell is the cell whose blocks are being read; nil is the top level.
+	cell       *[]Block
+	tableDepth int
+}
+
 // docxReader reads one DOCX package's body as blocks.
 type docxReader struct {
+	blockPlacer
 	pkg       *officezip.Package
-	e         *emitter
 	src       tokenSource
 	styles    *docxStyles
 	numbering *docxNumbering
 	// part is the part being read, and rels its relationships by id.
 	part string
 	rels map[string]officezip.Relationship
-	// cell is the cell whose blocks are being read; nil is the top level.
-	cell       *[]Block
-	tableDepth int
 	// fields is one entry per open complex field, true once its result has
 	// begun; text inside any field's instructions is dropped.
 	fields []bool

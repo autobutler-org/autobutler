@@ -66,14 +66,14 @@ func readDocx(e *emitter, src io.ReaderAt, size int64) error {
 		return fmt.Errorf("%w: the package holds no word-processing document", ErrMalformed)
 	}
 	if rel, ok := internalRel(pkgRels, relCoreProperties); ok && pkg.Has(rel.Part) {
-		e.title = readTitle(pkg, rel.Part, e.limits.MaxHeldBytes)
+		e.title = readTitle(pkg, rel.Part, e.limits.MaxHeldBytes, "coreProperties", "")
 	}
 	mainRels, err := pkg.Relationships(main)
 	if err != nil {
 		return err
 	}
 
-	r := &docxReader{pkg: pkg, e: e, styles: emptyStyles(), numbering: emptyNumbering()}
+	r := &docxReader{blockPlacer: blockPlacer{e: e}, pkg: pkg, styles: emptyStyles(), numbering: emptyNumbering()}
 	if rel, ok := internalRel(mainRels, relStyles); ok && pkg.Has(rel.Part) {
 		if r.styles, err = readStyles(pkg, rel.Part, e.limits); err != nil {
 			return err
@@ -214,42 +214,6 @@ func (r *docxReader) alternate(fn func(xml.StartElement) error) error {
 		}
 		return r.src.Skip()
 	})
-}
-
-// put places a finished block: into the cell being read, or out to the
-// writer at the top level.
-func (r *docxReader) put(b Block) error {
-	r.e.tally(b)
-	if r.cell != nil {
-		*r.cell = append(*r.cell, b)
-		return nil
-	}
-	return r.e.write(b)
-}
-
-// omit places an omitted block for what, splitting the paragraph p it
-// interrupts, if any.
-func (r *docxReader) omit(p *paragraph, what string) error {
-	r.e.warnings.count(what)
-	return r.split(p, Block{Type: BlockOmitted, What: what})
-}
-
-// split places b, first placing what paragraph p (nil at block level) has
-// collected so far, so b lands where the document has it.
-func (r *docxReader) split(p *paragraph, b Block) error {
-	if p != nil {
-		if err := r.flush(p); err != nil {
-			return err
-		}
-		p.placed = true
-	}
-	if err := r.e.admit(); err != nil {
-		return err
-	}
-	if err := r.e.charge(blockOverhead + len(b.Part) + len(b.Alt)); err != nil {
-		return err
-	}
-	return r.put(b)
 }
 
 // paragraph reads one w:p.
@@ -466,79 +430,10 @@ func (r *docxReader) inFieldCode() bool {
 // appendText adds text to the paragraph with the run's formatting. Hidden
 // text and field instructions are dropped.
 func (r *docxReader) appendText(p *paragraph, props runProps, link, s string) error {
-	if s == "" || props.hidden == optOn || r.inFieldCode() {
+	if props.hidden == optOn || r.inFieldCode() {
 		return nil
 	}
-	run := props.run("", link)
-	cost := len(s)
-	if !p.open || p.cur != run {
-		cost += runOverhead
-	}
-	if err := r.e.charge(cost); err != nil {
-		return err
-	}
-	if p.open && p.cur != run {
-		p.commit()
-	}
-	p.cur, p.open = run, true
-	p.text.WriteString(s)
-	return nil
-}
-
-// commit moves the run being collected into the block.
-func (p *paragraph) commit() {
-	if !p.open {
-		return
-	}
-	run := p.cur
-	run.Text = p.text.String()
-	p.block.Runs = append(p.block.Runs, run)
-	p.text.Reset()
-	p.open = false
-}
-
-// flush places what a paragraph has collected so far, before an image or a
-// page break splits it. What follows the split continues as a plain
-// paragraph, so a list item's marker or a heading is not repeated.
-func (r *docxReader) flush(p *paragraph) error {
-	p.commit()
-	if len(p.block.Runs) == 0 {
-		return nil
-	}
-	if !p.admitted {
-		if err := r.e.admit(); err != nil {
-			return err
-		}
-	}
-	b := p.block
-	p.block = Block{Type: BlockParagraph, Align: b.Align}
-	p.admitted, p.placed = false, true
-	return r.put(b)
-}
-
-// closeParagraph places the rest of a paragraph. An empty paragraph is
-// placed, since it is vertical space in the document, unless a split has
-// already placed something of it.
-func (r *docxReader) closeParagraph(p *paragraph) error {
-	p.commit()
-	if len(p.block.Runs) == 0 && p.placed {
-		return nil
-	}
-	if !p.admitted {
-		if err := r.e.admit(); err != nil {
-			return err
-		}
-	}
-	return r.put(p.block)
-}
-
-// pageBreak places a page break, splitting the paragraph. A page break
-// inside a table has nowhere to go and is dropped.
-func (r *docxReader) pageBreak(p *paragraph) error {
-	if r.cell != nil {
-		return nil
-	}
-	return r.split(p, Block{Type: BlockPageBreak})
+	return r.addText(p, props.run("", link), s)
 }
 
 // picture places what a drawing turned out to be: an image from the
@@ -560,13 +455,6 @@ func (r *docxReader) picture(p *paragraph, info drawingInfo) error {
 		return r.omit(p, "image")
 	}
 	return r.split(p, Block{Type: BlockImage, Part: rel.Part, Alt: info.alt, Width: info.width, Height: info.height})
-}
-
-// linkedImage places an image the document links to from outside the
-// package. Its target is never fetched, nor passed on.
-func (r *docxReader) linkedImage(p *paragraph, info drawingInfo) error {
-	r.e.warnings.count("linked image")
-	return r.split(p, Block{Type: BlockImage, External: true, Alt: info.alt, Width: info.width, Height: info.height})
 }
 
 // hyperlink returns a w:hyperlink's target, when it is one a reader may

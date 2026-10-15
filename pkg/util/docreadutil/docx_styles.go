@@ -555,26 +555,33 @@ func ordinalSuffix(n int) string {
 	return "th"
 }
 
-// readTitle reads the title from the package's core properties. A part that
-// cannot be read has none: the title is a nicety, never a reason to fail.
-func readTitle(pkg *officezip.Package, part string, maxBytes int64) string {
+// readTitle reads the title from a package's properties part, whose root
+// has the local name rootName and holds the title directly or, when
+// container is not empty, inside a child of that name. A part that cannot
+// be read has none: the title is a nicety, never a reason to fail.
+func readTitle(pkg *officezip.Package, part string, maxBytes int64, rootName, container string) string {
 	dec, closer, err := heldXML(pkg, part, maxBytes)
 	if err != nil {
 		return ""
 	}
 	defer closer.Close()
-	if _, err := root(dec, part, "coreProperties"); err != nil {
+	if _, err := root(dec, part, rootName); err != nil {
 		return ""
 	}
 	title := ""
-	_ = children(dec, func(c xml.StartElement) error {
-		if c.Name.Local != "title" || title != "" {
+	var find func(c xml.StartElement) error
+	find = func(c xml.StartElement) error {
+		switch {
+		case container != "" && c.Name.Local == container:
+			return children(dec, find)
+		case c.Name.Local != "title" || title != "":
 			return dec.Skip()
 		}
 		t, err := text(dec)
 		title = strings.TrimSpace(t)
 		return err
-	})
+	}
+	_ = children(dec, find)
 	if r := []rune(title); len(r) > maxTitleRunes {
 		title = string(r[:maxTitleRunes])
 	}
