@@ -361,13 +361,17 @@ exported and tested as geometry.
 
 An `ImageElement`'s `source` is an `ImageSource` written as one string:
 
-| `ImageSource`        | Stored as        | What it is                                  |
-| -------------------- | ---------------- | ------------------------------------------- |
-| `QuarkFileImage`     | the path itself  | a file in the user's Quark (`photos/a.jpg`) |
-| `UploadedAssetImage` | `asset:<id>`     | an asset the app uploaded for the deck      |
+| `ImageSource`        | Stored as          | What it is                                        |
+| -------------------- | ------------------ | ------------------------------------------------- |
+| `QuarkFileImage`     | the path itself    | a file in the user's Quark (`photos/a.jpg`)       |
+| `UploadedAssetImage` | `asset:<id>`       | an asset the app uploaded for the deck            |
+| `PackagePartImage`   | `part:<zip entry>` | a picture still inside the package being previewed |
 
 `ImageSource.parse(element.source)` (or `SlideImageSource.imageSource` in an
-image builder) reads it back. The package never loads a picture: the canvas
+image builder) reads it back. A `part:` reference, such as
+`part:ppt/media/image3.png`, names a zip entry in the office file. It is not
+a path in the user's files, so a deck that still holds one is a preview and
+the editor can refuse to save it. The package never loads a picture: the canvas
 asks the app's `imageBuilder`. An image's `altText` is what a screen reader
 reads for it ("Image: A dog on a beach"). Resizing an image keeps its aspect
 ratio, at an edge handle as well as a corner, unless Alt is held. Cropping is

@@ -5,9 +5,10 @@ import 'package:quark_slides/quark_slides.dart';
 
 import '../widgets/slides/present/fake_fullscreen.dart';
 
-/// Presenting a `.qslide` (#1165): loading or taking the editor's copy,
-/// stepping through the slides, the presenter view and its clock, the
-/// controls that hide when idle, and fullscreen.
+/// Presenting a `.qslide` (#1165): loading or taking a deck already in
+/// memory, stepping through the slides, the presenter view and its clock,
+/// the controls that hide when idle, fullscreen, and where a picture is
+/// fetched from.
 void main() {
   Presentation deck(int count) => Presentation(
     title: 'Deck',
@@ -66,6 +67,81 @@ void main() {
     expect(c.loadError, isNull);
     expect(c.slides, hasLength(2));
     c.dispose();
+  });
+
+  test('a deck handed in is presented without loading the file', () async {
+    var loads = 0;
+    final handed = deck(3);
+    final c = SlidePresentController(
+      filePath: 'talks/Deck.pptx',
+      startIndex: 1,
+      initial: handed,
+      loadPresentation: (path, {serial}) async {
+        loads++;
+        return deck(9);
+      },
+    );
+    expect(c.isLoading, isFalse);
+    expect(c.presentation, same(handed));
+    expect(c.index, 1);
+    expect(c.currentSlide?.id, 's2');
+    await c.load();
+    expect(loads, 0);
+    expect(c.presentation, same(handed));
+    c.dispose();
+  });
+
+  test('a package part is fetched from the file, a path from the device', () {
+    final partCalls = <(String, String, String?)>[];
+    final mediaCalls = <(String, String?)>[];
+    final c = SlidePresentController(
+      filePath: 'talks/Deck.pptx',
+      deviceSerial: 'usb1',
+      initial: deck(1),
+      mediaUrl: (path, {serial}) {
+        mediaCalls.add((path, serial));
+        return Uri.parse('https://files.test/$path');
+      },
+      partUrl: (part, {required filePath, serial}) {
+        partCalls.add((part, filePath, serial));
+        return Uri.parse('https://parts.test/$part');
+      },
+    );
+    addTearDown(c.dispose);
+
+    expect(
+      c.imageUrl(' part:ppt/media/image3.png '),
+      Uri.parse('https://parts.test/ppt/media/image3.png'),
+    );
+    expect(partCalls.single, (
+      'ppt/media/image3.png',
+      'talks/Deck.pptx',
+      'usb1',
+    ));
+    expect(
+      c.imageUrl('/photos/dog.jpg'),
+      Uri.parse('https://files.test/photos/dog.jpg'),
+    );
+    expect(
+      c.imageUrl('asset:logo'),
+      Uri.parse('https://files.test/asset:logo'),
+    );
+    expect(mediaCalls, [('photos/dog.jpg', 'usb1'), ('asset:logo', 'usb1')]);
+  });
+
+  test('the part endpoint names the file, the entry and the device', () {
+    final c = SlidePresentController(
+      filePath: 'talks/My Deck.pptx',
+      deviceSerial: 'usb1',
+      initial: deck(1),
+    );
+    addTearDown(c.dispose);
+
+    final url = c.imageUrl('part:ppt/media/image3.png');
+    expect(url.path, '/api/v0/previews/part');
+    expect(url.queryParameters['filePath'], 'talks/My Deck.pptx');
+    expect(url.queryParameters['part'], 'ppt/media/image3.png');
+    expect(url.queryParameters['serial'], 'usb1');
   });
 
   test('a failed load is kept as the thrown object', () async {
