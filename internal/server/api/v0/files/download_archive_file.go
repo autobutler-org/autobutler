@@ -18,7 +18,7 @@ import (
 
 // downloadArchiveFile godoc
 // @Summary Download a single file from inside an archive
-// @Description Reads the specified entry from the archive and streams it to the client. No data is extracted to disk. With format=jpeg an image entry other than camera RAW is converted and served as image/jpeg; every other entry is served as it is.
+// @Description Reads the specified entry from the archive and streams it to the client. No data is extracted to disk. With format=jpeg an image entry other than camera RAW is converted and served as image/jpeg; every other entry is served as it is. An archive that trips a safety limit (entry count, entry or total decompressed size, folder depth), names an entry outside itself, or needs a password is refused with 400 and a message saying which.
 // @Tags files
 // @Produce octet-stream,jpeg
 // @Param filePath query string true "Path to the archive file (relative to device files directory)"

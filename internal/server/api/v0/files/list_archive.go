@@ -12,7 +12,7 @@ import (
 
 // listArchive godoc
 // @Summary List contents of an archive file at a given virtual path
-// @Description Opens the archive at filePath and returns the direct children of subPath as FileNodeJSON entries. No data is extracted to disk — only archive headers are read.
+// @Description Opens the archive at filePath and returns the direct children of subPath as FileNodeJSON entries. No data is extracted to disk — only archive headers are read. An archive that trips a safety limit (entry count, entry or total decompressed size, folder depth), names an entry outside itself, or needs a password is refused with 400 and a message saying which.
 // @Tags files
 // @Produce json
 // @Param filePath query string true "Path to the archive file (relative to device files directory)"
