@@ -30,10 +30,12 @@ void main() {
     WidgetTester tester,
     Future<List<StorageDevice>> Function() listDevices,
   ) async {
-    // A desktop has no device photos to ask for, so the first load ends.
-    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     final uploads = <String?>[];
     final controller = PhotosController(
+      // No device photos to ask for, on any platform: the real query is a
+      // platform channel the test answers only on the real clock, so the
+      // refresh after an upload would outlast pumpAndSettle under load (#3237).
+      loadDeviceAssets: () async => [],
       listDevices: listDevices,
       readDroppedFile: (file) async => Uint8List.fromList([1]),
       renderDroppedFile: (file) async => null,
@@ -59,7 +61,6 @@ void main() {
       DropItemFile.fromData(Uint8List.fromList([1]), path: 'a.jpg'),
     ]);
     await tester.pumpAndSettle();
-    debugDefaultTargetPlatformOverride = null;
     return uploads;
   }
 
