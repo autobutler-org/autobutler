@@ -25,10 +25,10 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// more: the router checks with the Quark before it opens one of those pages,
 /// and the Quark refuses their requests from anyone else.
 ///
-/// Calendar and Slides are offered while an admin has their beta on, following
-/// [AppSettings.featureFlags]; the router asks the Quark again before it opens
-/// the page. Chat's row carries a dot when any channel holds an unread
-/// message (#2424): the drawer reads the counts as it opens and
+/// Calendar is always offered. Slides is offered while an admin has its beta
+/// on, following [AppSettings.featureFlags]; the router asks the Quark again
+/// before it opens that page. Chat's row carries a dot when any channel holds
+/// an unread message (#2424): the drawer reads the counts as it opens and
 /// [ChatUnreadController] keeps them current.
 ///
 /// The header names the active Quark (#2033) and, with more than one saved,
@@ -98,9 +98,7 @@ class _AppDrawerState extends State<AppDrawer> {
         onSelectHost: selectHost,
         onTapFiles: goTo(QuarkDrawerSection.files, AppRoutes.files),
         onTapPhotos: goTo(QuarkDrawerSection.photos, AppRoutes.photos),
-        onTapCalendar: settings.isFeatureEnabled(FeatureFlag.calendar)
-            ? goTo(QuarkDrawerSection.calendar, AppRoutes.calendar)
-            : null,
+        onTapCalendar: goTo(QuarkDrawerSection.calendar, AppRoutes.calendar),
         onTapTrash: goTo(QuarkDrawerSection.trash, AppRoutes.trash),
         onTapDocs: goTo(QuarkDrawerSection.docs, AppRoutes.docs),
         onTapSheets: goTo(QuarkDrawerSection.sheets, AppRoutes.sheets),

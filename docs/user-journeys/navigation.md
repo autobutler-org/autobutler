@@ -7,7 +7,7 @@ order, and which ones a given account sees.
 
 ### JN-NV-001: The drawer leads with the household's pages
 
-**Preconditions:** Logged in as an admin, with the Calendar, Slides and Chat betas on (JN-ST-028 turns one off).
+**Preconditions:** Logged in as an admin, with the Slides beta on (JN-ST-028 turns it off). Calendar and Chat are always listed.
 
 **Steps:**
 
@@ -35,8 +35,8 @@ order, and which ones a given account sees.
 
 ### JN-NV-002: The drawer hides what an account cannot open
 
-**Preconditions:** Logged in as a member who is not an admin. An admin has turned the Calendar, Slides and Chat
-betas off (JN-ST-028).
+**Preconditions:** Logged in as a member who is not an admin. An admin has turned the Slides beta off
+(JN-ST-028).
 
 **Steps:**
 
@@ -45,8 +45,8 @@ betas off (JN-ST-028).
 
 **Expected result:**
 
-- The everyday pages are **Files**, **Photos**, **Docs**, **Sheets**, **Books**. There is no **Calendar**, **Slides**
-  or **Chat** row, and no **Vault** row (JN-VT-000).
+- The everyday pages are **Files**, **Photos**, **Calendar**, **Docs**, **Sheets**, **Books**, **Chat**. There is no
+  **Slides** row, and no **Vault** row (JN-VT-000).
 - The **Manage** heading is still there, with **Trash**, **System** and **Settings** under it. There is no **Users**
   row (JN-USR-002).
 

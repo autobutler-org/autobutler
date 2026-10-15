@@ -58,9 +58,9 @@ void main() {
     settings.isAdmin.value = true;
     settings.featureFlags.value = const [
       FeatureFlag(
-        key: FeatureFlag.calendar,
-        label: 'Calendar',
-        description: 'Hides the calendar; stored events are kept.',
+        key: FeatureFlag.slides,
+        label: 'Slides',
+        description: 'Hides Slides; stored presentations are kept.',
         enabled: true,
       ),
     ];

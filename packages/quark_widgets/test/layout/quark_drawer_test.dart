@@ -549,10 +549,7 @@ void main() {
       drawerWith(QuarkDrawerSection.files, everyCallback([])),
       size: size,
     );
-    for (final section in [
-      QuarkDrawerSection.calendar,
-      QuarkDrawerSection.slides,
-    ]) {
+    for (final section in [QuarkDrawerSection.slides]) {
       final row = find.byKey(ValueKey('drawer_${section.name}'));
       await tester.scrollUntilVisible(row, 50);
       expect(
@@ -561,12 +558,18 @@ void main() {
         reason: section.name,
       );
     }
-    final chat = find.byKey(const ValueKey('drawer_chat'));
-    await tester.scrollUntilVisible(chat, 50);
-    expect(
-      find.descendant(of: chat, matching: find.byType(QuarkBetaBadge)),
-      findsNothing,
-    );
+    for (final section in [
+      QuarkDrawerSection.calendar,
+      QuarkDrawerSection.chat,
+    ]) {
+      final row = find.byKey(ValueKey('drawer_${section.name}'));
+      await tester.scrollUntilVisible(row, 50);
+      expect(
+        find.descendant(of: row, matching: find.byType(QuarkBetaBadge)),
+        findsNothing,
+        reason: section.name,
+      );
+    }
 
     for (final section in [
       QuarkDrawerSection.calendar,
@@ -601,7 +604,7 @@ void main() {
           activeSection: QuarkDrawerSection.photos,
           onTapFiles: () {},
           onTapPhotos: () {},
-          onTapCalendar: () {},
+          onTapSlides: () {},
         ),
         size: size,
         brightness: brightness,

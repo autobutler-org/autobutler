@@ -892,3 +892,45 @@ INSERT INTO settings (key, value) VALUES
 		t.Fatalf("migrate up again: %v", err)
 	}
 }
+
+// dropCalendarFeatureFlagVersion is 034_drop_calendar_feature_flag, which
+// deletes the retired calendar flag so an install that had it off turns the
+// calendar on (#2610).
+const dropCalendarFeatureFlagVersion = 34
+
+// TestDropCalendarFeatureFlagMigration deletes a stored featureFlags.calendar
+// row and leaves every other flag. The down migration cannot put the choice back.
+func TestDropCalendarFeatureFlagMigration(t *testing.T) {
+	conn, m := migrateTo(t, dropCalendarFeatureFlagVersion-1)
+	if _, err := conn.Exec(`
+INSERT INTO settings (key, value) VALUES
+	('featureFlags.calendar', 'false'),
+	('featureFlags.slides', 'true'),
+	('remoteAccessEnabled', 'true');
+`); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	if err := m.Migrate(dropCalendarFeatureFlagVersion); err != nil {
+		t.Fatalf("migrate to %d: %v", dropCalendarFeatureFlagVersion, err)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'featureFlags.calendar'`); n != 0 {
+		t.Errorf("featureFlags.calendar rows = %d, want the disabled flag deleted so the calendar is on", n)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'featureFlags.slides' AND value = 'true'`); n != 1 {
+		t.Error("the slides flag was changed")
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'remoteAccessEnabled' AND value = 'true'`); n != 1 {
+		t.Error("another setting was changed")
+	}
+
+	if err := m.Migrate(dropCalendarFeatureFlagVersion - 1); err != nil {
+		t.Fatalf("migrate down: %v", err)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'featureFlags.calendar'`); n != 0 {
+		t.Error("the down migration put the calendar flag back")
+	}
+	if err := m.Migrate(dropCalendarFeatureFlagVersion); err != nil {
+		t.Fatalf("migrate up again: %v", err)
+	}
+}

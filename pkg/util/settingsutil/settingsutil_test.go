@@ -106,7 +106,7 @@ func TestImport_BringsInEverySettingOnce(t *testing.T) {
 
 	off := false
 	want := &settingsutil.Settings{
-		SettingsVersion: 2, RemoteAccessEnabled: true,
+		SettingsVersion: 3, RemoteAccessEnabled: true,
 		RemoteAccessHousehold: "home", RemoteAccessHouseholdToken: "tok", DevMode: true,
 		ActiveBranch: "dev", DeviceID: "device-1", AccessRequestsEnabled: &off,
 		FeatureFlags: map[string]bool{"slides": true}, ThemeColor: "#aabbcc", AuthSaltSecret: secret,

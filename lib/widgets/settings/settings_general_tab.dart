@@ -82,7 +82,7 @@ class SettingsGeneralTab extends StatelessWidget {
   final CalendarView defaultCalendarView;
 
   /// Called with the view the user picked for Calendar to open on. Null
-  /// hides the section, as when the calendar is turned off for this Quark.
+  /// hides the section.
   final ValueChanged<CalendarView>? onDefaultCalendarViewChanged;
 
   /// The control for which notifications the account receives, shown under

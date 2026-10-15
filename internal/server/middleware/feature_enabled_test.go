@@ -16,8 +16,7 @@ import (
 // is on and answers 404 once an admin turns the beta off.
 func TestRequireFeatureEnabled(t *testing.T) {
 	for key, path := range map[string]string{
-		featureflagutil.Calendar: "/api/v0/calendar/events",
-		featureflagutil.Slides:   "/api/v0/files/export/pptx",
+		featureflagutil.Slides: "/api/v0/files/export/pptx",
 	} {
 		t.Run(key, func(t *testing.T) {
 			settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))

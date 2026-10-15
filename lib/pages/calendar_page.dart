@@ -104,10 +104,9 @@ class _CalendarPageState extends State<CalendarPage>
   /// Goes to [view] around [date], keeping the filter unless [mine] or
   /// [person] replaces it.
   ///
-  /// The page shows it at once and the URL follows: the router asks the Quark
-  /// whether the calendar is on before every calendar URL, and waiting for
-  /// that round trip left the arrows a beat behind the click (#2888). When the
-  /// route lands, [_followRoute] finds it already on show.
+  /// The page shows it at once and the URL follows, so the arrows are not a
+  /// beat behind the click (#2888). When the route lands, [_followRoute]
+  /// finds it already on show.
   void _go(
     CalendarView view,
     DateTime date, {

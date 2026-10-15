@@ -37,8 +37,8 @@ func TestFeatureFlag_UnsetAndRoundTrip(t *testing.T) {
 }
 
 // TestMigrate_DisabledChatFlagTurnsOn checks an install that stored chat off
-// imports with that value gone (#2577), so chat is on, and every other flag
-// stays. The old chatEnabled switch and a featureFlags.chat row both go.
+// imports with that value gone (#2577), so chat is on. The old chatEnabled
+// switch and a featureFlags.chat row both go.
 func TestMigrate_DisabledChatFlagTurnsOn(t *testing.T) {
 	for _, file := range []string{
 		`{"remoteAccessEnabled":true,"chatEnabled":false}`,
@@ -63,15 +63,26 @@ func TestMigrate_DisabledChatFlagTurnsOn(t *testing.T) {
 			}
 		}
 	}
+}
 
+// TestMigrate_DisabledCalendarFlagTurnsOn checks an install that stored the
+// calendar off imports with that value gone (#2610), so the calendar is on,
+// and a flag still in beta stays.
+func TestMigrate_DisabledCalendarFlagTurnsOn(t *testing.T) {
 	path := settingsFile(t)
-	file := `{"settingsVersion":1,"featureFlags":{"chat":false,"calendar":false}}`
+	file := `{"settingsVersion":2,"remoteAccessEnabled":true,"featureFlags":{"calendar":false,"slides":true}}`
 	if err := os.WriteFile(path, []byte(file), 0600); err != nil {
 		t.Fatal(err)
 	}
 	settingsutil.ResetForTesting(path)
-	if calendar, set, err := settingsutil.GetFeatureFlag("calendar"); err != nil || !set || calendar {
-		t.Errorf("calendar = %v set=%v err=%v; want the other flag left off", calendar, set, err)
+	if _, set, err := settingsutil.GetFeatureFlag("calendar"); err != nil || set {
+		t.Errorf("calendar still stored (set=%v err=%v); want it dropped so the calendar is on", set, err)
+	}
+	if slides, set, err := settingsutil.GetFeatureFlag("slides"); err != nil || !set || !slides {
+		t.Errorf("slides = %v set=%v err=%v; want the slides flag left on", slides, set, err)
+	}
+	if !settingsutil.GetRemoteAccess() {
+		t.Error("remoteAccessEnabled lost")
 	}
 }
 
