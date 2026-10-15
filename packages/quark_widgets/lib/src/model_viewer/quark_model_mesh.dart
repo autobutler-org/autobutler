@@ -14,10 +14,20 @@ enum QuarkModelFormat {
   /// Stanford PLY, ASCII or binary of either byte order: the `vertex`
   /// element's `x`, `y`, `z` and the `face` element's index list. Y-up by
   /// convention.
-  ply;
+  ply,
+
+  /// glTF 2.0, JSON (`.gltf`) or binary (`.glb`): the triangles of every
+  /// mesh in the default scene, placed by their nodes' transforms. Y-up, as
+  /// the format specifies.
+  gltf,
+
+  /// 3D Manufacturing Format (`.3mf`): a zip package whose XML model part
+  /// lists each object's vertices and triangles, and the build items that
+  /// place them. Z-up, as the format specifies.
+  threeMf;
 
   /// Whether the format's files put Z up rather than Y.
-  bool get isZUp => this == stl;
+  bool get isZUp => this == stl || this == threeMf;
 }
 
 /// A triangle mesh ready to draw: shared vertex [positions], [indices] naming
@@ -110,7 +120,7 @@ class QuarkModelMesh {
   /// The largest x, y and z of any vertex.
   final Float64List max;
 
-  /// Whether Z is up (STL) rather than Y (OBJ, PLY).
+  /// Whether Z is up (STL, 3MF) rather than Y (OBJ, PLY, glTF).
   final bool isZUp;
 
   /// How many vertices the mesh has, after identical ones are merged.

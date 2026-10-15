@@ -2,24 +2,35 @@ import 'package:flutter/foundation.dart';
 import 'package:quark/controllers/code_viewer_controller.dart';
 import 'package:quark/services/code_viewer_service.dart';
 import 'package:quark/services/model_viewer_service.dart';
+import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/model_viewer_config.dart';
 import 'package:quark/utils/model_viewer_files.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-/// Parses a model file's bytes; [ModelViewerService.parse] by default.
+/// Parses a model file's bytes, with the sibling files it names;
+/// [ModelViewerService.parse] by default.
 typedef ParseModelFn =
     Future<QuarkModelMesh> Function(
       Uint8List bytes,
       QuarkModelFormat format,
-      QuarkModelLimits limits,
-    );
+      QuarkModelLimits limits, {
+      Map<String, Uint8List> resources,
+    });
+
+/// Names the sibling files a model file needs;
+/// [ModelViewerService.resources] by default.
+typedef ListModelResourcesFn =
+    Future<List<String>> Function(Uint8List bytes, QuarkModelFormat format);
 
 /// State behind the 3D model viewer for the file at [path] (#2988): the
 /// parsed mesh, whether it shows as a wireframe, and why it could not be
 /// shown.
 ///
 /// A file over [limits]' size is never downloaded: a one-byte read learns
-/// its size first, and the real read stops at the cap either way. A file
+/// its size first, and the real read stops at the cap either way. The
+/// `.bin` files a `.gltf` names beside it (#3225) are read the same way,
+/// each stopping at what the cap has left, and one that is missing makes
+/// the model unreadable rather than a failed request. A file
 /// the viewer will not draw — too large, too detailed, too slow to read,
 /// not a valid model — sets [fallback], and the page shows the file's
 /// details instead. A failed request sets [error], which offers Retry.
@@ -29,6 +40,7 @@ class ModelViewerController extends ChangeNotifier {
     this.serial,
     this.readRange = CodeViewerService.readRange,
     this.parse = ModelViewerService.parse,
+    this.listResources = ModelViewerService.resources,
     this.limits = ModelViewerConfig.limits,
   });
 
@@ -41,6 +53,8 @@ class ModelViewerController extends ChangeNotifier {
   final ReadCodeRangeFn readRange;
 
   final ParseModelFn parse;
+
+  final ListModelResourcesFn listResources;
 
   /// The caps the file is held to.
   final QuarkModelLimits limits;
@@ -101,7 +115,23 @@ class ModelViewerController extends ChangeNotifier {
       if (generation != _generation) return;
       _fileSize ??= page.totalSize ?? page.bytes.length;
       _checkSize(page.bytes.length);
-      final mesh = await parse(page.bytes, format, limits);
+      final names = await listResources(page.bytes, format);
+      if (generation != _generation) return;
+      final resources = <String, Uint8List>{};
+      var read = page.bytes.length;
+      for (final name in names.toSet()) {
+        final sibling = await _readSibling(name, limits.maxBytes - read + 1);
+        if (generation != _generation) return;
+        read += sibling.length;
+        _checkSize(read);
+        resources[name] = sibling;
+      }
+      final mesh = await parse(
+        page.bytes,
+        format,
+        limits,
+        resources: resources,
+      );
       if (generation != _generation) return;
       _mesh = mesh;
     } on QuarkModelParseException catch (e) {
@@ -114,6 +144,27 @@ class ModelViewerController extends ChangeNotifier {
     }
     _isLoading = false;
     _notify();
+  }
+
+  /// Reads at most [length] bytes of the file called [name] in the model's
+  /// folder.
+  Future<Uint8List> _readSibling(String name, int length) async {
+    final folder = path.substring(0, path.lastIndexOf('/') + 1);
+    try {
+      final page = await readRange(
+        '$folder$name',
+        start: 0,
+        length: length,
+        serial: serial,
+      );
+      return page.bytes;
+    } on ApiException catch (e) {
+      if (e.statusCode != 404) rethrow;
+      throw QuarkModelParseException(
+        QuarkModelParseIssue.malformed,
+        '$name is missing',
+      );
+    }
   }
 
   void _checkSize(int bytes) {

@@ -258,7 +258,8 @@ class AppRoutes {
   static String markdownViewerPath(String path, {String? serial}) =>
       _withSerial('$markdownViewer/${encodeFilePath(path)}', serial);
 
-  /// Build a URL for an STL, OBJ or PLY file in the 3D model viewer.
+  /// Build a URL for an STL, OBJ, PLY, glTF or 3MF file in the 3D model
+  /// viewer.
   /// e.g. modelViewerPath('prints/part.stl') → '/model/prints/part.stl'
   /// Device serial is passed as a query param when non-empty.
   static String modelViewerPath(String path, {String? serial}) =>

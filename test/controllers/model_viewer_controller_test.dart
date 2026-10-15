@@ -16,11 +16,15 @@ final QuarkModelMesh triangle = QuarkModelMesh.fromTriangles(
 /// download, and how each failure surfaces.
 void main() {
   late List<({int start, int length})> reads;
+  late List<String> paths;
   late List<(int, QuarkModelFormat)> parses;
+  late Map<String, Uint8List> parsedResources;
 
   setUp(() {
     reads = [];
+    paths = [];
     parses = [];
+    parsedResources = {};
   });
 
   /// A Quark serving [size] bytes, saying how big the file is unless
@@ -28,6 +32,7 @@ void main() {
   ReadCodeRangeFn quark(int size, {bool reportsSize = true}) =>
       (path, {required start, required length, serial}) async {
         reads.add((start: start, length: length));
+        paths.add(path);
         final end = (start + length).clamp(0, size);
         return (
           bytes: Uint8List(end - start),
@@ -38,9 +43,11 @@ void main() {
   Future<QuarkModelMesh> parseOk(
     Uint8List bytes,
     QuarkModelFormat format,
-    QuarkModelLimits limits,
-  ) async {
+    QuarkModelLimits limits, {
+    Map<String, Uint8List> resources = const {},
+  }) async {
     parses.add((bytes.length, format));
+    parsedResources = resources;
     return triangle;
   }
 
@@ -48,12 +55,14 @@ void main() {
     String path = 'prints/part.stl',
     required ReadCodeRangeFn readRange,
     ParseModelFn? parse,
+    List<String> resources = const [],
     int maxBytes = 1000,
   }) {
     final controller = ModelViewerController(
       path: path,
       readRange: readRange,
       parse: parse ?? parseOk,
+      listResources: (bytes, format) async => resources,
       limits: QuarkModelLimits(maxBytes: maxBytes),
     );
     addTearDown(controller.dispose);
@@ -94,7 +103,7 @@ void main() {
     final viewer = controller(
       path: 'scans/bunny.PLY',
       readRange: quark(10),
-      parse: (bytes, format, limits) async {
+      parse: (bytes, format, limits, {resources = const {}}) async {
         parses.add((bytes.length, format));
         throw const QuarkModelParseException(
           QuarkModelParseIssue.tooManyTriangles,
@@ -127,12 +136,62 @@ void main() {
   test(
     'a file the viewer has no format for falls back as unreadable',
     () async {
-      final viewer = controller(path: 'models/part.glb', readRange: quark(10));
+      final viewer = controller(path: 'models/part.fbx', readRange: quark(10));
       await viewer.load();
       expect(viewer.fallback, QuarkModelParseIssue.malformed);
       expect(reads, isEmpty);
     },
   );
+
+  test('a .gltf reads the .bin files it names beside it', () async {
+    final viewer = controller(
+      path: 'models/car.gltf',
+      readRange: quark(300),
+      resources: ['car.bin', 'car.bin', 'wheels.bin'],
+    );
+    await viewer.load();
+    expect(viewer.mesh, same(triangle));
+    expect(paths, [
+      'models/car.gltf',
+      'models/car.gltf',
+      'models/car.bin',
+      'models/wheels.bin',
+    ]);
+    // Each sibling read stops one byte past what the cap has left.
+    expect(reads.sublist(2), [
+      (start: 0, length: 701),
+      (start: 0, length: 401),
+    ]);
+    expect(parses, [(300, QuarkModelFormat.gltf)]);
+    expect(parsedResources.keys, ['car.bin', 'wheels.bin']);
+    expect(parsedResources['wheels.bin'], hasLength(300));
+  });
+
+  test('siblings that take the model over the cap fall back', () async {
+    final viewer = controller(
+      path: 'car.gltf',
+      readRange: quark(600),
+      resources: ['car.bin'],
+    );
+    await viewer.load();
+    expect(paths.last, 'car.bin');
+    expect(viewer.fallback, QuarkModelParseIssue.tooLarge);
+    expect(parses, isEmpty);
+  });
+
+  test('a missing sibling makes the model unreadable, not an error', () async {
+    final viewer = controller(
+      path: 'car.gltf',
+      readRange: (path, {required start, required length, serial}) async {
+        if (path == 'car.bin') throw ApiException(404, 'missing');
+        return (bytes: Uint8List(3), totalSize: 3);
+      },
+      resources: ['car.bin'],
+    );
+    await viewer.load();
+    expect(viewer.fallback, QuarkModelParseIssue.malformed);
+    expect(viewer.error, isNull);
+  });
 
   test('only the latest load lands', () async {
     final viewer = controller(readRange: quark(10));

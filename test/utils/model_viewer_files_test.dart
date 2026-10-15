@@ -7,14 +7,20 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// Which files the 3D model viewer takes (#2988), where the router sends
 /// them, and the note shown when one falls back to its details.
 void main() {
-  test('STL, OBJ and PLY open in the model viewer, by extension', () {
-    expect(modelFormatForName('prints/Part.STL'), QuarkModelFormat.stl);
-    expect(modelFormatForName('scan.obj'), QuarkModelFormat.obj);
-    expect(modelFormatForName('bunny.ply'), QuarkModelFormat.ply);
-    for (final name in ['part.gltf', 'part.glb', 'part.3mf', 'stl', 'a.txt']) {
-      expect(opensInModelViewer(name), isFalse, reason: name);
-    }
-  });
+  test(
+    'STL, OBJ, PLY, glTF and 3MF open in the model viewer, by extension',
+    () {
+      expect(modelFormatForName('prints/Part.STL'), QuarkModelFormat.stl);
+      expect(modelFormatForName('scan.obj'), QuarkModelFormat.obj);
+      expect(modelFormatForName('bunny.ply'), QuarkModelFormat.ply);
+      expect(modelFormatForName('car.gltf'), QuarkModelFormat.gltf);
+      expect(modelFormatForName('Car.GLB'), QuarkModelFormat.gltf);
+      expect(modelFormatForName('plate.3MF'), QuarkModelFormat.threeMf);
+      for (final name in ['part.fbx', 'part.step', 'stl', 'a.bin', 'a.txt']) {
+        expect(opensInModelViewer(name), isFalse, reason: name);
+      }
+    },
+  );
 
   test('modelViewerPath encodes the path and carries the serial', () {
     expect(
@@ -33,8 +39,13 @@ void main() {
       viewFileRedirect('scans/bunny.ply', 's1'),
       '/model/scans/bunny.ply?serial=s1',
     );
+    expect(viewFileRedirect('models/car.glb', null), '/model/models/car.glb');
+    expect(
+      viewFileRedirect('prints/plate.3mf', null),
+      '/model/prints/plate.3mf',
+    );
     // A format the viewer does not read stays with the generic viewer.
-    expect(viewFileRedirect('models/part.glb', null), isNull);
+    expect(viewFileRedirect('models/part.fbx', null), isNull);
   });
 
   test('every fallback reason has its own sentence', () {
