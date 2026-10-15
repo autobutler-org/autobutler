@@ -680,7 +680,8 @@ type openedArchive struct {
 	// unwritten is what is left of limits.MaxTotalBytes for an extraction,
 	// counted down by every entry written.
 	unwritten int64
-	// zip reads a .zip in place through the file's ReadAt. It is Go's own
+	// zip reads a zip (.zip, or one named .cbz, .jar, .apk or .whl) in place
+	// through the file's ReadAt. It is Go's own
 	// reader rather than archiver's so an unsupported compression method
 	// can be named (openZipEntry).
 	zip *zip.Reader
@@ -726,7 +727,7 @@ func openArchive(ctx context.Context, fsys vfs.VFS, p string, limits ArchiveLimi
 
 // identify works out which reader the archive needs.
 func (a *openedArchive) identify(ctx context.Context) error {
-	if strings.EqualFold(path.Ext(a.path), ".zip") {
+	if storageutil.IsZipArchive(a.path) {
 		size, err := a.file.Seek(0, io.SeekEnd)
 		if err != nil {
 			return fmt.Errorf("failed to size archive: %w", err)

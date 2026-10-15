@@ -9,15 +9,35 @@ import (
 // supportedExts is the set of archive extensions we accept for listing,
 // reading and extraction. To add a new format: add its extension here.
 // mholt/archiver handles the rest as long as the underlying Go library for
-// that format is available.
+// that format is available; a zip under another name goes in zipExts too.
 var supportedExts = map[string]struct{}{
-	".zip":    {},
-	".rar":    {},
-	".tar":    {},
-	".tar.gz": {},
-	".tgz":    {},
-	".gz":     {},
-	".7z":     {},
+	".zip": {},
+	".rar": {},
+	".7z":  {},
+	".tar": {},
+	// A compressed tar, under its long name and its short one.
+	".tar.gz": {}, ".tgz": {},
+	".tar.bz2": {}, ".tbz2": {}, ".tbz": {},
+	".tar.xz": {}, ".txz": {},
+	".tar.zst": {}, ".tzst": {},
+	// A bare compressed stream: one file.
+	".gz": {}, ".bz2": {}, ".xz": {}, ".zst": {},
+	// Comic book archives.
+	".cbz": {}, ".cb7": {},
+	// Packages that are zips underneath: Java, Android, Python wheels.
+	".jar": {}, ".apk": {}, ".whl": {},
+}
+
+// zipExts are the extensions of archives that are zips under another name.
+// They are read in place as zips, never streamed.
+var zipExts = map[string]struct{}{
+	".zip": {}, ".cbz": {}, ".jar": {}, ".apk": {}, ".whl": {},
+}
+
+// IsZipArchive reports whether name is a zip, whatever it is called.
+func IsZipArchive(name string) bool {
+	_, ok := zipExts[archiveExt(name)]
+	return ok
 }
 
 // SupportedArchiveExts returns the sorted list of archive extensions that can
@@ -45,7 +65,7 @@ func IsSupportedArchive(name string) bool {
 func ArchiveStem(name string) string {
 	base := filepath.Base(name)
 	stem := strings.TrimSuffix(base, base[len(base)-len(archiveExt(base)):])
-	// Strip a trailing .tar that may remain after stripping .gz/.bz2/.xz.
+	// Strip a trailing .tar that may remain after stripping .gz/.bz2/.xz/.zst.
 	return strings.TrimSuffix(stem, ".tar")
 }
 
@@ -53,7 +73,7 @@ func ArchiveStem(name string) string {
 // double-extensions like ".tar.gz".
 func archiveExt(path string) string {
 	lower := strings.ToLower(path)
-	for _, ext := range []string{".tar.gz", ".tar.bz2", ".tar.xz"} {
+	for _, ext := range []string{".tar.gz", ".tar.bz2", ".tar.xz", ".tar.zst"} {
 		if strings.HasSuffix(lower, ext) {
 			return ext
 		}

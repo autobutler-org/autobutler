@@ -15,6 +15,8 @@ func TestArchiveExt(t *testing.T) {
 		{"ARCHIVE.TAR.GZ", ".tar.gz"},
 		{"archive.tgz", ".tgz"},
 		{"archive.tar.bz2", ".tar.bz2"},
+		{"archive.tar.zst", ".tar.zst"},
+		{"archive.cbz", ".cbz"},
 		{"archive.rar", ".rar"},
 		{"archive.7z", ".7z"},
 		{"archive.tar", ".tar"},
@@ -42,6 +44,12 @@ func TestArchiveStem_StripsDoubleExtensions(t *testing.T) {
 		"foo.bar.zip":    "foo.bar",
 		"no-extension":   "no-extension",
 		"dir/photos.ZIP": "photos",
+		"foo.tar.zst":    "foo",
+		"foo.tar.xz":     "foo",
+		"foo.tbz2":       "foo",
+		"notes.txt.zst":  "notes.txt",
+		"comic.cbz":      "comic",
+		"app.apk":        "app",
 	}
 	for name, want := range cases {
 		if got := ArchiveStem(name); got != want {
@@ -51,12 +59,16 @@ func TestArchiveStem_StripsDoubleExtensions(t *testing.T) {
 }
 
 func TestIsSupportedArchive(t *testing.T) {
-	for _, name := range []string{"a.zip", "a.TAR.GZ", "a.tgz", "a.gz", "a.rar", "a.7z", "a.tar"} {
+	for _, name := range []string{
+		"a.zip", "a.TAR.GZ", "a.tgz", "a.gz", "a.rar", "a.7z", "a.tar",
+		"a.tar.bz2", "a.tbz2", "a.tbz", "a.bz2", "a.tar.xz", "a.txz", "a.xz",
+		"a.tar.zst", "a.tzst", "a.zst", "a.cbz", "a.cb7", "a.jar", "a.apk", "a.whl",
+	} {
 		if !IsSupportedArchive(name) {
 			t.Errorf("IsSupportedArchive(%q) = false, want true", name)
 		}
 	}
-	for _, name := range []string{"a.txt", "a.tar.bz2", "zip"} {
+	for _, name := range []string{"a.txt", "zip", "a.iso", "a.deb", "a.rpm"} {
 		if IsSupportedArchive(name) {
 			t.Errorf("IsSupportedArchive(%q) = true, want false", name)
 		}
@@ -68,6 +80,19 @@ func TestSupportedArchiveExts_ContainsExpected(t *testing.T) {
 	for _, ext := range []string{".7z", ".gz", ".rar", ".tar", ".tar.gz", ".tgz", ".zip"} {
 		if !slices.Contains(supported, ext) {
 			t.Errorf("SupportedArchiveExts() missing %q", ext)
+		}
+	}
+}
+
+func TestIsZipArchive(t *testing.T) {
+	for _, name := range []string{"a.zip", "a.CBZ", "a.jar", "a.apk", "a.whl"} {
+		if !IsZipArchive(name) {
+			t.Errorf("IsZipArchive(%q) = false, want true", name)
+		}
+	}
+	for _, name := range []string{"a.7z", "a.cb7", "a.tar.gz", "a.rar", "a.zip.txt"} {
+		if IsZipArchive(name) {
+			t.Errorf("IsZipArchive(%q) = true, want false", name)
 		}
 	}
 }
