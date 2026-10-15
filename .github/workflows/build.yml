@@ -140,6 +140,12 @@ jobs:
       - name: Tidy
         run: |
           make tidy/flutter
+      # Flutter's plugin calls sdkmanager once during configuration. A truncated
+      # NDK archive is cached, and that one call fails the job. The Gradle retry
+      # lives on a lower layer, so a pull request published from main does not
+      # have it. Install the NDK here, dropping the bad archive between tries.
+      - name: Install Android NDK
+        run: bash scripts/ci-android-ndk.bash
       - name: Build [android]
         run: |
           make build/frontend/android
