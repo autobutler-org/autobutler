@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -53,8 +54,10 @@ void main() {
       path: filePath,
       readRange: readRange ?? serving(triangleStl()),
       // Inline, so the test needs no second isolate.
-      parse: (bytes, format, limits) async =>
-          parseQuarkModel(bytes, format, limits: limits),
+      parse: (bytes, format, limits, {resources = const {}}) async =>
+          parseQuarkModel(bytes, format, limits: limits, resources: resources),
+      listResources: (bytes, format) async =>
+          quarkModelResources(bytes, format),
       limits: QuarkModelLimits(maxBytes: maxBytes),
     );
     addTearDown(controller.dispose);
@@ -103,6 +106,48 @@ void main() {
       expect(find.text('STL · 134 B'), findsOneWidget);
     });
   }
+
+  testWidgets('a .gltf draws from the .bin beside it (#3225)', (tester) async {
+    // The same triangle, as three float corners in a sibling buffer.
+    final bin = Float32List.fromList([0, 0, 0, 10, 0, 0, 0, 20, 0]);
+    final gltf = utf8.encode(
+      jsonEncode({
+        'asset': {'version': '2.0'},
+        'buffers': [
+          {'byteLength': 36, 'uri': 'tri.bin'},
+        ],
+        'bufferViews': [
+          {'buffer': 0, 'byteLength': 36},
+        ],
+        'accessors': [
+          {'bufferView': 0, 'componentType': 5126, 'count': 3, 'type': 'VEC3'},
+        ],
+        'meshes': [
+          {
+            'primitives': [
+              {
+                'attributes': {'POSITION': 0},
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    final files = {
+      'models/tri.gltf': serving(gltf),
+      'models/tri.bin': serving(bin.buffer.asUint8List()),
+    };
+    await pumpViewer(
+      tester,
+      filePath: 'models/tri.gltf',
+      readRange: (path, {required start, required length, serial}) =>
+          files[path]!(path, start: start, length: length, serial: serial),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.byType(QuarkModelViewer), findsOneWidget);
+    expect(find.text('X 10 · Y 20 · Z 0'), findsOneWidget);
+    expect(find.text('1 triangle'), findsOneWidget);
+  });
 
   testWidgets('the wireframe button reaches the controller', (tester) async {
     await pumpViewer(tester);
