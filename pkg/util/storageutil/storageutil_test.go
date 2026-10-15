@@ -719,6 +719,13 @@ func TestDetermineFileTypeFromPath(t *testing.T) {
 		// rather than promising a conversion that cannot run (#1741).
 		{"legacy.xls", FileTypeGeneric},
 		{"archive.zip", FileTypeArchive},
+		{"backup.tar.zst", FileTypeArchive},
+		{"logs.txz", FileTypeArchive},
+		{"comic.cbz", FileTypeArchive},
+		{"comic.cb7", FileTypeArchive},
+		{"app.apk", FileTypeArchive},
+		{"lib.jar", FileTypeArchive},
+		{"pkg.whl", FileTypeArchive},
 		{"file.txt", FileTypeText},
 		{"photo.cr2", FileTypeImage},
 		{"photo.cr3", FileTypeImage},

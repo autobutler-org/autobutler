@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -48,6 +49,24 @@ func TestListArchive_ListsTheNamedDevice(t *testing.T) {
 	w = doRequest(h.engine, http.MethodGet, "/api/v0/files/list-archive?filePath=bundle.tar.gz&serial=NOPE", nil, "")
 	if w.Code != http.StatusNotFound {
 		t.Errorf("list-archive on an unattached device = %d, want 404", w.Code)
+	}
+}
+
+// An archive that is unsafe to open is a 400 whose message says why, not a
+// listing with the bad entry quietly left out, and not a 500 (#2990).
+func TestListArchive_RefusesAnEscapingName(t *testing.T) {
+	h := newDeviceUploadHarness(t)
+	writeArchive(t, h.usbDir, "evil.tar.gz", tarGzWith(t, map[string]string{
+		"../evil.txt": "evil",
+		"ok.txt":      "ok",
+	}))
+
+	w := doRequest(h.engine, http.MethodGet, "/api/v0/files/list-archive?filePath=evil.tar.gz&serial="+testUsbSerial, nil, "")
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("list-archive of an archive naming ../evil.txt = %d %s, want 400", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "points outside the archive") {
+		t.Errorf("the 400 should say why the archive was refused, got %s", w.Body.String())
 	}
 }
 

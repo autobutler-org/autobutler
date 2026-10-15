@@ -16,7 +16,7 @@ import (
 
 // extractFile godoc
 // @Summary Extract an archive in place
-// @Description Extracts a zip, tar, tar.gz, tgz, rar or 7z archive into a new folder beside it named after the archive without its extension, numbered when that name is taken; a bare .gz decompresses to a new file beside it. Nothing appears under the new name until the extraction is complete. Needs read access on the archive and write access on its directory; the caller owns what is extracted.
+// @Description Extracts a zip, tar, compressed tar (gz, bz2, xz, zst), rar or 7z archive, or a cbz, cb7, jar, apk or whl, into a new folder beside it named after the archive without its extension, numbered when that name is taken; a bare .gz, .bz2, .xz or .zst decompresses to a new file beside it. Nothing appears under the new name until the extraction is complete. Needs read access on the archive and write access on its directory; the caller owns what is extracted. An archive that trips a safety limit (entry count, entry or total decompressed size, folder depth), names an entry outside itself, or needs a password is refused with 400 and a message saying which.
 // @Tags files
 // @Produce json
 // @Param filePath query string true "Path to the archive to extract"

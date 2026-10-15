@@ -210,7 +210,9 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 	// format is not OOXML and needs a different parser entirely (#1741).
 	case ".xlsx", ".xlsm":
 		return FileTypeXlsx
-	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z":
+	case ".zip", ".rar", ".tar", ".gz", ".tgz", ".7z",
+		".bz2", ".tbz2", ".tbz", ".xz", ".txz", ".zst", ".tzst",
+		".cbz", ".cb7", ".jar", ".apk", ".whl":
 		return FileTypeArchive
 	case ".txt", ".md", ".markdown", ".rst", ".log", ".env":
 		return FileTypeText
