@@ -9,4 +9,15 @@ runs:
     - name: Install node modules
       shell: bash
       run: |
-        npm ci
+        # The npm registry drops connections often enough that one install fails
+        # a job whose tree is fine. build-android on #3311 died in this step and
+        # never compiled; the same install passed on the other frontend jobs.
+        attempt=1
+        until npm ci; do
+          if [ "$attempt" -ge 3 ]; then
+            exit 1
+          fi
+          echo "npm ci failed (attempt ${attempt}); retrying"
+          attempt=$((attempt + 1))
+          sleep $((attempt * 5))
+        done
