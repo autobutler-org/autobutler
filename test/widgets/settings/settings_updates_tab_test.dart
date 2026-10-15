@@ -6,9 +6,9 @@ import 'package:quark_widgets/quark_widgets.dart';
 import '../../support/text_scale.dart';
 
 /// #2792: the Updates tab says updates are manual and has no automatic
-/// updates switch. #2605, #2606: the tab, with an update on offer, survives 200% text
-/// and every control on it, the release notes link included, is a 48dp
-/// target a screen reader can name.
+/// updates switch. #2605, #2606: the tab, with an update on offer, survives
+/// 200% text, and at both text sizes every control on it, the release notes
+/// link included, is a 48dp target a screen reader can name.
 void main() {
   testWidgets('says updates are manual and offers no automatic switch', (
     tester,
@@ -41,6 +41,34 @@ void main() {
     expect(tester.takeException(), isNull);
     await expectTapTargetGuidelines(tester);
   });
+
+  // #2605: the release notes link was a Size.zero, shrink-wrapped target.
+  for (final (name, size) in [
+    ('narrow', narrowViewport),
+    ('wide', wideViewport),
+  ]) {
+    testWidgets('every control is a 48dp target ($name)', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuarkTheme.from(QuarkTokens.dark, Brightness.dark),
+          home: Scaffold(body: updatesTab()),
+        ),
+      );
+
+      final link = find.ancestor(
+        of: find.text("What's in this release"),
+        matching: find.byWidgetPredicate((w) => w is TextButton),
+      );
+      expect(
+        tester.getSize(link).height,
+        greaterThanOrEqualTo(kMinInteractiveDimension),
+      );
+      await expectTapTargetGuidelines(tester);
+    });
+  }
 
   // #2954: zero padding drew the focus ring at the icon's and the label's
   // edges. The ring needs an inset, and the resting text still lines up with
