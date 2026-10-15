@@ -1544,6 +1544,22 @@ definitions:
           Matched terms are enclosed in <b> tags.
         type: string
     type: object
+  v0_files.ConvertDocumentJSON:
+    properties:
+      path:
+        type: string
+      truncated:
+        description: |-
+          Truncated reports a document too long to convert whole; the .qdoc
+          holds its beginning.
+        type: boolean
+      warnings:
+        items:
+          type: string
+        type: array
+      words:
+        type: integer
+    type: object
   v0_files.ConvertXlsxJSON:
     properties:
       cells:
@@ -6063,6 +6079,63 @@ paths:
       summary: List all files of a given type
       tags:
       - files
+  /files/convert/document:
+    post:
+      description: 'Reads a .docx or .docm document and writes it as a sibling .qdoc,
+        the format the document editor opens ("Open as Quark doc"). The document itself
+        is left untouched. What a .qdoc cannot hold is flattened or left out and named
+        in warnings: a table becomes one line per row with tab-separated cells, and
+        images are dropped. Answers 409 when a .qdoc of that name already exists and
+        overwrite was not asked for; with overwrite on the internal device, the replaced
+        document is first snapshotted into its version history. A file that is not
+        what its name says is a 400. Needs read access on the document and write access
+        on its directory; the caller owns a newly created .qdoc.'
+      parameters:
+      - description: Path to the .docx or .docm file to convert
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      - description: Replace an existing .qdoc of the same name
+        in: query
+        name: overwrite
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_files.ConvertDocumentJSON'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Convert a document to a Quark document
+      tags:
+      - files
   /files/convert/xlsx:
     post:
       description: Reads an .xlsx or .xlsm workbook and writes it back as a sibling
@@ -7704,6 +7777,103 @@ paths:
       summary: Mark a video watched or unwatched for the caller
       tags:
       - playback
+  /previews/document:
+    get:
+      description: 'Streams a .docx or .docm document as NDJSON, one block per line,
+        for the read-only document viewer: a meta line, then headings, paragraphs,
+        list items, tables, images (naming the part GET /previews/part serves), page
+        breaks and omitted markers, then an end line with word, character and paragraph
+        counts, warnings, and truncated set when a limit stopped the document early.
+        The end line is always last: a stream without one was cut off by a server
+        error. Nothing the document contains is executed or fetched. A file that is
+        not what its name says is a 400. Needs read access on the document.'
+      parameters:
+      - description: Path to the document
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      produces:
+      - application/x-ndjson
+      responses:
+        "200":
+          description: NDJSON block stream
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "503":
+          description: Server busy converting other documents
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Preview a word-processing document
+      tags:
+      - previews
+  /previews/part:
+    get:
+      description: 'Streams one image a document preview''s image block names. This
+        is not a general zip browser: only a PNG, JPEG, GIF or WebP entry under the
+        document''s media folder (word/media/ for .docx and .docm), named without
+        any climbing, is served, and anything else is a 404. Needs read access on
+        the document.'
+      parameters:
+      - description: Path to the document
+        in: query
+        name: filePath
+        required: true
+        type: string
+      - description: The image's entry inside the document, e.g. word/media/image1.png
+        in: query
+        name: part
+        required: true
+        type: string
+      - description: Device serial number
+        in: query
+        name: serial
+        type: string
+      produces:
+      - image/png
+      - image/jpeg
+      - image/gif
+      - image/webp
+      responses:
+        "200":
+          description: Image content
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Get an image from inside a document
+      tags:
+      - previews
   /sbom:
     get:
       description: Returns the Go version and all embedded dependency information

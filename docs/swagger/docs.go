@@ -4910,6 +4910,82 @@ const docTemplate = `{
                 }
             }
         },
+        "/files/convert/document": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reads a .docx or .docm document and writes it as a sibling .qdoc, the format the document editor opens (\"Open as Quark doc\"). The document itself is left untouched. What a .qdoc cannot hold is flattened or left out and named in warnings: a table becomes one line per row with tab-separated cells, and images are dropped. Answers 409 when a .qdoc of that name already exists and overwrite was not asked for; with overwrite on the internal device, the replaced document is first snapshotted into its version history. A file that is not what its name says is a 400. Needs read access on the document and write access on its directory; the caller owns a newly created .qdoc.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Convert a document to a Quark document",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Path to the .docx or .docm file to convert",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Replace an existing .qdoc of the same name",
+                        "name": "overwrite",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_files.ConvertDocumentJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/files/convert/xlsx": {
             "post": {
                 "security": [
@@ -7200,6 +7276,138 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/playbackutil.State"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/previews/document": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Streams a .docx or .docm document as NDJSON, one block per line, for the read-only document viewer: a meta line, then headings, paragraphs, list items, tables, images (naming the part GET /previews/part serves), page breaks and omitted markers, then an end line with word, character and paragraph counts, warnings, and truncated set when a limit stopped the document early. The end line is always last: a stream without one was cut off by a server error. Nothing the document contains is executed or fetched. A file that is not what its name says is a 400. Needs read access on the document.",
+                "produces": [
+                    "application/x-ndjson"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Preview a word-processing document",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Path to the document",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "NDJSON block stream",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "Server busy converting other documents",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/previews/part": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Streams one image a document preview's image block names. This is not a general zip browser: only a PNG, JPEG, GIF or WebP entry under the document's media folder (word/media/ for .docx and .docm), named without any climbing, is served, and anything else is a 404. Needs read access on the document.",
+                "produces": [
+                    "image/png",
+                    "image/jpeg",
+                    "image/gif",
+                    "image/webp"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Get an image from inside a document",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Path to the document",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The image's entry inside the document, e.g. word/media/image1.png",
+                        "name": "part",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Image content",
+                        "schema": {
+                            "type": "file"
                         }
                     },
                     "400": {
@@ -12932,6 +13140,27 @@ const docTemplate = `{
                 "snippet": {
                     "description": "Snippet is a highlighted excerpt around the matched terms.\nMatched terms are enclosed in \u003cb\u003e tags.",
                     "type": "string"
+                }
+            }
+        },
+        "v0_files.ConvertDocumentJSON": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "truncated": {
+                    "description": "Truncated reports a document too long to convert whole; the .qdoc\nholds its beginning.",
+                    "type": "boolean"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "words": {
+                    "type": "integer"
                 }
             }
         },

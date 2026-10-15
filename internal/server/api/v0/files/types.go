@@ -10,6 +10,7 @@ type router struct{}
 
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
+		convertDocumentRoute,
 		convertXlsxRoute,
 		createDownloadTokenRoute,
 		deleteFilesRoute,
@@ -44,6 +45,17 @@ func (r *slidesRouter) Routes() []*serverutil.Route {
 		exportPptxRoute,
 		importPptxRoute,
 	}
+}
+
+// ConvertDocumentJSON reports the .qdoc a document was converted to. The
+// client opens Path and shows the warnings: what the .qdoc left out.
+type ConvertDocumentJSON struct {
+	Path string `json:"path"`
+	// Truncated reports a document too long to convert whole; the .qdoc
+	// holds its beginning.
+	Truncated bool     `json:"truncated"`
+	Words     int      `json:"words"`
+	Warnings  []string `json:"warnings"`
 }
 
 type createDownloadTokenResponse struct {
