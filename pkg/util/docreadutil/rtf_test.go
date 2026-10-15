@@ -15,22 +15,19 @@ import (
 	"testing"
 )
 
-// formatRTF is the format an RTF file's meta line names.
-const formatRTF Format = "rtf"
-
-// convertRTF reads an RTF file the way Convert reads any document: it
-// writes the stream, and turns a limit into a truncated result.
+// convertRTF converts an RTF file.
 func convertRTF(t testing.TB, src string, output Output, limits Limits) (string, ConvertResult, error) {
 	t.Helper()
 	var out bytes.Buffer
-	e := newEmitter(ConvertParams{Format: formatRTF, Output: output, Out: &out, Limits: limits})
-	if err := readRTF(e, strings.NewReader(src), int64(len(src))); err != nil && !errors.Is(err, errTruncated) {
-		return out.String(), ConvertResult{}, err
+	result, err := Convert(ConvertParams{Source: strings.NewReader(src), Size: int64(len(src)), Format: FormatRTF,
+		Output: output, Out: &out, Limits: limits})
+	return out.String(), result, err
+}
+
+func TestRTFFormatForName(t *testing.T) {
+	if f, ok := FormatForName("Letter.RTF"); !ok || f != FormatRTF {
+		t.Errorf("FormatForName = %q, %v", f, ok)
 	}
-	if err := e.finish(); err != nil {
-		return out.String(), ConvertResult{}, err
-	}
-	return out.String(), e.result(), nil
 }
 
 // readRTFStream reads an RTF file to NDJSON and parses the stream.
@@ -61,7 +58,7 @@ func readTestdata(t *testing.T, name string) string {
 
 func TestRTFLibreOfficeReport(t *testing.T) {
 	s, result := readRTFStream(t, readTestdata(t, "libreoffice-report.rtf"), Limits{})
-	if s.meta.Title != "Quarterly report" || s.meta.Format != formatRTF {
+	if s.meta.Title != "Quarterly report" || s.meta.Format != FormatRTF {
 		t.Errorf("meta = %+v", s.meta)
 	}
 	want := []string{
@@ -627,7 +624,7 @@ func TestRTFContextEndsTheConversion(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	for _, src := range []string{rtfDoc(`x\par`), rtfDoc(`{\pict ` + strings.Repeat("00", 1<<16) + `}`)} {
-		e := newEmitter(ConvertParams{Ctx: ctx, Format: formatRTF, Out: io.Discard})
+		e := newEmitter(ConvertParams{Ctx: ctx, Format: FormatRTF, Out: io.Discard})
 		if err := readRTF(e, strings.NewReader(src), int64(len(src))); !errors.Is(err, context.Canceled) {
 			t.Errorf("err = %v, want context.Canceled", err)
 		}
@@ -637,7 +634,7 @@ func TestRTFContextEndsTheConversion(t *testing.T) {
 func TestRTFWriteErrorsAreReturnedAsTheyAre(t *testing.T) {
 	src := rtfDoc(`x\par`)
 	for _, output := range []Output{OutputNDJSON, OutputDelta} {
-		e := newEmitter(ConvertParams{Format: formatRTF, Output: output, Out: failingWriter{}})
+		e := newEmitter(ConvertParams{Format: FormatRTF, Output: output, Out: failingWriter{}})
 		if err := readRTF(e, strings.NewReader(src), int64(len(src))); !errors.Is(err, errWrite) {
 			t.Errorf("output %d: err = %v, want the write error", output, err)
 		}
@@ -691,7 +688,7 @@ func FuzzRTF(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		for _, output := range []Output{OutputNDJSON, OutputDelta} {
 			var out bytes.Buffer
-			e := newEmitter(ConvertParams{Format: formatRTF, Output: output, Out: &out, Limits: fuzzLimits})
+			e := newEmitter(ConvertParams{Format: FormatRTF, Output: output, Out: &out, Limits: fuzzLimits})
 			err := readRTF(e, bytes.NewReader(data), int64(len(data)))
 			if err != nil && !errors.Is(err, errTruncated) {
 				if !errors.Is(err, ErrMalformed) && !errors.Is(err, ErrTooLarge) {
