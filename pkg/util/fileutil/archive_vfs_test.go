@@ -301,7 +301,7 @@ func TestExtractArchiveTakesAFreeNameAndPublishes(t *testing.T) {
 // entries already written, not the half-filled folder.
 func TestExtractArchiveThatFailsLeavesNothingBehind(t *testing.T) {
 	ctx := context.Background()
-	setEntryLimit(t, 4)
+	limits := fileutil.ArchiveLimits{MaxEntryBytes: 4}
 
 	cases := map[string]string{
 		// The second entry declares more than the limit.
@@ -319,7 +319,7 @@ func TestExtractArchiveThatFailsLeavesNothingBehind(t *testing.T) {
 			defer unsubscribe()
 
 			_, err := fileutil.ExtractArchive(fileutil.ExtractArchiveParams{
-				Ctx: ctx, Registry: registry, EventBus: bus, FilePath: name, Serial: archiveSerial,
+				Ctx: ctx, Registry: registry, EventBus: bus, Limits: limits, FilePath: name, Serial: archiveSerial,
 			})
 			var unsupported *fileutil.UnsupportedError
 			if !errors.As(err, &unsupported) {
@@ -337,16 +337,17 @@ func TestExtractArchiveThatFailsLeavesNothingBehind(t *testing.T) {
 	}
 }
 
-// An entry that climbs out of the archive is skipped, so nothing lands beside
-// the extraction folder (Zip Slip), and a link is never written.
-func TestExtractArchiveSkipsEscapingEntriesAndLinks(t *testing.T) {
+// A link is never written, since it can point anywhere, and an absolute name
+// lands inside the extraction folder rather than at the root it names. A name
+// that climbs out refuses the archive outright (TestArchiveRefusesEscapingNames).
+func TestExtractArchiveSkipsLinksAndRootsAbsoluteNames(t *testing.T) {
 	ctx := context.Background()
 	registry, fsys, _ := archiveRegistry(t, archiveTargets[1])
 
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
 	for _, h := range []*tar.Header{
-		{Name: "../evil.txt", Typeflag: tar.TypeReg, Size: 4, Mode: 0o644},
+		{Name: "/abs.txt", Typeflag: tar.TypeReg, Size: 4, Mode: 0o644},
 		{Name: "ok.txt", Typeflag: tar.TypeReg, Size: 4, Mode: 0o644},
 		{Name: "link", Typeflag: tar.TypeSymlink, Linkname: "../../etc/passwd", Mode: 0o777},
 	} {
@@ -369,8 +370,8 @@ func TestExtractArchiveSkipsEscapingEntriesAndLinks(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("ExtractArchive failed: %v", err)
 	}
-	if got := listNames(t, fsys, "in/bundle"); !slices.Equal(got, []string{"ok.txt"}) {
-		t.Errorf("extracted %v, want only ok.txt", got)
+	if got := listNames(t, fsys, "in/bundle"); !slices.Equal(got, []string{"abs.txt", "ok.txt"}) {
+		t.Errorf("extracted %v, want abs.txt and ok.txt and no link", got)
 	}
 	if got := listNames(t, fsys, "in"); !slices.Equal(got, []string{"bundle", "bundle.tar"}) {
 		t.Errorf("beside the archive: %v, want nothing but the archive and its folder", got)
@@ -379,14 +380,11 @@ func TestExtractArchiveSkipsEscapingEntriesAndLinks(t *testing.T) {
 
 // An archive over the entry limit is refused before it is written out.
 func TestExtractArchiveRefusesTooManyEntries(t *testing.T) {
-	orig := storageutil.MaxArchiveEntries
-	storageutil.MaxArchiveEntries = 2
-	t.Cleanup(func() { storageutil.MaxArchiveEntries = orig })
-
 	registry, fsys, _ := archiveRegistry(t, archiveTargets[1])
 	writeMem(t, fsys, "many.zip", zipWith(t, map[string]string{"a": "1", "b": "2", "c": "3"}))
 	_, err := fileutil.ExtractArchive(fileutil.ExtractArchiveParams{
-		Ctx: context.Background(), Registry: registry, FilePath: "many.zip", Serial: archiveSerial,
+		Ctx: context.Background(), Registry: registry, Limits: fileutil.ArchiveLimits{MaxEntries: 2},
+		FilePath: "many.zip", Serial: archiveSerial,
 	})
 	if err == nil || !strings.Contains(err.Error(), "exceeds maximum") {
 		t.Fatalf("got %v, want the entry limit", err)
@@ -629,14 +627,6 @@ func allocatedBy(t *testing.T, fn func()) uint64 {
 	fn()
 	runtime.ReadMemStats(&after)
 	return after.TotalAlloc - before.TotalAlloc
-}
-
-// setEntryLimit lowers the per-entry size limit for the test.
-func setEntryLimit(t *testing.T, limit int64) {
-	t.Helper()
-	orig := storageutil.MaxArchiveEntryBytes
-	storageutil.MaxArchiveEntryBytes = limit
-	t.Cleanup(func() { storageutil.MaxArchiveEntryBytes = orig })
 }
 
 // readEntry reads one archive entry whole. The entries are a few bytes.

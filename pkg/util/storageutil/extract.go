@@ -6,16 +6,6 @@ import (
 	"strings"
 )
 
-// MaxArchiveEntryBytes is the maximum number of bytes written per entry.
-// Guards against decompression bombs without rejecting legitimate large files.
-// Declared as a var so tests can override it without writing 10 GiB.
-var MaxArchiveEntryBytes int64 = 10 * 1024 * 1024 * 1024 // 10 GiB
-
-// MaxArchiveEntries is the maximum number of entries read from a single
-// archive. Declared as a var so tests can override it without building 100k
-// files.
-var MaxArchiveEntries = 100_000
-
 // supportedExts is the set of archive extensions we accept for listing,
 // reading and extraction. To add a new format: add its extension here.
 // mholt/archiver handles the rest as long as the underlying Go library for

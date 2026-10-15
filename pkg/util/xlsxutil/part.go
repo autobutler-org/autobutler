@@ -14,7 +14,7 @@ import (
 // stream is trusted: the declared size rejects an honest oversized part
 // outright, and the reader refuses to hand over more than the limit however
 // small the part claimed to be. This is the guard the archive extractor
-// already applies per entry (storageutil.MaxArchiveEntryBytes); a workbook is
+// already applies per entry (fileutil.ArchiveLimits.MaxEntryBytes); a workbook is
 // a zip and needs the same one.
 func openPart(f *zip.File, limit int64) (io.ReadCloser, error) {
 	if f.UncompressedSize64 > uint64(limit) {
