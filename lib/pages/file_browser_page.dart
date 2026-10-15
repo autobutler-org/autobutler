@@ -1550,7 +1550,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _goToEditor(node.apiPath, AppRoutes.markdownViewerPath(node.apiPath));
       return;
     }
-    // STL, OBJ and PLY open in the 3D model viewer (#2988).
+    // STL, OBJ, PLY and glTF open in the 3D model viewer (#2988).
     if (opensInModelViewer(node.name)) {
       _goToEditor(node.apiPath, AppRoutes.modelViewerPath(node.apiPath));
       return;
@@ -1987,7 +1987,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _goToEditor(filePath, AppRoutes.markdownViewerPath(filePath));
       return;
     }
-    // STL, OBJ and PLY open in the 3D model viewer (#2988).
+    // STL, OBJ, PLY and glTF open in the 3D model viewer (#2988).
     if (opensInModelViewer(fileName)) {
       _goToEditor(filePath, AppRoutes.modelViewerPath(filePath));
       return;

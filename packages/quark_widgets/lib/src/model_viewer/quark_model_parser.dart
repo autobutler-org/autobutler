@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'quark_model_mesh.dart';
+import 'quark_model_parser/gltf_reader.dart';
 import 'quark_model_parser/obj_reader.dart';
 import 'quark_model_parser/ply_reader.dart';
 import 'quark_model_parser/stl_reader.dart';
@@ -61,10 +62,25 @@ class QuarkModelLimits {
   final Duration maxDuration;
 }
 
+/// The files beside a [format] file that [parseQuarkModel] needs as its
+/// `resources`, by file name: the `.bin` buffers a `.gltf` names. Empty for
+/// every other format, and for a glTF whose buffers are all embedded.
+///
+/// Only plain file names in the same folder are listed. A buffer URI with a
+/// scheme, a path or a parent is never fetched, so a model cannot make its
+/// viewer read anything but its own siblings. Throws a
+/// [QuarkModelParseException] when [bytes] are not a glTF document.
+List<String> quarkModelResources(Uint8List bytes, QuarkModelFormat format) =>
+    format == QuarkModelFormat.gltf ? gltfSiblingFiles(bytes) : const [];
+
 /// Reads [bytes] as a [format] file into a mesh, within [limits].
 ///
-/// STL is told apart as ASCII or binary from its contents; PLY's header says
-/// which encoding it uses. Polygons are split into triangle fans, and STL's
+/// [resources] are the sibling files a glTF's buffers name, keyed by the
+/// names [quarkModelResources] lists; together with [bytes] they are held to
+/// `QuarkModelLimits.maxBytes`.
+///
+/// STL is told apart as ASCII or binary from its contents, and glTF as JSON
+/// or GLB; PLY's header says which encoding it uses. Polygons are split into triangle fans, and STL's
 /// unshared corners are merged where they are identical, so the vertex count
 /// means what it does in a modeling tool.
 ///
@@ -74,11 +90,13 @@ QuarkModelMesh parseQuarkModel(
   Uint8List bytes,
   QuarkModelFormat format, {
   QuarkModelLimits limits = const QuarkModelLimits(),
+  Map<String, Uint8List> resources = const {},
 }) {
-  if (bytes.length > limits.maxBytes) {
+  final total = resources.values.fold(bytes.length, (sum, r) => sum + r.length);
+  if (total > limits.maxBytes) {
     throw QuarkModelParseException(
       QuarkModelParseIssue.tooLarge,
-      '${bytes.length} bytes',
+      '$total bytes',
     );
   }
   try {
@@ -86,6 +104,7 @@ QuarkModelMesh parseQuarkModel(
       QuarkModelFormat.stl => readStl(bytes, limits),
       QuarkModelFormat.obj => readObj(bytes, limits),
       QuarkModelFormat.ply => readPly(bytes, limits),
+      QuarkModelFormat.gltf => readGltf(bytes, resources, limits),
     };
   } on RangeError catch (e) {
     // A count or offset that runs past the end of the bytes.

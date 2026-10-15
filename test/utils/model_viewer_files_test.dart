@@ -7,11 +7,13 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// Which files the 3D model viewer takes (#2988), where the router sends
 /// them, and the note shown when one falls back to its details.
 void main() {
-  test('STL, OBJ and PLY open in the model viewer, by extension', () {
+  test('STL, OBJ, PLY and glTF open in the model viewer, by extension', () {
     expect(modelFormatForName('prints/Part.STL'), QuarkModelFormat.stl);
     expect(modelFormatForName('scan.obj'), QuarkModelFormat.obj);
     expect(modelFormatForName('bunny.ply'), QuarkModelFormat.ply);
-    for (final name in ['part.gltf', 'part.glb', 'part.3mf', 'stl', 'a.txt']) {
+    expect(modelFormatForName('car.gltf'), QuarkModelFormat.gltf);
+    expect(modelFormatForName('Car.GLB'), QuarkModelFormat.gltf);
+    for (final name in ['part.3mf', 'part.fbx', 'stl', 'a.bin', 'a.txt']) {
       expect(opensInModelViewer(name), isFalse, reason: name);
     }
   });
@@ -33,8 +35,9 @@ void main() {
       viewFileRedirect('scans/bunny.ply', 's1'),
       '/model/scans/bunny.ply?serial=s1',
     );
+    expect(viewFileRedirect('models/car.glb', null), '/model/models/car.glb');
     // A format the viewer does not read stays with the generic viewer.
-    expect(viewFileRedirect('models/part.glb', null), isNull);
+    expect(viewFileRedirect('models/part.3mf', null), isNull);
   });
 
   test('every fallback reason has its own sentence', () {

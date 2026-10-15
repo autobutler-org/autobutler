@@ -8,17 +8,45 @@ import 'package:quark_widgets/quark_widgets.dart';
 class ModelViewerService {
   ModelViewerService._();
 
-  /// Parses [bytes] as a [format] file within [limits] on a background
-  /// isolate (inline on the web, where the time cap bounds the pause).
-  /// Throws the parser's `QuarkModelParseException` for a file it will not
-  /// draw.
+  /// The sibling files a [format] file's [bytes] need, by name, read off
+  /// the UI isolate: a `.gltf`'s JSON may be most of the file.
+  static Future<List<String>> resources(
+    Uint8List bytes,
+    QuarkModelFormat format,
+  ) => compute(_resources, (bytes: bytes, format: format));
+
+  /// Parses [bytes] as a [format] file, with the sibling [resources] it
+  /// names, within [limits] on a background isolate (inline on the web,
+  /// where the time cap bounds the pause). Throws the parser's
+  /// `QuarkModelParseException` for a file it will not draw.
   static Future<QuarkModelMesh> parse(
     Uint8List bytes,
     QuarkModelFormat format,
-    QuarkModelLimits limits,
-  ) => compute(_parse, (bytes: bytes, format: format, limits: limits));
+    QuarkModelLimits limits, {
+    Map<String, Uint8List> resources = const {},
+  }) => compute(_parse, (
+    bytes: bytes,
+    format: format,
+    limits: limits,
+    resources: resources,
+  ));
+
+  static List<String> _resources(
+    ({Uint8List bytes, QuarkModelFormat format}) job,
+  ) => quarkModelResources(job.bytes, job.format);
 
   static QuarkModelMesh _parse(
-    ({Uint8List bytes, QuarkModelFormat format, QuarkModelLimits limits}) job,
-  ) => parseQuarkModel(job.bytes, job.format, limits: job.limits);
+    ({
+      Uint8List bytes,
+      QuarkModelFormat format,
+      QuarkModelLimits limits,
+      Map<String, Uint8List> resources,
+    })
+    job,
+  ) => parseQuarkModel(
+    job.bytes,
+    job.format,
+    limits: job.limits,
+    resources: job.resources,
+  );
 }
