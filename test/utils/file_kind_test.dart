@@ -32,4 +32,27 @@ void main() {
       expect(isProseFile(name), isFalse, reason: name);
     }
   });
+
+  test('every archive extension the server reads is an archive (#3232)', () {
+    for (final name in [
+      'a.tar.zst',
+      'a.tzst',
+      'a.tar.xz',
+      'a.txz',
+      'a.tar.bz2',
+      'a.tbz2',
+      'a.tbz',
+      'a.zst',
+      'a.xz',
+      'a.bz2',
+      'a.cbz',
+      'a.cb7',
+      'a.jar',
+      'a.apk',
+      'a.whl',
+      'A.CBZ',
+    ]) {
+      expect(fileKindForName(name), FileKind.archive, reason: name);
+    }
+  });
 }

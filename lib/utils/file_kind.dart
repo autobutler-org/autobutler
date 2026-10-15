@@ -168,6 +168,21 @@ const _kindByExtension = {
   '.gz': FileKind.archive,
   '.tgz': FileKind.archive,
   '.7z': FileKind.archive,
+  // Compressed tars under their short names (.tar.zst and the like end in the
+  // bare stream extension), bare compressed streams, comic book archives, and
+  // zips under another name. Mirrors storageutil's archive table (#3232).
+  '.bz2': FileKind.archive,
+  '.tbz2': FileKind.archive,
+  '.tbz': FileKind.archive,
+  '.xz': FileKind.archive,
+  '.txz': FileKind.archive,
+  '.zst': FileKind.archive,
+  '.tzst': FileKind.archive,
+  '.cbz': FileKind.archive,
+  '.cb7': FileKind.archive,
+  '.jar': FileKind.archive,
+  '.apk': FileKind.archive,
+  '.whl': FileKind.archive,
   '.txt': FileKind.text,
   '.md': FileKind.text,
   '.markdown': FileKind.text,
