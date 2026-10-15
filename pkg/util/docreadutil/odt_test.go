@@ -440,13 +440,15 @@ func TestOdtNotesFollowTheBody(t *testing.T) {
 		note("edn1", "endnote", "i", odtPara("", " Note two")+odtPara("", "continued"))) +
 		`<table:table><table:table-row><table:table-cell>` + odtPara("", "cell"+note("ftn2", "footnote", "2", odtPara("", "In a cell"))) +
 		`</table:table-cell></table:table-row></table:table>` +
+		odtPara("", strings.Repeat("m", 5)+note("long", "footnote", strings.Repeat("9", 40), odtPara("", "long mark"))) +
 		odtPara("", "no id"+`<text:note><text:note-citation text:label="*">9</text:note-citation><text:note-body>`+odtPara("", "lost")+`</text:note-body></text:note>`) +
 		`<text:tracked-changes><text:changed-region><text:deletion>` + odtPara("", note("ftn1", "footnote", "1", odtPara("", "deleted twin"))) +
 		`</text:deletion></text:changed-region></text:tracked-changes>`}
 	s, result := readOdtStream(t, d, Limits{})
-	equalTexts(t, texts(s.blocks), "First1 andi", "table[cell2]", "no id*", "Notes", "1 Note one", "i Note two", "continued", "2 In a cell")
+	equalTexts(t, texts(s.blocks), "First1 andi", "table[cell2]", "mmmmm"+strings.Repeat("9", maxMarkRunes), "no id*",
+		"Notes", "1 Note one", "i Note two", "continued", "2 In a cell", strings.Repeat("9", maxMarkRunes)+" long mark")
 	equalRuns(t, s.blocks[0].Runs, []Run{{Text: "First"}, {Text: "1", Superscript: true}, {Text: " and"}, {Text: "i", Superscript: true}})
-	equalRuns(t, s.blocks[4].Runs, []Run{{Text: "1", Superscript: true}, {Text: " Note one"}})
+	equalRuns(t, s.blocks[5].Runs, []Run{{Text: "1", Superscript: true}, {Text: " Note one"}})
 	if len(result.Warnings) != 1 || result.Warnings[0] != warnNotes {
 		t.Errorf("warnings = %v", result.Warnings)
 	}

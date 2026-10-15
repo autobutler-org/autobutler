@@ -30,6 +30,10 @@ const maxRepeat = 1000
 // table has.
 const maxRowSpan = 1 << 16
 
+// maxMarkRunes bounds a note's mark, which is held until its body is
+// read.
+const maxMarkRunes = 16
+
 // maxSpaces bounds the spaces one text:s stands for.
 const maxSpaces = 1000
 
@@ -432,6 +436,9 @@ func (r *odtReader) noteCitation(p *paragraph, c xml.StartElement, props runProp
 	})
 	if err != nil {
 		return err
+	}
+	if m := []rune(mark); len(m) > maxMarkRunes {
+		mark = string(m[:maxMarkRunes])
 	}
 	if _, dup := r.notes[id]; id == "" || dup || len(r.notes) >= r.e.limits.MaxDefinitions {
 		r.e.warnings.note(warnNotes)
