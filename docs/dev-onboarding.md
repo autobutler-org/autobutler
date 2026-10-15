@@ -120,6 +120,23 @@ and takes a few minutes; later builds reuse both.
 
 The run-time packages are listed under [Linux runtime dependencies](#linux-runtime-dependencies).
 
+## Running Quark as a Linux desktop app
+
+`make install/frontend/linux` builds the release bundle for this machine's architecture and installs it for your
+user, with no `sudo`. Quark then shows up in the launcher (Super and type "quark" on Omarchy, or the GNOME and KDE
+app grids) and opens in its own window with its icon.
+
+```bash
+make install/frontend/linux      # bundle in ~/.local/share/quark-app, launcher entry and icons under ~/.local/share
+make uninstall/frontend/linux    # removes all of it
+```
+
+Run it again to upgrade in place. Set `PREFIX=<dir>` to install somewhere other than `~/.local`. A `quark`
+symlink goes in `$PREFIX/bin`, and the launcher entry points at it by absolute path, so `~/.local/bin` does not
+have to be on your `PATH`. The window class is `org.autobutler.quark`, which `linux/quark.desktop` carries as
+`StartupWMClass` so Hyprland and docks match the window to its launcher entry. The installed app still needs the
+[Linux runtime dependencies](#linux-runtime-dependencies).
+
 ## Building the Linux AppImage
 
 The AppImage is the release bundle and the libraries it links, in one executable file that runs without an
@@ -257,6 +274,8 @@ Run `make help` to see everything. The most common ones:
 | `make emulate/ios`              | Launch iOS simulator                  |
 | `make build/frontend/linux LINUX_ARCH=x64\|arm64` | Linux desktop release bundle |
 | `make build/frontend/linux/appimage LINUX_ARCH=x64\|arm64` | Linux AppImage (Ubuntu 22.04) |
+| `make install/frontend/linux` | Install the Linux desktop app into the launcher |
+| `make uninstall/frontend/linux` | Remove it again |
 | `make build`                    | Build everything                      |
 | `make generate`                 | Regenerate sqlc + swagger             |
 | `make generate/backend/sqlc`    | Regenerate DB layer only              |

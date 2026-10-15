@@ -408,7 +408,7 @@ APPIMAGE_OUT_DIR = $(CURDIR)/build/appimage
 APPIMAGE_WORK_DIR = $(CURDIR)/build/appimage-work
 # Ubuntu serves amd64 from its main archive and every other architecture from ports.
 APPIMAGE_APT_MIRROR = $(if $(filter arm64,$(LINUX_ARCH)),http://ports.ubuntu.com/ubuntu-ports/,http://archive.ubuntu.com/ubuntu/)
-# Where setup/appimage-builder puts the tool, under bin/. Per user, so no sudo.
+# Per user, so no sudo: setup/appimage-builder puts the tool under bin/, install/frontend/linux the app under share/.
 PREFIX ?= $(HOME)/.local
 # Both targets stop here on any other host, before downloading or building anything.
 define REQUIRE_APPIMAGE_HOST
@@ -480,6 +480,38 @@ else
 		--skip-tests
 	ls -lh ./*-$(LINUX_MACHINE).AppImage
 endif
+
+# Per user, no sudo. The bundle lands in $(LINUX_APP_DIR), a quark symlink in $(PREFIX)/bin, and the
+# launcher entry and hicolor icons under $(PREFIX)/share. The bundle directory is replaced
+# wholesale, so re-running upgrades in place without leaving files of the old build behind. The
+# .desktop file in the repo says Exec=quark so it validates; the installed copy gets the absolute path.
+# It builds for this machine's architecture, so it takes no LINUX_ARCH.
+LINUX_APP_DIR = $(PREFIX)/share/quark-app
+LINUX_APPS_DIR = $(PREFIX)/share/applications
+LINUX_ICONS_DIR = $(PREFIX)/share/icons/hicolor
+
+.PHONY: install/frontend/linux
+install/frontend/linux: ## Install the Linux desktop app into the launcher (PREFIX=~/.local)
+	if [ -z "$(LINUX_HOST_ARCH)" ]; then
+		echo "Error: install/frontend/linux installs onto this machine, which needs Linux on x86_64 or aarch64."
+		exit 1
+	fi
+	$(MAKE) build/frontend/linux LINUX_ARCH=$(LINUX_HOST_ARCH)
+	rm -rf "$(LINUX_APP_DIR)"
+	mkdir -p "$(LINUX_APP_DIR)" "$(PREFIX)/bin" "$(LINUX_APPS_DIR)" "$(LINUX_ICONS_DIR)"
+	cp -a build/linux/$(LINUX_HOST_ARCH)/release/bundle/. "$(LINUX_APP_DIR)/"
+	ln -sf "$(LINUX_APP_DIR)/quark" "$(PREFIX)/bin/quark"
+	sed 's|^Exec=.*|Exec=$(PREFIX)/bin/quark|' linux/quark.desktop > "$(LINUX_APPS_DIR)/quark.desktop"
+	cp -a linux/icons/hicolor/. "$(LINUX_ICONS_DIR)/"
+	update-desktop-database "$(LINUX_APPS_DIR)" 2>/dev/null || true
+	gtk-update-icon-cache -q -f -t "$(LINUX_ICONS_DIR)" 2>/dev/null || true
+
+.PHONY: uninstall/frontend/linux
+uninstall/frontend/linux: ## Remove the Linux desktop app installed by install/frontend/linux
+	rm -rf "$(LINUX_APP_DIR)"
+	rm -f "$(PREFIX)/bin/quark" "$(LINUX_APPS_DIR)/quark.desktop" "$(LINUX_ICONS_DIR)"/*/apps/quark.png
+	update-desktop-database "$(LINUX_APPS_DIR)" 2>/dev/null || true
+	gtk-update-icon-cache -q -f -t "$(LINUX_ICONS_DIR)" 2>/dev/null || true
 
 .PHONY: build/frontend/ios
 build/frontend/ios: generate/frontend/sbom ## Build iOS app
