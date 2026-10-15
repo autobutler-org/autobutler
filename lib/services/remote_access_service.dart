@@ -96,12 +96,9 @@ class RemoteAccessService with AuthenticatedService {
     final uri = apiBaseUri.resolve('/api/v0/settings/remote-access/devices');
     final response = await sharedHttpClient.post(uri, headers: _authHeaders);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      throwApiError(
-        response.statusCode,
-        body?['error'],
-        'Failed to pair this device',
-      );
+      // The status is the whole signal: 409 and 503 are retried, and every
+      // other code is shown through Errors. The body is a log, not copy.
+      throw ApiException(response.statusCode, 'Failed to pair this device');
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return PairedDevice.fromJson(json);

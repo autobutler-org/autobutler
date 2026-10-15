@@ -36,6 +36,10 @@ class ConnectionStatusView extends StatelessWidget {
     this.isCheckingRemoteAccess = false,
     this.remoteAccessError,
     this.onOpenSettings,
+    this.thisPhoneLabel,
+    this.thisPhoneOn = true,
+    this.onThisPhoneChanged,
+    this.thisPhoneError,
     super.key,
   });
 
@@ -60,12 +64,26 @@ class ConnectionStatusView extends StatelessWidget {
   /// Opens the Quark's remote access settings. Null hides the row.
   final VoidCallback? onOpenSettings;
 
+  /// The label on this phone's own switch. Shown with [onThisPhoneChanged].
+  final String? thisPhoneLabel;
+
+  /// Whether remote access is on for this phone.
+  final bool thisPhoneOn;
+
+  /// Turns this phone's remote access on or off. Null hides the switch.
+  final ValueChanged<bool>? onThisPhoneChanged;
+
+  /// Why this phone could not set itself up, in the caller's words, or null.
+  final String? thisPhoneError;
+
   @override
   Widget build(BuildContext context) {
     final tokens = QuarkTokens.of(context);
     final (icon, color) = ConnectionIndicator.glyphFor(mode, tokens);
     final onOpenSettings = this.onOpenSettings;
     final remoteAccessError = this.remoteAccessError;
+    final onThisPhoneChanged = this.onThisPhoneChanged;
+    final thisPhoneError = this.thisPhoneError;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -122,6 +140,17 @@ class ConnectionStatusView extends StatelessWidget {
             }),
             trailing: const Icon(QuarkIcons.chevron_right),
             onTap: onOpenSettings,
+          ),
+        if (onThisPhoneChanged != null)
+          SwitchListTile(
+            key: const ValueKey('remote_access_on_this_phone'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(thisPhoneLabel ?? ''),
+            subtitle: thisPhoneError == null
+                ? null
+                : Text(thisPhoneError, style: TextStyle(color: tokens.error)),
+            value: thisPhoneOn,
+            onChanged: onThisPhoneChanged,
           ),
       ],
     );

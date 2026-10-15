@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quark/controllers/remote_access_controller.dart';
 import 'package:quark/services/remote_access_service.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:quark/widgets/layout/remote_access_pause_banner.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 /// The sheet behind the app bar's connection indicator (#2857): how the app
@@ -17,6 +18,9 @@ class ConnectionSheet extends StatefulWidget {
     required this.mode,
     required this.onOpenSettings,
     this.readRemoteAccess = RemoteAccessService.getStatus,
+    this.remoteAccessOnThisPhone = true,
+    this.pairingError,
+    this.onRemoteAccessChanged,
     super.key,
   });
 
@@ -28,6 +32,16 @@ class ConnectionSheet extends StatefulWidget {
 
   /// Reads the Quark's remote access status. A test passes a fake.
   final Future<RemoteAccessStatus> Function() readRemoteAccess;
+
+  /// Whether remote access is on for this phone. The switch shows it.
+  final bool remoteAccessOnThisPhone;
+
+  /// Why this phone could not set itself up, in [Errors]' words, or null.
+  final String? pairingError;
+
+  /// Turns this phone's remote access on or off. Null hides the switch,
+  /// which is how the sheet stays as it was where pausing does not apply.
+  final ValueChanged<bool>? onRemoteAccessChanged;
 
   /// [mode] in a few words, as the indicator's tooltip and this sheet's
   /// heading say it.
@@ -76,6 +90,10 @@ class _ConnectionSheetState extends State<ConnectionSheet> {
             ? Errors.message(snapshot.error, 'load remote access status')
             : null,
         onOpenSettings: widget.onOpenSettings,
+        thisPhoneLabel: remoteAccessOnThisPhone,
+        thisPhoneOn: widget.remoteAccessOnThisPhone,
+        thisPhoneError: widget.pairingError,
+        onThisPhoneChanged: widget.onRemoteAccessChanged,
       ),
     );
   }

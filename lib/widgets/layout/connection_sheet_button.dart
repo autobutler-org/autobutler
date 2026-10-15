@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:quark/router.dart';
+import 'package:quark/services/device_pairing_store.dart';
 import 'package:quark/services/remote_access_service.dart';
 import 'package:quark/widgets/layout/connection_sheet.dart';
+import 'package:quark/widgets/layout/remote_access_pause_banner.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 /// The app bar's connection indicator, which opens [ConnectionSheet] when
@@ -10,7 +15,8 @@ import 'package:quark_widgets/quark_widgets.dart';
 ///
 /// It sits in every main page's bar, below the navigator, so it opens the
 /// sheet from its own context; the app root above the navigator only knows
-/// how to [onNavigate].
+/// how to [onNavigate]. While remote access is paused on this phone the
+/// pill reads Paused (#2876).
 ///
 /// Keys: `connection_indicator`, and those of [ConnectionStatusView].
 class ConnectionSheetButton extends StatelessWidget {
@@ -19,6 +25,10 @@ class ConnectionSheetButton extends StatelessWidget {
     required this.mode,
     required this.onNavigate,
     this.readRemoteAccess = RemoteAccessService.getStatus,
+    this.paused = false,
+    this.pairingError,
+    this.onPause,
+    this.onResume,
     super.key,
   });
 
@@ -32,23 +42,63 @@ class ConnectionSheetButton extends StatelessWidget {
   /// fake.
   final Future<RemoteAccessStatus> Function() readRemoteAccess;
 
+  /// Whether remote access is paused on this phone. The pill then reads
+  /// Paused.
+  final bool paused;
+
+  /// Why automatic pairing failed, in [Errors]' words, or null.
+  final String? pairingError;
+
+  /// Pauses remote access on this phone. Null hides the switch.
+  final Future<void> Function(DevicePauseChoice choice)? onPause;
+
+  /// Turns remote access back on for this phone.
+  final Future<void> Function()? onResume;
+
   @override
   Widget build(BuildContext context) {
+    final onPause = this.onPause;
+    final onResume = this.onResume;
+    void open() => showQuarkSheet<void>(
+      context,
+      title: 'Connection',
+      builder: (sheetContext) => ConnectionSheet(
+        mode: mode,
+        readRemoteAccess: readRemoteAccess,
+        remoteAccessOnThisPhone: !paused,
+        pairingError: pairingError,
+        onRemoteAccessChanged: onPause == null
+            ? null
+            : (on) async {
+                if (on) {
+                  await onResume?.call();
+                  return;
+                }
+                final choice = await showDevicePauseChoice(context);
+                if (!context.mounted || choice == null) return;
+                await onPause(choice);
+              },
+        onOpenSettings: () {
+          Navigator.of(sheetContext).pop();
+          onNavigate(AppRoutes.settingsTab(SettingsTab.network));
+        },
+      ),
+    );
+
+    if (paused) {
+      return QuarkBarChip(
+        key: const ValueKey('connection_indicator'),
+        icon: QuarkIcons.pause,
+        label: 'Paused',
+        tooltip: 'Paused',
+        keepLabel: true,
+        onPressed: open,
+      );
+    }
     return ConnectionIndicator(
       mode: mode,
       label: ConnectionSheet.labelFor(mode),
-      onTap: () => showQuarkSheet<void>(
-        context,
-        title: 'Connection',
-        builder: (sheetContext) => ConnectionSheet(
-          mode: mode,
-          readRemoteAccess: readRemoteAccess,
-          onOpenSettings: () {
-            Navigator.of(sheetContext).pop();
-            onNavigate(AppRoutes.settingsTab(SettingsTab.network));
-          },
-        ),
-      ),
+      onTap: open,
     );
   }
 }

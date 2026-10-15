@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -35,6 +36,7 @@ import 'package:quark/widgets/settings/settings_account_tab.dart';
 import 'package:quark/widgets/settings/settings_features_tab.dart';
 import 'package:quark/widgets/settings/settings_general_tab.dart';
 import 'package:quark/widgets/settings/settings_network_tab.dart';
+import 'package:quark/widgets/settings/this_phone_card.dart';
 import 'package:quark/widgets/settings/settings_profile_card.dart';
 import 'package:quark/widgets/settings/settings_updates_tab.dart';
 
@@ -742,6 +744,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   onTryAgain: _retryRemoteAccess,
                 ),
               ),
+              thisPhone: kIsWeb ? null : const ThisPhoneCard(),
               connectedDevices: ConnectedDevicesCard(
                 devices: _connectedDevices,
                 isLoading: _isLoadingDevices,

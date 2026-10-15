@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:quark/controllers/connection_controller.dart';
 import 'package:quark/controllers/jobs_controller.dart';
 import 'package:quark/controllers/notifications_controller.dart';
 import 'package:quark/router.dart';
 import 'package:quark/widgets/layout/connection_sheet_button.dart';
+import 'package:quark/widgets/layout/remote_access_pause_banner.dart';
 import 'package:quark/widgets/notifications/notifications_bell.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
@@ -14,9 +17,11 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// counting [notifications]' entries and opening them (#2493).
 ///
 /// The indicator is left out until [connection] has a mode, which is never on
-/// web and never with no Quark configured. The bell renders nothing while
-/// nobody is signed in.
-class AppBarTrailingHost extends StatelessWidget {
+/// web and never with no Quark configured. While remote access is paused on
+/// this phone the pill still shows, the pages gain a banner under the app
+/// bar, and an unreachable page offers to turn it back on (#2876). The bell
+/// renders nothing while nobody is signed in.
+class AppBarTrailingHost extends StatefulWidget {
   /// Creates the scope around [child].
   const AppBarTrailingHost({
     required this.jobs,
@@ -44,28 +49,55 @@ class AppBarTrailingHost extends StatelessWidget {
   final Widget child;
 
   @override
+  State<AppBarTrailingHost> createState() => _AppBarTrailingHostState();
+}
+
+class _AppBarTrailingHostState extends State<AppBarTrailingHost> {
+  @override
+  void dispose() {
+    QuarkPageScaffold.pauseBanner = null;
+    QuarkDisconnectedView.turnOnRemoteAccess = null;
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final connection = widget.connection;
     return ListenableBuilder(
       listenable: connection,
       builder: (context, _) {
         final mode = connection.mode;
+        final paused = connection.remoteAccessPaused;
+        QuarkPageScaffold.pauseBanner = (context) =>
+            paused ? RemoteAccessPauseBanner(controller: connection) : null;
+        QuarkDisconnectedView.turnOnRemoteAccess = paused
+            ? () => unawaited(connection.resumeRemoteAccess())
+            : null;
         return QuarkAppBarTrailing(
           actions: [
-            if (mode != null)
-              ConnectionSheetButton(mode: mode, onNavigate: onNavigate),
+            if (mode != null || paused)
+              ConnectionSheetButton(
+                mode: mode ?? ConnectionMode.offline,
+                paused: paused,
+                pairingError: connection.pairingError,
+                onPause: connection.pause,
+                onResume: connection.resumeRemoteAccess,
+                onNavigate: widget.onNavigate,
+              ),
             ListenableBuilder(
-              listenable: jobs,
+              listenable: widget.jobs,
               builder: (context, _) => JobsBadge(
-                runningCount: jobs.runningCount,
-                onTap: () => onNavigate(AppRoutes.systemTab(SystemTab.jobs)),
+                runningCount: widget.jobs.runningCount,
+                onTap: () =>
+                    widget.onNavigate(AppRoutes.systemTab(SystemTab.jobs)),
               ),
             ),
             NotificationsBell(
-              controller: notifications,
-              onNavigate: onNavigate,
+              controller: widget.notifications,
+              onNavigate: widget.onNavigate,
             ),
           ],
-          child: child,
+          child: widget.child,
         );
       },
     );

@@ -4,8 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/controllers/connection_controller.dart';
 import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/device_pairing_store.dart';
 import 'package:quark/services/remote_access_service.dart';
 import 'package:quark/utils/connection_config.dart';
+import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/remote_access_config.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 const _lan = 'https://quark.local';
@@ -20,6 +23,21 @@ void main() {
   late List<String> probed;
   late RemoteAccessStatus? status;
   late List<(String, String?)> saved;
+  late Map<String, StoredPairing> pairings;
+  late Map<String, StoredPause> pauses;
+  late int pairCalls;
+  late int statusReads;
+  late List<StoredPairing> enrolled;
+  late List<String> warmed;
+  late bool nodeRejected;
+  late Object? pairFailure;
+  late DateTime Function() clock;
+
+  const paired = PairedDevice(
+    authKey: 'key',
+    controlUrl: 'https://control.example',
+    quarkAddress: _remote,
+  );
 
   // A widget test checks for pending timers before tear-down runs, so it
   // disposes the controller itself and passes autoDispose: false.
@@ -29,6 +47,7 @@ void main() {
     Listenable? hostChanges,
     Future<String?> Function(String upstream)? embeddedProxy,
     Future<void> Function(String upstream)? warmEmbeddedTunnel,
+    bool remoteAccessAvailable = true,
   }) {
     final c = ConnectionController(
       activeHostChanges: hostChanges ?? ChangeNotifier(),
@@ -38,7 +57,10 @@ void main() {
             probed.add(address);
             return answering.contains(address);
           },
-      readRemoteAccess: () async => status,
+      readRemoteAccess: () async {
+        statusReads++;
+        return status;
+      },
       activeHost: () => host,
       saveRemoteAddress: (h, r) async {
         saved.add((h, r));
@@ -53,8 +75,38 @@ void main() {
       },
       // The real tunnel is the phone. These tests inject the answer.
       embeddedProxy: embeddedProxy ?? (_) async => null,
-      warmEmbeddedTunnel: warmEmbeddedTunnel ?? (_) async {},
+      warmEmbeddedTunnel:
+          warmEmbeddedTunnel ?? (upstream) async => warmed.add(upstream),
       watchEmbeddedTunnel: (_) {},
+      pairDevice: () async {
+        pairCalls++;
+        final failure = pairFailure;
+        if (failure != null) throw failure;
+        return paired;
+      },
+      readPairing: (h) async => pairings[h],
+      savePairing: (h, pairing) async => pairings[h] = pairing,
+      clearPairing: (h) async => pairings.remove(h),
+      readPause: (h) async => pauses[h],
+      savePause: (h, pause) async => pauses[h] = pause,
+      clearPause: (h) async => pauses.remove(h),
+      enroll:
+          ({
+            required String controlUrl,
+            required String authKey,
+            required String upstream,
+          }) async {
+            enrolled.add(
+              StoredPairing(
+                authKey: authKey,
+                controlUrl: controlUrl,
+                quarkAddress: upstream,
+              ),
+            );
+          },
+      nodeRejected: () async => nodeRejected,
+      now: () => clock(),
+      remoteAccessAvailable: remoteAccessAvailable,
     );
     if (autoDispose) addTearDown(c.dispose);
     return c;
@@ -66,7 +118,25 @@ void main() {
     probed = [];
     status = null;
     saved = [];
+    pairings = {};
+    pauses = {};
+    pairCalls = 0;
+    statusReads = 0;
+    enrolled = [];
+    warmed = [];
+    nodeRejected = false;
+    pairFailure = null;
+    clock = DateTime.now;
   });
+
+  void connectedAtHome() {
+    answering = {_lan};
+    status = const RemoteAccessStatus(
+      enabled: true,
+      connected: true,
+      remoteUrl: _remote,
+    );
+  }
 
   test('uses the home address when it answers', () async {
     answering = {_lan};
@@ -325,6 +395,237 @@ void main() {
       await tester.pump();
       expect(c.mode, ConnectionMode.remote);
       c.dispose();
+    });
+  });
+
+  group('automatic pairing', () {
+    test('pairs a signed-in phone at home when nothing is stored', () async {
+      connectedAtHome();
+      host = HostEntry(name: 'Home', hostAddress: _lan);
+      final c = build();
+      await c.check();
+      expect(pairCalls, 1);
+      expect(pairings[_lan]?.authKey, 'key');
+      expect(pairings[_lan]?.controlUrl, paired.controlUrl);
+      expect(pairings[_lan]?.quarkAddress, _remote);
+      expect(enrolled, hasLength(1));
+      expect(enrolled.single.authKey, 'key');
+      expect(warmed, [_remote]);
+      expect(c.pairingError, isNull);
+    });
+
+    test(
+      'never pairs or starts the node where remote access is not offered',
+      () async {
+        connectedAtHome();
+        host = HostEntry(name: 'Home', hostAddress: _lan);
+        final c = build(remoteAccessAvailable: false);
+        await c.check();
+        await c.resumeRemoteAccess();
+        expect(pairCalls, 0);
+        expect(pairings, isEmpty);
+        expect(enrolled, isEmpty);
+        expect(warmed.where((upstream) => upstream.isNotEmpty), isEmpty);
+      },
+    );
+
+    test('does not pair when this phone already has a key', () async {
+      connectedAtHome();
+      pairings[_lan] = const StoredPairing(
+        authKey: 'kept',
+        controlUrl: 'https://control.example',
+        quarkAddress: _remote,
+      );
+      final c = build();
+      await c.check();
+      expect(pairCalls, 0);
+      expect(enrolled, isEmpty);
+      expect(pairings[_lan]?.authKey, 'kept');
+      expect(warmed, [_remote]);
+    });
+
+    test('does not pair away from home', () async {
+      answering = {_remote};
+      status = const RemoteAccessStatus(
+        enabled: true,
+        connected: true,
+        remoteUrl: _remote,
+      );
+      final c = build();
+      await c.check();
+      expect(c.mode, ConnectionMode.remote);
+      expect(pairCalls, 0);
+      expect(pairings, isEmpty);
+    });
+
+    test('does not pair when remote access is still connecting', () async {
+      answering = {_lan};
+      status = const RemoteAccessStatus(enabled: true);
+      final c = build();
+      await c.check();
+      expect(pairCalls, 0);
+      expect(warmed, [_remote]);
+    });
+
+    test('does not pair without a session', () async {
+      answering = {_lan};
+      status = null;
+      final c = build();
+      await c.check();
+      expect(pairCalls, 0);
+      expect(statusReads, 1);
+    });
+
+    test('a 409 waits for the next check and says nothing', () async {
+      connectedAtHome();
+      pairFailure = const ApiException(409, 'off');
+      final c = build();
+      await c.check();
+      await c.check();
+      expect(pairCalls, 2);
+      expect(c.pairingError, isNull);
+      expect(pairings, isEmpty);
+    });
+
+    testWidgets('a 503 retries after the status poll interval', (tester) async {
+      connectedAtHome();
+      pairFailure = const ApiException(503, 'connecting');
+      final c = build(autoDispose: false);
+      await c.check();
+      expect(pairCalls, 1);
+      await tester.pump(
+        RemoteAccessConfig.statusPollInterval - const Duration(seconds: 1),
+      );
+      expect(pairCalls, 1);
+      await tester.pump(const Duration(seconds: 1));
+      expect(pairCalls, 2);
+      expect(c.pairingError, isNull);
+      c.dispose();
+    });
+
+    test('any other failure is shown through Errors', () async {
+      connectedAtHome();
+      const failure = ApiException(500, 'boom');
+      pairFailure = failure;
+      final c = build();
+      await c.check();
+      expect(pairCalls, 1);
+      expect(
+        c.pairingError,
+        Errors.message(failure, 'set up remote access on this phone'),
+      );
+      expect(pairings, isEmpty);
+    });
+
+    test(
+      'a rejected node drops the stored key and the next visit pairs',
+      () async {
+        connectedAtHome();
+        pairings[_lan] = const StoredPairing(
+          authKey: 'expired',
+          controlUrl: 'https://control.example',
+          quarkAddress: _remote,
+        );
+        nodeRejected = true;
+        final c = build();
+        await c.check();
+        expect(pairCalls, 0);
+        expect(pairings.containsKey(_lan), isFalse);
+        expect(warmed, ['']);
+
+        answering = {_remote};
+        nodeRejected = false;
+        await c.check();
+        expect(c.mode, ConnectionMode.remote);
+        expect(pairCalls, 0);
+
+        connectedAtHome();
+        await c.check();
+        expect(pairCalls, 1);
+        expect(pairings[_lan]?.authKey, 'key');
+      },
+    );
+  });
+
+  group('pause', () {
+    for (final choice in DevicePauseChoice.values) {
+      test('pausing for ${choice.name} stops only this phone', () async {
+        final c = build();
+        await c.pause(choice);
+        expect(c.remoteAccessPaused, isTrue);
+        expect(c.pauseChoice, choice);
+        expect(pauses[_lan]?.choice, choice);
+        expect(warmed, ['']);
+        expect(pairCalls, 0);
+        expect(statusReads, 0);
+      });
+    }
+
+    test('an hour pause stores when it ends', () async {
+      final start = DateTime.utc(2026, 1, 1, 12);
+      clock = () => start;
+      final c = build();
+      await c.pause(DevicePauseChoice.hour);
+      expect(pauses[_lan]?.until, start.add(const Duration(hours: 1)));
+    });
+
+    testWidgets('an hour pause ends on its own', (tester) async {
+      final c = build(autoDispose: false);
+      await c.pause(DevicePauseChoice.hour);
+      expect(c.remoteAccessPaused, isTrue);
+      await tester.pump(const Duration(hours: 1));
+      expect(c.remoteAccessPaused, isFalse);
+      expect(pauses.containsKey(_lan), isFalse);
+      c.dispose();
+    });
+
+    test('an until-home pause clears once the phone is home again', () async {
+      final c = build();
+      await c.pause(DevicePauseChoice.untilHome);
+
+      answering = {_lan};
+      await c.check();
+      expect(c.remoteAccessPaused, isTrue);
+
+      answering = {};
+      await c.check();
+      expect(c.remoteAccessPaused, isTrue);
+      expect(c.mode, ConnectionMode.offline);
+
+      answering = {_lan};
+      await c.check();
+      expect(c.remoteAccessPaused, isFalse);
+      expect(pauses.containsKey(_lan), isFalse);
+      expect(c.mode, ConnectionMode.local);
+    });
+
+    test('a pause is still there after a restart', () async {
+      final c = build(autoDispose: false);
+      await c.pause(DevicePauseChoice.untilManual);
+      c.dispose();
+
+      final restarted = build(autoDispose: false);
+      restarted.start();
+      await pumpEventQueue();
+      expect(restarted.remoteAccessPaused, isTrue);
+      expect(restarted.pauseChoice, DevicePauseChoice.untilManual);
+      restarted.dispose();
+    });
+
+    test('an hour pause that already ended is dropped on startup', () async {
+      var time = DateTime.utc(2026, 1, 1);
+      clock = () => time;
+      final c = build(autoDispose: false);
+      await c.pause(DevicePauseChoice.hour);
+      c.dispose();
+
+      time = time.add(const Duration(hours: 1));
+      final restarted = build(autoDispose: false);
+      restarted.start();
+      await pumpEventQueue();
+      expect(restarted.remoteAccessPaused, isFalse);
+      expect(pauses.containsKey(_lan), isFalse);
+      restarted.dispose();
     });
   });
 }

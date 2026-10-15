@@ -89,6 +89,7 @@ class QuarkDisconnectedView extends StatelessWidget {
     this.onManageHosts,
     this.manageHostsLabel = 'Check the address',
     this.steps = quarkTroubleshootingSteps,
+    this.onTurnOnRemoteAccess,
   });
 
   /// The address the app tried and could not reach, shown under the body so a
@@ -110,11 +111,22 @@ class QuarkDisconnectedView extends StatelessWidget {
   /// The troubleshooting checklist, in the order it is worth checking.
   final List<String> steps;
 
+  /// Ends a pause of remote access on this phone. Null hides the button
+  /// unless [turnOnRemoteAccess] is set.
+  ///
+  /// Key: `disconnected_turn_on_remote_access`.
+  final VoidCallback? onTurnOnRemoteAccess;
+
+  /// Set while remote access is paused on this phone, so a page that already
+  /// builds this view can offer the button without a new argument.
+  static VoidCallback? turnOnRemoteAccess;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final tokens = QuarkTokens.of(context);
     final address = hostAddress;
+    final turnOn = onTurnOnRemoteAccess ?? turnOnRemoteAccess;
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
@@ -171,6 +183,12 @@ class QuarkDisconnectedView extends StatelessWidget {
                 runSpacing: tokens.spacingSm + tokens.spacingXs,
                 alignment: WrapAlignment.center,
                 children: [
+                  if (turnOn != null)
+                    FilledButton(
+                      key: const ValueKey('disconnected_turn_on_remote_access'),
+                      onPressed: turnOn,
+                      child: const Text('Turn on remote access'),
+                    ),
                   if (onRetry != null)
                     FilledButton.icon(
                       key: const ValueKey('disconnected_retry'),

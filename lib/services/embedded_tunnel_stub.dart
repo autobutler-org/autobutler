@@ -34,4 +34,11 @@ Future<String?> tunnelProxyUrl(String upstream) async => null;
 Future<void> tunnelWarm(String upstream) async {}
 
 /// Does nothing.
+Future<void> tunnelEnroll({
+  required String controlUrl,
+  required String authKey,
+  required String upstream,
+}) async {}
+
+/// Does nothing.
 void tunnelWatch(void Function() onReconnected) {}

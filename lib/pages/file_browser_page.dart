@@ -62,6 +62,7 @@ import 'package:quark/widgets/file_browser/recent_files_section.dart';
 import 'package:quark/widgets/file_browser/route_resolution_loading_shell.dart';
 import 'package:quark/widgets/file_browser/shared_roots_sheet.dart';
 import 'package:quark/widgets/layout/app_drawer.dart';
+import 'package:quark/widgets/layout/remote_access_pause_banner.dart';
 import 'package:quark/widgets/quark_connect_form.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_slides/quark_slides.dart';
@@ -2240,6 +2241,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
             ),
       body: Column(
         children: [
+          const RemoteAccessPauseBanner(),
           if (_selectionMode)
             FileSelectionBar(
               selectedCount: _selectedPaths.length,
