@@ -8535,6 +8535,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/storage/protection": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reports how protected the files are. unprotected means no snapshot-backup drive has a completed backup within 30 days, basic means one such drive after partitions of one disk are grouped, and protected means two or more. The live copy on the default-storage drive and the internal drive never count. A failed, unfinished, or stale backup does not count. sentence is one plain sentence. nextStep is assign-backup-role, start-backup, or keep-one-elsewhere. drives lists each snapshot-backup drive, whether it counts, why not, and when it was last backed up. Refetch when a backup completes or fails (backup_completed, backup_failed).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Get data protection status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_storage.ProtectionStatus"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/thumbnails/{filePath}": {
             "get": {
                 "security": [
@@ -13489,6 +13520,63 @@ const docTemplate = `{
                 },
                 "reason": {
                     "description": "Reason is why not, when available is false: unsupported_os,\nnot_service, sshd_missing, helper_missing or no_login_shell.",
+                    "type": "string"
+                }
+            }
+        },
+        "v0_storage.ProtectionDrive": {
+            "type": "object",
+            "properties": {
+                "counts": {
+                    "description": "Counts is whether this drive adds a backup copy. Partitions of one disk share a single count.",
+                    "type": "boolean"
+                },
+                "lastBackedUp": {
+                    "description": "LastBackedUp is when this drive's newest completed snapshot backup finished.\nNil when it has no completed backup.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "Reason is why Counts is false. Empty when Counts is true.",
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_storage.ProtectionStatus": {
+            "type": "object",
+            "properties": {
+                "drives": {
+                    "description": "Drives lists every snapshot-backup drive.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v0_storage.ProtectionDrive"
+                    }
+                },
+                "level": {
+                    "description": "Level is unprotected, basic, or protected.",
+                    "type": "string",
+                    "enum": [
+                        "unprotected",
+                        "basic",
+                        "protected"
+                    ]
+                },
+                "nextStep": {
+                    "description": "NextStep is assign-backup-role, start-backup, or keep-one-elsewhere.",
+                    "type": "string",
+                    "enum": [
+                        "assign-backup-role",
+                        "start-backup",
+                        "keep-one-elsewhere"
+                    ]
+                },
+                "sentence": {
+                    "description": "Sentence is one plain sentence describing that level.",
                     "type": "string"
                 }
             }
