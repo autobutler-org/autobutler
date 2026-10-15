@@ -5,6 +5,7 @@ import 'quark_model_parser/gltf_reader.dart';
 import 'quark_model_parser/obj_reader.dart';
 import 'quark_model_parser/ply_reader.dart';
 import 'quark_model_parser/stl_reader.dart';
+import 'quark_model_parser/three_mf_reader.dart';
 
 /// Why `parseQuarkModel` gave up on a file.
 enum QuarkModelParseIssue {
@@ -80,9 +81,12 @@ List<String> quarkModelResources(Uint8List bytes, QuarkModelFormat format) =>
 /// `QuarkModelLimits.maxBytes`.
 ///
 /// STL is told apart as ASCII or binary from its contents, and glTF as JSON
-/// or GLB; PLY's header says which encoding it uses. Polygons are split into triangle fans, and STL's
-/// unshared corners are merged where they are identical, so the vertex count
-/// means what it does in a modeling tool.
+/// or GLB; PLY's header says which encoding it uses. A 3MF package is read
+/// from its zip with random access, and only the model parts it reaches are
+/// decompressed, together held to `QuarkModelLimits.maxBytes` as well.
+/// Polygons are split into triangle fans, and STL's unshared corners are
+/// merged where they are identical, so the vertex count means what it does
+/// in a modeling tool.
 ///
 /// Pure Dart and synchronous: run it with `compute` to keep it off the UI
 /// isolate. Throws a [QuarkModelParseException] for anything it cannot draw.
@@ -105,6 +109,7 @@ QuarkModelMesh parseQuarkModel(
       QuarkModelFormat.obj => readObj(bytes, limits),
       QuarkModelFormat.ply => readPly(bytes, limits),
       QuarkModelFormat.gltf => readGltf(bytes, resources, limits),
+      QuarkModelFormat.threeMf => readThreeMf(bytes, limits),
     };
   } on RangeError catch (e) {
     // A count or offset that runs past the end of the bytes.

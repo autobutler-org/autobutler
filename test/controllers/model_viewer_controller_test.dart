@@ -136,7 +136,7 @@ void main() {
   test(
     'a file the viewer has no format for falls back as unreadable',
     () async {
-      final viewer = controller(path: 'models/part.3mf', readRange: quark(10));
+      final viewer = controller(path: 'models/part.fbx', readRange: quark(10));
       await viewer.load();
       expect(viewer.fallback, QuarkModelParseIssue.malformed);
       expect(reads, isEmpty);
