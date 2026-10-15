@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/controllers/data_protection_controller.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/data_protection_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/services/vault_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
@@ -13,9 +15,11 @@ import 'package:quark/widgets/storage_devices/credentials_dialog.dart';
 import 'package:quark/widgets/storage_devices/role_dialog.dart';
 import 'package:quark/widgets/storage_devices/snapshot_backup_dialog.dart';
 import 'package:quark/widgets/storage_devices/storage_devices_body.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
-/// The System page's Storage tab: the drives the Quark can see, their status
-/// and role, and the actions to mount, rename or back them up.
+/// The System page's Storage tab: how protected the files are, the drives the
+/// Quark can see, their status and role, and the actions to mount, rename or
+/// back them up.
 class StorageTab extends StatefulWidget {
   const StorageTab({this.onRefreshingChanged, super.key});
 
@@ -39,6 +43,18 @@ class _StorageTabState extends State<StorageTab>
   BackupJobStatus? _backupStatus;
   Timer? _pollTimer;
   String _vaultDeviceSerial = '';
+  late final DataProtectionController _protection;
+
+  @override
+  void initState() {
+    _protection = DataProtectionController();
+    _protection.addListener(_onProtection);
+    super.initState();
+  }
+
+  void _onProtection() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void didChangeRefreshing() => widget.onRefreshingChanged?.call(isRefreshing);
@@ -52,6 +68,7 @@ class _StorageTabState extends State<StorageTab>
       });
       return;
     }
+    final protection = _protection.load();
     try {
       final results = await Future.wait([
         StorageService.listDevices(),
@@ -70,11 +87,14 @@ class _StorageTabState extends State<StorageTab>
       if (!mounted) return;
       setState(() => _error = e);
     }
+    await protection;
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _protection.removeListener(_onProtection);
+    _protection.dispose();
     super.dispose();
   }
 
@@ -252,28 +272,118 @@ class _StorageTabState extends State<StorageTab>
     }
   }
 
+  void _showExplainer() {
+    showQuarkSheet<void>(
+      context,
+      title: 'Why two backup drives?',
+      builder: (_) => const DataProtectionExplainerSheet(),
+    );
+  }
+
+  /// The first enabled external drive that is not already a backup drive.
+  /// Set Role is only offered for an enabled drive.
+  StorageDevice? _assignTarget() {
+    final devices = _devices;
+    if (devices == null) return null;
+    for (final device in devices) {
+      if (!device.isEnabled || device.isInternal || device.serial.isEmpty) {
+        continue;
+      }
+      if (device.role == 'snapshot-backup') continue;
+      return device;
+    }
+    return null;
+  }
+
+  /// The drive the Quark named for a start-backup step.
+  StorageDevice? _backupTarget() {
+    final serial = _protection.status?.backupTargetSerial;
+    final devices = _devices;
+    if (serial == null || devices == null) return null;
+    for (final device in devices) {
+      if (device.serial == serial) return device;
+    }
+    return null;
+  }
+
+  String? _nextStepLabel() {
+    switch (_protection.status?.action) {
+      case DataProtectionAction.assignBackupRole:
+        return 'Assign the backup role';
+      case DataProtectionAction.startBackup:
+        return 'Start a backup';
+      case DataProtectionAction.keepElsewhere:
+        return 'Keep one backup drive somewhere else';
+      case null:
+        return null;
+    }
+  }
+
+  /// Assign and start stay admin-only. Keeping a drive somewhere else opens
+  /// the explainer, which anyone can read.
+  VoidCallback? _nextStepAction(bool isAdmin) {
+    switch (_protection.status?.action) {
+      case DataProtectionAction.assignBackupRole:
+        if (!isAdmin) return null;
+        final device = _assignTarget();
+        if (device == null) return null;
+        return () => _showRoleDialog(device);
+      case DataProtectionAction.startBackup:
+        if (!isAdmin) return null;
+        final device = _backupTarget();
+        if (device == null) return null;
+        return () => _startBackup(device);
+      case DataProtectionAction.keepElsewhere:
+        return _showExplainer;
+      case null:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Every drive action is admin-only on the Quark (#1899), so anyone else
     // gets the list without them (#1928).
     return ValueListenableBuilder<bool>(
       valueListenable: AppSettings.instance.isAdmin,
-      builder: (context, isAdmin, _) => StorageDevicesBody(
-        devices: _devices,
-        error: _error,
-        mounting: _mounting,
-        vaultDeviceSerial: _vaultDeviceSerial,
-        backupStatus: _backupStatus,
-        activeBackupJobId: _activeBackupJobId,
-        onRefresh: refresh,
-        onRetry: manualRefresh,
-        onManageHosts: () =>
-            context.go(AppRoutes.settingsTab(SettingsTab.general)),
-        onMount: isAdmin ? _mountDevice : null,
-        onSetRole: isAdmin ? _showRoleDialog : null,
-        onBackup: isAdmin ? _startBackup : null,
-        onVerify: isAdmin ? _verifyBackup : null,
-      ),
+      builder: (context, isAdmin, _) {
+        final level = _protection.level;
+        final error = _protection.error;
+        final showCard = _devices != null;
+        return StorageDevicesBody(
+          devices: _devices,
+          error: _error,
+          mounting: _mounting,
+          vaultDeviceSerial: _vaultDeviceSerial,
+          backupStatus: _backupStatus,
+          activeBackupJobId: _activeBackupJobId,
+          onRefresh: refresh,
+          onRetry: manualRefresh,
+          onManageHosts: () =>
+              context.go(AppRoutes.settingsTab(SettingsTab.general)),
+          onMount: isAdmin ? _mountDevice : null,
+          onSetRole: isAdmin ? _showRoleDialog : null,
+          onBackup: isAdmin ? _startBackup : null,
+          onVerify: isAdmin ? _verifyBackup : null,
+          header: showCard
+              ? DataProtectionStatusCard(
+                  level: level,
+                  sentence: _protection.status?.sentence,
+                  drives: _protection.drives,
+                  nextStepLabel: _nextStepLabel(),
+                  onNextStep: _nextStepAction(isAdmin),
+                  onExplain: _showExplainer,
+                  isLoading: _protection.isLoading,
+                  error: error == null
+                      ? null
+                      : Errors.message(error, 'check the backup'),
+                )
+              : null,
+          protectionBadge: level == null
+              ? null
+              : DataProtectionBadge(level: level),
+        );
+      },
     );
   }
 }

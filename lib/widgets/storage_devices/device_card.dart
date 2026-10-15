@@ -17,6 +17,7 @@ class DeviceCard extends StatelessWidget {
     this.onBackup,
     this.onVerify,
     this.isBackupRunning = false,
+    this.protectionBadge,
     super.key,
   });
 
@@ -28,6 +29,10 @@ class DeviceCard extends StatelessWidget {
   final VoidCallback? onBackup;
   final VoidCallback? onVerify;
   final bool isBackupRunning;
+
+  /// The protection level, drawn beside **Back Up** when that button is
+  /// shown and in the header otherwise. Null draws nothing.
+  final Widget? protectionBadge;
 
   static const _categoryColors = <String, Color>{
     'documents': Color(0xFF4A90D9),
@@ -41,6 +46,10 @@ class DeviceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final usedPct = device.usedPercent.clamp(0.0, 100.0) / 100.0;
+    final showActions =
+        device.isEnabled && (!device.isInternal || onSetRole != null);
+    final badge = protectionBadge;
+    final badgeBesideBackup = badge != null && onBackup != null && showActions;
 
     return Card(
       child: Padding(
@@ -78,6 +87,7 @@ class DeviceCard extends StatelessWidget {
                       if (isVaultDevice) const VaultBadge(),
                       if (device.role != 'unassigned')
                         RoleBadge(role: device.role),
+                      if (badge != null && !badgeBesideBackup) badge,
                       if (device.role == 'unassigned' && device.isEnabled)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -212,6 +222,7 @@ class DeviceCard extends StatelessWidget {
                       icon: const Icon(QuarkIcons.backup_outlined, size: 16),
                       label: const Text('Back Up'),
                     ),
+                  if (badgeBesideBackup) badge,
                   if (onVerify != null)
                     OutlinedButton.icon(
                       onPressed: isBackupRunning ? null : onVerify,
