@@ -58,9 +58,9 @@ void main() {
     settings.isAdmin.value = true;
     settings.featureFlags.value = const [
       FeatureFlag(
-        key: FeatureFlag.chat,
-        label: 'Chat',
-        description: 'Hides chat; stored data is kept.',
+        key: FeatureFlag.calendar,
+        label: 'Calendar',
+        description: 'Hides the calendar; stored events are kept.',
         enabled: true,
       ),
     ];

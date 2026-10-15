@@ -25,10 +25,10 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// more: the router checks with the Quark before it opens one of those pages,
 /// and the Quark refuses their requests from anyone else.
 ///
-/// Chat, Calendar and Slides are offered while an admin has their beta on, following
+/// Calendar and Slides are offered while an admin has their beta on, following
 /// [AppSettings.featureFlags]; the router asks the Quark again before it opens
-/// the page. While chat is on, its row carries a dot when any channel holds
-/// an unread message (#2424): the drawer reads the counts as it opens and
+/// the page. Chat's row carries a dot when any channel holds an unread
+/// message (#2424): the drawer reads the counts as it opens and
 /// [ChatUnreadController] keeps them current.
 ///
 /// The header names the active Quark (#2033) and, with more than one saved,
@@ -56,9 +56,7 @@ class _AppDrawerState extends State<AppDrawer> {
   @override
   void initState() {
     super.initState();
-    if (AppSettings.instance.isFeatureEnabled(FeatureFlag.chat)) {
-      unawaited(_unread.refresh());
-    }
+    unawaited(_unread.refresh());
   }
 
   @override
@@ -110,9 +108,7 @@ class _AppDrawerState extends State<AppDrawer> {
             ? goTo(QuarkDrawerSection.slides, AppRoutes.slides)
             : null,
         onTapBooks: goTo(QuarkDrawerSection.books, AppRoutes.books),
-        onTapChat: settings.isFeatureEnabled(FeatureFlag.chat)
-            ? goTo(QuarkDrawerSection.chat, AppRoutes.chat)
-            : null,
+        onTapChat: goTo(QuarkDrawerSection.chat, AppRoutes.chat),
         hasUnreadChat: _unread.hasUnread,
         onTapSystem: goTo(QuarkDrawerSection.system, AppRoutes.system),
         onTapVault: settings.isAdmin.value

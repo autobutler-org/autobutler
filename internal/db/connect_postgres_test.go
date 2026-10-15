@@ -3,6 +3,7 @@ package db_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net"
 	"net/url"
 	"strings"
@@ -181,12 +182,18 @@ func TestConnectToPostgresRefusesWhatItCannotCarryForward(t *testing.T) {
 		// arrange puts a migrated or an empty schema into the state under test.
 		migrated bool
 		arrange  string
-		wantErr  []string
+		// wantDirtyVersion asks the refusal to name the version arrange left
+		// dirty. That version is whatever the migrations applied, read back
+		// rather than written here, so the next migration does not break the
+		// test the way 033 did when this still said 32.
+		wantDirtyVersion bool
+		wantErr          []string
 	}{
 		{
 			name: "a dirty flag", migrated: true,
-			arrange: `UPDATE schema_migrations SET dirty = true`,
-			wantErr: []string{"marked dirty at migration 32", "Nothing was changed", "never resets"},
+			arrange:          `UPDATE schema_migrations SET dirty = true`,
+			wantDirtyVersion: true,
+			wantErr:          []string{"Nothing was changed", "never resets"},
 		},
 		{
 			name: "a version this build does not have", migrated: true,
@@ -215,7 +222,15 @@ func TestConnectToPostgresRefusesWhatItCannotCarryForward(t *testing.T) {
 				database.Db.Close()
 				t.Fatal("ConnectToPostgres opened the database, want a refusal")
 			}
-			for _, want := range tc.wantErr {
+			wants := tc.wantErr
+			if tc.wantDirtyVersion {
+				var version int
+				if err := conn.QueryRow(`SELECT version FROM schema_migrations`).Scan(&version); err != nil {
+					t.Fatal(err)
+				}
+				wants = append([]string{fmt.Sprintf("marked dirty at migration %d", version)}, tc.wantErr...)
+			}
+			for _, want := range wants {
 				if !strings.Contains(err.Error(), want) {
 					t.Errorf("the refusal %q does not say %q", err, want)
 				}

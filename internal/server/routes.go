@@ -56,6 +56,7 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 		v0_access.NewRouter(),
 		v0_auth.NewRouter(),
 		v0_books.NewRouter(),
+		v0_chat.NewRouter(),
 		v0_files.NewRouter(),
 		v0_devices.NewRouter(),
 		v0_events.NewRouter(),
@@ -80,9 +81,8 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 		serverutil.RegisterRouterWithGroup(group, r)
 	}
 
-	// Betas an admin can turn off (#2421, #2609, #2868), each behind its flag.
+	// Betas an admin can turn off (#2609, #2868), each behind its flag.
 	betaRouters := map[string]serverutil.Router{
-		featureflagutil.Chat:     v0_chat.NewRouter(),
 		featureflagutil.Calendar: v0_calendar.NewRouter(),
 		featureflagutil.Slides:   v0_files.NewSlidesRouter(),
 	}

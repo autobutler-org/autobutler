@@ -851,3 +851,44 @@ func TestBackupJobsMigration(t *testing.T) {
 		t.Fatalf("migrate up again: %v", err)
 	}
 }
+
+// dropChatFeatureFlagVersion is 033_drop_chat_feature_flag, which deletes the
+// retired chat flag so an install that had it off turns chat on (#2577).
+const dropChatFeatureFlagVersion = 33
+
+// TestDropChatFeatureFlagMigration deletes a stored featureFlags.chat row and
+// leaves every other flag. The down migration cannot put the choice back.
+func TestDropChatFeatureFlagMigration(t *testing.T) {
+	conn, m := migrateTo(t, dropChatFeatureFlagVersion-1)
+	if _, err := conn.Exec(`
+INSERT INTO settings (key, value) VALUES
+	('featureFlags.chat', 'false'),
+	('featureFlags.calendar', 'false'),
+	('remoteAccessEnabled', 'true');
+`); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	if err := m.Migrate(dropChatFeatureFlagVersion); err != nil {
+		t.Fatalf("migrate to %d: %v", dropChatFeatureFlagVersion, err)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'featureFlags.chat'`); n != 0 {
+		t.Errorf("featureFlags.chat rows = %d, want the disabled flag deleted so chat is on", n)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'featureFlags.calendar' AND value = 'false'`); n != 1 {
+		t.Error("the calendar flag was changed")
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'remoteAccessEnabled' AND value = 'true'`); n != 1 {
+		t.Error("another setting was changed")
+	}
+
+	if err := m.Migrate(dropChatFeatureFlagVersion - 1); err != nil {
+		t.Fatalf("migrate down: %v", err)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'featureFlags.chat'`); n != 0 {
+		t.Error("the down migration put the chat flag back")
+	}
+	if err := m.Migrate(dropChatFeatureFlagVersion); err != nil {
+		t.Fatalf("migrate up again: %v", err)
+	}
+}

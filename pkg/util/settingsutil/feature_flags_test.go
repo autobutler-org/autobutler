@@ -36,32 +36,42 @@ func TestFeatureFlag_UnsetAndRoundTrip(t *testing.T) {
 	}
 }
 
-// TestMigrate_ChatEnabledMovesToFeatureFlags checks a file #2421 wrote has
-// its chatEnabled moved to featureFlags.chat and dropped on import.
-func TestMigrate_ChatEnabledMovesToFeatureFlags(t *testing.T) {
-	for _, tc := range []struct {
-		file      string
-		want, set bool
-	}{
-		{`{"remoteAccessEnabled":true,"chatEnabled":false}`, false, true},
-		{`{"remoteAccessEnabled":true,"chatEnabled":true}`, true, true},
-		{`{"remoteAccessEnabled":true}`, false, false},
+// TestMigrate_DisabledChatFlagTurnsOn checks an install that stored chat off
+// imports with that value gone (#2577), so chat is on, and every other flag
+// stays. The old chatEnabled switch and a featureFlags.chat row both go.
+func TestMigrate_DisabledChatFlagTurnsOn(t *testing.T) {
+	for _, file := range []string{
+		`{"remoteAccessEnabled":true,"chatEnabled":false}`,
+		`{"remoteAccessEnabled":true,"chatEnabled":true}`,
+		`{"remoteAccessEnabled":true}`,
+		`{"settingsVersion":1,"remoteAccessEnabled":true,"featureFlags":{"chat":false,"calendar":false}}`,
 	} {
 		path := settingsFile(t)
-		if err := os.WriteFile(path, []byte(tc.file), 0600); err != nil {
+		if err := os.WriteFile(path, []byte(file), 0600); err != nil {
 			t.Fatal(err)
 		}
 		settingsutil.ResetForTesting(path)
-		got, set, err := settingsutil.GetFeatureFlag("chat")
-		if err != nil || set != tc.set || got != tc.want {
-			t.Errorf("%s: chat=%v set=%v err=%v; want %v set=%v", tc.file, got, set, err, tc.want, tc.set)
+		if _, set, err := settingsutil.GetFeatureFlag("chat"); err != nil || set {
+			t.Errorf("%s: chat still stored (set=%v err=%v); want it dropped so chat is on", file, set, err)
 		}
 		if !settingsutil.GetRemoteAccess() {
-			t.Errorf("%s: remoteAccessEnabled lost", tc.file)
+			t.Errorf("%s: remoteAccessEnabled lost", file)
 		}
-		if _, err := settingsutil.QueriesForTesting().GetSetting(t.Context(), "chatEnabled"); !errors.Is(err, sql.ErrNoRows) {
-			t.Errorf("%s: chatEnabled survived the migration (err=%v)", tc.file, err)
+		for _, key := range []string{"chatEnabled", "featureFlags.chat"} {
+			if _, err := settingsutil.QueriesForTesting().GetSetting(t.Context(), key); !errors.Is(err, sql.ErrNoRows) {
+				t.Errorf("%s: %s survived the migration (err=%v)", file, key, err)
+			}
 		}
+	}
+
+	path := settingsFile(t)
+	file := `{"settingsVersion":1,"featureFlags":{"chat":false,"calendar":false}}`
+	if err := os.WriteFile(path, []byte(file), 0600); err != nil {
+		t.Fatal(err)
+	}
+	settingsutil.ResetForTesting(path)
+	if calendar, set, err := settingsutil.GetFeatureFlag("calendar"); err != nil || !set || calendar {
+		t.Errorf("calendar = %v set=%v err=%v; want the other flag left off", calendar, set, err)
 	}
 }
 
