@@ -164,6 +164,9 @@ func documentPartContentType(format docreadutil.Format, part string) (string, bo
 	switch format {
 	case docreadutil.FormatDOCX, docreadutil.FormatDOCM:
 		mediaDir = "word/media/"
+	case docreadutil.FormatODT:
+		// Matched lowercased; ODF writes Pictures/.
+		mediaDir = "pictures/"
 	default:
 		return "", false
 	}

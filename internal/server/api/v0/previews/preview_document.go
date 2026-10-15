@@ -13,7 +13,7 @@ import (
 
 // previewDocument godoc
 // @Summary Preview a word-processing document
-// @Description Streams a .docx or .docm document as NDJSON, one block per line, for the read-only document viewer: a meta line, then headings, paragraphs, list items, tables, images (naming the part GET /previews/part serves), page breaks and omitted markers, then an end line with word, character and paragraph counts, warnings, and truncated set when a limit stopped the document early. The end line is always last: a stream without one was cut off by a server error. Nothing the document contains is executed or fetched. A file that is not what its name says is a 400. Needs read access on the document.
+// @Description Streams a .docx, .docm or .odt document as NDJSON, one block per line, for the read-only document viewer: a meta line, then headings, paragraphs, list items, tables, images (naming the part GET /previews/part serves), page breaks and omitted markers, then an end line with word, character and paragraph counts, warnings, and truncated set when a limit stopped the document early. The end line is always last: a stream without one was cut off by a server error. Nothing the document contains is executed or fetched. A file that is not what its name says is a 400. Needs read access on the document.
 // @Tags previews
 // @Produce application/x-ndjson
 // @Param filePath query string true "Path to the document"

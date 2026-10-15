@@ -17,10 +17,10 @@ import (
 
 // convertDocument godoc
 // @Summary Convert a document to a Quark document
-// @Description Reads a .docx or .docm document and writes it as a sibling .qdoc, the format the document editor opens ("Open as Quark doc"). The document itself is left untouched. What a .qdoc cannot hold is flattened or left out and named in warnings: a table becomes one line per row with tab-separated cells, and images are dropped. Answers 409 when a .qdoc of that name already exists and overwrite was not asked for; with overwrite on the internal device, the replaced document is first snapshotted into its version history. A file that is not what its name says is a 400. Needs read access on the document and write access on its directory; the caller owns a newly created .qdoc.
+// @Description Reads a .docx, .docm or .odt document and writes it as a sibling .qdoc, the format the document editor opens ("Open as Quark doc"). The document itself is left untouched. What a .qdoc cannot hold is flattened or left out and named in warnings: a table becomes one line per row with tab-separated cells, and images are dropped. Answers 409 when a .qdoc of that name already exists and overwrite was not asked for; with overwrite on the internal device, the replaced document is first snapshotted into its version history. A file that is not what its name says is a 400. Needs read access on the document and write access on its directory; the caller owns a newly created .qdoc.
 // @Tags files
 // @Produce json
-// @Param filePath query string true "Path to the .docx or .docm file to convert"
+// @Param filePath query string true "Path to the .docx, .docm or .odt file to convert"
 // @Param serial query string false "Device serial number"
 // @Param overwrite query bool false "Replace an existing .qdoc of the same name"
 // @Success 200 {object} ConvertDocumentJSON

@@ -224,3 +224,33 @@ func TestOpenDocumentPart(t *testing.T) {
 		}
 	}
 }
+
+func TestOpenDocumentPartServesODTPictures(t *testing.T) {
+	root, registry := newDocumentFixture(t, documentParts(helloBody))
+	seedParts(t, root, "notes.odt", map[string]string{
+		"mimetype":         "application/vnd.oasis.opendocument.text",
+		"content.xml":      "<office:document-content/>",
+		"Pictures/a.png":   pngBytes,
+		"Pictures/a.svg":   "<svg/>",
+		"word/media/b.png": pngBytes,
+	})
+	open := func(part string) (fileutil.OpenDocumentPartResult, error) {
+		return fileutil.OpenDocumentPart(fileutil.OpenDocumentPartParams{
+			Ctx: context.Background(), Registry: registry, FilePath: "notes.odt", Part: part,
+		})
+	}
+
+	got, err := open("Pictures/a.png")
+	if err != nil {
+		t.Fatalf("open the picture: %v", err)
+	}
+	if err := got.Close(); err != nil || got.ContentType != "image/png" {
+		t.Errorf("content type %q, close %v", got.ContentType, err)
+	}
+	for _, part := range []string{"content.xml", "Pictures/a.svg", "word/media/b.png"} {
+		var notFound *fileutil.NotFoundError
+		if _, err := open(part); !errors.As(err, &notFound) {
+			t.Errorf("part %q: err = %v, want NotFoundError", part, err)
+		}
+	}
+}
