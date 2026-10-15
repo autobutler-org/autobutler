@@ -6,10 +6,15 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:video_player/video_player.dart';
 
-/// iOS and Android: captures the `RepaintBoundary` under [frameKey], where
-/// the player's texture is composited, scaled up or down to the video's own
-/// resolution. Before the video reports a size, the frame is taken at the
+/// iOS, Android and Linux: captures the `RepaintBoundary` under [frameKey],
+/// where the player's texture is composited, scaled up or down to the video's
+/// own resolution. Before the video reports a size, the frame is taken at the
 /// size it is shown.
+///
+/// Nothing here branches on the platform, so Linux (playing through
+/// `video_player_media_kit`, see `installVideoPlaybackBackend`) takes the same
+/// path as iOS and Android. It has not been tried on a Linux build: whether
+/// the embedder draws the libmpv texture into `toImage` is unconfirmed.
 Future<Uint8List> captureVideoFramePlatform(
   VideoPlayerController controller,
   GlobalKey frameKey,
