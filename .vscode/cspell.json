@@ -731,7 +731,14 @@
     "libpcache",
     "libspdlog",
     "logfile",
-    "powercut"
+    "powercut",
+    "endfacet",
+    "endloop",
+    "endsolid",
+    "gltf",
+    "mtllib",
+    "uchar",
+    "usemtl"
   ],
   "flagWords": []
 }

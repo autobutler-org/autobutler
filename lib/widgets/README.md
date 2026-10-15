@@ -114,6 +114,11 @@ lib/widgets/
                                 FilesService for one on the Quark, and holds
                                 a remote one behind a "Load remote image"
                                 button
+  model_viewer/
+    model_viewer_body.dart      QuarkModelViewer fed from a
+                                ModelViewerController; reads AppSettings
+                                for the disconnected state and writes its
+                                sentences with Errors
   notifications/
     notification_copy.dart      the title, body and Settings label of each
                                 notification type; the Quark sends no text

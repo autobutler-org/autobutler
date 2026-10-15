@@ -103,6 +103,20 @@ abstract final class Errors {
       "This video format ($extension) isn't supported for in-browser "
       'playback. Download the file to watch it locally.';
 
+  /// Why the 3D model viewer showed a model's details instead of the model
+  /// (#2988). The file is fine to download either way, so each says so.
+  static String modelPreview(QuarkModelParseIssue issue) => switch (issue) {
+    QuarkModelParseIssue.tooLarge =>
+      "This model is too big to preview here. You can still download it.",
+    QuarkModelParseIssue.tooManyTriangles =>
+      "This model is too detailed to preview here. You can still download it.",
+    QuarkModelParseIssue.tooSlow =>
+      'This model took too long to open. You can still download it.',
+    QuarkModelParseIssue.malformed =>
+      "This file couldn't be read as a 3D model. It may be damaged.",
+    QuarkModelParseIssue.noSurfaces => 'This model has no surfaces to show.',
+  };
+
   /// Files dropped onto the Photos page that are not images. The page leaves
   /// them out rather than filling the library with them (#2214).
   static String notPhotos(int count) => count == 1

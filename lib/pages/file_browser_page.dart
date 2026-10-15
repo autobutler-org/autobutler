@@ -37,6 +37,7 @@ import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_kind.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
 import 'package:quark/utils/markdown_viewer_files.dart';
+import 'package:quark/utils/model_viewer_files.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/utils/file_browser_drag_config.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
@@ -1549,6 +1550,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _goToEditor(node.apiPath, AppRoutes.markdownViewerPath(node.apiPath));
       return;
     }
+    // STL, OBJ and PLY open in the 3D model viewer (#2988).
+    if (opensInModelViewer(node.name)) {
+      _goToEditor(node.apiPath, AppRoutes.modelViewerPath(node.apiPath));
+      return;
+    }
     switch (kind) {
       // Navigate into archives as virtual directories.
       case FileKind.archive:
@@ -1979,6 +1985,11 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // Markdown opens rendered (#2987).
     if (opensInMarkdownViewer(fileName)) {
       _goToEditor(filePath, AppRoutes.markdownViewerPath(filePath));
+      return;
+    }
+    // STL, OBJ and PLY open in the 3D model viewer (#2988).
+    if (opensInModelViewer(fileName)) {
+      _goToEditor(filePath, AppRoutes.modelViewerPath(filePath));
       return;
     }
 

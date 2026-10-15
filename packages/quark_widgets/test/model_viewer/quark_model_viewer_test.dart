@@ -1,0 +1,300 @@
+import 'dart:typed_data';
+
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark_widgets/src/model_viewer/quark_model_viewer/model_viewer_painter.dart';
+import 'package:quark_widgets/src/model_viewer/quark_model_viewer/model_viewer_stats.dart';
+
+import '../support/pump.dart';
+
+/// A 2 x 3 x 4 box, as twelve triangles over eight shared corners.
+QuarkModelMesh box({bool isZUp = true}) {
+  final positions = Float32List.fromList([
+    0, 0, 0, 2, 0, 0, 2, 3, 0, 0, 3, 0, //
+    0, 0, 4, 2, 0, 4, 2, 3, 4, 0, 3, 4,
+  ]);
+  final indices = Uint32List.fromList([
+    0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, //
+    0, 1, 5, 0, 5, 4, 2, 3, 7, 2, 7, 6,
+    1, 2, 6, 1, 6, 5, 0, 4, 7, 0, 7, 3,
+  ]);
+  return QuarkModelMesh.fromTriangles(
+    positions: positions,
+    indices: indices,
+    isZUp: isZUp,
+  );
+}
+
+/// `QuarkModelViewer` (#2988): every state, the stats strip, the buttons,
+/// and that touch, mouse and keyboard all move the camera.
+void main() {
+  const canvas = ValueKey('model_viewer_canvas');
+  const wireframeToggle = ValueKey('model_viewer_wireframe_toggle');
+  const zoomIn = ValueKey('model_viewer_zoom_in');
+  const zoomOut = ValueKey('model_viewer_zoom_out');
+  const reset = ValueKey('model_viewer_reset');
+
+  /// The camera the canvas is painting with.
+  QuarkModelCamera camera(WidgetTester tester) {
+    final paint = tester.widget<CustomPaint>(
+      find.descendant(
+        of: find.byKey(canvas),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is CustomPaint && widget.painter is ModelViewerPainter,
+        ),
+      ),
+    );
+    return (paint.painter! as ModelViewerPainter).camera;
+  }
+
+  testBothViewports('shows a loader while loading', (tester, size) async {
+    await pumpAt(
+      tester,
+      const QuarkModelViewer(mesh: null, isLoading: true),
+      size: size,
+    );
+    expect(find.byType(QuarkLoader), findsOneWidget);
+    expect(find.byKey(canvas), findsNothing);
+  });
+
+  testBothViewports('shows the error with a Retry button', (
+    tester,
+    size,
+  ) async {
+    var retried = 0;
+    await pumpAt(
+      tester,
+      QuarkModelViewer(
+        mesh: null,
+        error: "Couldn't load the model.",
+        onRetry: () => retried++,
+      ),
+      size: size,
+    );
+    expect(find.text("Couldn't load the model."), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('model_viewer_retry')));
+    expect(retried, 1);
+  });
+
+  testBothViewports('says when there is nothing to draw', (tester, size) async {
+    await pumpAt(tester, const QuarkModelViewer(mesh: null), size: size);
+    expect(find.text('Nothing to show'), findsOneWidget);
+  });
+
+  testBothViewports('draws the model with its size and counts', (
+    tester,
+    size,
+  ) async {
+    await pumpAt(
+      tester,
+      QuarkModelViewer(mesh: box(), statusLabel: 'STL · 684 B'),
+      size: size,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(canvas), findsOneWidget);
+    expect(find.text('X 2 · Y 3 · Z 4'), findsOneWidget);
+    expect(find.text('12 triangles'), findsOneWidget);
+    expect(find.text('8 vertices'), findsOneWidget);
+    expect(find.text('STL · 684 B'), findsOneWidget);
+    expect(find.text(ModelViewerStats.hint), findsOneWidget);
+    expect(camera(tester), QuarkModelCamera.initial);
+  });
+
+  testBothViewports('draws a wireframe, and survives 200% text', (
+    tester,
+    size,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = largeTextScale;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpAt(
+      tester,
+      QuarkModelViewer(mesh: box(isZUp: false), wireframe: true),
+      size: size,
+    );
+    expect(tester.takeException(), isNull);
+    expectNoClippedText(tester);
+  });
+
+  testBothViewports('the buttons meet the tap target guidelines', (
+    tester,
+    size,
+  ) async {
+    await pumpAt(
+      tester,
+      Padding(
+        padding: const EdgeInsets.all(24),
+        child: QuarkModelViewer(mesh: box(), onWireframeChanged: (_) {}),
+      ),
+      size: size,
+    );
+    await expectTapTargetGuidelines(tester);
+  });
+
+  testWidgets('the wireframe button and the W key ask for the other mode', (
+    tester,
+  ) async {
+    final asked = <bool>[];
+    await pumpAt(
+      tester,
+      QuarkModelViewer(mesh: box(), onWireframeChanged: asked.add),
+    );
+    await tester.tap(find.byKey(wireframeToggle));
+    await tester.tap(find.byKey(canvas));
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    expect(asked, [true, true]);
+    // Let the double-tap the canvas tap might have started run out.
+    await tester.pump(kDoubleTapTimeout);
+  });
+
+  testWidgets('without a handler the wireframe button is disabled', (
+    tester,
+  ) async {
+    await pumpAt(tester, QuarkModelViewer(mesh: box()));
+    final button = tester.widget<QuarkBarIconButton>(
+      find.byKey(wireframeToggle),
+    );
+    expect(button.onPressed, isNull);
+  });
+
+  testWidgets('zoom buttons move the camera and reset brings it back', (
+    tester,
+  ) async {
+    await pumpAt(tester, QuarkModelViewer(mesh: box()));
+    await tester.tap(find.byKey(zoomIn));
+    await tester.pump();
+    expect(camera(tester).zoom, closeTo(QuarkModelViewer.zoomStep, 1e-9));
+    await tester.tap(find.byKey(zoomOut));
+    await tester.tap(find.byKey(zoomOut));
+    await tester.pump();
+    expect(camera(tester).zoom, closeTo(1 / QuarkModelViewer.zoomStep, 1e-9));
+    await tester.tap(find.byKey(reset));
+    await tester.pump();
+    expect(camera(tester), QuarkModelCamera.initial);
+  });
+
+  testWidgets('one finger turns, two move, pinch zooms, double-tap resets', (
+    tester,
+  ) async {
+    await pumpAt(tester, QuarkModelViewer(mesh: box()), size: narrowViewport);
+    final center = tester.getCenter(find.byKey(canvas));
+
+    await tester.dragFrom(center, const Offset(100, 40));
+    await tester.pump();
+    final turned = camera(tester);
+    expect(turned.yaw, isNot(QuarkModelCamera.initial.yaw));
+    expect(turned.pitch, greaterThan(QuarkModelCamera.initial.pitch));
+    expect(turned.panX, 0);
+
+    final first = await tester.startGesture(center - const Offset(40, 0));
+    final second = await tester.startGesture(
+      center + const Offset(40, 0),
+      pointer: 2,
+    );
+    await tester.pump();
+    for (var step = 1; step <= 5; step++) {
+      await first.moveBy(const Offset(-8, 10));
+      await second.moveBy(const Offset(12, 10));
+      await tester.pump();
+    }
+    await first.up();
+    await second.up();
+    await tester.pump();
+    final moved = camera(tester);
+    expect(moved.yaw, turned.yaw);
+    expect(moved.panY, lessThan(0));
+    expect(moved.zoom, greaterThan(1));
+
+    await tester.tapAt(center);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tapAt(center);
+    await tester.pumpAndSettle();
+    expect(camera(tester), QuarkModelCamera.initial);
+  });
+
+  testWidgets('the mouse wheel zooms and a right-drag moves', (tester) async {
+    await pumpAt(tester, QuarkModelViewer(mesh: box()));
+    final center = tester.getCenter(find.byKey(canvas));
+    final mouse = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(mouse.hover(center));
+    await tester.sendEventToBinding(mouse.scroll(const Offset(0, -200)));
+    await tester.pump();
+    expect(camera(tester).zoom, greaterThan(1));
+
+    final drag = await tester.startGesture(
+      center,
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await drag.moveBy(const Offset(50, 0));
+    await drag.up();
+    await tester.pump();
+    expect(camera(tester).panX, greaterThan(0));
+    expect(camera(tester).yaw, QuarkModelCamera.initial.yaw);
+  });
+
+  testWidgets('arrows turn, Shift+arrows move, +/- zoom, 0 resets', (
+    tester,
+  ) async {
+    await pumpAt(tester, QuarkModelViewer(mesh: box()));
+    await tester.tap(find.byKey(canvas));
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(
+      camera(tester).yaw,
+      closeTo(QuarkModelCamera.initial.yaw + QuarkModelViewer.keyTurn, 1e-9),
+    );
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.pump();
+    expect(camera(tester).panY, closeTo(QuarkModelViewer.keyPan, 1e-9));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.equal);
+    await tester.pump();
+    expect(camera(tester).zoom, closeTo(QuarkModelViewer.zoomStep, 1e-9));
+    await tester.sendKeyEvent(LogicalKeyboardKey.minus);
+    await tester.pump();
+    expect(camera(tester).zoom, closeTo(1, 1e-9));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit0);
+    await tester.pump();
+    expect(camera(tester), QuarkModelCamera.initial);
+    await tester.pump(kDoubleTapTimeout);
+  });
+
+  testWidgets('a new model starts from the initial view', (tester) async {
+    Widget viewer(QuarkModelMesh mesh) => QuarkModelViewer(mesh: mesh);
+    await pumpAt(tester, viewer(box()));
+    await tester.tap(find.byKey(zoomIn));
+    await tester.pump();
+    expect(camera(tester).zoom, isNot(1));
+    await pumpAt(tester, viewer(box()));
+    expect(camera(tester), QuarkModelCamera.initial);
+  });
+
+  test('the camera clamps its pitch and zoom', () {
+    final camera = QuarkModelCamera.initial.orbit(0, 10).zoomBy(1000);
+    expect(camera.pitch, QuarkModelCamera.maxPitch);
+    expect(camera.zoom, QuarkModelCamera.maxZoom);
+    expect(
+      QuarkModelCamera.initial.zoomBy(0.0001).zoom,
+      QuarkModelCamera.minZoom,
+    );
+  });
+
+  test('lengths keep three significant decimals at most', () {
+    expect(formatModelLength(120), '120');
+    expect(formatModelLength(45.25), '45.25');
+    expect(formatModelLength(1234.56), '1234.6');
+    expect(formatModelLength(0.125), '0.125');
+    expect(formatModelLength(-0.0001), '0');
+  });
+}
