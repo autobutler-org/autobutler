@@ -1,22 +1,21 @@
 # Chat Journeys
 
-Covers the chat beta (#2414): opening a channel, sending and receiving
+Covers chat (#2414): opening a channel, sending and receiving
 end-to-end encrypted messages, unlocking chat on web after a reload, waiting
-for a channel key, an admin turning the beta off, and creating, sharing,
-renaming, leaving and deleting channels (#2422), reacting to messages
-(#2426), a message's menu (#2631), searching a channel on the device
-(#2429), and mentioning a member (#2623).
+for a channel key, and creating, sharing, renaming, leaving and deleting
+channels (#2422), reacting to messages (#2426), a message's menu (#2631),
+searching a channel on the device (#2429), and mentioning a member (#2623).
 
 ---
 
 ### JN-CHAT-001: Open general
 
-**Preconditions:** Signed in (JN-AUTH-002). An admin has not turned chat off (see JN-CHAT-006).
+**Preconditions:** Signed in (JN-AUTH-002).
 
 **Steps:**
 
 1. Open the drawer from the brand button.
-2. Tap **Chat**, which carries a **Beta** badge.
+2. Tap **Chat**.
 
 **Expected result:**
 
@@ -111,30 +110,6 @@ renaming, leaving and deleting channels (#2422), reacting to messages
 - Messages from before the account had the key read "Waiting for the key to read this message".
 - The composer is replaced by "Waiting for a member to share the key to this channel."
 - Once any member who has the key opens the app, the messages open and the composer returns, without a reload.
-
----
-
-### JN-CHAT-006: An admin turns the beta off
-
-**Preconditions:** Signed in as an admin.
-
-**Steps:**
-
-1. Open **Settings**, Features tab (JN-ST-028).
-2. Turn off **Chat** (marked **Beta**).
-3. As another account, open the drawer, then open `/chat` directly.
-
-**Expected result:**
-
-- The drawer has no Chat row.
-- `/chat` and any `/chat/<id>` go to Files.
-- Every `/api/v0/chat/*` request answers 404.
-- Turning **Chat** back on brings everything back as it was: no message, channel or key was deleted.
-
-**Notes:**
-
-- Only admins see the Features tab. Chat is on until an admin turns it off.
-- A member already on `/chat` is moved to Files, and their drawer loses the row, without a reload.
 
 ---
 
