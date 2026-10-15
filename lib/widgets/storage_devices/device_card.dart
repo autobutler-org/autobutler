@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:quark/controllers/drive_health_controller.dart';
 import 'package:quark/services/storage_service.dart';
+import 'package:quark/widgets/storage_devices/drive_health_section.dart';
 import 'package:quark/widgets/storage_devices/role_badge.dart';
 import 'package:quark/widgets/storage_devices/vault_badge.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -140,6 +142,12 @@ class DeviceCard extends StatelessWidget {
                 ),
               ),
             ],
+
+            const SizedBox(height: 8),
+            DriveHealthSection(
+              health: DriveHealthController.view(device.health),
+              id: DriveHealthController.idFor(device),
+            ),
 
             // Storage bar (only when totalBytes is known)
             if (device.totalBytes > 0) ...[

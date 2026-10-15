@@ -5,6 +5,106 @@ import 'package:quark/services/auth_secret.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/utils/error_text.dart';
 
+// cspell:words reallocated celsius
+
+/// Health the Quark reported for one drive on `GET /storage/devices/status`.
+///
+/// [verdict] is `healthy`, `watch`, `replace-soon`, or `unknown`. A missing
+/// object is not this class: the caller treats that as Unknown. Detail fields
+/// are null when the Quark omitted them. [speedClass] is `diskProbe.speedClass`,
+/// copied here so the detail panel can show it beside the health readings.
+/// [worseThanDefault] is the Quark's own comparison with the current default
+/// storage drive.
+class StorageDriveHealth {
+  /// Creates a report with the raw [verdict] string.
+  const StorageDriveHealth({
+    required this.verdict,
+    this.reason,
+    this.smartStatus,
+    this.reallocatedSectors,
+    this.pendingSectors,
+    this.powerOnHours,
+    this.temperatureCelsius,
+    this.media,
+    this.linkSpeed,
+    this.speedClass,
+    this.worseThanDefault = false,
+  });
+
+  /// Parses `health`, plus [speedClass] from `diskProbe` when the caller has it.
+  factory StorageDriveHealth.fromJson(
+    Map<String, dynamic> json, {
+    String? speedClass,
+  }) {
+    return StorageDriveHealth(
+      verdict: json['verdict'] as String? ?? '',
+      reason: json['reason'] as String?,
+      smartStatus: json['smartStatus'] as String?,
+      reallocatedSectors: _asInt(json['reallocatedSectors']),
+      pendingSectors: _asInt(json['pendingSectors']),
+      powerOnHours: _asInt(json['powerOnHours']),
+      temperatureCelsius: _asInt(json['temperatureCelsius']),
+      media: json['media'] as String?,
+      linkSpeed: json['linkSpeed'] as String?,
+      speedClass: speedClass,
+      worseThanDefault: json['worseThanDefault'] as bool? ?? false,
+    );
+  }
+
+  /// `healthy`, `watch`, `replace-soon`, `unknown`, or a word this app does not know.
+  final String verdict;
+
+  /// The Quark's one-sentence reason.
+  final String? reason;
+
+  /// Overall SMART status, such as `passed` or `failed`.
+  final String? smartStatus;
+
+  /// Reallocated sector count, when the Quark sent one.
+  final int? reallocatedSectors;
+
+  /// Pending sector count, when the Quark sent one.
+  final int? pendingSectors;
+
+  /// Power-on hours, when the Quark sent them.
+  final int? powerOnHours;
+
+  /// Temperature in Celsius, when the Quark sent it.
+  final int? temperatureCelsius;
+
+  /// `spinning` or `solid-state`, when the Quark sent it.
+  final String? media;
+
+  /// Link speed, in the Quark's words.
+  final String? linkSpeed;
+
+  /// `diskProbe.speedClass`: `fast`, `medium`, `slow`, or `unknown`.
+  final String? speedClass;
+
+  /// True when the Quark says this drive is worse than the current default storage.
+  final bool worseThanDefault;
+}
+
+int? _asInt(Object? value) => value is num ? value.toInt() : null;
+
+/// `health` on a device status, with `diskProbe.speedClass` attached.
+///
+/// Null only when the Quark sent neither. An empty verdict still comes back,
+/// and the page shows that as Unknown.
+StorageDriveHealth? _driveHealth(Map<String, dynamic> json) {
+  final probe = json['diskProbe'];
+  final speed = probe is Map ? probe['speedClass'] as String? : null;
+  final raw = json['health'];
+  if (raw is! Map) {
+    if (speed == null || speed.isEmpty) return null;
+    return StorageDriveHealth(verdict: '', speedClass: speed);
+  }
+  return StorageDriveHealth.fromJson(
+    Map<String, dynamic>.from(raw),
+    speedClass: speed,
+  );
+}
+
 class StorageDevice {
   const StorageDevice({
     required this.name,
@@ -20,6 +120,7 @@ class StorageDevice {
     this.serial = '',
     this.role = 'unassigned',
     this.categories = const {},
+    this.health,
   });
 
   factory StorageDevice.fromJson(Map<String, dynamic> json) {
@@ -46,6 +147,7 @@ class StorageDevice {
       serial: serial,
       role: json['role'] as String? ?? 'unassigned',
       categories: categories,
+      health: _driveHealth(json),
     );
   }
 
@@ -68,6 +170,9 @@ class StorageDevice {
 
   /// File category breakdown in bytes, e.g. {'documents': 1024, 'media': 2048}.
   final Map<String, int> categories;
+
+  /// Health the Quark reported. Null when the status omitted it.
+  final StorageDriveHealth? health;
 
   /// Whether this device is detected but not yet mounted.
   bool get isUnmounted => !isInternal && mountPoint.isEmpty;
@@ -212,6 +317,7 @@ class StorageService with AuthenticatedService {
     required String role,
     required String username,
     required String password,
+    bool acknowledgeHealth = false,
   }) async {
     final uri = apiBaseUri.resolve('/api/v0/storage/devices/role');
     final secret = await AuthSecret.resolve(
@@ -227,6 +333,7 @@ class StorageService with AuthenticatedService {
         'role': role,
         'username': username,
         'password': secret.authKey,
+        if (acknowledgeHealth) 'acknowledgeHealth': true,
       }),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -241,6 +348,7 @@ class StorageService with AuthenticatedService {
     String? username,
     String? password,
     String? recoveryPassword,
+    bool acknowledgeHealth = false,
   }) async {
     final uri = apiBaseUri.resolve('/api/v0/storage/devices/snapshot-backup');
     final body = <String, dynamic>{'targetDeviceSerial': targetDeviceSerial};
@@ -256,6 +364,7 @@ class StorageService with AuthenticatedService {
       )).authKey;
     }
     if (recoveryPassword != null) body['recoveryPassword'] = recoveryPassword;
+    if (acknowledgeHealth) body['acknowledgeHealth'] = true;
 
     final response = await sharedHttpClient.post(
       uri,

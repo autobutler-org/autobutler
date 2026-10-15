@@ -257,3 +257,35 @@ including one that is not mounted.
   second partition of the same disk stays at the reason the Quark sent.
 - Keeping a drive somewhere else is a sentence on the card, not a place the page stores.
 - The page refresh reloads the card. The card also reloads when a backup finishes or fails.
+
+---
+
+### JN-SD-013: Read a drive's health before committing to it
+
+<!-- cspell:words reallocated -->
+
+**Preconditions:** User is logged in. At least one storage device is connected, and the Quark reports a health verdict for it.
+
+**Steps:**
+
+1. Navigate to `/system/storage`.
+2. Read the health on a drive and the sentence under it.
+3. Tap **Show details**.
+4. As an admin, tap **Set Role** on a **Replace soon** drive, choose **Default Storage** or **Snapshot Backup**, and read the acknowledgment.
+5. Confirm the acknowledgment, then confirm your credentials.
+6. On a **Replace soon** backup drive, tap **Back Up** and read the acknowledgment before the backup starts.
+
+**Expected result:**
+
+- Every drive shows one verdict in words: **Healthy**, **Watch**, **Replace soon**, or **Unknown**, plus the one sentence the Quark sent.
+- **Unknown** reads as Unknown. It does not read as Healthy. The sentence is the one the Quark sent, including when the health tool is not installed.
+- **Show details** lists only the readings the Quark sent: SMART status, reallocated sectors, pending sectors, power-on hours, temperature, spinning or solid-state, link speed, and the speed class. A reading the Quark left out is not shown.
+- Power-on hours are a count of hours. When the Quark calls the drive heavily used, the sentence says that. The page never states a manufacture year.
+- Choosing default storage or the backup role, or starting a backup, on a **Replace soon** drive asks for an acknowledgment first. Confirming sends it. Canceling leaves the role and the backup unchanged. The acknowledgment says files already on the drive stay. Assigning the backup role or starting a backup also says the backup is added beside them.
+- **Watch** does not ask for that acknowledgment. Switching default storage to a drive the Quark marked as worse than the current default storage shows the stronger warning. Continuing does not send an acknowledgment.
+- A non-admin sees the verdict, the sentence, and the details, and is not offered **Set Role** or **Back Up**.
+
+**Notes:**
+
+- The page shows the verdict, the sentence, and whether the drive is worse than the current default storage, as the Quark sent them. It does not score the drive again.
+- A future action that formats or erases a drive has to come through this same health check and acknowledgment. This journey does not erase a drive.
