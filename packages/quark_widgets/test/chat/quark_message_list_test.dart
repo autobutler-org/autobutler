@@ -1372,6 +1372,61 @@ void main() {
     expect(reports, isEmpty);
   });
 
+  // #3255: scrolled up, a new message is counted on a pill. Tapping it
+  // returns to the newest message and clears the count.
+  testBothViewports(
+    'shows the new-message count while scrolled up and clears it on tap',
+    (tester, size) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      final history = [
+        for (var i = 40; i >= 1; i--)
+          msg('m$i', day1.add(Duration(minutes: i)), body: 'message $i'),
+      ];
+      await pumpAt(
+        tester,
+        QuarkMessageList(messages: history, controller: controller),
+        size: size,
+      );
+      expect(find.byKey(const ValueKey('message_list_jump')), findsNothing);
+
+      expect(controller.position.maxScrollExtent, greaterThan(0));
+      controller.jumpTo(controller.position.maxScrollExtent);
+      await tester.pump();
+      expect(find.text('1 new message'), findsNothing);
+
+      await pumpAt(
+        tester,
+        QuarkMessageList(
+          messages: [
+            msg(
+              'm41',
+              day1.add(const Duration(minutes: 41)),
+              body: 'just arrived',
+            ),
+            ...history,
+          ],
+          controller: controller,
+        ),
+        size: size,
+      );
+
+      expect(find.text('1 new message'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byKey(const ValueKey('message_list_jump')));
+      await tester.pump();
+
+      expect(
+        controller.offset,
+        lessThanOrEqualTo(QuarkMessageList.atBottomTolerance),
+      );
+      expect(find.byKey(const ValueKey('message_list_jump')), findsNothing);
+      expect(find.text('just arrived'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   // #2623: a mention of a member is drawn apart, and a message that mentions
   // the reader is highlighted.
   group('mentions', () {
