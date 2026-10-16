@@ -9,11 +9,10 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// Everything the duplicates page shows and does (#1666): the groups, which
 /// copies are marked for deletion, and deleting them.
 ///
-/// Identical copies start with every copy but the first marked, since one is
-/// as good as another; similar photos start with none marked, since they may
-/// differ in ways that matter. Every group keeps at least one copy. A reload
-/// keeps the user's marks: only a group made entirely of photos it has not
-/// shown before gets the defaults.
+/// Nothing is marked when a group first appears (#3362). The user marks the
+/// copies to delete, and a group always keeps at least one. A reload keeps
+/// those marks. A group this controller has not shown before stays unmarked,
+/// unless a preferred format applies to it.
 ///
 /// A similar group whose copies are each a different format and whose
 /// perceptual hashes are all within
@@ -106,8 +105,9 @@ class DuplicatesController extends ChangeNotifier {
         : _thumbnailUrl(path.relPath, serial: path.serial);
   }
 
-  /// Loads the groups, keeping the marks in every group it has shown before
-  /// and marking the spare identical copies in each new one.
+  /// Loads the groups. Marks the user already made stay on groups it has shown
+  /// before. A group it has not shown before stays unmarked, except where a
+  /// preferred format applies.
   Future<void> load() async {
     _isLoading = true;
     _error = null;
@@ -136,7 +136,7 @@ class DuplicatesController extends ChangeNotifier {
             ],
           ),
       ];
-      for (final (index, group) in _groups.indexed) {
+      for (final group in _groups) {
         final ids = [for (final p in group.photos) p.id];
         if (ids.any(seen.contains)) {
           final kept = ids.where(marked.contains).toSet();
@@ -144,8 +144,6 @@ class DuplicatesController extends ChangeNotifier {
           // is the copy that went away.
           if (kept.length == ids.length) kept.remove(ids.first);
           _selected.addAll(kept);
-        } else if (groups[index].isExact) {
-          _selected.addAll(ids.skip(1));
         } else {
           _applyPreference(group);
         }
