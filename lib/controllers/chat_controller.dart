@@ -35,9 +35,11 @@ typedef UpdateChatChannelFn =
       required String topic,
     });
 
-/// A message sent from this client that the Quark has not stored yet: shown
-/// at once, and kept with its [error] when sending failed so it can be
-/// retried.
+/// A message sent from this client that the Quark has not stored yet.
+///
+/// [error] is null while the send is still going out, and set when the last
+/// attempt failed so [ChatController.retry] can send this one again. It is
+/// not part of [ChatController.messageItems].
 @immutable
 class ChatPendingSend {
   /// Builds a pending send.
@@ -86,8 +88,10 @@ class ChatPendingSend {
 ///   [selectedChannel] back into the URL.
 /// - Each open channel gets its own [ChatMessagesController], disposed when
 ///   another is picked, so plaintext never outlives the channel on screen.
-/// - [send] shows a pending row at once. A failure keeps it, with its error,
-///   for [retry] or [discard].
+/// - [send] keeps the message until the Quark stores it. While it is going
+///   out, and after it fails, it stays out of [messageItems] so the page can
+///   show sending or failed instead of a sent row. [retry] delivers that one
+///   message again; [discard] drops it.
 /// - `chat_channel_changed` reloads the channel list, and the members when it
 ///   names the open channel. `account_changed` — an account deleted, or a
 ///   profile picture changed — reloads both, so a stale name or picture
@@ -309,10 +313,19 @@ class ChatController extends ChangeNotifier {
   /// Sends not yet stored, oldest first, across every channel.
   List<ChatPendingSend> get pending => _pending;
 
+  /// The open channel's sends the Quark has not stored, oldest first.
+  ///
+  /// One with [ChatPendingSend.failed] is waiting on the user. The rest are
+  /// still going out. None of them are in [messageItems].
+  List<ChatPendingSend> get outboundSends => [
+    for (final p in _pending)
+      if (p.channelId == _selected?.id) p,
+  ];
+
   /// The open channel's sends that failed, oldest first.
   List<ChatPendingSend> get failedSends => [
-    for (final p in _pending)
-      if (p.failed && p.channelId == _selected?.id) p,
+    for (final p in outboundSends)
+      if (p.failed) p,
   ];
 
   /// Whether chat needs the password before anything can be read: on web
@@ -489,13 +502,10 @@ class ChatController extends ChangeNotifier {
   String? get composerDisabledReason =>
       _selected == null ? 'Pick a channel to write in it.' : null;
 
-  /// The open channel's timeline for `QuarkMessageList`: newest first, sends
-  /// not yet stored at the head. While a search query is set, only the
-  /// messages that match it ([searchMatchCount]).
-  ///
-  /// `ChatMessageItem` has no pending or failed kind, so a send in flight or
-  /// failed is drawn as a plain text row; the page puts retry beside the
-  /// composer.
+  /// The open channel's stored timeline for `QuarkMessageList`, newest first.
+  /// While a search query is set, only the messages that match it
+  /// ([searchMatchCount]). A send the Quark has not stored yet is omitted;
+  /// see [outboundSends].
   List<ChatMessageItem> get messageItems {
     final channel = _selected;
     final messages = _messages;
@@ -506,15 +516,6 @@ class ChatController extends ChangeNotifier {
       return [for (final m in matches.reversed) itemFor(m, nameOf, me: me)];
     }
     return [
-      for (final p in _pending.reversed)
-        if (p.channelId == channel.id)
-          ChatMessageItem(
-            id: p.id,
-            authorId: '${me ?? 0}',
-            authorName: me == null ? 'You' : nameOf(me),
-            sentAt: p.sentAt,
-            body: p.text,
-          ),
       for (final entry in messages.entries.reversed)
         itemFor(entry, nameOf, me: me),
     ];

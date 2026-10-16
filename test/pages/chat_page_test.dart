@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -195,6 +197,97 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    // #3253: each offline send fails on its own row. Retrying one delivers
+    // that message and leaves the other failed. A send still in flight shows
+    // a sending indicator instead of a delivered row.
+    testWidgets(
+      'every failed send has its own retry, and a pending one shows sending ($label)',
+      (tester) async {
+        final (_, fake) = await pumpChat(tester, size);
+        fake.opened[1]!.onSend = (_) async =>
+            throw const MessageException('offline');
+
+        Future<void> sendText(String text) async {
+          await tester.enterText(
+            find.byKey(const ValueKey('message_composer_field')),
+            text,
+          );
+          await tester.pump();
+          await tester.tap(find.byKey(const ValueKey('message_composer_send')));
+          await tester.pumpAndSettle();
+        }
+
+        await sendText('one');
+        await sendText('two');
+        expect(
+          find.byKey(const ValueKey('chat_send_failed_pending_0')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('chat_failed_send_retry_pending_0')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('chat_failed_send_discard_pending_0')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('chat_send_failed_pending_1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('chat_failed_send_retry_pending_1')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('message_pending_0')), findsNothing);
+        expect(find.byKey(const ValueKey('message_pending_1')), findsNothing);
+
+        final before = fake.opened[1]!.sent.length;
+        fake.opened[1]!.onSend = null;
+        await tester.tap(
+          find.byKey(const ValueKey('chat_failed_send_retry_pending_1')),
+        );
+        await tester.pumpAndSettle();
+        expect(fake.opened[1]!.sent.skip(before), ['two']);
+        expect(
+          find.byKey(const ValueKey('chat_failed_send_retry_pending_0')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('chat_failed_send_retry_pending_1')),
+          findsNothing,
+        );
+
+        final gate = Completer<void>();
+        fake.opened[1]!.onSend = (_) => gate.future;
+        await tester.enterText(
+          find.byKey(const ValueKey('message_composer_field')),
+          'three',
+        );
+        await tester.pump();
+        await tester.tap(find.byKey(const ValueKey('message_composer_send')));
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('chat_send_sending_pending_2')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('message_pending_2')), findsNothing);
+        expect(
+          find.byKey(const ValueKey('chat_failed_send_retry_pending_2')),
+          findsNothing,
+        );
+
+        gate.complete();
+        await tester.pump();
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('chat_send_sending_pending_2')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('a failed send offers retry ($label)', (tester) async {
       final (_, fake) = await pumpChat(tester, size);
       fake.opened[1]!.onSend = (_) async =>
@@ -208,15 +301,21 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('message_composer_send')));
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey('chat_failed_send_retry')),
+        find.byKey(const ValueKey('chat_failed_send_retry_pending_0')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('chat_send_failed_pending_0')),
         findsOneWidget,
       );
 
       fake.opened[1]!.onSend = null;
-      await tester.tap(find.byKey(const ValueKey('chat_failed_send_retry')));
+      await tester.tap(
+        find.byKey(const ValueKey('chat_failed_send_retry_pending_0')),
+      );
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey('chat_failed_send_retry')),
+        find.byKey(const ValueKey('chat_failed_send_retry_pending_0')),
         findsNothing,
       );
       expect(tester.takeException(), isNull);

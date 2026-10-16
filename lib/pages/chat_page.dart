@@ -396,7 +396,6 @@ class _ChatPageState extends State<ChatPage>
         final serverName = hostIndex >= 0 && hostIndex < settings.hosts.length
             ? settings.hosts[hostIndex].name
             : 'Quark';
-        final failed = c.failedSends.firstOrNull;
         final messagesError = channel == null
             ? c.channelsError
             : c.messagesError;
@@ -534,15 +533,15 @@ class _ChatPageState extends State<ChatPage>
                           onCheckAgain: c.checkKey,
                           onLearnMore: _explainEncryption,
                         ),
-                      if (failed != null)
+                      for (final send in c.outboundSends)
                         ChatFailedSendBar(
-                          text: failed.text,
-                          error: Errors.message(
-                            failed.error,
-                            'send the message',
-                          ),
-                          onRetry: () => c.retry(failed.id),
-                          onDiscard: () => c.discard(failed.id),
+                          id: send.id,
+                          text: send.text,
+                          error: send.failed
+                              ? Errors.message(send.error, 'send the message')
+                              : null,
+                          onRetry: () => c.retry(send.id),
+                          onDiscard: () => c.discard(send.id),
                         ),
                       // Chrome pinned to the bottom edge keeps clear of the
                       // rounded display corners and the home indicator
