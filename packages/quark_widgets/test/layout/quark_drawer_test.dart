@@ -161,6 +161,7 @@ void main() {
   }
 
   const groupedOrder = [
+    'drawer_group_household',
     'drawer_files',
     'drawer_photos',
     'drawer_calendar',
@@ -201,7 +202,7 @@ void main() {
       QuarkDrawer(activeSection: QuarkDrawerSection.files, onTapFiles: () {}),
       size: size,
     );
-    expect(childKeys(tester), ['drawer_files']);
+    expect(childKeys(tester), ['drawer_group_household', 'drawer_files']);
     expect(find.text('Manage'), findsNothing);
 
     await pumpAt(
@@ -214,6 +215,33 @@ void main() {
     );
     expect(childKeys(tester), ['drawer_group_manage', 'drawer_settings']);
     expect(find.text('Manage'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testBothViewports('the Household label is a heading under the header', (
+    tester,
+    size,
+  ) async {
+    await pumpAt(
+      tester,
+      drawerWith(QuarkDrawerSection.files, everyCallback([])),
+      size: size,
+    );
+
+    final handle = tester.ensureSemantics();
+    expect(
+      tester.getSemantics(find.text('Household')),
+      matchesSemantics(label: 'Household', isHeader: true),
+    );
+    handle.dispose();
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('drawer_group_household')),
+        matching: find.byType(Divider),
+      ),
+      findsNothing,
+      reason: 'the header already separates it',
+    );
     expect(tester.takeException(), isNull);
   });
 

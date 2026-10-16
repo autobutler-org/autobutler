@@ -43,10 +43,14 @@ class NotificationsBell extends StatelessWidget {
         final tokens = QuarkTokens.of(context);
         return Badge(
           isLabelVisible: count > 0,
-          label: Text(
-            '$count',
-            style: const TextStyle(
-              fontFeatures: [FontFeature.tabularFigures()],
+          // The tooltip already says the count; a screen reader should not
+          // read it twice.
+          label: ExcludeSemantics(
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
             ),
           ),
           backgroundColor: tokens.primary,

@@ -9,6 +9,10 @@ import '../format_version_time.dart';
 /// One row of a `FileVersionsPanel`: when the version was saved, what it is
 /// called, its size and who saved it, with a Preview and a Restore button.
 ///
+/// Each button's tooltip, which is also its accessible name, names the
+/// version — "Restore Draft 3, 7:09 AM" — so a screen reader can tell the
+/// rows apart.
+///
 /// A null [onPreview] or [onRestore] dims its button. While [isBusy] the two
 /// buttons give way to a loader, so a restore in flight reads as one.
 ///
@@ -48,6 +52,10 @@ class FileVersionTile extends StatelessWidget {
       version.sizeLabel,
       if (version.author.isNotEmpty) version.author,
     ].join(' · ');
+    final time = formatVersionTime(context, version.createdAt);
+    final name = version.label.isNotEmpty
+        ? '${version.label}, $time'
+        : 'version from $time';
 
     return Padding(
       key: ValueKey('file_version_tile_${version.id}'),
@@ -66,7 +74,7 @@ class FileVersionTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  formatVersionTime(context, version.createdAt),
+                  time,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyLarge,
@@ -90,13 +98,13 @@ class FileVersionTile extends StatelessWidget {
           else ...[
             IconButton(
               key: ValueKey('file_version_preview_${version.id}'),
-              tooltip: 'Preview',
+              tooltip: 'Preview $name',
               icon: const Icon(QuarkIcons.visibility_outlined),
               onPressed: onPreview,
             ),
             IconButton(
               key: ValueKey('file_version_restore_${version.id}'),
-              tooltip: 'Restore',
+              tooltip: 'Restore $name',
               icon: const Icon(QuarkIcons.restore),
               onPressed: onRestore,
             ),

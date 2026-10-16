@@ -9,6 +9,8 @@ import '../code_search_match.dart';
 /// One line of a `QuarkCodeViewer`: its right-aligned line number in a gutter
 /// of [gutterWidth], then the text, colored by [tokens] with every search hit
 /// in [matches] on a tinted background and [activeMatch] on a solid one.
+/// Inside a hit the syntax colors give way to plain foreground text, which
+/// keeps AA contrast on the tint where they do not (#3187).
 ///
 /// The line is as tall as its text: one row with [wrap] off, where the text
 /// runs on to the right, and as many rows as it needs with [wrap] on. The
@@ -105,6 +107,8 @@ class CodeViewerLine extends StatelessWidget {
       final isActive = inMatch && match == activeMatch;
       final color = isActive
           ? quark.primaryForeground
+          : inMatch
+          ? quark.foreground
           : switch (inToken ? token.kind : CodeTokenKind.plain) {
               CodeTokenKind.plain => null,
               CodeTokenKind.comment => quark.mutedForeground,

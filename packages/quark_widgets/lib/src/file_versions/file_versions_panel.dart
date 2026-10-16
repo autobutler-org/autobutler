@@ -115,12 +115,18 @@ class FileVersionsPanel extends StatelessWidget {
         if (error != null)
           Padding(
             padding: EdgeInsets.only(top: tokens.spacingSm),
-            child: Text(error, style: TextStyle(color: tokens.error)),
+            child: Semantics(
+              liveRegion: true,
+              child: Text(error, style: TextStyle(color: tokens.error)),
+            ),
           ),
         if (notice != null)
           Padding(
             padding: EdgeInsets.only(top: tokens.spacingSm),
-            child: Text(notice, style: TextStyle(color: tokens.success)),
+            child: Semantics(
+              liveRegion: true,
+              child: Text(notice, style: TextStyle(color: tokens.success)),
+            ),
           ),
         SizedBox(height: tokens.spacingSm),
         if (versions.isNotEmpty)

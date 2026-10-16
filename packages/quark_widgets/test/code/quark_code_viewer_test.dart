@@ -277,6 +277,72 @@ void main() {
     }
   });
 
+  testBothViewports('a hit keeps its text above AA on the tint', (
+    tester,
+    size,
+  ) async {
+    const lines = ['// a comment', 'final s = "str" + 42;'];
+    for (final themeColor in QuarkThemeColor.presets) {
+      for (final brightness in Brightness.values) {
+        await pumpAt(
+          tester,
+          QuarkCodeViewer(
+            lines: lines,
+            language: CodeLanguage.dart,
+            searchQuery: 'x',
+            matches: const [
+              CodeSearchMatch(line: 0, start: 0, end: 12),
+              CodeSearchMatch(line: 1, start: 0, end: 21),
+            ],
+          ),
+          size: size,
+          brightness: brightness,
+          themeColor: themeColor,
+        );
+        // The app animates from the last theme to this one.
+        await tester.pumpAndSettle();
+        final tokens = themeColor.tokensFor(brightness);
+        var hits = 0;
+        for (final paragraph
+            in tester
+                .widgetList<RichText>(
+                  find.descendant(
+                    of: find.byKey(const ValueKey('${lineKey}0')),
+                    matching: find.byType(RichText),
+                  ),
+                )
+                .followedBy(
+                  tester.widgetList<RichText>(
+                    find.descendant(
+                      of: find.byKey(const ValueKey('${lineKey}1')),
+                      matching: find.byType(RichText),
+                    ),
+                  ),
+                )) {
+          paragraph.text.visitChildren((span) {
+            final background = span.style?.backgroundColor;
+            if (background == null) return true;
+            hits++;
+            final color = span.style!.color!;
+            expect(
+              contrastRatio(
+                color,
+                Color.alphaBlend(background, tokens.background),
+              ),
+              greaterThanOrEqualTo(4.5),
+              reason:
+                  '${themeColor.name} ${brightness.name}: '
+                  '"${(span as TextSpan).text}"',
+            );
+            return true;
+          });
+        }
+        expect(hits, greaterThan(0), reason: 'the hits are tinted');
+      }
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testBothViewports('the counter says where the search is', (
     tester,
     size,
@@ -581,8 +647,8 @@ void main() {
       // The active hit, on a number.
       expect(styleOf(0, '42')!.backgroundColor, tokens.primary);
       expect(styleOf(0, '42')!.color, tokens.primaryForeground);
-      // Any other hit keeps its token color on a tint.
-      expect(styleOf(1, 'return')!.color, tokens.primary);
+      // Any other hit drops its token color for plain text on a tint.
+      expect(styleOf(1, 'return')!.color, tokens.foreground);
       expect(
         styleOf(1, 'return')!.backgroundColor,
         tokens.primary.withValues(alpha: 0.25),
