@@ -54,7 +54,10 @@ import 'calendar_time_grid/time_grid_hour_gutter.dart';
 /// full-size way to set its times. From the keyboard, with the event focused,
 /// Alt and an arrow do the same: up and down move it 15 minutes, left and
 /// right a day, and with Shift held up and down move its end; the focus stays
-/// on the event wherever it lands. A move keeps the start on its own date and
+/// on the event wherever it lands. Tab reaches each event, since the empty
+/// hours take no focus (#3185); a mouse hovering an event is told the keys,
+/// and a screen reader hears them as its hint, gets the same moves as custom
+/// actions, and hears the new times after each. A move keeps the start on its own date and
 /// on a date on show, and a resize stops 15 minutes short of the start. The
 /// timeline does not scroll under a drag, which reaches the hours on show.
 /// Nothing animates, so reduced motion changes nothing. The grid only reports

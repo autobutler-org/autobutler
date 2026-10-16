@@ -3,6 +3,7 @@ import 'dart:ui' show SemanticsAction;
 import 'package:flutter/gestures.dart'
     show PointerDeviceKind, kLongPressTimeout;
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -988,6 +989,99 @@ void main() {
         find.byKey(const ValueKey('calendar_event_3_2026-09-30')),
         findsOneWidget,
       );
+    });
+
+    group('keyboard and screen reader access (#3185)', () {
+      for (final (name, size) in [
+        ('narrow', narrowViewport),
+        ('wide', wideViewport),
+      ]) {
+        testWidgets('Tab reaches an event past the empty hours on a $name '
+            'week', (tester) async {
+          // The hours and headings take taps too, as on the page.
+          await pumpAt(
+            tester,
+            _grid(
+              days: week,
+              events: [_vet],
+              onSlotTap: (_) {},
+              onDayTap: (_) {},
+              onEventTap: (_) {},
+              onEventReschedule: (_, _, _) {},
+            ),
+            size: size,
+          );
+          final focus = Focus.of(tester.element(find.text('Vet')));
+          for (var i = 0; i < 16 && !focus.hasPrimaryFocus; i++) {
+            await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+            await tester.pump();
+          }
+          expect(focus.hasPrimaryFocus, isTrue);
+        });
+      }
+
+      testWidgets('a screen reader hears the keys and moves the event with '
+          'its actions', (tester) async {
+        final handle = tester.ensureSemantics();
+        final moves = await pumpVet(tester, week, wideViewport);
+        final node = tester.getSemantics(vet);
+        final data = node.getSemanticsData();
+        expect(data.label, contains('Vet'));
+        expect(data.hint, contains('Alt'));
+        final actions = {
+          for (final id in data.customSemanticsActionIds!)
+            CustomSemanticsAction.getAction(id)!.label: id,
+        };
+        expect(actions.keys, [
+          'Move 15 minutes earlier',
+          'Move 15 minutes later',
+          'Move to the previous day',
+          'Move to the next day',
+          'Shorten by 15 minutes',
+          'Extend by 15 minutes',
+        ]);
+        for (final label in ['Move 15 minutes later', 'Move to the next day']) {
+          node.owner!.performAction(
+            node.id,
+            SemanticsAction.customAction,
+            actions[label],
+          );
+          await tester.pump();
+        }
+        expect(moves, [
+          (_vet, at(29, 16, 15), at(29, 17)),
+          (_vet, at(30, 16), at(30, 16, 45)),
+        ]);
+        expect(tester.takeAnnouncements().map((a) => a.message), [
+          'Vet, 4:15 – 5:00 PM',
+          'Vet, Wed, Sep 30, 4:00 – 4:45 PM',
+        ]);
+        handle.dispose();
+      });
+
+      testWidgets('a Day offers no move to another day', (tester) async {
+        final handle = tester.ensureSemantics();
+        await pumpVet(tester, [_today], narrowViewport);
+        final ids = tester
+            .getSemantics(vet)
+            .getSemanticsData()
+            .customSemanticsActionIds!;
+        expect(
+          ids.map((id) => CustomSemanticsAction.getAction(id)!.label),
+          isNot(contains('Move to the next day')),
+        );
+        handle.dispose();
+      });
+
+      testWidgets('a mouse hovering an event is told the keys', (tester) async {
+        await pumpVet(tester, week, wideViewport);
+        expect(
+          find.byWidgetPredicate(
+            (w) => w is Tooltip && (w.message ?? '').contains('Alt'),
+          ),
+          findsOneWidget,
+        );
+      }, variant: TargetPlatformVariant.desktop());
     });
 
     testWidgets('without a handler an event stays where it is', (tester) async {

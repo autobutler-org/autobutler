@@ -15,6 +15,9 @@ import '../calendar_labels.dart';
 /// moves to another hour under a resting pointer or is tapped. The next move
 /// brings it back.
 ///
+/// It takes taps and a screen reader's press but not the keyboard's focus: a
+/// week's 168 hours in the Tab order buried the events behind them (#3185).
+///
 /// Key prefixes: `calendar_slot_<yyyy-mm-dd>_<hour>`, for example
 /// `calendar_slot_2026-09-29_10`.
 class TimeGridSlot extends StatefulWidget {
@@ -82,6 +85,7 @@ class _TimeGridSlotState extends State<TimeGridSlot> {
               'calendar_slot_${CalendarDates.key(widget.start)}_${widget.start.hour}',
             ),
             onTap: onTap,
+            canRequestFocus: false,
             child: Container(
               height: widget.height,
               decoration: BoxDecoration(
