@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -133,19 +132,6 @@ class QuarkMessageComposer extends StatefulWidget {
   static String overLimitText(int count) =>
       '$count characters over the limit. Shorten it to send.';
 
-  /// Whether Enter sends on the current platform: on a desktop, not on a
-  /// phone, where the keyboard's return key has to start new lines. On the
-  /// web [defaultTargetPlatform] reports the browser's OS, so a phone browser
-  /// counts as a phone.
-  static bool enterSends() => switch (defaultTargetPlatform) {
-    TargetPlatform.macOS ||
-    TargetPlatform.windows ||
-    TargetPlatform.linux => true,
-    TargetPlatform.android ||
-    TargetPlatform.iOS ||
-    TargetPlatform.fuchsia => false,
-  };
-
   @override
   State<QuarkMessageComposer> createState() => _QuarkMessageComposerState();
 }
@@ -241,6 +227,35 @@ class _QuarkMessageComposerState extends State<QuarkMessageComposer> {
     _send();
   }
 
+  /// Inserts a newline at the caret. Does nothing while an input method is
+  /// composing, the same way [_sendFromEnter] does.
+  void _insertNewline() {
+    if (_text.value.composing.isValid) return;
+    final text = _text.text;
+    final selection = _text.selection;
+    final start = selection.isValid ? selection.start : text.length;
+    final end = selection.isValid ? selection.end : text.length;
+    _text.value = TextEditingValue(
+      text: '${text.substring(0, start)}\n${text.substring(end)}',
+      selection: TextSelection.collapsed(offset: start + 1),
+    );
+  }
+
+  /// One hardware Enter on the web is delivered twice: the key event, then
+  /// the field's input action. The second one has to be ignored, or a send
+  /// is followed by the blank hint and Shift+Enter sends the line it just
+  /// broke.
+  bool _enterHandled = false;
+
+  void _once(VoidCallback action) {
+    if (_enterHandled) return;
+    _enterHandled = true;
+    Future.microtask(() {
+      if (mounted) _enterHandled = false;
+    });
+    action();
+  }
+
   void _send() {
     final message = _text.text.trim();
     if (message.isEmpty) {
@@ -325,6 +340,16 @@ class _QuarkMessageComposerState extends State<QuarkMessageComposer> {
           }
 
           final onEnter = suggestions == null ? _sendFromEnter : pick;
+          // Hardware Enter sends on every platform. Shift+Enter inserts a
+          // newline. The on-screen keyboard's action is Send, and it takes
+          // the same path.
+          void onEnterKey({required bool shift}) => _once(() {
+            if (shift) {
+              _insertNewline();
+            } else {
+              onEnter();
+            }
+          });
 
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -360,12 +385,22 @@ class _QuarkMessageComposerState extends State<QuarkMessageComposer> {
                           ): () =>
                               setState(() => _dismissedAt = suggestions.start),
                         },
-                        if (QuarkMessageComposer.enterSends()) ...{
-                          const SingleActivator(LogicalKeyboardKey.enter):
-                              onEnter,
-                          const SingleActivator(LogicalKeyboardKey.numpadEnter):
-                              onEnter,
-                        },
+                        const SingleActivator(
+                          LogicalKeyboardKey.enter,
+                          shift: true,
+                        ): () =>
+                            onEnterKey(shift: true),
+                        const SingleActivator(
+                          LogicalKeyboardKey.numpadEnter,
+                          shift: true,
+                        ): () =>
+                            onEnterKey(shift: true),
+                        const SingleActivator(LogicalKeyboardKey.enter): () =>
+                            onEnterKey(shift: false),
+                        const SingleActivator(
+                          LogicalKeyboardKey.numpadEnter,
+                        ): () =>
+                            onEnterKey(shift: false),
                       },
                       child: TextField(
                         key: const ValueKey('message_composer_field'),
@@ -374,7 +409,13 @@ class _QuarkMessageComposerState extends State<QuarkMessageComposer> {
                         minLines: 1,
                         maxLines: widget.maxLines,
                         keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
+                        // Send's default drops focus. The caret stays so the
+                        // next message can be typed.
+                        onEditingComplete: () => _focus.requestFocus(),
+                        onSubmitted: (_) => onEnterKey(
+                          shift: HardwareKeyboard.instance.isShiftPressed,
+                        ),
+                        textInputAction: TextInputAction.send,
                         decoration: InputDecoration(
                           hintText: widget.hintText,
                           helper: _showBlankHint
