@@ -27,6 +27,10 @@ import '../theme/quark_tokens.dart';
 /// as an active [QuarkBarChip] is, and announced as on or off to a screen
 /// reader. Left null, it is a plain action.
 ///
+/// [badge] hangs a count over the top end corner, inside the tap target, so it
+/// grows toward the glyph rather than past the bar's edge or out of a
+/// scrolling row's clip.
+///
 /// Key prefixes: none of its own. Every bar action passes its own `key`, and
 /// that is the one a test or a `.probe` script reaches for.
 ///
@@ -47,6 +51,7 @@ class QuarkBarIconButton extends StatelessWidget {
     this.isBusy = false,
     this.destructive = false,
     this.selected,
+    this.badge,
     super.key,
   });
 
@@ -87,6 +92,9 @@ class QuarkBarIconButton extends StatelessWidget {
   /// Whether the button is a toggle that is on; null for a plain action.
   final bool? selected;
 
+  /// A childless [Badge] drawn over the top end corner, or null for none.
+  final Widget? badge;
+
   @override
   Widget build(BuildContext context) {
     final tokens = QuarkTokens.of(context);
@@ -96,7 +104,7 @@ class QuarkBarIconButton extends StatelessWidget {
         : on
         ? tokens.primary
         : tokens.secondaryForeground;
-    return IconButton(
+    final button = IconButton(
       tooltip: tooltip,
       isSelected: selected,
       onPressed: isBusy ? null : onPressed,
@@ -129,6 +137,14 @@ class QuarkBarIconButton extends StatelessWidget {
             ),
           ),
       icon: isBusy ? QuarkLoader(size: glyphSize) : Icon(icon),
+    );
+    final badge = this.badge;
+    if (badge == null) return button;
+    return Stack(
+      children: [
+        button,
+        PositionedDirectional(top: tapTargetMargin / 2, end: 0, child: badge),
+      ],
     );
   }
 }

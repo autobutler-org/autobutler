@@ -29,20 +29,20 @@ class JobsBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     if (runningCount <= 0) return const SizedBox.shrink();
     final tokens = QuarkTokens.of(context);
-    return Badge(
-      label: Text(
-        '$runningCount',
-        style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
-      ),
-      backgroundColor: tokens.primary,
-      textColor: tokens.primaryForeground,
-      child: QuarkBarIconButton(
-        key: const ValueKey('jobs_badge'),
-        icon: QuarkIcons.pending_actions_outlined,
-        tooltip: runningCount == 1
-            ? '1 job running'
-            : '$runningCount jobs running',
-        onPressed: onTap,
+    return QuarkBarIconButton(
+      key: const ValueKey('jobs_badge'),
+      icon: QuarkIcons.pending_actions_outlined,
+      tooltip: runningCount == 1
+          ? '1 job running'
+          : '$runningCount jobs running',
+      onPressed: onTap,
+      badge: Badge(
+        label: Text(
+          '$runningCount',
+          style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+        ),
+        backgroundColor: tokens.primary,
+        textColor: tokens.primaryForeground,
       ),
     );
   }
