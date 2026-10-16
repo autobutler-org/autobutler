@@ -19,6 +19,9 @@
 /// address: an accepted certificate must also pass [checkCertificatePin]
 /// against the one the saved Quark presented first. `local_trust_pin_io.dart`
 /// applies it in every certificate callback; the pins live in `AppSettings`.
+/// The pin is checked only there: the platform calls a `badCertificateCallback`
+/// only for a certificate that failed chain verification, so one a public CA
+/// vouches for is never compared with the pin.
 ///
 /// Deliberately pure Dart (no `dart:io`, no Flutter) so it can be imported from
 /// web builds and unit-tested without a binding.
@@ -121,6 +124,14 @@ CertificatePinCheck checkCertificatePin({
     : pinned == presented
     ? CertificatePinCheck.match
     : CertificatePinCheck.mismatch;
+
+/// [sha256], a certificate's lowercase hex SHA-256, as colon-separated
+/// uppercase pairs (`BA:78:16:BF:…`): the form `openssl x509 -fingerprint
+/// -sha256` prints, for comparing by eye (#3182).
+String formatCertificateFingerprint(String sha256) => [
+  for (var i = 0; i < sha256.length; i += 2)
+    sha256.substring(i, i + 2 > sha256.length ? sha256.length : i + 2),
+].join(':').toUpperCase();
 
 /// Returns true for RFC 1918 private ranges, loopback, and link-local IPv4.
 bool _isPrivateIpv4(String host) {

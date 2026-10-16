@@ -106,7 +106,15 @@ void main() {
     expect(acceptsReportedPinnedCertificate(genuine, '10.0.0.7', 443), isTrue);
     expect(acceptsReportedPinnedCertificate(forged, '10.0.0.7', 443), isFalse);
 
+    // Forgetting the pin does not let the next certificate in unseen (#3182).
     await AppSettings.instance.forgetCertificate(home);
-    expect(acceptsReportedPinnedCertificate(forged, 'home.local', 443), isTrue);
+    expect(
+      acceptsReportedPinnedCertificate(forged, 'home.local', 443),
+      isFalse,
+    );
+    expect(
+      AppSettings.instance.pendingCertificateFor(home),
+      certificateSha256(forged),
+    );
   });
 }
