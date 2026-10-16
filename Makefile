@@ -1441,11 +1441,18 @@ test/chaos/local: build/backend ## Run the API stress suite against a temporary 
 	fi
 	QUARK_BASE_URL=$(PERF_BASE_URL) $(MAKE) test/chaos
 
+.PHONY: test/chaos/powercut/base
+test/chaos/powercut/base: ## Prove the power-cut base image falls through a mirror that answers 429
+	./test/chaos/powercut/pull-base_test.bash
+
 .PHONY: test/chaos/powercut
-test/chaos/powercut: check/docker ## Cut the power under the upload and vault write paths on LazyFS (see test/chaos/powercut/README.md)
+test/chaos/powercut: check/docker test/chaos/powercut/base ## Cut the power under the upload and vault write paths on LazyFS (see test/chaos/powercut/README.md)
 	mkdir -p build test-results
 	CGO_ENABLED=0 GOOS=linux $(GO) build -o build/powercut ./test/chaos/powercut
-	docker build -t quark-powercut test/chaos/powercut
+	# pull-base.bash tries the next mirror when a registry answers 429.
+	base="$$(./test/chaos/powercut/pull-base.bash)"
+	echo "powercut base image: $$base"
+	docker build --build-arg BASE_IMAGE="$$base" -t quark-powercut test/chaos/powercut
 	docker run --rm --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor=unconfined \
 		-v "$(PWD)/build/powercut:/usr/local/bin/powercut:ro" \
 		-v "$(PWD)/test/chaos/powercut/run.bash:/usr/local/bin/run-powercut:ro" \
@@ -1541,7 +1548,7 @@ watch/frontend: generate/frontend ## Watch frontend on web
 check: check/backend check/frontend check/spelling ## Check code
 
 .PHONY: check/backend
-check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc check/migrations ## Check backend code
+check/backend: generate/backend check/format/go check/lint/go check/lint/sqlc check/migrations test/chaos/powercut/base ## Check backend code
 
 .PHONY: check/frontend
 check/frontend: check/format/flutter check/lint/flutter check/frontend/test-shards ## Check frontend code

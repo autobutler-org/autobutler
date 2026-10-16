@@ -48,6 +48,7 @@ half-written database page, and the commit point.
 | `run.bash`      | the orchestrator; `run.bash --help` for running it outside Docker                               |
 | `*.go`          | the `powercut` writer and checker, built by the Makefile target                                 |
 | `Dockerfile`    | LazyFS, pinned to a commit, built on Ubuntu                                                      |
+| `pull-base.bash` | pulls that Ubuntu base from the first mirror that answers, so a registry 429 is not a failed job |
 | `lazyfs.patch`  | builds LazyFS against the distribution's spdlog instead of downloading one at configure time    |
 
 Results, one directory per case with the LazyFS log, writer log, ledger and check output, land in

@@ -1,9 +1,11 @@
 # LazyFS, the FUSE file system run.bash cuts the power under (#2517). The powercut
 # writer and run.bash are mounted in by `make test/chaos/powercut`, so this image
 # only changes when LazyFS does.
-# Pulled from the AWS public mirror of the official image: CI runners share Docker Hub's
-# anonymous pull limit and a 429 there failed this job.
-FROM public.ecr.aws/docker/library/ubuntu:24.04
+# BASE_IMAGE is chosen by pull-base.bash. GitHub-hosted runners share source IPs,
+# so Docker Hub's anonymous pull limit and ECR Public's anonymous data cap both
+# answer this job with 429. The script pulls the first mirror that still answers.
+ARG BASE_IMAGE=public.ecr.aws/docker/library/ubuntu:24.04
+FROM ${BASE_IMAGE}
 
 ARG LAZYFS_COMMIT=fa7d32ee9710d55a7e529ac3c375f6616563c78b
 

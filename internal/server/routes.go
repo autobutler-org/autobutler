@@ -2,8 +2,8 @@ package server
 
 import (
 	"embed"
+	"io/fs"
 	"log/slog"
-	"net/http"
 
 	v0_access "github.com/autobutler-org/quark/internal/server/api/v0/access"
 	v0_admin "github.com/autobutler-org/quark/internal/server/api/v0/admin"
@@ -38,7 +38,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/healthutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
-	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
@@ -102,30 +101,13 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 }
 
 func setupStaticRoutes(engine *gin.Engine) error {
-	fs, err := static.EmbedFolder(public, "public")
+	web, err := fs.Sub(public, "public")
 	if err != nil {
 		return err
 	}
-	engine.Use(static.Serve("/", fs))
-	// Read index.html once at startup for the SPA fallback.
-	// In dev mode (no built frontend), index.html may not exist — fall back
-	// to a plain 404 so the server still starts.
-	indexHTML, readErr := public.ReadFile("public/index.html")
-	if readErr != nil {
+	if _, err := fs.Stat(web, "index.html"); err != nil {
 		slog.Warn("No embedded index.html — SPA fallback disabled (dev mode?)")
 	}
-	engine.NoRoute(
-		func(c *gin.Context) {
-			if indexHTML != nil {
-				// Serve index.html for any unmatched route so Flutter's client-side
-				// router can read the URL path (e.g. /health, /photos) and navigate.
-				// Using c.Data instead of c.FileFromFS to avoid http.FileServer's
-				// redirect behavior that strips the path to /.
-				c.Data(http.StatusOK, "text/html; charset=utf-8", indexHTML)
-				return
-			}
-			c.String(http.StatusNotFound, "404 page not found")
-		},
-	)
+	engine.NoRoute(serveWebApp(web))
 	return nil
 }
