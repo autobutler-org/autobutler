@@ -9,6 +9,9 @@ import 'package:quark_widgets/quark_widgets.dart';
 
 /// Body of the devices page: no host, error, spinner, or the device list with
 /// the backup progress card on top.
+///
+/// [header] is drawn above that list. [protectionBadge] is drawn on the first
+/// snapshot-backup drive.
 class StorageDevicesBody extends StatelessWidget {
   const StorageDevicesBody({
     required this.devices,
@@ -24,6 +27,8 @@ class StorageDevicesBody extends StatelessWidget {
     this.onSetRole,
     this.onBackup,
     this.onVerify,
+    this.header,
+    this.protectionBadge,
     super.key,
   });
 
@@ -49,6 +54,12 @@ class StorageDevicesBody extends StatelessWidget {
   final ValueChanged<StorageDevice>? onSetRole;
   final ValueChanged<StorageDevice>? onBackup;
   final ValueChanged<StorageDevice>? onVerify;
+
+  /// Drawn above the drive list. Null leaves the list as it was.
+  final Widget? header;
+
+  /// Drawn on the first snapshot-backup drive. Null draws nothing.
+  final Widget? protectionBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -78,10 +89,11 @@ class StorageDevicesBody extends StatelessWidget {
     if (devices == null) {
       return const Center(child: QuarkLoader());
     }
-    if (devices.isEmpty) {
+    final header = this.header;
+    if (devices.isEmpty && header == null) {
       return const Center(child: Text('No storage devices detected.'));
     }
-    final widgets = <Widget>[];
+    final widgets = <Widget>[?header];
 
     if (backupStatus != null && activeBackupJobId != null) {
       widgets.add(BackupProgressCard(status: backupStatus!));
@@ -91,12 +103,17 @@ class StorageDevicesBody extends StatelessWidget {
     final onSetRole = this.onSetRole;
     final onBackup = this.onBackup;
     final onVerify = this.onVerify;
+    final protectionBadge = this.protectionBadge;
+    var badgePlaced = false;
     for (final device in devices) {
       final isVaultDevice =
           (vaultDeviceSerial.isEmpty && device.isInternal) ||
           (vaultDeviceSerial.isNotEmpty && device.serial == vaultDeviceSerial);
       final isUsb = device.serial.isNotEmpty;
       final isBackupDrive = device.role == 'snapshot-backup';
+      final placeBadge =
+          protectionBadge != null && isBackupDrive && !badgePlaced;
+      if (placeBadge) badgePlaced = true;
       widgets.add(
         DeviceCard(
           device: device,
@@ -114,8 +131,12 @@ class StorageDevicesBody extends StatelessWidget {
               ? () => onVerify(device)
               : null,
           isBackupRunning: backupStatus?.isRunning == true,
+          protectionBadge: placeBadge ? protectionBadge : null,
         ),
       );
+    }
+    if (devices.isEmpty) {
+      widgets.add(const Center(child: Text('No storage devices detected.')));
     }
 
     return RefreshIndicator(

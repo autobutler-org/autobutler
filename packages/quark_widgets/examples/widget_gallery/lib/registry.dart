@@ -2371,6 +2371,91 @@ final List<GalleryEntry> registry = [
     ),
   ),
 
+  // ── System ────────────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'DataProtectionBadge',
+    group: 'System',
+    build: (context, log) => Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final level in DataProtectionLevel.values)
+          DataProtectionBadge(id: level.name, level: level),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'DataProtectionMeter',
+    group: 'System',
+    build: (context, log) {
+      var level = DataProtectionLevel.basic;
+      return StatefulBuilder(
+        builder: (context, setState) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DataProtectionMeter(level: level),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final choice in DataProtectionLevel.values)
+                  FilledButton(
+                    onPressed: () {
+                      log('DataProtectionMeter ${choice.name}');
+                      setState(() => level = choice);
+                    },
+                    child: Text(choice.label),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text('Reduced motion'),
+            MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: const DataProtectionMeter(
+                id: 'reduced',
+                level: DataProtectionLevel.protected,
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  ),
+  GalleryEntry(
+    name: 'DataProtectionStatusCard',
+    group: 'System',
+    build: (context, log) => DataProtectionStatusCard(
+      level: DataProtectionLevel.basic,
+      sentence:
+          'Your files are on 2 drives. Add a second backup drive and keep it somewhere else.',
+      drives: [
+        DataProtectionDrive(
+          id: 'usb-1',
+          name: 'Backup',
+          lastBackedUp: DateTime(2026, 10, 1),
+        ),
+        const DataProtectionDrive(
+          id: 'usb-2',
+          name: 'Second backup',
+          reason: 'No completed backup yet.',
+        ),
+      ],
+      nextStepLabel: 'Assign the backup role',
+      onNextStep: () => log('DataProtectionStatusCard.onNextStep'),
+      onExplain: () => log('DataProtectionStatusCard.onExplain'),
+    ),
+  ),
+  GalleryEntry(
+    name: 'DataProtectionExplainerSheet',
+    group: 'System',
+    build: (context, log) => QuarkSheet(
+      title: 'Why two backup drives?',
+      onClose: () => log('DataProtectionExplainerSheet.onClose'),
+      child: const DataProtectionExplainerSheet(),
+    ),
+  ),
+
   // ── Users ─────────────────────────────────────────────────────────────────
   GalleryEntry(
     name: 'UserList',

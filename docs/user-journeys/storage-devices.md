@@ -218,3 +218,42 @@ including one that is not mounted.
   straight to that drive are not copied back, and get no version history.
 - The role is the upload sheet's starting point only: a request that names no device still writes to built-in
   storage.
+
+---
+
+### JN-SD-012: Read how protected the files are
+
+**Preconditions:** User is logged in. The Quark answers the protection status for the files.
+
+**Steps:**
+
+1. Navigate to `/system/storage`.
+2. Read the protection card at the top of the drive list.
+3. Tap **Why two backup drives?**.
+4. Dismiss the sheet, then tap **Why two backup drives?** again.
+5. Dismiss the sheet and tap the card's next step.
+
+**Expected result:**
+
+- The card names the level the Quark reported: **Unprotected**, **Basic**, or **Protected**. The meter is filled
+  through that level.
+- The card shows the Quark's sentence. With no backup copy it reads "Your files are only on this Quark." With one
+  good backup drive it names how many drives hold the files and says to add a second backup drive and keep it
+  somewhere else. With two or more it says to keep one backup drive somewhere else.
+- Each backup drive on the card shows when it was last backed up, or the reason the Quark sent when that drive
+  does not count.
+- The first snapshot-backup drive in the list carries a compact badge with the same level.
+- The sheet is titled **Why two backup drives?** and shows what a fire, a theft, or a failed drive does to one
+  copy versus three, plus the reminder to keep one backup drive somewhere else. Dismissing it closes it, and the
+  card opens it again.
+- **Assign the backup role** opens the Set Role dialog. **Start a backup** opens the backup dialog. **Keep one
+  backup drive somewhere else** opens the same sheet.
+- A non-admin sees the card, the badge, and the sheet, and does not see **Assign the backup role** or **Start a
+  backup**.
+
+**Notes:**
+
+- The page shows the level the Quark sent. It does not count drives again. A stale backup, a failed backup, or a
+  second partition of the same disk stays at the reason the Quark sent.
+- Keeping a drive somewhere else is a sentence on the card, not a place the page stores.
+- The page refresh reloads the card. The card also reloads when a backup finishes or fails.
