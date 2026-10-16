@@ -2,19 +2,49 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:quark/controllers/slide_editor_controller.dart';
+import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/slides_service.dart';
 import 'package:quark/utils/fullscreen.dart';
 import 'package:quark_slides/quark_slides.dart';
 
+/// The URL one picture inside an office package is fetched from.
+///
+/// [part] is the zip entry (`ppt/media/image3.png`). [filePath] is the
+/// package on the device [serial] (null for the Quark's own storage).
+typedef PartUrlFn =
+    Uri Function(String part, {required String filePath, String? serial});
+
+/// Builds a [PartUrlFn] for `GET /api/v0/previews/part`.
+///
+/// The bearer token is added when the app holds one, so an image widget,
+/// which cannot send an Authorization header, can still authenticate.
+Uri previewPartUrl(String part, {required String filePath, String? serial}) {
+  final querySegments = <String>[
+    'filePath=${Uri.encodeQueryComponent(filePath)}',
+    'part=${Uri.encodeQueryComponent(part)}',
+  ];
+  final serialValue = serial?.trim() ?? '';
+  if (serialValue.isNotEmpty) {
+    querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+  }
+  final token = AppSettings.instance.bearerToken;
+  if (token != null && token.isNotEmpty) {
+    querySegments.add('token=${Uri.encodeQueryComponent(token)}');
+  }
+  return apiBaseUri
+      .resolve('/api/v0/previews/part')
+      .replace(query: querySegments.join('&'));
+}
+
 /// State behind presenting a `.qslide` (#1165): the presentation, the slide
 /// showing, the presenter view with its clock, the control bar that hides
 /// when the pointer rests, and fullscreen.
 ///
-/// Opened from the editor it is handed the editor's copy as [initial], so
-/// edits not yet saved are on screen at once; opened from a link it loads
-/// the file. It never edits: speaker notes are read here, written in the
-/// editor (#1166).
+/// Handed a deck as [initial] — the editor's unsaved copy, or a deck a
+/// viewer already converted — it shows that deck at once. Opened from a
+/// link, it loads the file. It never edits: speaker notes are read here,
+/// written in the editor (#1166).
 ///
 /// Each step plays the [transition] of the slide it arrives at, mirrored
 /// when it goes back ([movedBack]).
@@ -25,9 +55,12 @@ import 'package:quark_slides/quark_slides.dart';
 ///
 /// Service calls and fullscreen are parameters, so a test passes fakes.
 class SlidePresentController extends ChangeNotifier {
-  /// Creates a controller presenting the file at [filePath] on the device
+  /// Creates a controller for the file at [filePath] on the device
   /// [deviceSerial] (empty for the Quark's own storage), from the slide at
-  /// [startIndex]. Call [load] to open it.
+  /// [startIndex].
+  ///
+  /// [initial] is a deck already in memory: the editor's copy, or one a
+  /// viewer converted. Without one, call [load] to open the file.
   SlidePresentController({
     required this.filePath,
     this.deviceSerial = '',
@@ -35,6 +68,7 @@ class SlidePresentController extends ChangeNotifier {
     Presentation? initial,
     this.loadPresentation = SlidesService.load,
     this.mediaUrl = FilesService.constructMediaUrl,
+    this.partUrl = previewPartUrl,
     this.fullscreen = const FullscreenControl(),
   }) {
     if (initial != null) _show(initial);
@@ -55,6 +89,9 @@ class SlidePresentController extends ChangeNotifier {
 
   /// Builds the download URL a picture on a slide is fetched from.
   final MediaUrlFn mediaUrl;
+
+  /// Builds the URL a picture inside the file at [filePath] is fetched from.
+  final PartUrlFn partUrl;
 
   /// The platform's fullscreen switch.
   final FullscreenControl fullscreen;
@@ -130,10 +167,23 @@ class SlidePresentController extends ChangeNotifier {
   /// Whether the app is fullscreen.
   bool get isFullscreen => fullscreen.isSupported && fullscreen.isActive;
 
-  /// The URL of the picture a slide names by [source], a path relative to
-  /// the files root of the device the presentation is on.
-  Uri imageUrl(String source) =>
-      mediaUrl(source.trim().replaceAll(RegExp(r'^/+'), ''), serial: _serial);
+  /// The URL of the picture a slide names by [source].
+  ///
+  /// A file in the Quark, and an uploaded asset, are fetched from the device
+  /// the presentation is on. A [PackagePartImage] is fetched from inside the
+  /// file at [filePath].
+  Uri imageUrl(String source) {
+    final trimmed = source.trim();
+    switch (ImageSource.parse(trimmed)) {
+      case PackagePartImage(:final part):
+        return partUrl(part, filePath: filePath, serial: _serial);
+      case QuarkFileImage() || UploadedAssetImage():
+        return mediaUrl(
+          trimmed.replaceAll(RegExp(r'^/+'), ''),
+          serial: _serial,
+        );
+    }
+  }
 
   /// Fetches the presentation, unless it was handed over already.
   Future<void> load() async {
