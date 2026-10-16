@@ -362,6 +362,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                         children: [
                           for (final item in entry.value)
                             FolderDropWrapper(
+                              key: fileThumbnailKey(item),
                               item: item,
                               currentPath: widget.currentPath,
                               onDropToFolder: widget.onDropToFolder,
@@ -463,6 +464,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                       onVersionHistory: widget.onVersionHistory,
                     );
                     return FolderDropWrapper(
+                      key: fileThumbnailKey(item),
                       item: item,
                       currentPath: widget.currentPath,
                       onDropToFolder: widget.onDropToFolder,
@@ -618,6 +620,7 @@ class _FileBrowserViewState extends State<FileBrowserView> {
                 itemBuilder: (context, index) {
                   final item = files[index];
                   return FolderDropWrapper(
+                    key: fileThumbnailKey(item),
                     item: item,
                     currentPath: widget.currentPath,
                     onDropToFolder: widget.onDropToFolder,
