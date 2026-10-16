@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/controllers/chat_controller.dart';
 import 'package:quark/models/chat_channel.dart';
 import 'package:quark/models/chat_channel_keys.dart';
 import 'package:quark/models/chat_message.dart';
@@ -28,6 +29,8 @@ void main() {
     String location = '/chat/general',
     FakeChat? chat,
   }) async {
+    ChatController.clearSessionDrafts();
+    addTearDown(ChatController.clearSessionDrafts);
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -51,6 +54,24 @@ void main() {
   }
 
   String at(GoRouter r) => r.routerDelegate.currentConfiguration.uri.toString();
+
+  const field = ValueKey('message_composer_field');
+
+  String fieldText(WidgetTester tester) =>
+      tester.widget<TextField>(find.byKey(field)).controller!.text;
+
+  Future<void> openChannel(
+    WidgetTester tester,
+    FakeChat chat,
+    String id,
+  ) async {
+    if (find.byKey(ValueKey('channel_tile_$id')).evaluate().isEmpty) {
+      chat.controller.toggleChannelList();
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byKey(ValueKey('channel_tile_$id')));
+    await tester.pumpAndSettle();
+  }
 
   for (final (label, size) in [('narrow', narrow), ('wide', wide)]) {
     testWidgets('opens general and moves the URL to its id ($label)', (
@@ -194,6 +215,85 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(fake.opened[1]!.sent, ['hello']);
+      expect(tester.takeException(), isNull);
+    });
+
+    // #3254: the composer is rebuilt per channel, and that used to drop
+    // whatever was typed. Each channel keeps its own draft for the session.
+    testWidgets(
+      'drafts stay with their channels, and sending clears only the one sent ($label)',
+      (tester) async {
+        final (_, chat) = await pumpChat(tester, size);
+
+        await tester.enterText(find.byKey(field), 'from general');
+        await tester.pump();
+        await openChannel(tester, chat, '2');
+        expect(fieldText(tester), isEmpty);
+
+        await tester.enterText(find.byKey(field), 'from random');
+        await tester.pump();
+        await openChannel(tester, chat, '1');
+        expect(fieldText(tester), 'from general');
+        await openChannel(tester, chat, '2');
+        expect(fieldText(tester), 'from random');
+        await openChannel(tester, chat, '1');
+        await tester.tap(find.byKey(const ValueKey('message_composer_send')));
+        await tester.pumpAndSettle();
+        expect(fieldText(tester), isEmpty);
+        expect(chat.opened[1]!.sent, ['from general']);
+
+        await openChannel(tester, chat, '2');
+        expect(fieldText(tester), 'from random');
+        await tester.enterText(find.byKey(field), '');
+        await tester.pump();
+
+        await openChannel(tester, chat, '1');
+        await tester.enterText(find.byKey(field), 'again');
+        await tester.pump();
+        await openChannel(tester, chat, '2');
+        expect(fieldText(tester), isEmpty);
+        await openChannel(tester, chat, '1');
+        expect(fieldText(tester), 'again');
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('a draft survives leaving chat and coming back ($label)', (
+      tester,
+    ) async {
+      ChatController.clearSessionDrafts();
+      addTearDown(ChatController.clearSessionDrafts);
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      Future<void> show(FakeChat fake) async {
+        final router = GoRouter(
+          initialLocation: '/chat/general',
+          routes: [
+            GoRoute(
+              path: '${AppRoutes.chat}/:channelId',
+              builder: (context, state) => ChatPage(
+                channelId: state.pathParameters['channelId']!,
+                controller: fake.controller,
+              ),
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
+      }
+
+      await show(FakeChat());
+      await tester.enterText(find.byKey(field), 'still here');
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+
+      await show(FakeChat());
+      expect(fieldText(tester), 'still here');
       expect(tester.takeException(), isNull);
     });
 

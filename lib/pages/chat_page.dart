@@ -605,8 +605,15 @@ class _ChatPageState extends State<ChatPage>
                       // (#2788).
                       QuarkEdgeInset(
                         child: QuarkMessageComposer(
-                          // A draft belongs to its channel.
+                          // A new state per channel. The text is that
+                          // channel's draft, kept for this app session.
                           key: ValueKey('chat_composer_${channel?.id}'),
+                          initialText: channel == null
+                              ? ''
+                              : c.draftFor(channel.id),
+                          onChanged: channel == null
+                              ? null
+                              : (text) => c.setDraft(channel.id, text),
                           hintText: channel == null
                               ? 'Message'
                               : 'Message #${channel.name}',

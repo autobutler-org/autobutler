@@ -38,6 +38,62 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  // #3254: a channel switch builds a new composer. It has to show the draft
+  // it was given, and report edits so the caller can keep them.
+  testBothViewports('shows a restored draft and reports edits', (
+    tester,
+    size,
+  ) async {
+    final edits = <String>[];
+    await pumpAt(
+      tester,
+      QuarkMessageComposer(
+        initialText: 'draft',
+        onChanged: edits.add,
+        onSend: (_) {},
+      ),
+      size: size,
+    );
+
+    expect(
+      tester.widget<TextField>(find.byKey(field)).controller!.text,
+      'draft',
+    );
+    expect(edits, isEmpty);
+
+    await tester.enterText(find.byKey(field), 'draft plus');
+    await tester.pump();
+    expect(edits, ['draft plus']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testBothViewports('sending a restored draft clears it and reports empty', (
+    tester,
+    size,
+  ) async {
+    final edits = <String>[];
+    final sent = <String>[];
+    await pumpAt(
+      tester,
+      QuarkMessageComposer(
+        initialText: 'hello',
+        onChanged: edits.add,
+        onSend: sent.add,
+      ),
+      size: size,
+    );
+
+    await tester.tap(find.byKey(send));
+    await tester.pump();
+    expect(sent, ['hello']);
+    expect(edits, ['']);
+    expect(
+      tester.widget<TextField>(find.byKey(field)).controller!.text,
+      isEmpty,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testBothViewports('never sends a blank message', (tester, size) async {
     final sent = <String>[];
     await pumpAt(tester, QuarkMessageComposer(onSend: sent.add), size: size);

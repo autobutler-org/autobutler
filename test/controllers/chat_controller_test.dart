@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/controllers/chat_controller.dart';
+import 'package:quark/controllers/chat_unread_controller.dart';
 import 'package:quark/models/chat_channel.dart';
 import 'package:quark/models/chat_channel_keys.dart';
 import 'package:quark/models/chat_message.dart';
@@ -35,6 +36,10 @@ ChatMessage message(int id, {int author = 7}) => ChatMessage(
 );
 
 void main() {
+  // A failed send left at dispose becomes a session draft; keep each case
+  // from leaking one into the next.
+  tearDown(ChatController.clearSessionDrafts);
+
   test('opens general for the bare path and the general slug', () async {
     for (final requested in [null, 'general']) {
       final chat = FakeChat();
@@ -106,6 +111,77 @@ void main() {
     chat.controller.dispose();
   });
 
+  // #3254: a draft belongs to one channel on one Quark, and to this app
+  // session. Disposing the controller is leaving the page.
+  test('drafts stay per channel and per device for the session', () async {
+    ChatController.clearSessionDrafts();
+    addTearDown(ChatController.clearSessionDrafts);
+    final live = <ChatController>[];
+    final counts = <ChatUnreadController>[];
+    addTearDown(() {
+      for (final controller in live) {
+        controller.dispose();
+      }
+      for (final unread in counts) {
+        unread.dispose();
+      }
+    });
+
+    ChatController open(String device) {
+      final unread = ChatUnreadController(
+        listChannels: () async => [...fakeChannels],
+        markRead: (channelId, messageId) async => ChatReadMarker(
+          channelId: channelId,
+          lastReadMessageId: messageId,
+          unreadCount: 0,
+        ),
+        currentUserId: () => 7,
+        events: const Stream.empty(),
+      );
+      counts.add(unread);
+      final controller = ChatController(
+        listChannels: () async => [...fakeChannels],
+        listMembers: (_) async => const [],
+        messagesFor: FakeChatMessages.new,
+        isUnlocked: () => true,
+        currentUserId: () => 7,
+        events: const Stream.empty(),
+        unread: unread,
+        deviceKey: () => device,
+      );
+      live.add(controller);
+      return controller;
+    }
+
+    final first = open('quark-a');
+    first.select('1');
+    await first.refresh();
+    first.setDraft(1, 'from general');
+    first.setDraft(2, 'from random');
+    live.remove(first);
+    first.dispose();
+
+    final second = open('quark-a');
+    expect(second.draftFor(1), 'from general');
+    expect(second.draftFor(2), 'from random');
+
+    second.setDraft(2, '');
+    expect(second.draftFor(1), 'from general');
+    expect(second.draftFor(2), isEmpty);
+
+    second.select('1');
+    await second.refresh();
+    await second.send('from general');
+    expect(second.draftFor(1), isEmpty);
+    expect(second.draftFor(2), isEmpty);
+
+    final other = open('quark-b');
+    other.setDraft(1, 'on the other quark');
+    expect(second.draftFor(1), isEmpty);
+    expect(other.draftFor(1), 'on the other quark');
+    expect(other.draftFor(2), isEmpty);
+  });
+
   test('a failed send is kept for retry or discard', () async {
     final chat = FakeChat();
     chat.controller.select('general');
@@ -129,6 +205,28 @@ void main() {
     chat.controller.discard(chat.controller.failedSends.single.id);
     expect(chat.controller.pending, isEmpty);
     chat.controller.dispose();
+  });
+
+  // #3370 review: the composer clears on send because a failed send stays on
+  // screen with its own retry. Leaving chat with it still failed puts it
+  // back in the channel's draft, ahead of what was typed since.
+  test('a failed send left behind returns to its draft', () async {
+    final chat = FakeChat();
+    chat.controller.select('general');
+    await chat.controller.refresh();
+    final timeline = chat.opened[1]!;
+    timeline.onSend = (_) async => throw const MessageException('offline');
+
+    await chat.controller.send('lost?');
+    expect(chat.controller.failedSends.single.text, 'lost?');
+    expect(chat.controller.draftFor(1), isEmpty);
+
+    chat.controller.setDraft(1, 'typed after');
+    chat.controller.dispose();
+
+    final again = FakeChat();
+    expect(again.controller.draftFor(1), 'lost?\ntyped after');
+    again.controller.dispose();
   });
 
   // #3253: three sends while offline each fail on their own. Retrying one
