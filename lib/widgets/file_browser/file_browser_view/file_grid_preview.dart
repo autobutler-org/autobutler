@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/services/files_service.dart';
@@ -20,6 +19,10 @@ import 'package:shimmer/shimmer.dart';
 /// [fileThumbnailKey]: the file's device serial and path. The grid reuses a
 /// tile's element when the file in that slot changes; a key of the slot's
 /// index leaves the previous file's image in place (#3355).
+///
+/// The picture comes from [ThumbnailCacheManager.image], so it is decoded
+/// once and a tile coming back from a viewer or a scroll shows its own
+/// picture again (#3355).
 class FileGridPreview extends StatelessWidget {
   const FileGridPreview({required this.item, super.key});
 
@@ -36,6 +39,11 @@ class FileGridPreview extends StatelessWidget {
       item.apiPath,
       serial: item.deviceSerial,
     );
+    final placeholder = Shimmer.fromColors(
+      baseColor: Colors.grey[800]!,
+      highlightColor: Colors.grey[700]!,
+      child: Container(color: Colors.grey[800]),
+    );
     return SizedBox(
       width: double.infinity,
       child: !hasServerThumbnail(item)
@@ -48,26 +56,19 @@ class FileGridPreview extends StatelessWidget {
               // cache key.
               builder: (context, generation, onFailed) => KeyedSubtree(
                 key: ValueKey('${thumbKey.value}:$generation'),
-                child: CachedNetworkImage(
+                child: Image(
                   key: thumbKey,
-                  imageUrl: url.toString(),
-                  cacheKey: ThumbnailCacheManager.keyFor(url),
-                  cacheManager: ThumbnailCacheManager.instance,
-                  imageBuilder: (context, imageProvider) => Image(
-                    key: thumbKey,
-                    image: imageProvider,
-                    fit: BoxFit.cover,
-                    excludeFromSemantics: true,
-                  ),
-                  placeholder: (context, url) => Shimmer.fromColors(
-                    baseColor: Colors.grey[800]!,
-                    highlightColor: Colors.grey[700]!,
-                    child: Container(color: Colors.grey[800]),
-                  ),
+                  image: ThumbnailCacheManager.image(url),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  excludeFromSemantics: true,
+                  frameBuilder: (context, child, frame, synchronous) =>
+                      frame == null ? placeholder : child,
                   // A video or HEIC with no thumbnail yet gets one rendered
                   // here and uploaded (#2381); a busy Quark is asked again
                   // (#3349).
-                  errorWidget: (context, url, error) {
+                  errorBuilder: (context, error, stack) {
                     onFailed(error);
                     return icon;
                   },

@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/models/file_node.dart';
+import 'package:quark/utils/decode_once_image.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
 import 'package:quark/widgets/file_browser/file_browser_view/file_browser_list_tile.dart';
 
@@ -16,6 +17,12 @@ FileNode _image(String name) => FileNode(
   deviceSerial: 'internal',
   dirPath: 'users/me/$name',
 );
+
+/// The thumbnail URL an [Image] built by `ThumbnailCacheManager.image` loads.
+String _urlOf(Image image) =>
+    (((image.image as DecodeOnceImage).image as ResizeImage).imageProvider
+            as CachedNetworkImageProvider)
+        .url;
 
 const _names = [
   'files-photo-0003.jpg',
@@ -95,13 +102,13 @@ void main() {
         final node = nodes[i];
         final tile = find.widgetWithText(FileBrowserListTile, node.name);
         expect(tile, findsOneWidget);
-        final image = tester.widget<CachedNetworkImage>(
-          find.descendant(of: tile, matching: find.byType(CachedNetworkImage)),
+        final image = tester.widget<Image>(
+          find.descendant(of: tile, matching: find.byType(Image)),
         );
         // Device serial and path, never the row's list index.
         expect(image.key, ValueKey('${node.deviceSerial}:${node.apiPath}'));
         expect(image.key, isNot(ValueKey<int>(i)));
-        final url = Uri.parse(image.imageUrl);
+        final url = Uri.parse(_urlOf(image));
         expect(url.path, contains(node.name));
         expect(url.queryParameters['serial'], node.deviceSerial);
         if (i + 1 < nodes.length) {
