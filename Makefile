@@ -1444,6 +1444,11 @@ test/chaos/local: build/backend ## Run the API stress suite against a temporary 
 .PHONY: test/chaos/powercut
 test/chaos/powercut: check/docker ## Cut the power under the upload and vault write paths on LazyFS (see test/chaos/powercut/README.md)
 	mkdir -p build test-results
+	# A published power-cut job still pins public.ecr.aws. ci-pull.bash points
+	# that FROM at the next mirror that answers. A Dockerfile that already
+	# takes BASE_IMAGE is left alone.
+	./test/chaos/powercut/ci-pull_test.bash
+	./test/chaos/powercut/ci-pull.bash
 	CGO_ENABLED=0 GOOS=linux $(GO) build -o build/powercut ./test/chaos/powercut
 	docker build -t quark-powercut test/chaos/powercut
 	docker run --rm --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor=unconfined \
