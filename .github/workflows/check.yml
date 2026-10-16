@@ -29,8 +29,8 @@ jobs:
         uses: ./.github/actions/setup-sqlc
       - name: Setup swag
         uses: ./.github/actions/setup-swag
-      - name: Setup gotools
-        uses: ./.github/actions/setup-gotools
+      - name: Setup golangci-lint
+        uses: ./.github/actions/setup-golangci-lint
       - name: Generate code
         run: |
           make generate/backend
@@ -128,8 +128,8 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: Setup govulncheck
+        uses: ./.github/actions/setup-govulncheck
 
       - name: Check for vulnerabilities
         run: make check/vuln/backend

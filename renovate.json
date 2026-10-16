@@ -1,12 +1,30 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>autobutler-org/renovate-config"],
+  "extends": [
+    "github>autobutler-org/renovate-config"
+  ],
   "packageRules": [
     {
       "description": "gin-swagger still imports github.com/swaggo/files (v1), so the /v2 module can't replace it yet; revisit once gin-swagger moves to v2.",
-      "matchPackageNames": ["github.com/swaggo/files"],
-      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "github.com/swaggo/files"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Go tool versions pinned in the Makefile, each under a `# renovate:` comment.",
+      "managerFilePatterns": [
+        "/^Makefile$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+ := (?<currentValue>\\S+)"
+      ]
     }
   ]
 }
