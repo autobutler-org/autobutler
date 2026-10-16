@@ -6,9 +6,10 @@ import 'package:quark_widgets/quark_widgets.dart';
 
 import '../support/pump.dart';
 
-/// The field messages are written in (#2420): the send button sends
-/// everywhere, Enter sends only on a desktop, a blank message never sends,
-/// and a user who may not write sees why instead of a field.
+/// The field messages are written in (#2420, #3256): the send button sends
+/// everywhere, a hardware Enter sends and Shift+Enter inserts a newline on
+/// every platform, a blank message never sends, and a user who may not write
+/// sees why instead of a field.
 void main() {
   const field = ValueKey('message_composer_field');
   const send = ValueKey('message_composer_send');
@@ -48,37 +49,76 @@ void main() {
     expect(sent, isEmpty);
   });
 
-  testBothViewports('Enter sends on a desktop', (tester, size) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    final sent = <String>[];
-    await pumpAt(tester, QuarkMessageComposer(onSend: sent.add), size: size);
+  // #3256: hardware Enter sends on a phone as well as a desktop.
+  // Shift+Enter inserts a newline. The on-screen keyboard shows Send.
+  for (final platform in const [TargetPlatform.macOS, TargetPlatform.android]) {
+    final where = platform == TargetPlatform.macOS ? 'desktop' : 'phone';
 
-    await tester.enterText(find.byKey(field), 'hi');
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
+    testBothViewports('a hardware Enter sends on a $where', (
+      tester,
+      size,
+    ) async {
+      debugDefaultTargetPlatformOverride = platform;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final sent = <String>[];
+      await pumpAt(tester, QuarkMessageComposer(onSend: sent.add), size: size);
 
-    expect(sent, ['hi']);
-    debugDefaultTargetPlatformOverride = null;
-  });
+      await tester.enterText(find.byKey(field), 'hi');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
 
-  testBothViewports('Shift+Enter does not send on a desktop', (
+      expect(sent, ['hi']);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testBothViewports('Shift+Enter inserts a newline on a $where', (
+      tester,
+      size,
+    ) async {
+      debugDefaultTargetPlatformOverride = platform;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final sent = <String>[];
+      await pumpAt(tester, QuarkMessageComposer(onSend: sent.add), size: size);
+
+      await tester.enterText(find.byKey(field), 'hi');
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pump();
+
+      expect(sent, isEmpty);
+      final controller = tester
+          .widget<TextField>(find.byKey(field))
+          .controller!;
+      expect(controller.text, 'hi\n');
+      expect(controller.selection, const TextSelection.collapsed(offset: 3));
+      debugDefaultTargetPlatformOverride = null;
+    });
+  }
+
+  testBothViewports('the on-screen keyboard shows Send and sends', (
     tester,
     size,
   ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     final sent = <String>[];
     await pumpAt(tester, QuarkMessageComposer(onSend: sent.add), size: size);
 
-    await tester.enterText(find.byKey(field), 'hi');
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    expect(
+      tester.widget<TextField>(find.byKey(field)).textInputAction,
+      TextInputAction.send,
+    );
+    await tester.showKeyboard(find.byKey(field));
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'hi',
+        selection: TextSelection.collapsed(offset: 2),
+      ),
+    );
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.send);
     await tester.pump();
 
-    expect(sent, isEmpty);
-    debugDefaultTargetPlatformOverride = null;
+    expect(sent, ['hi']);
   });
 
   testBothViewports('Enter confirms an input method, it does not send', (
@@ -114,20 +154,6 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pump();
     expect(sent, ['nihon']);
-    debugDefaultTargetPlatformOverride = null;
-  });
-
-  testBothViewports('Enter does not send on a phone', (tester, size) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    final sent = <String>[];
-    await pumpAt(tester, QuarkMessageComposer(onSend: sent.add), size: size);
-
-    await tester.enterText(find.byKey(field), 'hi');
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-
-    expect(sent, isEmpty);
     debugDefaultTargetPlatformOverride = null;
   });
 
