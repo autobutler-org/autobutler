@@ -1445,7 +1445,13 @@ test/chaos/local: build/backend ## Run the API stress suite against a temporary 
 test/chaos/powercut: check/docker ## Cut the power under the upload and vault write paths on LazyFS (see test/chaos/powercut/README.md)
 	mkdir -p build test-results
 	CGO_ENABLED=0 GOOS=linux $(GO) build -o build/powercut ./test/chaos/powercut
-	docker build -t quark-powercut test/chaos/powercut
+	# The base image comes from a public registry that rate-limits shared CI runners (429), so retry the pull.
+	for attempt in 1 2 3 4; do
+		docker build -t quark-powercut test/chaos/powercut && break
+		[ "$$attempt" -lt 4 ] || exit 1
+		echo "docker build failed (attempt $$attempt); retrying in $$((attempt * 30))s" >&2
+		sleep $$((attempt * 30))
+	done
 	docker run --rm --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor=unconfined \
 		-v "$(PWD)/build/powercut:/usr/local/bin/powercut:ro" \
 		-v "$(PWD)/test/chaos/powercut/run.bash:/usr/local/bin/run-powercut:ro" \
