@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:quark/models/file_list_column.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/utils/file_kind.dart';
@@ -13,6 +14,14 @@ bool hasServerThumbnail(FileNode node) =>
 
 bool isArchiveNode(FileNode node) =>
     !node.isDir && fileKindForName(node.name) == FileKind.archive;
+
+/// Identity of [node] for the list slot and the thumbnail in it.
+///
+/// A list or grid matches a child with no key by index. After the viewer
+/// route is popped, that slot keeps the next file's image (#3355). The
+/// serial is part of the key because two drives can list the same path.
+ValueKey<String> fileThumbnailKey(FileNode node) =>
+    ValueKey('${node.deviceSerial}:${node.apiPath}');
 
 /// What a cell shows when the listing has nothing to put in it: a folder's
 /// size, or the time of a node the Quark sent none for.

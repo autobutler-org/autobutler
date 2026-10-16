@@ -16,9 +16,9 @@ import 'package:shimmer/shimmer.dart';
 /// noise to a screen reader (#2603).
 ///
 /// The thumbnail, and the icon when the file has none, are keyed by
-/// [FileNode.apiPath]. A list reuses the element in a slot; without that key
-/// the slot keeps painting the previous file's image until the new URL
-/// settles.
+/// [fileThumbnailKey]: the file's device serial and path. A list reuses the
+/// element in a slot; a key of that slot's index keeps painting the next
+/// file's image after the viewer route is popped (#3355).
 class FileListLeading extends StatelessWidget {
   const FileListLeading({required this.item, super.key});
 
@@ -31,7 +31,7 @@ class FileListLeading extends StatelessWidget {
     final icon = Center(
       child: QuarkFileIcon(name: item.name, isDir: item.isDir),
     );
-    final thumbKey = ValueKey(item.apiPath);
+    final thumbKey = fileThumbnailKey(item);
 
     final url = FilesService.constructThumbnailUrl(
       item.apiPath,
@@ -50,7 +50,7 @@ class FileListLeading extends StatelessWidget {
               // so the element after a backfill loads afresh under the same
               // cache key.
               builder: (context, generation, onFailed) => KeyedSubtree(
-                key: ValueKey(generation),
+                key: ValueKey('${thumbKey.value}:$generation'),
                 child: CachedNetworkImage(
                   key: thumbKey,
                   imageUrl: url.toString(),
@@ -62,6 +62,7 @@ class FileListLeading extends StatelessWidget {
                   imageBuilder: (context, imageProvider) => ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: Image(
+                      key: thumbKey,
                       image: imageProvider,
                       fit: BoxFit.cover,
                       excludeFromSemantics: true,

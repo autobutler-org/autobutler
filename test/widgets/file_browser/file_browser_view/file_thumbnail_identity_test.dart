@@ -12,9 +12,11 @@ FileNode _image(String name) => FileNode(
   isDir: false,
   deviceName: 'Quark',
   devicePath: '',
-  deviceSerial: '',
-  dirPath: '',
+  deviceSerial: 'internal',
+  dirPath: 'users/me/$name',
 );
+
+ValueKey<String> _thumbKey(String name) => ValueKey('internal:users/me/$name');
 
 /// The test binding answers every request with HTTP 400, and a shimmer keeps
 /// a frame scheduled. Unmount, then fail if an image error escaped.
@@ -42,8 +44,8 @@ Future<void> _pumpLeadings(WidgetTester tester, List<String> names) {
   );
 }
 
-Finder _imageKey(String path) => find.byWidgetPredicate(
-  (widget) => widget is CachedNetworkImage && widget.key == ValueKey(path),
+Finder _imageKey(String name) => find.byWidgetPredicate(
+  (widget) => widget is CachedNetworkImage && widget.key == _thumbKey(name),
 );
 
 void main() {
@@ -52,17 +54,17 @@ void main() {
   ) async {
     await _pumpLeadings(tester, ['mountain.png', 'sunset.png']);
 
-    // Absent keys fail here: nothing is tagged with the file path.
-    expect(find.byKey(const ValueKey('mountain.png')), findsOneWidget);
-    expect(find.byKey(const ValueKey('sunset.png')), findsOneWidget);
-    final mountain = tester.element(find.byKey(const ValueKey('mountain.png')));
-    final sunset = tester.element(find.byKey(const ValueKey('sunset.png')));
+    // Absent keys fail here: nothing is tagged with the device serial and path.
+    expect(find.byKey(_thumbKey('mountain.png')), findsOneWidget);
+    expect(find.byKey(_thumbKey('sunset.png')), findsOneWidget);
+    final mountain = tester.element(find.byKey(_thumbKey('mountain.png')));
+    final sunset = tester.element(find.byKey(_thumbKey('sunset.png')));
     expect(mountain, isNot(same(sunset)));
 
     await _pumpLeadings(tester, ['sunset.png', 'mountain.png']);
 
-    expect(find.byKey(const ValueKey('sunset.png')), findsOneWidget);
-    expect(find.byKey(const ValueKey('mountain.png')), findsOneWidget);
+    expect(find.byKey(_thumbKey('sunset.png')), findsOneWidget);
+    expect(find.byKey(_thumbKey('mountain.png')), findsOneWidget);
 
     final first = tester.widget<CachedNetworkImage>(
       find.descendant(
@@ -75,11 +77,11 @@ void main() {
 
     // The slot Flutter reused must not still be the previous file's element.
     expect(
-      tester.element(find.byKey(const ValueKey('sunset.png'))),
+      tester.element(find.byKey(_thumbKey('sunset.png'))),
       isNot(same(mountain)),
     );
     expect(
-      tester.element(find.byKey(const ValueKey('mountain.png'))),
+      tester.element(find.byKey(_thumbKey('mountain.png'))),
       isNot(same(sunset)),
     );
 
@@ -120,8 +122,8 @@ void main() {
         .widgetList<FileListLeading>(find.byType(FileListLeading))
         .toList();
     expect(leadings, hasLength(2));
-    expect(leadings.first.key, const ValueKey('sunset.png'));
-    expect(leadings.last.key, const ValueKey('mountain.png'));
+    expect(leadings.first.key, _thumbKey('sunset.png'));
+    expect(leadings.last.key, _thumbKey('mountain.png'));
     expect(_imageKey('sunset.png'), findsOneWidget);
     expect(_imageKey('mountain.png'), findsOneWidget);
 
@@ -151,22 +153,22 @@ void main() {
     }
 
     await pump(['mountain.png', 'sunset.png']);
-    final mountain = tester.element(find.byKey(const ValueKey('mountain.png')));
+    final mountain = tester.element(find.byKey(_thumbKey('mountain.png')));
 
     await pump(['sunset.png', 'mountain.png']);
 
-    expect(find.byKey(const ValueKey('sunset.png')), findsOneWidget);
-    expect(find.byKey(const ValueKey('mountain.png')), findsOneWidget);
+    expect(find.byKey(_thumbKey('sunset.png')), findsOneWidget);
+    expect(find.byKey(_thumbKey('mountain.png')), findsOneWidget);
     final first = tester.widget<CachedNetworkImage>(
       find.descendant(
         of: find.byType(FileGridPreview).first,
         matching: _imageKey('sunset.png'),
       ),
     );
-    expect(first.key, const ValueKey('sunset.png'));
+    expect(first.key, _thumbKey('sunset.png'));
     expect(first.imageUrl, contains('sunset.png'));
     expect(
-      tester.element(find.byKey(const ValueKey('sunset.png'))),
+      tester.element(find.byKey(_thumbKey('sunset.png'))),
       isNot(same(mountain)),
     );
 

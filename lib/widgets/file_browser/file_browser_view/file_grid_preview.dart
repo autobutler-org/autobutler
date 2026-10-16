@@ -17,9 +17,9 @@ import 'package:shimmer/shimmer.dart';
 /// noise to a screen reader (#2603).
 ///
 /// The thumbnail, and the icon when the file has none, are keyed by
-/// [FileNode.apiPath]. The grid reuses a tile's element when the file in
-/// that slot changes; the key makes the image a new element instead of
-/// briefly showing the previous file.
+/// [fileThumbnailKey]: the file's device serial and path. The grid reuses a
+/// tile's element when the file in that slot changes; a key of the slot's
+/// index leaves the previous file's image in place (#3355).
 class FileGridPreview extends StatelessWidget {
   const FileGridPreview({required this.item, super.key});
 
@@ -30,7 +30,7 @@ class FileGridPreview extends StatelessWidget {
     final icon = Center(
       child: QuarkFileIcon(name: item.name, isDir: item.isDir, size: 48),
     );
-    final thumbKey = ValueKey(item.apiPath);
+    final thumbKey = fileThumbnailKey(item);
 
     final url = FilesService.constructThumbnailUrl(
       item.apiPath,
@@ -47,13 +47,14 @@ class FileGridPreview extends StatelessWidget {
               // so the element after a backfill loads afresh under the same
               // cache key.
               builder: (context, generation, onFailed) => KeyedSubtree(
-                key: ValueKey(generation),
+                key: ValueKey('${thumbKey.value}:$generation'),
                 child: CachedNetworkImage(
                   key: thumbKey,
                   imageUrl: url.toString(),
                   cacheKey: ThumbnailCacheManager.keyFor(url),
                   cacheManager: ThumbnailCacheManager.instance,
                   imageBuilder: (context, imageProvider) => Image(
+                    key: thumbKey,
                     image: imageProvider,
                     fit: BoxFit.cover,
                     excludeFromSemantics: true,
