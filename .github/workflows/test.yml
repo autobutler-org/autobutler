@@ -148,6 +148,13 @@ jobs:
           go-version-file: go.mod
       - name: Cut the power under uploads and the vault
         run: |
+          # A pull request built from main still pins public.ecr.aws in the
+          # power-cut Dockerfile. That registry answers 429, and the Makefile
+          # on that tree builds the image with no mirror fallback. ci-base.bash
+          # points FROM at the next mirror that answers. A Dockerfile that
+          # already takes BASE_IMAGE is left alone.
+          ./test/chaos/powercut/ci-base_test.bash
+          ./test/chaos/powercut/ci-base.bash
           make test/chaos/powercut
       - name: Upload power-cut results
         if: always()

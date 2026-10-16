@@ -1387,6 +1387,12 @@ func CreateKeyVersion(params CreateKeyVersionParams) (CreateKeyVersionResult, er
 	}
 	var result CreateKeyVersionResult
 	err = db.InTx(params.Ctx, params.Database.Db, func(q db.Querier) error {
+		// Lock before reading, so a second creator waits under busy_timeout
+		// and then answers ErrVersionConflict. A read that comes first fails
+		// SQLITE_BUSY the moment it tries to write (#3188).
+		if err := q.LockChatChannel(params.Ctx, params.ChannelID); err != nil {
+			return err
+		}
 		state, err := loadKeyState(params.Ctx, q, params.ChannelID)
 		if err != nil {
 			return err
