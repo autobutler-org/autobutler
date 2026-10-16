@@ -95,9 +95,9 @@ void main() {
     timeline.onSend = (_) => gate.future;
 
     final sending = chat.controller.send('hi');
-    expect(chat.controller.messageItems.first.body, 'hi');
-    expect(chat.controller.messageItems.first.authorName, 'ada');
-    expect(chat.controller.pending, hasLength(1));
+    expect(chat.controller.pending.single.text, 'hi');
+    expect(chat.controller.pending.single.failed, isFalse);
+    expect(chat.controller.messageItems, isEmpty);
 
     gate.complete();
     await sending;
@@ -117,7 +117,7 @@ void main() {
     final failed = chat.controller.failedSends.single;
     expect(failed.text, 'hi');
     expect(Errors.message(failed.error, 'send the message'), 'Offline.');
-    expect(chat.controller.messageItems.first.body, 'hi');
+    expect(chat.controller.messageItems, isEmpty);
 
     timeline.onSend = null;
     await chat.controller.retry(failed.id);
@@ -130,6 +130,53 @@ void main() {
     expect(chat.controller.pending, isEmpty);
     chat.controller.dispose();
   });
+
+  // #3253: three sends while offline each fail on their own. Retrying one
+  // delivers that message once and leaves the other two failed.
+  test(
+    'three offline sends each fail, and retrying one delivers only it',
+    () async {
+      final chat = FakeChat();
+      chat.controller.select('general');
+      await chat.controller.refresh();
+      final timeline = chat.opened[1]!;
+      timeline.onSend = (_) async => throw const MessageException('offline');
+
+      await Future.wait([
+        chat.controller.send('one'),
+        chat.controller.send('two'),
+        chat.controller.send('three'),
+      ]);
+
+      final failed = chat.controller.failedSends;
+      expect(failed.map((send) => send.text), ['one', 'two', 'three']);
+      expect(failed.map((send) => send.id).toSet(), hasLength(3));
+      expect(failed.every((send) => send.failed), isTrue);
+      expect(
+        chat.controller.messageItems.where(
+          (item) => item.id.startsWith('pending_'),
+        ),
+        isEmpty,
+      );
+
+      final attempts = [...timeline.sent];
+      timeline.onSend = null;
+      await chat.controller.retry(failed[1].id);
+
+      expect(timeline.sent.skip(attempts.length), ['two']);
+      expect(timeline.sent.where((text) => text == 'one'), ['one']);
+      expect(timeline.sent.where((text) => text == 'three'), ['three']);
+      expect(chat.controller.failedSends.map((send) => send.text), [
+        'one',
+        'three',
+      ]);
+      expect(chat.controller.pending.map((send) => send.text), [
+        'one',
+        'three',
+      ]);
+      chat.controller.dispose();
+    },
+  );
 
   test('locked chat opens nothing until unlocked', () async {
     final chat = FakeChat(unlocked: false);
@@ -1226,7 +1273,11 @@ void main() {
       final sending = Completer<void>();
       chat.opened[1]!.onSend = (_) => sending.future;
       unawaited(c.send('lunch is pending'));
-      expect(c.messageItems.first.body, 'lunch is pending');
+      expect(c.pending.single.text, 'lunch is pending');
+      expect(
+        c.messageItems.map((item) => item.body),
+        isNot(contains('lunch is pending')),
+      );
 
       c
         ..toggleSearch()

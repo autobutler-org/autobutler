@@ -21,6 +21,7 @@ void main() {
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: ChatFailedSendBar(
+                  id: 'pending_0',
                   text: 'see you at noon',
                   error: "Couldn't send the message.",
                   onRetry: () => log.add('retry'),
@@ -32,10 +33,78 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byKey(const ValueKey('chat_failed_send_retry')));
-      await tester.tap(find.byKey(const ValueKey('chat_failed_send_discard')));
+      await tester.tap(
+        find.byKey(const ValueKey('chat_failed_send_retry_pending_0')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('chat_failed_send_discard_pending_0')),
+      );
       expect(log, ['retry', 'discard']);
       await expectTapTargetGuidelines(tester);
     });
   }
+
+  testWidgets(
+    'a failed row shows its indicator and actions, and a pending row shows sending',
+    (tester) async {
+      setViewport(tester, wideViewport);
+      final log = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuarkTheme.from(QuarkTokens.dark, Brightness.dark),
+          home: Scaffold(
+            body: Column(
+              children: [
+                ChatFailedSendBar(
+                  id: 'pending_0',
+                  text: 'first',
+                  error: "Couldn't send the message.",
+                  onRetry: () => log.add('retry-0'),
+                  onDiscard: () => log.add('discard-0'),
+                ),
+                ChatFailedSendBar(
+                  id: 'pending_1',
+                  text: 'second',
+                  onRetry: () => log.add('retry-1'),
+                  onDiscard: () => log.add('discard-1'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('chat_send_failed_pending_0')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('chat_failed_send_retry_pending_0')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('chat_failed_send_discard_pending_0')),
+        findsOneWidget,
+      );
+      expect(find.textContaining("Couldn't send the message."), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('chat_send_sending_pending_1')),
+        findsOneWidget,
+      );
+      expect(find.byType(QuarkLoader), findsOneWidget);
+      expect(find.textContaining('Sending "second"'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('chat_failed_send_retry_pending_1')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('chat_failed_send_retry_pending_0')),
+      );
+      expect(log, ['retry-0']);
+
+      // The sending indicator animates. Unmount it before the test ends.
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 }
