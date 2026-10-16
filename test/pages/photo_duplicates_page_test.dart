@@ -57,6 +57,89 @@ void main() {
     return deleted;
   }
 
+  testWidgets('opens with nothing selected and no delete bar', (tester) async {
+    await pumpPage(
+      tester,
+      groups: const [
+        DuplicateGroup(
+          isExact: true,
+          photos: [
+            (deviceSerial: '', relPath: 'Camera/beach.jpg'),
+            (deviceSerial: '', relPath: 'Backups/beach.jpg'),
+            (deviceSerial: '', relPath: 'beach copy.jpg'),
+          ],
+        ),
+        DuplicateGroup(
+          isExact: true,
+          photos: [
+            (deviceSerial: '', relPath: 'Camera/cat.jpg'),
+            (deviceSerial: '', relPath: 'cat copy.jpg'),
+          ],
+        ),
+      ],
+    );
+
+    expect(find.text('Identical copies · 3'), findsOneWidget);
+    expect(find.text('Identical copies · 2'), findsOneWidget);
+    expect(find.text('Keep'), findsNWidgets(5));
+    expect(find.text('Delete'), findsNothing);
+    expect(find.textContaining(RegExp(r'Delete \d+ photo')), findsNothing);
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const ValueKey('duplicates_delete')))
+          .onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('the delete bar counts the copies the user selected', (
+    tester,
+  ) async {
+    await pumpPage(
+      tester,
+      groups: const [
+        DuplicateGroup(
+          isExact: true,
+          photos: [
+            (deviceSerial: '', relPath: 'Camera/beach.jpg'),
+            (deviceSerial: '', relPath: 'Backups/beach.jpg'),
+            (deviceSerial: '', relPath: 'beach copy.jpg'),
+          ],
+        ),
+        DuplicateGroup(
+          isExact: true,
+          photos: [
+            (deviceSerial: '', relPath: 'Camera/cat.jpg'),
+            (deviceSerial: '', relPath: 'cat copy.jpg'),
+          ],
+        ),
+      ],
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('duplicate_photo_:Backups/beach.jpg')),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('duplicate_photo_:beach copy.jpg')),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('duplicate_photo_:cat copy.jpg')),
+    );
+    await tester.pump();
+
+    expect(find.text('Delete'), findsNWidgets(3));
+    expect(find.text('Keep'), findsNWidgets(2));
+    // Two groups are on screen. The bar counts the three marked copies.
+    expect(find.text('Delete 3 photos'), findsOneWidget);
+    expect(find.text('Delete 2 photos'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('duplicates_delete')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('3 photos moves to Trash'), findsOneWidget);
+  });
+
   testWidgets('offers no format to keep without a picture in several', (
     tester,
   ) async {
@@ -119,13 +202,18 @@ void main() {
     final deleted = await pumpPage(tester);
 
     expect(find.text('Identical copies · 2'), findsOneWidget);
+    expect(find.textContaining(RegExp(r'Delete \d+ photo')), findsNothing);
+    await tester.tap(
+      find.byKey(const ValueKey('duplicate_photo_:Backups/beach.jpg')),
+    );
+    await tester.pump();
+    expect(find.text('Delete 1 photo'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('duplicates_delete')));
     await tester.pumpAndSettle();
     expect(find.text('Move to Trash?'), findsOneWidget);
     await tester.tap(find.text('Move to Trash'));
     await tester.pumpAndSettle();
 
-    // The first copy is kept; every other identical copy starts marked.
     expect(deleted, ['Backups/beach.jpg']);
     expect(find.text('No duplicates found'), findsOneWidget);
   });
@@ -133,6 +221,10 @@ void main() {
   testWidgets('says when a copy could not be deleted', (tester) async {
     await pumpPage(tester, deleteFails: true);
 
+    await tester.tap(
+      find.byKey(const ValueKey('duplicate_photo_:Backups/beach.jpg')),
+    );
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('duplicates_delete')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Move to Trash'));
