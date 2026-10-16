@@ -178,17 +178,19 @@ class FilesService with AuthenticatedService {
     ];
   }
 
+  /// The `serial` values for a listing filter, trimmed. A blank one is kept:
+  /// inside a non-empty filter it names the internal drive, while no values
+  /// at all means every device (#3201).
+  static List<String> _serialFilter(List<String>? serials) => [
+    for (final serial in serials ?? const <String>[]) serial.trim(),
+  ];
+
   static Future<List<FileNode>> getFiles(
     String path, {
     List<String>? serials,
   }) async {
     final normalizedPath = _normalizePath(path);
-    final serialValues =
-        serials
-            ?.map((value) => value.trim())
-            .where((value) => value.isNotEmpty)
-            .toList(growable: false) ??
-        const <String>[];
+    final serialValues = _serialFilter(serials);
 
     final querySegments = <String>[];
     if (normalizedPath.isNotEmpty) {
@@ -236,10 +238,8 @@ class FilesService with AuthenticatedService {
     final querySegments = <String>[
       'fileType=${Uri.encodeQueryComponent(fileType)}',
     ];
-    for (final serial in serials ?? const <String>[]) {
-      if (serial.isNotEmpty) {
-        querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
-      }
+    for (final serial in _serialFilter(serials)) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
     final uri = apiBaseUri
         .resolve('/api/v0/files/by-type')
@@ -271,10 +271,8 @@ class FilesService with AuthenticatedService {
     List<String>? serials,
   }) async {
     final querySegments = <String>['limit=$limit'];
-    for (final serial in serials ?? const <String>[]) {
-      if (serial.isNotEmpty) {
-        querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
-      }
+    for (final serial in _serialFilter(serials)) {
+      querySegments.add('serial=${Uri.encodeQueryComponent(serial)}');
     }
     final uri = apiBaseUri
         .resolve('/api/v0/files/recent')
@@ -298,12 +296,7 @@ class FilesService with AuthenticatedService {
     String query, {
     List<String>? serials,
   }) async {
-    final serialValues =
-        serials
-            ?.map((value) => value.trim())
-            .where((value) => value.isNotEmpty)
-            .toList(growable: false) ??
-        const <String>[];
+    final serialValues = _serialFilter(serials);
     final querySegments = <String>[];
     querySegments.add('query=${Uri.encodeQueryComponent(query)}');
     for (final serial in serialValues) {

@@ -61,6 +61,21 @@ class FileBrowserController {
   final Future<PowerPointImport> Function(String path, {String? serial})
   importPowerPoint;
 
+  /// The `serial` filter for the devices whose paths are in [activePaths]:
+  /// null when every known device is selected (no filter), otherwise their
+  /// serials, with `''` naming the internal drive (#3201). An empty filter
+  /// means every device to the backend, so the blank serial must be sent.
+  static List<String>? serialFilter(
+    List<StorageDevice> devices,
+    Set<String> activePaths,
+  ) {
+    final selected = devices
+        .where((d) => activePaths.contains(d.devicePath))
+        .toList();
+    if (selected.length == devices.length) return null;
+    return [for (final d in selected) d.serial];
+  }
+
   Future<List<FileNode>> fetchFiles(
     String currentPath, {
     List<String>? serials,
