@@ -79,6 +79,14 @@ void main() {
         AppRoutes.plaintextEditorPath('/my notes.txt'),
         '/edit/my%20notes.txt',
       );
+      expect(
+        AppRoutes.plaintextEditorPath(
+          'a.log',
+          serial: 's1',
+          from: '/code/a.log',
+        ),
+        '/edit/a.log?serial=s1&from=/code/a.log',
+      );
     });
 
     test('slideFile encodes the path and carries the serial', () {
@@ -1365,7 +1373,7 @@ void main() {
       );
       expect(
         viewFileRedirect('notes/readme.txt', null),
-        '/edit/notes/readme.txt',
+        '/code/notes/readme.txt',
       );
     });
 

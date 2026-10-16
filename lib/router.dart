@@ -238,13 +238,18 @@ class AppRoutes {
   /// Build a URL for a specific plaintext file.
   /// e.g. plaintextEditorPath('notes/readme.txt') → '/edit/notes/readme.txt'
   /// Device serial is passed as a query param when non-empty.
-  static String plaintextEditorPath(String path, {String? serial}) {
-    final clean = encodeFilePath(path);
-    final base = '$plaintextEditor/$clean';
-    return (serial != null && serial.isNotEmpty)
-        ? '$base?serial=${Uri.encodeQueryComponent(serial)}'
-        : base;
-  }
+  ///
+  /// [from] is the location it is being opened from, for [editorOrigin]: Edit
+  /// in a viewer passes the viewer, so Back returns to it (#3186).
+  static String plaintextEditorPath(
+    String path, {
+    String? serial,
+    String? from,
+  }) => _editorUrl(
+    '$plaintextEditor/${encodeFilePath(path)}',
+    serial: serial,
+    from: from,
+  );
 
   /// Build a URL for a source, config or log file in the code viewer.
   /// e.g. codeViewerPath('app/main.go') → '/code/app/main.go'
@@ -920,8 +925,10 @@ final router = GoRouter(
 );
 
 /// Where `/view/[path]` belongs instead, or null when [FileViewerPage] shows
-/// it. Docs, sheets, presentations and text have editors at their own URLs, source and
-/// logs the code viewer, Markdown its rendered viewer, 3D models the model viewer; a folder or an archive is browsed in Files. [serial] rides along to whichever it is.
+/// it. Docs, sheets and presentations have editors at their own URLs, source
+/// and plain text the code viewer, Markdown its rendered viewer, 3D models the
+/// model viewer; a folder or an archive is browsed in Files. [serial] rides
+/// along to whichever it is.
 String? viewFileRedirect(String path, String? serial) {
   final folder = AppRoutes.filesPath(path);
   if (!isLikelyFilePath(path)) return _withSerial(folder, serial);
@@ -938,8 +945,6 @@ String? viewFileRedirect(String path, String? serial) {
     FileKind.qdoc => AppRoutes.docFile(path, serial: serial),
     FileKind.qsheet => AppRoutes.sheetFile(path, serial: serial),
     FileKind.qslide => AppRoutes.slideFile(path, serial: serial),
-    FileKind.text ||
-    FileKind.code => AppRoutes.plaintextEditorPath(path, serial: serial),
     FileKind.archive => _withSerial(folder, serial),
     _ => null,
   };

@@ -22,7 +22,7 @@ void main() {
     );
   });
 
-  test('a /view link to plain prose still opens the plaintext editor', () {
-    expect(viewFileRedirect('notes/todo.txt', null), '/edit/notes/todo.txt');
+  test('a /view link to plain text opens the code viewer too (#3186)', () {
+    expect(viewFileRedirect('notes/todo.txt', null), '/code/notes/todo.txt');
   });
 }

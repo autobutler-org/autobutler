@@ -152,6 +152,8 @@ class _MarkdownViewerPageState extends State<MarkdownViewerPage> {
                             AppRoutes.plaintextEditorPath(
                               widget.filePath,
                               serial: widget.deviceSerial,
+                              // Back from the editor returns here (#3186).
+                              from: GoRouterState.of(context).uri.toString(),
                             ),
                           ),
                   ),

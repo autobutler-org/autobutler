@@ -133,10 +133,17 @@ class _PlaintextEditorPageState extends State<PlaintextEditorPage> {
   Widget build(BuildContext context) {
     final title = _dirty ? '$_displayName •' : _displayName;
     // Nothing underneath is the usual case: every entry point opens the
-    // editor at its own URL (#2078). The home folder is not where this file
-    // lives, so leaving goes to the folder that holds it (#1749).
+    // editor at its own URL (#2078). Leaving goes back where it was opened
+    // from — a viewer's Edit says so (#3186) — and otherwise to the folder
+    // that holds the file, not the home folder (#1749).
     final canPop = context.canPop();
-    void leave() => context.go(AppRoutes.containingFolder(widget.filePath));
+    void leave() => context.go(
+      AppRoutes.editorOrigin(context) ??
+          AppRoutes.containingFolder(
+            widget.filePath,
+            serial: widget.deviceSerial,
+          ),
+    );
 
     return PopScope(
       // A system back with nothing underneath would close the app.

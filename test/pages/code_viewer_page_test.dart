@@ -120,7 +120,9 @@ void main() {
 
     expect(
       router.routeInformationProvider.value.uri.toString(),
-      '/edit/src/app/main.go',
+      // It carries where it was opened from, so the editor's Back returns
+      // to the viewer rather than to the folder (#3186).
+      '/edit/src/app/main.go?from=/code/src/app/main.go',
     );
   });
 
