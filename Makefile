@@ -1472,10 +1472,16 @@ test/chaos/powercut: check/docker test/chaos/powercut/base ## Cut the power unde
 	./test/chaos/powercut/ci-pull_test.bash
 	./test/chaos/powercut/ci-pull.bash
 	CGO_ENABLED=0 GOOS=linux $(GO) build -o build/powercut ./test/chaos/powercut
-	# pull-base.bash tries the next mirror when a registry answers 429.
+	# pull-base.bash tries the next mirror when a registry answers 429. Retry the
+	# build too, because a selected public registry can still rate-limit CI.
 	base="$$(./test/chaos/powercut/pull-base.bash)"
 	echo "powercut base image: $$base"
-	docker build --build-arg BASE_IMAGE="$$base" -t quark-powercut test/chaos/powercut
+	for attempt in 1 2 3 4; do
+		docker build --build-arg BASE_IMAGE="$$base" -t quark-powercut test/chaos/powercut && break
+		[ "$$attempt" -lt 4 ] || exit 1
+		echo "docker build failed (attempt $$attempt); retrying in $$((attempt * 30))s" >&2
+		sleep $$((attempt * 30))
+	done
 	docker run --rm --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor=unconfined \
 		-v "$(PWD)/build/powercut:/usr/local/bin/powercut:ro" \
 		-v "$(PWD)/test/chaos/powercut/run.bash:/usr/local/bin/run-powercut:ro" \
@@ -1759,4 +1765,3 @@ version: ## Print version
 .PHONY: help
 help: ## Displays help info
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m\033[0m\n"} /^[a-zA-Z0-9_\/.-]+:.*?##/ { printf "  \033[36m%-36s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
-
