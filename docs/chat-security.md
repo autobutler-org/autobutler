@@ -403,7 +403,7 @@ Quark restarts.
   sign-in, a recovery or a rotation gives a Quark nothing that opens a wrap. The raw password or phrase goes out
   only to move an account the Quark marks `legacy` or `legacyRecovery` to keys, once each. A Quark too old for keys
   is refused before anything goes out, and the Quark refuses a raw password or phrase from an old app with 426. What
-  is still open, and why chat is still a beta:
+  is still open, now that chat is no longer behind a feature flag:
   - **Public keys.** The Quark serves every member's public keys and the granter's signing key, and nothing checks
     them. A Quark that hands out a key of its own in place of a member's can be granted channel keys and read what
     follows. #2430 does not fix this; it needs keys verified out of band.
