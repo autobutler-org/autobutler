@@ -15,7 +15,7 @@ import (
 
 // changePassword godoc
 // @Summary Change the caller's password
-// @Description Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it; nothing changes if any part fails. The caller's sessions, this one and any other, stay signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.
+// @Description Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it; nothing changes if any part fails. Every other session of the account is signed out in the same transaction; this one stays signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -51,11 +51,14 @@ func changePassword(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	}
 
+	// Absent under HTTP Basic auth, which has no session to keep.
+	sessionID, _ := ctxutil.Get[string](c, "sessionID")
 	_, err = authutil.ChangePassword(c.Request.Context(), (*deps).Database(), authutil.ChangePasswordParams{
 		UserID:         userID,
 		CurrentAuthKey: req.Password,
 		NewAuthKey:     req.NewAuthKey,
 		AfterChange:    afterChange,
+		KeepSessionID:  sessionID,
 	})
 	switch {
 	case errors.Is(err, authutil.ErrIncorrectPassword):

@@ -469,6 +469,10 @@ type ChangePasswordParams struct {
 	// back. Chat uses it to store the identity re-wrapped under the new
 	// password.
 	AfterChange func(queries db.Querier, userID int64) error
+	// KeepSessionID is the id of the caller's session, which stays signed in
+	// while every other session of the account is signed out (#3181). With ""
+	// every session goes.
+	KeepSessionID string
 }
 
 // ChangePasswordResult is empty; a stored key has nothing to report.
@@ -1189,9 +1193,10 @@ func SetRecoveryKey(ctx context.Context, database *db.DatabaseSqlc, params SetRe
 // ChangePassword replaces the signed-in account's auth key with the one of a
 // new password, once CurrentAuthKey has been checked, so a session on its own
 // cannot change the password (#3022). The new key and params.AfterChange
-// commit together or not at all. The account keeps its salt, which is the one
-// the client derived the new key with, and its sessions: the others are not
-// signed out.
+// commit together or not at all, with every session of the account but
+// params.KeepSessionID signed out, so one a thief holds ends with the old
+// password (#3181). The account keeps its salt, which is the one the client
+// derived the new key with.
 //
 // It returns ErrAppTooOld for a current key not shaped like an auth key, which
 // is a raw password, ErrInvalidAuthKey for a malformed new key, ErrUserNotFound
@@ -1228,6 +1233,9 @@ func ChangePassword(ctx context.Context, database *db.DatabaseSqlc, params Chang
 			AuthSalt:    user.AuthSalt,
 		}); err != nil {
 			return fmt.Errorf("store the auth key: %w", err)
+		}
+		if err := RevokeOtherSessions(ctx, q, user.ID, params.KeepSessionID); err != nil {
+			return err
 		}
 		if params.AfterChange != nil {
 			return params.AfterChange(q, user.ID)

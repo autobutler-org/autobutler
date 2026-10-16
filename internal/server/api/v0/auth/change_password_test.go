@@ -16,8 +16,8 @@ import (
 
 // TestChangePassword drives PUT /auth/password for a member: refused without
 // a session or the current password's auth key, all-or-nothing with chat
-// keys, and afterwards the new password signs in and the old one does not,
-// while the sessions the account already had stay signed in (#3022).
+// keys, and afterwards the new password signs in and the old one does not
+// (#3022), and every session but the caller's is signed out (#3181).
 func TestChangePassword(t *testing.T) {
 	const path = "/api/v0/auth/password"
 	ctx := context.Background()
@@ -34,7 +34,11 @@ func TestChangePassword(t *testing.T) {
 	login := func(key string) int {
 		return postJSON(engine, "/api/v0/auth/login", map[string]string{"username": "bob", "authKey": key}).Code
 	}
-	session, _ := decodeBody(t, postJSON(engine, "/api/v0/auth/login", map[string]string{"username": "bob", "authKey": oldKey}))["token"].(string)
+	signIn := func() string {
+		token, _ := decodeBody(t, postJSON(engine, "/api/v0/auth/login", map[string]string{"username": "bob", "authKey": oldKey}))["token"].(string)
+		return token
+	}
+	session, other := signIn(), signIn()
 	// unchanged fails unless bob still has the password and chat keys he
 	// started with.
 	unchanged := func(after string) {
@@ -96,7 +100,10 @@ func TestChangePassword(t *testing.T) {
 		t.Errorf("login with the old password after a failed change = %d, want 200", code)
 	}
 
-	if w := putAs(t, database, bob, path, map[string]any{"password": oldKey, "newAuthKey": newKey, "chatKeys": chatKeysOf(3)}); w.Code != http.StatusNoContent || w.Body.Len() != 0 {
+	if _, _, err := authutil.ValidateSession(ctx, queries, other); err != nil {
+		t.Errorf("a refused change signed out another session: %v", err)
+	}
+	if w := putAsSession(t, database, bob, session, path, map[string]any{"password": oldKey, "newAuthKey": newKey, "chatKeys": chatKeysOf(3)}); w.Code != http.StatusNoContent || w.Body.Len() != 0 {
 		t.Fatalf("change = %d %s, want 204 and no body", w.Code, w.Body)
 	}
 	got, err := chatutil.GetKeys(chatutil.GetKeysParams{Ctx: ctx, Queries: queries, UserID: bob.ID})
@@ -113,7 +120,10 @@ func TestChangePassword(t *testing.T) {
 		t.Errorf("login with the new password = %d, want 200", code)
 	}
 	if _, _, err := authutil.ValidateSession(ctx, queries, session); err != nil {
-		t.Errorf("a session from before the change was signed out: %v", err)
+		t.Errorf("the caller's session was signed out: %v", err)
+	}
+	if _, _, err := authutil.ValidateSession(ctx, queries, other); err == nil {
+		t.Error("another session stayed signed in after the change")
 	}
 	// The old key no longer re-confirms the caller either.
 	if w := putAs(t, database, bob, path, map[string]any{"password": oldKey, "newAuthKey": authKeyOf(7)}); w.Code != http.StatusForbidden {

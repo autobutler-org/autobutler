@@ -2145,7 +2145,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it; nothing changes if any part fails. The caller's sessions, this one and any other, stay signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.",
+                "description": "Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it; nothing changes if any part fails. Every other session of the account is signed out in the same transaction; this one stays signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.",
                 "consumes": [
                     "application/json"
                 ],
