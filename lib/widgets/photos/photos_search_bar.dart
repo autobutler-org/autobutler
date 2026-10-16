@@ -7,7 +7,10 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// It holds no query of its own beyond the text being typed: every change
 /// goes out through [onChanged], and the button at its end asks to leave the
 /// search through [onClose]. The field takes the focus as it appears, since
-/// opening it is asking to type.
+/// opening it is asking to type. `autofocus` alone is not enough: it does
+/// nothing while anything else in the scope has the focus, which the Photos
+/// page always does, so the first keys typed went nowhere (#3363). The field
+/// asks for the focus outright once its first frame is laid out.
 ///
 /// Keys: `photos_search_field` on the text field and `photos_search_close`
 /// on the button that ends the search.
@@ -18,7 +21,7 @@ import 'package:quark_widgets/quark_widgets.dart';
 ///   onClose: closeSearch,
 /// );
 /// ```
-class PhotosSearchBar extends StatelessWidget {
+class PhotosSearchBar extends StatefulWidget {
   /// Creates the strip.
   const PhotosSearchBar({
     required this.onChanged,
@@ -31,6 +34,27 @@ class PhotosSearchBar extends StatelessWidget {
 
   /// Called when the search is closed.
   final VoidCallback onClose;
+
+  @override
+  State<PhotosSearchBar> createState() => _PhotosSearchBarState();
+}
+
+class _PhotosSearchBarState extends State<PhotosSearchBar> {
+  final _focusNode = FocusNode(debugLabel: 'photos_search_field');
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +75,10 @@ class PhotosSearchBar extends StatelessWidget {
       ),
       child: TextField(
         key: const ValueKey('photos_search_field'),
+        focusNode: _focusNode,
         autofocus: true,
         textInputAction: TextInputAction.search,
-        onChanged: onChanged,
+        onChanged: widget.onChanged,
         decoration: InputDecoration(
           hintText: 'Search photos by name…',
           prefixIcon: const Icon(QuarkIcons.search_rounded, size: 20),
@@ -61,7 +86,7 @@ class PhotosSearchBar extends StatelessWidget {
             key: const ValueKey('photos_search_close'),
             tooltip: 'Close search',
             icon: const Icon(QuarkIcons.close_rounded, size: 18),
-            onPressed: onClose,
+            onPressed: widget.onClose,
           ),
           isDense: true,
           filled: true,
