@@ -464,14 +464,21 @@ class FileBrowserController {
     return 'Downloaded ${trimTrailingSlashes(node.name)}';
   }
 
-  /// Saves the archive entry [entryPath] and answers the message to show, or
-  /// null when the user canceled the save.
+  /// Saves the archive entry [entryPath] from the archive on device [serial]
+  /// (null for the built-in drive) and answers the message to show, or null
+  /// when the user canceled the save.
   Future<String?> saveArchiveEntry(
     String archivePath,
     String entryPath, {
     required String name,
+    String? serial,
   }) async {
-    final saved = await saveArchiveFile(archivePath, entryPath, fileName: name);
+    final saved = await saveArchiveFile(
+      archivePath,
+      entryPath,
+      serial: serial,
+      fileName: name,
+    );
     return saved == null ? null : 'Downloaded $name';
   }
 
