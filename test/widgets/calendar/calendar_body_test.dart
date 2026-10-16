@@ -11,8 +11,9 @@ import '../../support/tap_target_guidelines.dart';
 /// The Calendar body's error states: a failed load after the first one keeps
 /// the view on show under a banner with its own Try again (#2540). Also the
 /// week start it hands the month grid (#2539) and the empty month and day
-/// (#2538), the swipe that steps Day, Week and Month (#2885), and the hours
-/// kept in view across a step (#2887).
+/// (#2538), the swipe that steps Day, Week and Month (#2885), the short touch
+/// swipe that follows the finger (#3250), and the hours kept in view across
+/// a step (#2887).
 void main() {
   final today = CalendarDates.dateOnly(DateTime.now());
 
@@ -329,6 +330,92 @@ void main() {
       await tester.pumpAndSettle();
       expect(log, ['next']);
     });
+  }
+
+  // #3250: a touch swipe is measured from where the pointer went down, so one
+  // well under 200px pages the way the finger went, and the grid moves while
+  // the pointer is still down instead of jumping when it is released.
+  for (final size in const [narrowViewport, wideViewport]) {
+    for (final view in [
+      CalendarView.day,
+      CalendarView.week,
+      CalendarView.month,
+    ]) {
+      Finder grid() => view == CalendarView.month
+          ? find.byType(CalendarMonthGrid)
+          : find.byType(CalendarTimeGrid);
+
+      testWidgets(
+        '${view.slug}: a short touch swipe pages the way the finger went '
+        'at $size',
+        (tester) async {
+          final log = <String>[];
+          await pumpBody(
+            tester,
+            size,
+            view: view,
+            isInitialLoad: false,
+            log: log,
+          );
+
+          // 60px, then held still, so nothing is left of a fling. The old
+          // detector started counting where the drag won the arena and asked
+          // for 64px after that, which a normal touch swipe never reached.
+          Future<void> swipe(double dx) async {
+            final gesture = await tester.startGesture(
+              tester.getCenter(grid()),
+              kind: PointerDeviceKind.touch,
+            );
+            var stamp = Duration.zero;
+            const steps = 6;
+            for (var i = 0; i < steps; i++) {
+              stamp += const Duration(milliseconds: 50);
+              await gesture.moveBy(Offset(dx / steps, 0), timeStamp: stamp);
+              await tester.pump(const Duration(milliseconds: 50));
+            }
+            await tester.pump(const Duration(milliseconds: 200));
+            await gesture.up();
+            await tester.pumpAndSettle();
+          }
+
+          await swipe(-60);
+          await swipe(60);
+          expect(log, ['next', 'previous']);
+        },
+      );
+
+      testWidgets(
+        '${view.slug}: the view moves with the finger during a drag at $size',
+        (tester) async {
+          final log = <String>[];
+          await pumpBody(
+            tester,
+            size,
+            view: view,
+            isInitialLoad: false,
+            log: log,
+          );
+          final before = tester.getTopLeft(grid()).dx;
+          final gesture = await tester.startGesture(
+            tester.getCenter(grid()),
+            kind: PointerDeviceKind.touch,
+          );
+          var stamp = Duration.zero;
+          for (var i = 0; i < 6; i++) {
+            stamp += const Duration(milliseconds: 50);
+            await gesture.moveBy(const Offset(-10, 0), timeStamp: stamp);
+            await tester.pump(const Duration(milliseconds: 50));
+          }
+
+          expect(tester.getTopLeft(grid()).dx, lessThan(before - 40));
+          expect(log, isEmpty);
+
+          await gesture.up();
+          await tester.pumpAndSettle();
+          expect(log, ['next']);
+        },
+      );
+    }
   }
 
   // #2887: stepping Day or Week keeps the hours on show. A new span used to be
