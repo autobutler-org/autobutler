@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:quark/models/photo_metadata.dart';
+import 'package:quark/utils/photo_location.dart';
 import 'package:quark/widgets/image_viewer/info_row.dart';
 import 'package:quark/widgets/image_viewer/section.dart';
 import 'package:quark_icons/quark_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// The metadata sections shown in the photo viewer, shared by the desktop
 /// sidebar and the mobile drawer.
+///
+/// A photo with a GPS position gets an "Open in Maps" row
+/// (`photo_info_open_in_maps`) under its coordinates.
 class MetadataContent {
   static List<Widget> sections({
     required BuildContext context,
@@ -67,6 +72,18 @@ class MetadataContent {
               value:
                   '${exif!.latitude!.toStringAsFixed(5)}, '
                   '${exif.longitude!.toStringAsFixed(5)}',
+            ),
+            InkWell(
+              key: const ValueKey('photo_info_open_in_maps'),
+              onTap: () => launchUrl(
+                photoMapUri(exif.latitude!, exif.longitude!),
+                mode: LaunchMode.externalApplication,
+              ),
+              child: const InfoRow(
+                icon: QuarkIcons.open_in_new,
+                value: 'Open in Maps',
+                tappable: true,
+              ),
             ),
           ],
         ),

@@ -59,4 +59,22 @@ void main() {
       }
     });
   });
+  // #3364: a photo's GPS position opens in the phone's maps app, or a maps
+  // page in the browser, rather than sitting there as two numbers.
+  group('photoMapUri', () {
+    test('asks a maps search for the coordinates', () {
+      final uri = photoMapUri(48.8566, 2.3522);
+      expect(uri.scheme, 'https');
+      expect(uri.host, 'www.google.com');
+      expect(uri.path, '/maps/search/');
+      expect(uri.queryParameters, {'api': '1', 'query': '48.8566,2.3522'});
+    });
+
+    test('keeps the sign of a southern or western position', () {
+      expect(
+        photoMapUri(-33.8568, -151.2153).queryParameters['query'],
+        '-33.8568,-151.2153',
+      );
+    });
+  });
 }
