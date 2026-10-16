@@ -853,6 +853,52 @@ void main() {
       expect(preview, findsNothing);
     });
 
+    testBothViewports(
+      'pressing Escape during a drag leaves the event at its original times',
+      (tester, size) async {
+        final moves = <(CalendarEventItem, DateTime, DateTime)>[];
+        var events = [_vet];
+        await pumpAt(
+          tester,
+          StatefulBuilder(
+            builder: (context, setState) => _grid(
+              days: week,
+              events: events,
+              onEventTap: (_) {},
+              onEventReschedule: (item, start, end) => setState(() {
+                moves.add((item, start, end));
+                events = [item.rescheduled(start, end)];
+              }),
+            ),
+          ),
+          size: size,
+        );
+        final gesture = await tester.startGesture(
+          tester.getTopLeft(vet) + const Offset(4, 4),
+        );
+        await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+        final hour = size == narrowViewport ? 64.0 : 56.0;
+        await gesture.moveBy(Offset(0, hour));
+        await tester.pump();
+        expect(preview, findsOneWidget);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump();
+        await gesture.up();
+        await tester.pump();
+
+        expect(moves, isEmpty);
+        expect(events.single.start, at(29, 16));
+        expect(events.single.end, at(29, 16, 45));
+        expect(
+          find.byKey(const ValueKey('calendar_event_3_2026-09-29')),
+          findsOneWidget,
+        );
+        expect(preview, findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('a mouse drags an event to another day and time at once', (
       tester,
     ) async {
