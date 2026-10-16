@@ -43,10 +43,10 @@ void main() {
     settings.featureFlags.value = const [];
   }
 
-  const slides = FeatureFlag(
-    key: FeatureFlag.slides,
-    label: 'Slides',
-    description: 'Hides Slides; stored presentations are kept.',
+  const notes = FeatureFlag(
+    key: 'notes',
+    label: 'Notes',
+    description: 'Hides Notes; stored notes are kept.',
     enabled: true,
   );
 
@@ -61,7 +61,7 @@ void main() {
     await settings.setSessionToken('a-session');
     await settings.setUsername('ada');
     settings.isAdmin.value = true;
-    settings.featureFlags.value = const [slides];
+    settings.featureFlags.value = const [notes];
   });
 
   tearDown(() async {
@@ -110,7 +110,7 @@ void main() {
     SettingsTab.network: 'Remote access',
     SettingsTab.updates: 'Quark version (installed)',
     SettingsTab.about: 'Software Bill of Materials',
-    SettingsTab.features: 'Hides Slides; stored presentations are kept.',
+    SettingsTab.features: 'Hides Notes; stored notes are kept.',
   };
 
   const viewports = {'narrow': Size(360, 640), 'wide': Size(1280, 800)};
@@ -162,10 +162,7 @@ void main() {
     await pumpAt(tester, SettingsTab.features, const Size(1280, 800));
 
     expect(featuresTab(), findsNothing);
-    expect(
-      find.byKey(const ValueKey('feature_flag_tile_slides')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey('feature_flag_tile_notes')), findsNothing);
     // A link to the hidden tab shows General instead.
     expect(find.text('Backend hosts'), findsOneWidget);
   });
@@ -197,28 +194,28 @@ void main() {
       const Size(1280, 800),
       featureFlags: controller,
     );
-    final tile = find.byKey(const ValueKey('feature_flag_tile_slides'));
+    final tile = find.byKey(const ValueKey('feature_flag_tile_notes'));
     await tester.scrollUntilVisible(tile, 200, scrollable: tabList());
 
     await tester.tap(tile);
     await tester.pump();
     await tester.tap(tile);
     await tester.pump();
-    expect(calls, [(FeatureFlag.slides, false)]);
+    expect(calls, [('notes', false)]);
     expect(tester.widget<SwitchListTile>(tile).onChanged, isNull);
 
     saving.complete(
       const FeatureFlag(
-        key: FeatureFlag.slides,
-        label: 'Slides',
-        description: 'Hides Slides; stored presentations are kept.',
+        key: 'notes',
+        label: 'Notes',
+        description: 'Hides Notes; stored notes are kept.',
         enabled: false,
       ),
     );
     await tester.pump();
     expect(calls, hasLength(1));
     expect(tester.widget<SwitchListTile>(tile).value, isFalse);
-    expect(settings.isFeatureEnabled(FeatureFlag.slides), isFalse);
+    expect(settings.isFeatureEnabled('notes'), isFalse);
   });
 
   testWidgets('links to the drives instead of listing them', (tester) async {

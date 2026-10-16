@@ -7,7 +7,7 @@ order, and which ones a given account sees.
 
 ### JN-NV-001: The drawer leads with the household's pages
 
-**Preconditions:** Logged in as an admin, with the Slides beta on (JN-ST-028 turns it off). Calendar and Chat are always listed.
+**Preconditions:** Logged in as an admin. Calendar, Chat, and Slides are always listed.
 
 **Steps:**
 
@@ -35,8 +35,7 @@ order, and which ones a given account sees.
 
 ### JN-NV-002: The drawer hides what an account cannot open
 
-**Preconditions:** Logged in as a member who is not an admin. An admin has turned the Slides beta off
-(JN-ST-028).
+**Preconditions:** Logged in as a member who is not an admin.
 
 **Steps:**
 
@@ -45,14 +44,15 @@ order, and which ones a given account sees.
 
 **Expected result:**
 
-- The everyday pages are **Files**, **Photos**, **Calendar**, **Docs**, **Sheets**, **Books**, **Chat**. There is no
-  **Slides** row, and no **Vault** row (JN-VT-000).
+- The everyday pages are **Files**, **Photos**, **Calendar**, **Docs**, **Sheets**, **Slides**, **Books**, **Chat**.
+  There is no **Vault** row (JN-VT-000).
 - The **Manage** heading is still there, with **Trash**, **System** and **Settings** under it. There is no **Users**
   row (JN-USR-002).
 
 **Notes:**
 
-- A row appears or disappears without a reload when an admin turns a beta on or off, or changes the account's admin
-  role (JN-USR-003, JN-USR-004).
+- A row for a feature still in beta appears or disappears without a reload when an admin turns that beta on or off.
+  Slides, Calendar, and Chat stay listed. Changing the account's admin role shows or hides **Users** and **Vault**
+  (JN-USR-003, JN-USR-004).
 - Hiding a row decides what the drawer shows and nothing more. Opening a hidden page by its address is refused
   separately.

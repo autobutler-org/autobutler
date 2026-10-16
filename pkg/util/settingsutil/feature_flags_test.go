@@ -66,8 +66,8 @@ func TestMigrate_DisabledChatFlagTurnsOn(t *testing.T) {
 }
 
 // TestMigrate_DisabledCalendarFlagTurnsOn checks an install that stored the
-// calendar off imports with that value gone (#2610), so the calendar is on,
-// and a flag still in beta stays.
+// calendar off imports with that value gone (#2610), so the calendar is on.
+// The file is old enough that the later slides migration runs too (#2869).
 func TestMigrate_DisabledCalendarFlagTurnsOn(t *testing.T) {
 	path := settingsFile(t)
 	file := `{"settingsVersion":2,"remoteAccessEnabled":true,"featureFlags":{"calendar":false,"slides":true}}`
@@ -75,11 +75,27 @@ func TestMigrate_DisabledCalendarFlagTurnsOn(t *testing.T) {
 		t.Fatal(err)
 	}
 	settingsutil.ResetForTesting(path)
-	if _, set, err := settingsutil.GetFeatureFlag("calendar"); err != nil || set {
-		t.Errorf("calendar still stored (set=%v err=%v); want it dropped so the calendar is on", set, err)
+	for _, key := range []string{"calendar", "slides"} {
+		if _, set, err := settingsutil.GetFeatureFlag(key); err != nil || set {
+			t.Errorf("%s still stored (set=%v err=%v); want it dropped", key, set, err)
+		}
 	}
-	if slides, set, err := settingsutil.GetFeatureFlag("slides"); err != nil || !set || !slides {
-		t.Errorf("slides = %v set=%v err=%v; want the slides flag left on", slides, set, err)
+	if !settingsutil.GetRemoteAccess() {
+		t.Error("remoteAccessEnabled lost")
+	}
+}
+
+// TestMigrate_DisabledSlidesFlagTurnsOn checks an install that stored slides
+// off imports with that value gone (#2869), so slides is on.
+func TestMigrate_DisabledSlidesFlagTurnsOn(t *testing.T) {
+	path := settingsFile(t)
+	file := `{"settingsVersion":3,"remoteAccessEnabled":true,"featureFlags":{"slides":false}}`
+	if err := os.WriteFile(path, []byte(file), 0600); err != nil {
+		t.Fatal(err)
+	}
+	settingsutil.ResetForTesting(path)
+	if _, set, err := settingsutil.GetFeatureFlag("slides"); err != nil || set {
+		t.Errorf("slides still stored (set=%v err=%v); want it dropped so slides is on", set, err)
 	}
 	if !settingsutil.GetRemoteAccess() {
 		t.Error("remoteAccessEnabled lost")

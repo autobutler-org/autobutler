@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quark/models/feature_flag.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/widgets/layout/app_drawer.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
@@ -31,12 +30,8 @@ void main() {
   });
 
   setUp(() {
-    // An admin with every beta on, so the drawer holds every row it can.
+    // An admin, so the drawer holds every row it can.
     settings.isAdmin.value = true;
-    settings.featureFlags.value = [
-      for (final key in [FeatureFlag.slides])
-        FeatureFlag(key: key, label: key, description: '', enabled: true),
-    ];
   });
 
   tearDown(() {

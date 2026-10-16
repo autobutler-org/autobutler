@@ -11,7 +11,6 @@ import 'package:quark/pages/recover_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
-import 'package:quark/services/feature_flags_service.dart';
 
 import 'support/fake_chat.dart';
 
@@ -1027,7 +1026,6 @@ void main() {
       }
       await settings.setSessionToken(null);
       authStatusProbe = AuthService.checkStatus;
-      featureFlagsProbe = FeatureFlagsService.list;
       settings.featureFlags.value = const [];
     }
 
@@ -1072,6 +1070,10 @@ void main() {
                 Text('calendar ${state.pathParameters['view']}'),
           ),
           GoRoute(
+            path: AppRoutes.slides,
+            builder: (_, _) => const Text('slides'),
+          ),
+          GoRoute(
             path: '${AppRoutes.slides}/:path(.*)',
             builder: (_, state) =>
                 Text('slides ${state.pathParameters['path']}'),
@@ -1095,9 +1097,9 @@ void main() {
     }
 
     Future<void> signIn({
-      bool slidesEnabled = true,
       bool staleChatOff = false,
       bool staleCalendarOff = false,
+      bool staleSlidesOff = false,
     }) async {
       await reset();
       await settings.addHost(
@@ -1121,14 +1123,14 @@ void main() {
             description: '',
             enabled: false,
           ),
-        FeatureFlag(
-          key: FeatureFlag.slides,
-          label: 'Slides',
-          description: '',
-          enabled: slidesEnabled,
-        ),
+        if (staleSlidesOff)
+          const FeatureFlag(
+            key: 'slides',
+            label: 'Slides',
+            description: '',
+            enabled: false,
+          ),
       ];
-      featureFlagsProbe = () async => flags;
       settings.featureFlags.value = flags;
     }
 
@@ -1174,33 +1176,28 @@ void main() {
       expect(at(r), '/calendar/week');
     });
 
-    testWidgets('slides turned off sends its pages to Files (#2868)', (
+    testWidgets('a stored slides flag that is off still opens slides', (
       tester,
     ) async {
-      await signIn(slidesEnabled: false);
+      await signIn(staleSlidesOff: true);
       for (final location in [
         AppRoutes.slides,
         '/slides/talks/q1.qslide',
         '/slides/talks/q1.qslide/present',
       ]) {
         final r = await pumpGated(tester, location);
-        expect(at(r), AppRoutes.files, reason: location);
+        expect(at(r), location, reason: location);
       }
     });
 
     // #2935: every view or week change used to ask the Quark for its flags.
-    // The calendar is no longer a flag (#2610), so moving around it asks nothing.
+    // The calendar is no longer a flag (#2610), so moving around it stays put.
     testWidgets('moving between calendar views does not ask for the flags', (
       tester,
     ) async {
       await signIn();
       settings.featureFlags.value = const [];
       await settings.setSessionToken('calendar-token');
-      var asked = 0;
-      featureFlagsProbe = () async {
-        asked++;
-        return const [];
-      };
 
       final r = await pumpGated(tester, '/calendar/week');
       for (final location in [
@@ -1213,36 +1210,26 @@ void main() {
         await tester.pumpAndSettle();
         expect(at(r), location);
       }
-      expect(asked, 0);
 
       await settings.setSessionToken('other-token');
       await tester.pumpAndSettle();
-      expect(asked, 0);
+      expect(at(r), '/calendar/week?date=2026-10-19');
     });
 
-    // The slides beta still asks once per session, then follows the cache.
-    testWidgets('moving between slides pages asks for the flags once', (
-      tester,
-    ) async {
-      await signIn();
-      settings.featureFlags.value = const [];
+    // Slides left beta (#2869), so moving between its pages stays on them
+    // even when a stored flag says it is off.
+    testWidgets('moving between slides pages stays on slides', (tester) async {
+      await signIn(staleSlidesOff: true);
       await settings.setSessionToken('slides-token');
-      final probe = featureFlagsProbe;
-      var asked = 0;
-      featureFlagsProbe = () {
-        asked++;
-        return probe();
-      };
 
       final r = await pumpGated(tester, '/slides/talks/q1.qslide');
       r.go('/slides/talks/q1.qslide/present');
       await tester.pumpAndSettle();
       expect(at(r), '/slides/talks/q1.qslide/present');
-      expect(asked, 1);
 
       await settings.setSessionToken('other-token');
       await tester.pumpAndSettle();
-      expect(asked, 2);
+      expect(at(r), '/slides/talks/q1.qslide/present');
     });
 
     testWidgets('calendar on keeps its views when a chat flag is off', (
@@ -1261,7 +1248,6 @@ void main() {
       expect(at(r), '/chat/12');
 
       // What the feature_flag_changed event does. Chat is no longer a flag.
-      featureFlagsProbe = () async => const [];
       settings.featureFlags.value = const [];
       await tester.pumpAndSettle();
 
@@ -1602,7 +1588,6 @@ void main() {
         }
         await settings.setSessionToken(null);
         authStatusProbe = AuthService.checkStatus;
-        featureFlagsProbe = FeatureFlagsService.list;
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(secureStorage, null);
       });
@@ -1611,15 +1596,6 @@ void main() {
       );
       await settings.acceptTerms();
       authStatusProbe = () async => const AuthStatus(setupComplete: true);
-      // The slides beta is on, or the gate would send the link to Files.
-      featureFlagsProbe = () async => const [
-        FeatureFlag(
-          key: FeatureFlag.slides,
-          label: 'Slides',
-          description: '',
-          enabled: true,
-        ),
-      ];
 
       final link = AppRoutes.slideFile('talks/q 1.qslide', serial: 's1');
       final r = GoRouter(

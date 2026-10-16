@@ -29,8 +29,6 @@ void main() {
         .setMockMethodCallHandler(secureStorage, null);
   });
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  FeatureFlag flag(String key, {required bool enabled}) =>
-      FeatureFlag(key: key, label: key, description: '', enabled: enabled);
 
   setUp(() => settings.isAdmin.value = false);
   tearDown(() {
@@ -87,6 +85,7 @@ void main() {
       QuarkDrawerSection.files,
       QuarkDrawerSection.photos,
       QuarkDrawerSection.calendar,
+      QuarkDrawerSection.slides,
       QuarkDrawerSection.trash,
       QuarkDrawerSection.docs,
       QuarkDrawerSection.sheets,
@@ -121,29 +120,34 @@ void main() {
       ),
       findsNothing,
     );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('drawer_slides')),
+        matching: find.byType(QuarkBetaBadge),
+      ),
+      findsNothing,
+    );
   });
 
-  for (final key in [FeatureFlag.slides]) {
-    testWidgets('offers $key, marked beta, only while its beta is on', (
-      tester,
-    ) async {
-      final row = find.byKey(ValueKey('drawer_$key'));
-      await pumpDrawer(tester);
-      expect(row, findsNothing);
-
-      settings.featureFlags.value = [flag(key, enabled: true)];
-      await tester.pump();
-      expect(row, findsOneWidget);
-      expect(
-        find.descendant(of: row, matching: find.byType(QuarkBetaBadge)),
-        findsOneWidget,
-      );
-
-      settings.featureFlags.value = [flag(key, enabled: false)];
-      await tester.pump();
-      expect(row, findsNothing);
-    });
-  }
+  testWidgets('keeps slides listed when a stored slides flag is off', (
+    tester,
+  ) async {
+    settings.featureFlags.value = const [
+      FeatureFlag(
+        key: 'slides',
+        label: 'Slides',
+        description: '',
+        enabled: false,
+      ),
+    ];
+    await pumpDrawer(tester);
+    final row = find.byKey(const ValueKey('drawer_slides'));
+    expect(row, findsOneWidget);
+    expect(
+      find.descendant(of: row, matching: find.byType(QuarkBetaBadge)),
+      findsNothing,
+    );
+  });
 
   testWidgets('keeps admin-only pages out of a non-admin drawer', (
     tester,
@@ -153,6 +157,7 @@ void main() {
     expect(find.byKey(const ValueKey('drawer_vault')), findsNothing);
     expect(find.byKey(const ValueKey('drawer_users')), findsNothing);
     expect(find.byKey(const ValueKey('drawer_calendar')), findsOneWidget);
+    expect(find.byKey(const ValueKey('drawer_slides')), findsOneWidget);
     expect(find.byKey(const ValueKey('drawer_chat')), findsOneWidget);
     expect(find.byKey(const ValueKey('drawer_settings')), findsOneWidget);
   });

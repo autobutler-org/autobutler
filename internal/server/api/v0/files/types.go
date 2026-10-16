@@ -36,8 +36,7 @@ func (r *router) Routes() []*serverutil.Route {
 	}
 }
 
-// slidesRouter holds the PowerPoint export and import routes, which sit
-// behind the slides beta's flag (#2868).
+// slidesRouter holds the PowerPoint export and import routes.
 type slidesRouter struct{}
 
 func (r *slidesRouter) Routes() []*serverutil.Route {

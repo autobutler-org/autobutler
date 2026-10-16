@@ -1,0 +1,2 @@
+-- The previous value of featureFlags.slides is gone. Rolling back leaves
+-- slides on, which is also the flag's old default.

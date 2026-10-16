@@ -540,7 +540,7 @@ void main() {
     expect(find.byTooltip('Switch Quark'), findsNothing);
   });
 
-  testBothViewports('marks the betas and hides each when not offered', (
+  testBothViewports('hides a row that is not offered and marks none as beta', (
     tester,
     size,
   ) async {
@@ -549,16 +549,8 @@ void main() {
       drawerWith(QuarkDrawerSection.files, everyCallback([])),
       size: size,
     );
-    for (final section in [QuarkDrawerSection.slides]) {
-      final row = find.byKey(ValueKey('drawer_${section.name}'));
-      await tester.scrollUntilVisible(row, 50);
-      expect(
-        find.descendant(of: row, matching: find.byType(QuarkBetaBadge)),
-        findsOneWidget,
-        reason: section.name,
-      );
-    }
     for (final section in [
+      QuarkDrawerSection.slides,
       QuarkDrawerSection.calendar,
       QuarkDrawerSection.chat,
     ]) {
@@ -572,6 +564,7 @@ void main() {
     }
 
     for (final section in [
+      QuarkDrawerSection.slides,
       QuarkDrawerSection.calendar,
       QuarkDrawerSection.chat,
     ]) {
@@ -641,10 +634,9 @@ void main() {
       );
       expect(textColor('Files'), tokens.chromeForeground);
       expect(iconColor('drawer_files'), tokens.chromeSecondaryForeground);
-      // The active row and the beta badge are the accent as chrome draws it.
+      // The active row is the accent as chrome draws it.
       expect(textColor('Photos'), tokens.chromePrimary);
       expect(iconColor('drawer_photos'), tokens.chromePrimary);
-      expect(textColor('Beta'), tokens.chromePrimary);
       final header = tester.widget<DrawerHeader>(find.byType(DrawerHeader));
       expect((header.decoration! as BoxDecoration).color, tokens.chromePrimary);
       expect(tester.takeException(), isNull);

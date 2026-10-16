@@ -31,7 +31,7 @@ enum QuarkDrawerSection {
   /// The spreadsheet list.
   sheets,
 
-  /// The presentation list, a beta: its row carries a [QuarkBetaBadge].
+  /// The presentation list.
   slides,
 
   /// The book list: every PDF and EPUB on the Quark.
@@ -53,8 +53,9 @@ enum QuarkDrawerSection {
   settings,
 }
 
-/// The sections still in beta, whose rows carry a [QuarkBetaBadge].
-const _betaSections = {QuarkDrawerSection.slides};
+/// The sections still in beta, whose rows carry a [QuarkBetaBadge]. None
+/// are, now that Slides has left beta (#2869).
+const _betaSections = <QuarkDrawerSection>{};
 
 /// The sections for looking after the Quark, which follow the household's
 /// everyday pages under a "Manage" label.
@@ -90,8 +91,8 @@ const _manageSections = {
 /// (#2230). Adding and editing Quarks stays in Settings, a row below. With
 /// one it is a plain label.
 ///
-/// A section still in beta, Slides for now, carries a [QuarkBetaBadge]
-/// beside its label.
+/// A section still in beta carries a [QuarkBetaBadge] beside its label.
+/// None are, now that Slides has left beta (#2869).
 ///
 /// With [hasUnreadChat], the Chat row ends its label in a small dot that a
 /// screen reader reads as "Unread messages". Whether anything is unread is

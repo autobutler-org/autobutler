@@ -238,10 +238,9 @@ class AppSettings {
   /// `UsersService.avatarUrl` so a changed picture is a new URL.
   final ValueNotifier<int?> avatarUpdatedAt = ValueNotifier(null);
 
-  /// The current [activeHost]'s beta feature flags (#2542), which decide
-  /// whether the drawer offers a beta such as Chat. Kept current by
-  /// `FeatureFlagsService.refresh` whenever [isAdmin] is, and when an admin
-  /// flips one; the router asks the Quark itself before opening a beta's page.
+  /// The current [activeHost]'s beta feature flags (#2542). The Features tab
+  /// lists them. Kept current by `FeatureFlagsService.refresh` whenever
+  /// [isAdmin] is, and when an admin flips one.
   final ValueNotifier<List<FeatureFlag>> featureFlags = ValueNotifier(const []);
 
   /// Whether the flag [key] is on in [featureFlags]. A flag the Quark does not

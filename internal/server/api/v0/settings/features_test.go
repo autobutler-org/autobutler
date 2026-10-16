@@ -110,8 +110,9 @@ func (h featuresHarness) published() int {
 	}
 }
 
-// slidesState returns slides' entry from GET /settings/features as user.
-func (h featuresHarness) slidesState(t *testing.T, user string) featureflagutil.FlagState {
+// listedFlags returns GET /settings/features as user and fails if a retired
+// flag is still listed.
+func (h featuresHarness) listedFlags(t *testing.T, user string) featureflagutil.ListFlagsResult {
 	t.Helper()
 	w := h.do(user, http.MethodGet, "/api/v0/settings/features", "")
 	if w.Code != http.StatusOK {
@@ -122,48 +123,19 @@ func (h featuresHarness) slidesState(t *testing.T, user string) featureflagutil.
 		t.Fatal(err)
 	}
 	for _, f := range got.Features {
-		if f.Key == "chat" || f.Key == "calendar" {
+		if f.Key == "chat" || f.Key == "calendar" || f.Key == "slides" {
 			t.Fatalf("retired %s flag still listed: %s", f.Key, w.Body.String())
 		}
-		if f.Key == featureflagutil.Slides {
-			return f
-		}
 	}
-	t.Fatalf("slides missing from %s", w.Body.String())
-	return featureflagutil.FlagState{}
+	return got
 }
 
-// TestListFeatures_DefaultForAnyUser checks a member can read the flags and
-// that slides reports its registry default while nobody has set it.
-func TestListFeatures_DefaultForAnyUser(t *testing.T) {
+// TestListFeatures_EmptyForAnyUser checks a member can read the flags and
+// that none are registered, slides having left beta (#2869).
+func TestListFeatures_EmptyForAnyUser(t *testing.T) {
 	h := newFeaturesHarness(t)
-	slides := h.slidesState(t, "member")
-	if !slides.Enabled || !slides.Default || slides.SunsetIssue != 2869 || slides.Label == "" || slides.Description == "" {
-		t.Errorf("slides = %+v; want on by default, with its copy and sunset issue", slides)
-	}
-}
-
-// TestUpdateFeature_AdminPersists checks an admin's PUT is stored, survives a
-// reload, is what every user then reads, and tells open apps.
-func TestUpdateFeature_AdminPersists(t *testing.T) {
-	h := newFeaturesHarness(t)
-	w := h.do("admin", http.MethodPut, "/api/v0/settings/features/slides", `{"enabled":false}`)
-	if w.Code != http.StatusOK {
-		t.Fatalf("PUT = %d: %s", w.Code, w.Body.String())
-	}
-	var got featureflagutil.FlagState
-	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
-		t.Fatal(err)
-	}
-	if got.Key != featureflagutil.Slides || got.Enabled {
-		t.Errorf("response = %+v; want slides off", got)
-	}
-	if n := h.published(); n != 1 {
-		t.Errorf("published %d feature_flag_changed events; want 1", n)
-	}
-	settingsutil.ResetForTesting(h.path)
-	if h.slidesState(t, "member").Enabled {
-		t.Error("slides is on for a member after an admin turned it off")
+	if got := h.listedFlags(t, "member"); len(got.Features) != 0 {
+		t.Errorf("features = %+v; want none", got.Features)
 	}
 }
 
@@ -181,19 +153,20 @@ func TestUpdateFeature_Refusals(t *testing.T) {
 		{"unknown key", "admin", "/api/v0/settings/features/nope", `{"enabled":true}`, http.StatusNotFound},
 		{"retired chat flag", "admin", "/api/v0/settings/features/chat", `{"enabled":false}`, http.StatusNotFound},
 		{"retired calendar flag", "admin", "/api/v0/settings/features/calendar", `{"enabled":false}`, http.StatusNotFound},
+		{"retired slides flag", "admin", "/api/v0/settings/features/slides", `{"enabled":false}`, http.StatusNotFound},
 		{"retired key", "admin", "/api/v0/settings/features/chatEnabled", `{"enabled":false}`, http.StatusNotFound},
 	} {
 		if w := h.do(tc.user, http.MethodPut, tc.path, tc.body); w.Code != tc.want {
 			t.Errorf("%s: PUT = %d, want %d: %s", tc.name, w.Code, tc.want, w.Body.String())
 		}
 	}
-	if !h.slidesState(t, "admin").Enabled {
-		t.Error("a refused PUT turned slides off")
+	if got := h.listedFlags(t, "admin"); len(got.Features) != 0 {
+		t.Errorf("features = %+v; want none after refused PUTs", got.Features)
 	}
 	if n := h.published(); n != 0 {
 		t.Errorf("refused PUTs published %d events", n)
 	}
-	for _, key := range []string{"nope", "chat", "calendar", "chatEnabled"} {
+	for _, key := range []string{"nope", "chat", "calendar", "slides", "chatEnabled"} {
 		if _, set, _ := settingsutil.GetFeatureFlag(key); set {
 			t.Errorf("refused key %q was stored", key)
 		}

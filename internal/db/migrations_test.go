@@ -934,3 +934,41 @@ INSERT INTO settings (key, value) VALUES
 		t.Fatalf("migrate up again: %v", err)
 	}
 }
+
+// dropSlidesFeatureFlagVersion is 035_drop_slides_feature_flag, which deletes
+// the retired slides flag so an install that had it off turns slides on
+// (#2869).
+const dropSlidesFeatureFlagVersion = 35
+
+// TestDropSlidesFeatureFlagMigration deletes a stored featureFlags.slides row
+// and leaves every other setting. The down migration cannot put the choice back.
+func TestDropSlidesFeatureFlagMigration(t *testing.T) {
+	conn, m := migrateTo(t, dropSlidesFeatureFlagVersion-1)
+	if _, err := conn.Exec(`
+INSERT INTO settings (key, value) VALUES
+	('featureFlags.slides', 'false'),
+	('remoteAccessEnabled', 'true');
+`); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	if err := m.Migrate(dropSlidesFeatureFlagVersion); err != nil {
+		t.Fatalf("migrate to %d: %v", dropSlidesFeatureFlagVersion, err)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'featureFlags.slides'`); n != 0 {
+		t.Errorf("featureFlags.slides rows = %d, want the disabled flag deleted so slides is on", n)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'remoteAccessEnabled' AND value = 'true'`); n != 1 {
+		t.Error("another setting was changed")
+	}
+
+	if err := m.Migrate(dropSlidesFeatureFlagVersion - 1); err != nil {
+		t.Fatalf("migrate down: %v", err)
+	}
+	if n := count(t, conn, `SELECT COUNT(*) FROM settings WHERE key = 'featureFlags.slides'`); n != 0 {
+		t.Error("the down migration put the slides flag back")
+	}
+	if err := m.Migrate(dropSlidesFeatureFlagVersion); err != nil {
+		t.Fatalf("migrate up again: %v", err)
+	}
+}

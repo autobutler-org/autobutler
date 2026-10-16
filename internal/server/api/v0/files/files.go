@@ -1,9 +1,8 @@
 // Package v0_files serves /api/v0/files: listing, searching and stat-ing files, uploads (including resumable upload
 // sessions), downloads and archive views, moves, deletes and new folders, spreadsheet conversions between .xlsx
 // and .qsheet (the .xlsx export streamed back as a download), and a presentation's .pptx export and import. The
-// .pptx routes (GET /files/export/pptx, POST /files/import/pptx) are a 404 while an admin has the slides feature
-// flag turned off (PUT /settings/features/slides). An upload that saves over a .qslide, .qsheet or .qdoc
-// snapshots the old content into its version history first.
+// .pptx routes are GET /files/export/pptx and POST /files/import/pptx. An upload that saves over a .qslide,
+// .qsheet or .qdoc snapshots the old content into its version history first.
 package v0_files
 
 import (
@@ -51,8 +50,7 @@ func NewRouter() serverutil.Router {
 }
 
 // NewSlidesRouter returns the routes that export and import a presentation
-// as a PowerPoint file. Mount it behind
-// middleware.RequireFeatureEnabled(featureflagutil.Slides).
+// as a PowerPoint file.
 func NewSlidesRouter() serverutil.Router {
 	return &slidesRouter{}
 }

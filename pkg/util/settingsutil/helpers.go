@@ -163,6 +163,7 @@ var migrations = []migration{
 	moveChatEnabledToFeatureFlags, // 1: #2542
 	dropFeatureFlag("chat"),       // 2: #2577
 	dropFeatureFlag("calendar"),   // 3: #2610
+	dropFeatureFlag("slides"),     // 4: #2869
 }
 
 // moveChatEnabledToFeatureFlags moves the chat switch #2421 stored as

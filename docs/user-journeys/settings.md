@@ -12,7 +12,7 @@ unknown tab lands on General too. Admins get a sixth tab, Features, while the Qu
 | **Network** | `/settings/network` | Remote access, connected devices, SSH access (admins) |
 | **Updates** | `/settings/updates` | The Quark's version, a note that updates are manual, updates (admins), Repair installation (admins) |
 | **About** | `/settings/about` | The app's version, Help & Support, Terms of Service, the software bill of materials |
-| **Features** | `/settings/features` | A switch per beta feature, such as Slides (admins, only while a beta exists) |
+| **Features** | `/settings/features` | A switch per beta feature (admins, only while a beta exists) |
 
 ---
 
@@ -496,13 +496,13 @@ The password travels in the request body, never the URL, and attempts share the 
 ### JN-ST-028: Turn a beta feature off
 
 **Preconditions:** Logged in as an admin (JN-AUTH-002). A second, non-admin account is signed in on another device.
-The Quark has at least one feature in beta, such as Slides.
+The Quark has at least one feature still in beta.
 
 **Steps:**
 
 1. Navigate to `/settings/features`.
-2. Turn off a feature, say **Slides** (marked **Beta**).
-3. On the member's device, open the drawer, then open the feature's page directly (`/slides`).
+2. Turn off a feature marked **Beta**.
+3. On the member's device, open the drawer, then open the feature's page directly.
 
 **Expected result:**
 
@@ -515,6 +515,8 @@ The Quark has at least one feature in beta, such as Slides.
 
 **Notes:**
 
+- Slides is not a beta (#2869). It stays in the drawer and at `/slides`. An admin cannot turn it off, and stored
+  presentations stay.
 - Non-admins get no Features tab, and `/settings/features` sends them to Files. With no feature in beta, admins get no
   Features tab either.
 - A refused change says so ("Couldn't change the feature…") and leaves the switch where it was.

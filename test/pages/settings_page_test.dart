@@ -49,7 +49,7 @@ void main() {
     priorOverrides = HttpOverrides.current;
     HttpOverrides.global = UnreachableQuarkHttpOverrides();
     await reset();
-    // Signed in as an admin with a beta on, so every row is on screen.
+    // Signed in as an admin with a feature flag on, so every row is on screen.
     await settings.addHost(
       HostEntry(name: 'Quark', hostAddress: 'https://quark.local'),
     );
@@ -58,9 +58,9 @@ void main() {
     settings.isAdmin.value = true;
     settings.featureFlags.value = const [
       FeatureFlag(
-        key: FeatureFlag.slides,
-        label: 'Slides',
-        description: 'Hides Slides; stored presentations are kept.',
+        key: 'notes',
+        label: 'Notes',
+        description: 'Hides Notes; stored notes are kept.',
         enabled: true,
       ),
     ];

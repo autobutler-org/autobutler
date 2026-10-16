@@ -4,6 +4,9 @@ Covers the Slides page (`/slides`), the slide editor for `.qslide` presentations
 inserting pictures, tables and charts, its speaker notes, and presenting (#1152, #1153, #1158, #1160, #1161, #1165,
 #1166, #1167, #1170).
 
+Slides is always listed in the drawer and at `/slides`. It is not behind a switch. Stored presentations stay
+(#2869).
+
 ---
 
 ### JN-SL-001: Browse presentations
@@ -19,6 +22,11 @@ inserting pictures, tables and charts, its speaker notes, and presenting (#1152,
 - Every `.qslide` file the user can reach is listed, newest first.
 - With none, an empty state reads "No presentations yet" with a **Create a presentation** button.
 - The app bar's refresh button, beside the brand button, fetches the list again.
+
+**Notes:**
+
+- Slides is always offered. An admin cannot turn it off, and a stored flag from when it was in beta does not hide
+  it. Stored presentations stay (#2869).
 
 ---
 
@@ -582,6 +590,7 @@ same drive as the presentation (`photos/cover.jpg`).
 - The entry is offered only on PowerPoint files the Quark can import: not on a legacy `.ppt`, a folder, or a file
   inside an archive.
 - Tapping the PowerPoint file itself still opens it in the generic viewer, as before.
+- **Open as presentation** is always in that menu for a PowerPoint file. It is not behind a switch.
 
 ---
 
