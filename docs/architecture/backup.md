@@ -1,7 +1,8 @@
 # Backup
 
 `pkg/backup` copies a Quark onto a managed device that holds the `snapshot-backup` role. This page covers what a
-snapshot holds, how the chat tables get into it and back out, and how an admin is reminded to take one. How the file copies survive a power cut is in
+snapshot holds, how the chat tables get into it and back out, how an admin is reminded to take one, and how
+protected the files are. How the file copies survive a power cut is in
 [Durability](durability.md).
 
 ## What a snapshot holds
@@ -109,3 +110,41 @@ a calendar reminder, will need stored notifications; that belongs to the epic (#
 The app does not show these yet. The bell, the list and the toggle for each type are a follow-up to #2493, and
 push delivery is #1150. A Quark whose last backup predates the record reads as never backed up until its next
 snapshot.
+
+<!-- cspell:ignore protectionutil sda -->
+
+## How protected the files are
+
+`GET /api/v0/storage/protection` reports a level worked out from the drives and snapshot-backup jobs already on
+the Quark. Nothing new is stored for it. `protectionutil.Status` takes the roles, devices, and completed-job
+timestamps the handler has already loaded, and it does not open the database or the filesystem.
+
+Copy 1 is the live data on the default-storage drive. It never counts as a backup copy. The internal drive never
+counts; assigning it the snapshot-backup role is already refused.
+
+| Level        | When                                                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| unprotected  | no snapshot-backup drive has a completed backup inside 30 days                                                     |
+| basic        | exactly one such drive, after partitions of one disk are grouped                                                   |
+| protected    | two or more such drives                                                                                             |
+
+The 30 days are `protectionutil.StaleAfter`, the same window as `backup_stale`. A drive counts only when its role
+is snapshot-backup and it has a completed snapshot-backup job inside that window. A failed job, a job that has
+not completed, and a completion older than the window do not count. Quark does not store the result of a verify,
+so a completed job is the success signal.
+
+Two partitions of one physical disk count once. The whole-disk key comes from `Device.DevicePath`: `/dev/disk3s5`
+and `/dev/disk3s1` share `disk3`, and `/dev/sda1` and `/dev/sda2` share `sda`. A group counts when at least one
+member qualifies. An empty `DevicePath` stands alone, which is also how an unplugged drive is counted, because
+its path is not available until it is attached.
+
+Offsite is not tracked. The response recommends one next step: assign the backup role, start a backup, or keep
+one backup drive somewhere else. It also lists each snapshot-backup drive, whether that drive counts, why not,
+and when it was last backed up.
+
+Live sync does not erase a snapshot-backup drive. `SyncWorker` mirrors the internal drive onto the
+default-storage drive only, and a user delete is not copied there (`pkg/backup/sync.go`, #2791), so a
+snapshot-backup drive still counts when the rules above say so.
+
+When a snapshot backup completes or fails, `SnapshotBackup` publishes `backup_completed` or `backup_failed`.
+An open client should refetch protection status on either one.

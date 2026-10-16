@@ -19,6 +19,9 @@ const (
 	// purge. DeviceSerial names the device; Path is empty.
 	EventTrashChanged EventKind = "trash_changed"
 
+	// Snapshot backups. SnapshotBackup publishes backup_completed and
+	// backup_failed when a run finishes, which is the cue to refetch
+	// GET /storage/protection.
 	EventBackupStarted   EventKind = "backup_started"
 	EventBackupProgress  EventKind = "backup_progress"
 	EventBackupCompleted EventKind = "backup_completed"
