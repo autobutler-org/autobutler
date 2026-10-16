@@ -127,17 +127,25 @@ class _TimeGridEventMoverState extends State<TimeGridEventMover> {
   bool _resize = false;
   CalendarEventItem? _preview;
 
+  // Set while [_onEscape] is registered. A drag does not focus the block, so
+  // Escape would otherwise never reach it, and letting go would still move
+  // the event.
+  bool _watchingEscape = false;
+
   /// 1 where a later day is to the right, -1 where it is to the left.
   int get _later => Directionality.of(context) == TextDirection.rtl ? -1 : 1;
 
   double _handle(bool touch) =>
       math.min(touch ? kMinInteractiveDimension : 8, widget.height / 2);
 
-  void _start(Offset global, Offset local, bool touch) => setState(() {
-    _origin = global;
-    _resize = local.dy >= widget.height - _handle(touch);
-    _preview = null;
-  });
+  void _start(Offset global, Offset local, bool touch) {
+    setState(() {
+      _origin = global;
+      _resize = local.dy >= widget.height - _handle(touch);
+      _preview = null;
+    });
+    _watchEscape();
+  }
 
   void _update(Offset global) {
     final origin = _origin;
@@ -169,11 +177,40 @@ class _TimeGridEventMoverState extends State<TimeGridEventMover> {
 
   void _cancel() {
     if (_origin == null) return;
+    _stopListeningForEscape();
     setState(() {
       _origin = null;
       _preview = null;
     });
     widget.onPreview(null);
+  }
+
+  void _watchEscape() {
+    if (_watchingEscape) return;
+    _watchingEscape = true;
+    HardwareKeyboard.instance.addHandler(_onEscape);
+  }
+
+  void _stopListeningForEscape() {
+    if (!_watchingEscape) return;
+    _watchingEscape = false;
+    HardwareKeyboard.instance.removeHandler(_onEscape);
+  }
+
+  // Escape calls the drag off. Key-up and every other key are left alone.
+  bool _onEscape(KeyEvent event) {
+    if (event is! KeyDownEvent ||
+        event.logicalKey != LogicalKeyboardKey.escape) {
+      return false;
+    }
+    _cancel();
+    return true;
+  }
+
+  @override
+  void dispose() {
+    _stopListeningForEscape();
+    super.dispose();
   }
 
   void _nudge({int days = 0, int minutes = 0, bool resize = false}) {
