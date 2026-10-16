@@ -212,4 +212,45 @@ void main() {
     expect(unread.countOf(1), 3);
     unread.dispose();
   });
+
+  test('the active channel\'s unread count stays 0 while it is open and '
+      'focused', () async {
+    final unread = build();
+    await unread.refresh();
+    expect(unread.countOf(1), 3);
+
+    unread.setViewing(1, focused: true);
+    expect(unread.countOf(1), 0);
+    expect(unread.hasUnread, isFalse);
+
+    events
+      ..add(created(1, author: 8))
+      ..add(created(1, author: 8))
+      ..add(created(2, author: 8));
+    await pumpEventQueue();
+
+    expect(unread.countOf(1), 0);
+    expect(unread.countOf(2), 1);
+    expect(unread.hasUnread, isTrue);
+
+    channels = const [
+      ChatChannel(id: 1, name: 'general', unreadCount: 9),
+      ChatChannel(id: 2, name: 'random', unreadCount: 4),
+    ];
+    await unread.refresh();
+    expect(
+      unread.countOf(1),
+      0,
+      reason: 'a refresh keeps the open channel clear',
+    );
+    expect(unread.countOf(2), 4);
+
+    unread.setViewing(1, focused: false);
+    expect(unread.countOf(1), 9);
+
+    events.add(created(1, author: 8));
+    await pumpEventQueue();
+    expect(unread.countOf(1), 10);
+    unread.dispose();
+  });
 }

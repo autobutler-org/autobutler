@@ -117,7 +117,7 @@ import 'quark_message_list/chat_system_line.dart';
 ///   avatarBuilder: (context, userId) => AppAvatar(userId: userId),
 /// );
 /// ```
-class QuarkMessageList extends StatelessWidget {
+class QuarkMessageList extends StatefulWidget {
   /// Creates the list of [messages], newest first.
   const QuarkMessageList({
     required this.messages,
@@ -252,19 +252,112 @@ class QuarkMessageList extends StatelessWidget {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
+  State<QuarkMessageList> createState() => _QuarkMessageListState();
+}
+
+/// Scroll position and the count of messages that arrived while it was away
+/// from the newest one. Both are view state the list has to keep itself.
+class _QuarkMessageListState extends State<QuarkMessageList> {
+  ScrollController? _owned;
+  final Set<String> _ids = {};
+  bool _atBottom = true;
+  int _newCount = 0;
+
+  ScrollController get _scroll =>
+      widget.controller ?? (_owned ??= ScrollController());
+
+  @override
+  void initState() {
+    super.initState();
+    _remember(widget.messages);
+  }
+
+  @override
+  void didUpdateWidget(QuarkMessageList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _countArrivals(widget.messages);
+  }
+
+  @override
+  void dispose() {
+    _owned?.dispose();
+    super.dispose();
+  }
+
+  void _remember(List<ChatMessageItem> messages) {
+    _ids
+      ..clear()
+      ..addAll(messages.map((message) => message.id));
+  }
+
+  /// Counts messages inserted at the newest end while the viewport is away
+  /// from it. Older pages sit at the other end and do not count, and a list
+  /// that shares no id with the one before it is a different channel.
+  void _countArrivals(List<ChatMessageItem> incoming) {
+    if (incoming.isEmpty ||
+        (_ids.isNotEmpty &&
+            incoming.every((message) => !_ids.contains(message.id)))) {
+      _remember(incoming);
+      _newCount = 0;
+      return;
+    }
+    var added = 0;
+    if (_isAwayFromBottom) {
+      for (final message in incoming) {
+        if (_ids.contains(message.id)) break;
+        added++;
+      }
+    }
+    _remember(incoming);
+    if (!_isAwayFromBottom) {
+      _newCount = 0;
+    } else if (added > 0) {
+      _newCount += added;
+    }
+  }
+
+  bool get _isAwayFromBottom {
+    final scroll = widget.controller ?? _owned;
+    if (scroll == null || !scroll.hasClients) return false;
+    return scroll.position.extentBefore > QuarkMessageList.atBottomTolerance;
+  }
+
+  void _reportAtBottom(bool atBottom) {
+    widget.onAtBottomChanged?.call(atBottom);
+    if (atBottom == _atBottom && (!atBottom || _newCount == 0)) return;
+    setState(() {
+      _atBottom = atBottom;
+      if (atBottom) _newCount = 0;
+    });
+  }
+
+  void _jumpToLatest() {
+    final scroll = _scroll;
+    if (scroll.hasClients) scroll.jumpTo(0);
+    if (_newCount == 0 && _atBottom) return;
+    setState(() {
+      _newCount = 0;
+      _atBottom = true;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tokens = QuarkTokens.of(context);
-    final error = this.error;
-    final onLoadOlder = this.onLoadOlder;
-    final avatarBuilder = this.avatarBuilder;
-    final onCopy = this.onCopy;
-    final onDelete = this.onDelete;
-    final permissions = this.permissions;
+    final messages = widget.messages;
+    final isLoading = widget.isLoading;
+    final hasMore = widget.hasMore;
+    final error = widget.error;
+    final onLoadOlder = widget.onLoadOlder;
+    final avatarBuilder = widget.avatarBuilder;
+    final onCopy = widget.onCopy;
+    final onDelete = widget.onDelete;
+    final permissions = widget.permissions;
     final deletesAny =
         permissions?.contains(ChatPermission.deleteMessages) ?? false;
     final onReact =
         permissions == null || permissions.contains(ChatPermission.addReactions)
-        ? this.onReact
+        ? widget.onReact
         : null;
 
     if (permissions != null &&
@@ -272,7 +365,7 @@ class QuarkMessageList extends StatelessWidget {
       return const EmptyStateWidget(
         key: ValueKey('message_list_not_member'),
         icon: QuarkIcons.lock_outline,
-        headline: notMemberText,
+        headline: QuarkMessageList.notMemberText,
         subtext: 'You can manage it, but its messages are not shared with you.',
       );
     }
@@ -311,7 +404,9 @@ class QuarkMessageList extends StatelessWidget {
     // scrollable inside a message.
     void reportAtBottom(int depth, ScrollMetrics metrics) {
       if (depth == 0) {
-        onAtBottomChanged?.call(metrics.extentBefore <= atBottomTolerance);
+        _reportAtBottom(
+          metrics.extentBefore <= QuarkMessageList.atBottomTolerance,
+        );
       }
     }
 
@@ -322,7 +417,8 @@ class QuarkMessageList extends StatelessWidget {
             !isLoading &&
             error == null &&
             onLoadOlder != null &&
-            notification.metrics.extentAfter < loadOlderExtent) {
+            notification.metrics.extentAfter <
+                QuarkMessageList.loadOlderExtent) {
           onLoadOlder();
         }
         return false;
@@ -335,7 +431,7 @@ class QuarkMessageList extends StatelessWidget {
           return false;
         },
         child: ListView.builder(
-          controller: controller,
+          controller: _scroll,
           reverse: true,
           padding: EdgeInsets.symmetric(vertical: tokens.spacingSm),
           itemCount: messages.length + 1,
@@ -353,7 +449,8 @@ class QuarkMessageList extends StatelessWidget {
                 ? messages[index + 1]
                 : null;
             final startsDay =
-                older == null || !isSameDay(message.sentAt, older.sentAt);
+                older == null ||
+                !QuarkMessageList.isSameDay(message.sentAt, older.sentAt);
 
             return Column(
               key: ValueKey('message_${message.id}'),
@@ -361,11 +458,14 @@ class QuarkMessageList extends StatelessWidget {
               children: [
                 if (startsDay) ChatDaySeparator(date: message.sentAt),
                 if (message.kind == ChatMessageKind.system)
-                  ChatSystemLine(message: message, onHelp: onEncryptionHelp)
+                  ChatSystemLine(
+                    message: message,
+                    onHelp: widget.onEncryptionHelp,
+                  )
                 else
                   ChatMessageRow(
                     message: message,
-                    avatarSize: avatarSize,
+                    avatarSize: QuarkMessageList.avatarSize,
                     longPressOpensMenu: !selectable,
                     onCopy:
                         onCopy == null || message.kind != ChatMessageKind.text
@@ -374,26 +474,27 @@ class QuarkMessageList extends StatelessWidget {
                     onDelete:
                         onDelete == null ||
                             message.kind != ChatMessageKind.text ||
-                            !(deletesAny || message.authorId == currentUserId)
+                            !(deletesAny ||
+                                message.authorId == widget.currentUserId)
                         ? null
                         : () => onDelete(message.id),
                     onReact: onReact == null
                         ? null
                         : (emoji) => onReact(message.id, emoji),
-                    onOpenLink: onOpenLink,
-                    mentionNames: mentionNames,
-                    selfName: currentUserName,
-                    avatar: !startsGroup(message, older)
+                    onOpenLink: widget.onOpenLink,
+                    mentionNames: widget.mentionNames,
+                    selfName: widget.currentUserName,
+                    avatar: !QuarkMessageList.startsGroup(message, older)
                         ? null
                         : avatarBuilder != null
                         ? SizedBox.square(
-                            dimension: avatarSize,
+                            dimension: QuarkMessageList.avatarSize,
                             child: avatarBuilder(context, message.authorId),
                           )
                         : QuarkAvatar(
                             id: message.authorId,
                             name: message.authorName,
-                            size: avatarSize,
+                            size: QuarkMessageList.avatarSize,
                           ),
                   ),
               ],
@@ -405,11 +506,54 @@ class QuarkMessageList extends StatelessWidget {
     // An empty selection toolbar: a right-click belongs to the message's
     // menu, and the copy shortcut works without one. The builder cannot be
     // null, which a touch long press on a desktop platform dereferences.
-    return selectable
+    final body = selectable
         ? SelectionArea(
             contextMenuBuilder: (_, _) => const SizedBox.shrink(),
             child: list,
           )
         : list;
+    // The list stays the stack's first child whether or not the pill is
+    // showing. Swapping it in only when a message arrives rebuilds the
+    // scrollable and drops a reversed list back at the newest message.
+    final label = _newCount == 1 ? '1 new message' : '$_newCount new messages';
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        body,
+        if (_newCount > 0)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: tokens.spacingMd,
+            child: Center(
+              child: TextButton(
+                key: const ValueKey('message_list_jump'),
+                style: TextButton.styleFrom(
+                  foregroundColor: tokens.primaryForeground,
+                  backgroundColor: tokens.primary,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: tokens.spacingMd,
+                    vertical: tokens.spacingSm,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(tokens.radiusLg),
+                  ),
+                  minimumSize: const Size(0, kMinInteractiveDimension),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: _jumpToLatest,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(QuarkIcons.arrow_downward_rounded, size: 18),
+                    SizedBox(width: tokens.spacingXs),
+                    Text(label),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/controllers/chat_channel_share_target.dart';
 import 'package:quark/controllers/chat_controller.dart';
+import 'package:quark/controllers/chat_unread_controller.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
@@ -89,10 +90,27 @@ class _ChatPageState extends State<ChatPage>
   late final ChatController _controller =
       (widget.controller ?? ChatController())..select(widget.channelId);
 
+  /// Whether this window is focused on the page. An unfocused window keeps
+  /// the open channel's unread badge; a focused one does not (#3255).
+  bool _windowFocused = true;
+
   @override
   void initState() {
     super.initState();
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _windowFocused =
+        lifecycle == null || lifecycle == AppLifecycleState.resumed;
     _controller.addListener(_followController);
+    _syncViewing();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final focused = state == AppLifecycleState.resumed;
+    if (focused == _windowFocused) return;
+    setState(() => _windowFocused = focused);
+    _syncViewing();
   }
 
   @override
@@ -112,6 +130,7 @@ class _ChatPageState extends State<ChatPage>
     _controller
       ..removeListener(_followController)
       ..dispose();
+    ChatUnreadController.instance.setViewing(null, focused: false);
     super.dispose();
   }
 
@@ -122,6 +141,7 @@ class _ChatPageState extends State<ChatPage>
   /// back to the default. After the frame: this can run from
   /// [didUpdateWidget], mid-build.
   void _followController() {
+    _syncViewing();
     final id = _controller.selectedChannel?.id;
     if (id == null || '$id' == widget.channelId) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -176,6 +196,34 @@ class _ChatPageState extends State<ChatPage>
   void _openChannel(String id) {
     _controller.closeChannelList();
     context.go(AppRoutes.chatChannel(id));
+  }
+
+  /// Tells the shared unread counts which channel is on screen, so its badge
+  /// stays at zero while this window is focused on it.
+  void _syncViewing() {
+    final id = _windowFocused ? _controller.selectedChannel?.id : null;
+    ChatUnreadController.instance.setViewing(id, focused: id != null);
+  }
+
+  /// The channel list with the open channel's own badges removed while this
+  /// window is focused on it. [openId] is null when the badge should show.
+  List<ChatChannelItem> _channelsWithoutOwnBadge(
+    List<ChatChannelItem> items,
+    String? openId,
+  ) {
+    if (openId == null) return items;
+    return [
+      for (final item in items)
+        if (item.id == openId)
+          ChatChannelItem(
+            id: item.id,
+            name: item.name,
+            isPrivate: item.isPrivate,
+            permissions: item.permissions,
+          )
+        else
+          item,
+    ];
   }
 
   String? _saveError(String action) {
@@ -402,6 +450,9 @@ class _ChatPageState extends State<ChatPage>
             : c.messagesError;
         final encryption = c.encryptionStatus;
         final matches = c.searchMatchCount;
+        final openId = _windowFocused && channel != null
+            ? '${channel.id}'
+            : null;
         return QuarkPageScaffold(
           title: 'Chat',
           icon: QuarkIcons.forum_outlined,
@@ -450,8 +501,11 @@ class _ChatPageState extends State<ChatPage>
                         ),
                   channelList: QuarkChannelList(
                     serverName: serverName,
-                    channels: c.channelItems,
-                    otherChannels: c.otherChannelItems,
+                    channels: _channelsWithoutOwnBadge(c.channelItems, openId),
+                    otherChannels: _channelsWithoutOwnBadge(
+                      c.otherChannelItems,
+                      openId,
+                    ),
                     selectedChannelId: channel == null ? null : '${channel.id}',
                     isLoading: c.isLoadingChannels && c.channels.isEmpty,
                     error: c.channelsError == null
@@ -487,6 +541,9 @@ class _ChatPageState extends State<ChatPage>
                                     'are searched.',
                               )
                             : QuarkMessageList(
+                                key: ValueKey(
+                                  'chat_messages_${channel?.id ?? 'none'}',
+                                ),
                                 messages: c.messageItems,
                                 isLoading:
                                     c.isLoadingMessages ||

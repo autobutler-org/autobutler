@@ -55,18 +55,45 @@ class ChatUnreadController extends ChangeNotifier {
 
   Map<int, int> _counts = const {};
 
+  /// The channel on screen while this window is focused on it. Its count is
+  /// hidden until the window leaves it.
+  int? _viewingId;
+
   /// The newest message id sent or heard as each channel's marker.
   final Map<int, int> _markers = {};
 
   /// How many unread messages channel [channelId] holds; zero for one never
-  /// heard of.
-  int countOf(int channelId) => _counts[channelId] ?? 0;
+  /// heard of, and zero for the channel [setViewing] is holding.
+  int countOf(int channelId) => counts[channelId] ?? 0;
 
   /// Every channel's unread count, by channel id.
-  Map<int, int> get counts => _counts;
+  ///
+  /// The channel [setViewing] is holding reads as zero here too, so a badge
+  /// and a mention count that follow this map agree with [countOf].
+  Map<int, int> get counts {
+    final viewing = _viewingId;
+    if (viewing == null) return _counts;
+    final count = _counts[viewing] ?? 0;
+    if (count == 0) return _counts;
+    return {..._counts, viewing: 0};
+  }
 
   /// Whether any channel holds an unread message.
-  bool get hasUnread => _counts.values.any((count) => count > 0);
+  bool get hasUnread => counts.values.any((count) => count > 0);
+
+  /// The channel on screen, and whether this window is focused on it.
+  ///
+  /// While [focused] is true and [channelId] is set, that channel's count
+  /// stays 0: the badge is hidden, and a message that arrives is not shown
+  /// as unread. A null [channelId], or [focused] false, shows the count
+  /// again, including messages that arrived in the meantime. A refresh
+  /// while it is still focused stores the Quark's count and keeps hiding it.
+  void setViewing(int? channelId, {required bool focused}) {
+    final next = focused ? channelId : null;
+    if (next == _viewingId) return;
+    _viewingId = next;
+    notifyListeners();
+  }
 
   /// Reads every channel's count from the Quark.
   Future<void> refresh() async {
