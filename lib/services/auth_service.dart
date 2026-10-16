@@ -328,7 +328,9 @@ class AuthService {
   /// switching Quarks), and whenever the Quark reports an account's role
   /// changed, so a demoted admin loses admin-only entries without signing out.
   /// The Quark closes the socket of the account whose role changed instead of
-  /// sending it that event, so every reconnect refreshes too.
+  /// sending it that event, so every reconnect refreshes too. The first
+  /// connection does not: the refresh below already covers it, and following
+  /// it as well asked the Quark everything twice on every load (#3209).
   static void watchAccount() {
     AppSettings.instance.sessionTokenNotifier.addListener(refreshAccount);
     // Switching between two Quarks that are both signed out moves no session,
@@ -345,7 +347,7 @@ class AuthService {
         SettingsService.refreshThemeColor();
       }
     });
-    EventsService.instance.connections.listen((_) => refreshAccount());
+    EventsService.instance.reconnects.listen((_) => refreshAccount());
     EventsService.instance.start();
     refreshAccount();
   }

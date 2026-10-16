@@ -1448,6 +1448,11 @@ test/chaos/powercut/base: ## Prove the power-cut base image falls through a mirr
 .PHONY: test/chaos/powercut
 test/chaos/powercut: check/docker test/chaos/powercut/base ## Cut the power under the upload and vault write paths on LazyFS (see test/chaos/powercut/README.md)
 	mkdir -p build test-results
+	# A published power-cut job still pins public.ecr.aws. ci-pull.bash points
+	# that FROM at the next mirror that answers. A Dockerfile that already
+	# takes BASE_IMAGE is left alone.
+	./test/chaos/powercut/ci-pull_test.bash
+	./test/chaos/powercut/ci-pull.bash
 	CGO_ENABLED=0 GOOS=linux $(GO) build -o build/powercut ./test/chaos/powercut
 	# pull-base.bash tries the next mirror when a registry answers 429.
 	base="$$(./test/chaos/powercut/pull-base.bash)"
