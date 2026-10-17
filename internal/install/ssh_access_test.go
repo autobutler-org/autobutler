@@ -15,10 +15,12 @@ import (
 // The mount rule must not move, and SSH adds exactly one exact-path entry: no
 // broad systemctl, ufw or chpasswd rights (#2131). Renaming adds one more,
 // which sudo runs with no arguments at all: no broad hostnamectl (#2344).
+// Drive health adds one more. The script, not sudoers, checks the device path.
 func TestSudoersContent(t *testing.T) {
 	want := "quark ALL=(root) NOPASSWD: /bin/mount * /var/lib/quark/data/mounts/*, /bin/umount /var/lib/quark/data/mounts/*\n" +
 		"quark ALL=(root) NOPASSWD: /usr/local/libexec/quark/ssh-access\n" +
-		"quark ALL=(root) NOPASSWD: /usr/local/libexec/quark/set-hostname \"\"\n"
+		"quark ALL=(root) NOPASSWD: /usr/local/libexec/quark/set-hostname \"\"\n" +
+		"quark ALL=(root) NOPASSWD: /usr/local/libexec/quark/drive-health\n"
 	if got := sudoersContent(); got != want {
 		t.Errorf("sudoers content:\n%s\nwant:\n%s", got, want)
 	}

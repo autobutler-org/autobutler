@@ -8388,7 +8388,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Assigns a role (default-storage, snapshot-backup, unassigned) to a device. Requires master password re-entry.",
+                "description": "Assigns a role (default-storage, snapshot-backup, unassigned) to a device. Requires master password re-entry. A drive whose health.verdict is replace-soon is refused with 409 unless acknowledgeHealth is true. Watch does not block. Unknown is not healthy. Files already on the drive are left in place. Switching default storage to a drive in worse health than the current one uses the stronger 409 text.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8401,7 +8401,7 @@ const docTemplate = `{
                 "summary": "Set the role of a storage device",
                 "parameters": [
                     {
-                        "description": "{serial: string, role: string, username: string, password: string}",
+                        "description": "{serial: string, role: string, username: string, password: string, acknowledgeHealth: bool}",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -8429,6 +8429,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/serverutil.Response"
                         }
                     },
+                    "409": {
+                        "description": "replace-soon drive was not acknowledged",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
                     "426": {
                         "description": "password is a raw password, not the auth key: the app is too old",
                         "schema": {
@@ -8451,7 +8457,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Queues a job that aggregates all files from all managed devices onto the target snapshot-backup device. Answers 409 while the target already has a pending or running backup, whichever instance started it. jobId is what the status route takes.",
+                "description": "Queues a job that aggregates all files from all managed devices onto the target snapshot-backup device. Answers 409 while the target already has a pending or running backup, whichever instance started it, and 409 when the target's health.verdict is replace-soon unless acknowledgeHealth is true. Watch does not block. The backup does not delete files already on the drive; it removes only its own temp files. jobId is what the status route takes.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8464,7 +8470,7 @@ const docTemplate = `{
                 "summary": "Start a snapshot backup to a device",
                 "parameters": [
                     {
-                        "description": "{targetDeviceSerial: string}",
+                        "description": "{targetDeviceSerial: string, acknowledgeHealth: bool}",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -8487,7 +8493,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "Conflict",
+                        "description": "backup already running, or a replace-soon target was not acknowledged",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -8617,7 +8623,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns statuses for all known storage devices",
+                "description": "Returns statuses for all known storage devices. Each device's health object is verdict (healthy, watch, replace-soon, or unknown), reason (one sentence), and when a read succeeded smartStatus, reallocatedSectors, pendingSectors, powerOnHours, temperatureCelsius, media (spinning or solid-state), and linkSpeed. worseThanDefault is true when the verdict is worse than the current default-storage drive (healthy, then watch, then unknown, then replace-soon). health is omitted until a read is attempted. Unknown is never reported as healthy, including when the health tool is not installed. Age is power-on hours; a heavily used drive does not claim a manufacture year.",
                 "produces": [
                     "application/json"
                 ],
@@ -8750,7 +8756,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Reports how protected the files are. unprotected means no snapshot-backup drive has a completed backup within 30 days, basic means one such drive after partitions of one disk are grouped, and protected means two or more. The live copy on the default-storage drive and the internal drive never count. A failed, unfinished, or stale backup does not count. sentence is one plain sentence. nextStep is assign-backup-role, start-backup, or keep-one-elsewhere. drives lists each snapshot-backup drive, whether it counts, why not, and when it was last backed up. Refetch when a backup completes or fails (backup_completed, backup_failed).",
+                "description": "Reports how protected the files are. unprotected means no snapshot-backup drive has a completed backup within 30 days, basic means one such drive after partitions of one disk are grouped, and protected means two or more. The live copy on the default-storage drive and the internal drive never count. A failed, unfinished, or stale backup does not count. A drive whose health verdict is replace-soon does not count, even inside 30 days. Watch and unknown still follow the 30-day rule. sentence is one plain sentence. nextStep is assign-backup-role, start-backup, or keep-one-elsewhere. drives lists each snapshot-backup drive, whether it counts, why not, and when it was last backed up. Refetch when a backup completes or fails (backup_completed, backup_failed).",
                 "produces": [
                     "application/json"
                 ],

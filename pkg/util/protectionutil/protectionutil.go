@@ -4,11 +4,12 @@
 //
 // Copy 1 is the live data on the default-storage drive and never counts as a
 // backup. A drive counts when its role is snapshot-backup, it is not the
-// internal drive, and one of its completed snapshot-backup jobs finished
-// inside [StaleAfter]. A failed job, a job that has not completed, and a
-// completion older than StaleAfter do not count. Two partitions of one
-// physical disk count once. An empty device path is not grouped with any
-// other drive. Offsite is not tracked.
+// internal drive, its health is not Replace soon, and one of its completed
+// snapshot-backup jobs finished inside [StaleAfter]. A failed job, a job that
+// has not completed, a completion older than StaleAfter, and a Replace soon
+// drive do not count. Watch and Unknown still follow the 30-day rule. Two
+// partitions of one physical disk count once. An empty device path is not
+// grouped with any other drive. Offsite is not tracked.
 //
 // [Status] does not open the database or the filesystem. The caller passes
 // the roles, devices, and completed-job timestamps it has already loaded.
@@ -54,6 +55,8 @@ const (
 	ReasonStale = "The last backup is more than 30 days old."
 	// ReasonSameDisk is why a second partition of a disk that already counts does not count.
 	ReasonSameDisk = "This partition is on the same disk as another backup."
+	// ReasonReplaceSoon is why a drive whose health verdict is Replace soon does not count.
+	ReasonReplaceSoon = "This drive should be replaced soon, so it does not count as a backup copy."
 )
 
 // Role is the role assigned to one device. Serial is empty for the internal drive.
@@ -69,6 +72,10 @@ type Device struct {
 	Name       string
 	DevicePath string
 	IsInternal bool
+	// ReplaceSoon is true when the drive's health verdict is replace soon.
+	// The drive does not count as a backup copy. Watch and Unknown leave this
+	// false and still follow the 30-day rule.
+	ReplaceSoon bool
 }
 
 // Completion is one completed snapshot-backup job. Failed and unfinished jobs

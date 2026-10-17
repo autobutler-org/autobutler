@@ -37,7 +37,7 @@ type ProtectionDrive struct {
 
 // getProtectionStatus godoc
 // @Summary Get data protection status
-// @Description Reports how protected the files are. unprotected means no snapshot-backup drive has a completed backup within 30 days, basic means one such drive after partitions of one disk are grouped, and protected means two or more. The live copy on the default-storage drive and the internal drive never count. A failed, unfinished, or stale backup does not count. sentence is one plain sentence. nextStep is assign-backup-role, start-backup, or keep-one-elsewhere. drives lists each snapshot-backup drive, whether it counts, why not, and when it was last backed up. Refetch when a backup completes or fails (backup_completed, backup_failed).
+// @Description Reports how protected the files are. unprotected means no snapshot-backup drive has a completed backup within 30 days, basic means one such drive after partitions of one disk are grouped, and protected means two or more. The live copy on the default-storage drive and the internal drive never count. A failed, unfinished, or stale backup does not count. A drive whose health verdict is replace-soon does not count, even inside 30 days. Watch and unknown still follow the 30-day rule. sentence is one plain sentence. nextStep is assign-backup-role, start-backup, or keep-one-elsewhere. drives lists each snapshot-backup drive, whether it counts, why not, and when it was last backed up. Refetch when a backup completes or fails (backup_completed, backup_failed).
 // @Tags storage
 // @Produce json
 // @Success 200 {object} ProtectionStatus

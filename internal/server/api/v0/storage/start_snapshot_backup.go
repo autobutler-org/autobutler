@@ -7,20 +7,21 @@ import (
 	"github.com/autobutler-org/quark/pkg/backup"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
+	"github.com/autobutler-org/quark/pkg/util/deviceutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/gin-gonic/gin"
 )
 
 // startSnapshotBackup godoc
 // @Summary Start a snapshot backup to a device
-// @Description Queues a job that aggregates all files from all managed devices onto the target snapshot-backup device. Answers 409 while the target already has a pending or running backup, whichever instance started it. jobId is what the status route takes.
+// @Description Queues a job that aggregates all files from all managed devices onto the target snapshot-backup device. Answers 409 while the target already has a pending or running backup, whichever instance started it, and 409 when the target's health.verdict is replace-soon unless acknowledgeHealth is true. Watch does not block. The backup does not delete files already on the drive; it removes only its own temp files. jobId is what the status route takes.
 // @Tags storage
 // @Accept json
 // @Produce json
-// @Param body body object true "{targetDeviceSerial: string}"
+// @Param body body object true "{targetDeviceSerial: string, acknowledgeHealth: bool}"
 // @Success 202 {object} object
 // @Failure 400 {object} serverutil.Response
-// @Failure 409 {object} serverutil.Response
+// @Failure 409 {object} serverutil.Response "backup already running, or a replace-soon target was not acknowledged"
 // @Failure 426 {object} serverutil.Response "password is a raw password, not the auth key: the app is too old"
 // @Failure 500 {object} serverutil.Response
 // @Failure 501 {object} serverutil.Response "A snapshot includes the chat backup, which is not supported on the PostgreSQL backend yet"
@@ -37,6 +38,7 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 		Username           string `json:"username"`
 		Password           string `json:"password"`
 		RecoveryPassword   string `json:"recoveryPassword"`
+		AcknowledgeHealth  bool   `json:"acknowledgeHealth"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return serverutil.BadRequest(fmt.Errorf("invalid request body: %w", err))
@@ -44,6 +46,18 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 
 	// The account the job is recorded under. Absent means 0, a system job.
 	userID, _ := ctxutil.Get[int64](c, "userID")
+	// A target that does not hold the role keeps the role error. A Replace soon
+	// target that does is refused until acknowledgeHealth is set.
+	if role, err := deps.Database().Queries.GetDeviceRole(c.Request.Context(), req.TargetDeviceSerial); err == nil && role == "snapshot-backup" {
+		if err := deviceutil.RefuseReplaceSoonTarget(deviceutil.BackupHealthParams{
+			Ctx:               c.Request.Context(),
+			Storage:           deps.StorageService(),
+			Serial:            req.TargetDeviceSerial,
+			AcknowledgeHealth: req.AcknowledgeHealth,
+		}); err != nil {
+			return deviceError(err)
+		}
+	}
 	result, err := backup.StartSnapshotBackup(backup.StartSnapshotBackupParams{
 		Ctx:                c.Request.Context(),
 		Queries:            deps.Database().Queries,

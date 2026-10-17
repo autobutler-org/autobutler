@@ -2,6 +2,7 @@ package deviceutil
 
 import (
 	"context"
+	"sync"
 
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
@@ -17,6 +18,10 @@ type ListStatusesParams struct {
 	// Database holds the names and roles to overlay. Nil leaves the detector's
 	// own names in place and reports no roles at all.
 	Database *db.DatabaseSqlc
+	// Health, when set, reports a drive's verdict instead of reading SMART.
+	// Tests pass a fake. Nil reads through storageutil. A missing tool or a
+	// failed read is an Unknown verdict and does not fail the list.
+	Health func(context.Context, storageutil.Device) *storageutil.DiskHealth
 }
 
 // ListStatusesResult carries the assembled statuses.
@@ -67,5 +72,61 @@ func ListStatuses(params ListStatusesParams) (ListStatusesResult, error) {
 		}
 	}
 
+	fillDriveHealth(params.Ctx, statuses, params.Health)
 	return ListStatusesResult{Statuses: statuses}, nil
+}
+
+// fillDriveHealth sets Health on every status. A nil reader result, or a nil
+// Health func that cannot read SMART, becomes Unknown and never Healthy.
+// WorseThanDefault is set when a drive's verdict is worse than the current
+// default-storage drive.
+func fillDriveHealth(ctx context.Context, statuses []*storageutil.DeviceStatus, read func(context.Context, storageutil.Device) *storageutil.DiskHealth) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	healths := make([]*storageutil.DiskHealth, len(statuses))
+	if read != nil {
+		for i, status := range statuses {
+			healths[i] = read(ctx, status.Device)
+		}
+	} else {
+		var wg sync.WaitGroup
+		for i, status := range statuses {
+			wg.Add(1)
+			go func(i int, device storageutil.Device) {
+				defer wg.Done()
+				healths[i] = storageutil.CachedDriveHealth(ctx, device.DevicePath)
+			}(i, status.Device)
+		}
+		wg.Wait()
+	}
+
+	defaultRank := -1
+	defaultSerial := ""
+	haveDefault := false
+	for i, status := range statuses {
+		health := healths[i]
+		if health == nil {
+			unknown := storageutil.UnknownDiskHealth()
+			health = &unknown
+		}
+		copied := *health
+		status.Health = &copied
+		if status.Role == "default-storage" {
+			defaultRank = storageutil.HealthRank(copied.Verdict)
+			defaultSerial = deviceSerial(status.Device)
+			haveDefault = true
+		}
+	}
+	if !haveDefault {
+		return
+	}
+	for _, status := range statuses {
+		if deviceSerial(status.Device) == defaultSerial {
+			continue
+		}
+		if storageutil.HealthRank(status.Health.Verdict) > defaultRank {
+			status.Health.WorseThanDefault = true
+		}
+	}
 }

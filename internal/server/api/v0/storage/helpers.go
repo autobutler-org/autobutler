@@ -26,8 +26,11 @@ func deviceError(err error) *serverutil.Response {
 		invalid      *deviceutil.InvalidRequestError
 		unauthorized *deviceutil.UnauthorizedError
 		notFound     *deviceutil.NotFoundError
+		needsAck     *deviceutil.AcknowledgmentRequiredError
 	)
 	switch {
+	case errors.As(err, &needsAck):
+		return serverutil.Conflict(err)
 	case errors.As(err, &invalid):
 		return serverutil.BadRequest(err)
 	case errors.As(err, &unauthorized):
@@ -67,11 +70,13 @@ func protectionStatus(ctx context.Context, deps deputil.Dependencies) (protectio
 		})
 	}
 	for _, root := range roots {
+		health := storageutil.CachedDriveHealth(ctx, root.DevicePath)
 		params.Devices = append(params.Devices, protectionutil.Device{
-			Serial:     deviceSerial(root.Device),
-			Name:       root.Name,
-			DevicePath: root.DevicePath,
-			IsInternal: root.IsInternal,
+			Serial:      deviceSerial(root.Device),
+			Name:        root.Name,
+			DevicePath:  root.DevicePath,
+			IsInternal:  root.IsInternal,
+			ReplaceSoon: health != nil && health.Verdict == storageutil.HealthReplaceSoon,
 		})
 	}
 	for _, job := range jobs {

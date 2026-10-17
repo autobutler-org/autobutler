@@ -14,6 +14,7 @@ import (
 
 	"github.com/autobutler-org/quark/pkg/util/hostnameutil"
 	"github.com/autobutler-org/quark/pkg/util/sshutil"
+	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
 // installSystemdService writes the unit and enables it. restart starts the
@@ -250,6 +251,9 @@ func Install(systemOnly bool) error {
 		}
 		if err := installRootHelper(hostnameutil.HelperPath, hostnameHelperContent); err != nil {
 			return fmt.Errorf("failed to install the hostname helper: %w", err)
+		}
+		if err := installRootHelper(storageutil.HelperPath, driveHealthHelperContent); err != nil {
+			return fmt.Errorf("failed to install the drive health helper: %w", err)
 		}
 		if err := installSSHDropIn(); err != nil {
 			return fmt.Errorf("failed to install the sshd drop-in: %w", err)

@@ -9,4 +9,7 @@ type DeviceStatus struct {
 	FilesDir  string           `json:"filesDir,omitempty"`
 	Role      string           `json:"role"`
 	DiskProbe *DiskProbeResult `json:"diskProbe,omitempty"` // nil until probed
+	// Health is the drive's SMART verdict. It is nil until a caller reads it.
+	// The device list fills it; a failed read is Unknown, never Healthy.
+	Health *DiskHealth `json:"health,omitempty"`
 }
