@@ -383,8 +383,8 @@ changes the file tree — upload, move, delete, new folder, conversion, restore 
 `make check/lint/go` is the whole Go check, and CI runs the same target — nothing is advisory.
 
 - **golangci-lint** against `.golangci.yml`: `govet`, `errcheck`, `ineffassign`, `staticcheck` and `unused`,
-  plus `revive`. Install it with `make setup/golangci-lint`. staticcheck runs only as a golangci-lint linter;
-  there is no second standalone copy to disagree with it.
+  plus `revive`. Install it with `make setup/gotools`, which pins the CI version. staticcheck runs only as a
+  golangci-lint linter; there is no second standalone copy to disagree with it.
 - **`scripts/check-go-structure.bash`** enforces the layout rules above, which no general-purpose linter can
   see: every package under `pkg/` and every router package under `internal/server/api/` has its `<pkg>.go`
   interface file and declares nothing private in it, no `v<N>_` filename prefix disagrees with the version

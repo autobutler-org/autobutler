@@ -64,6 +64,16 @@ unexport GIT_PREFIX
 
 GO := $(shell which go)
 PROBE_VERSION := v0.14.0
+# The CI tool pins below are bumped by Renovate (renovate.json, customManagers) and read by
+# .github/actions/setup-* to key the tool cache, so keep each on one `NAME := vX.Y.Z` line.
+# renovate: datasource=go depName=github.com/sqlc-dev/sqlc
+SQLC_VERSION := v1.30.0
+# renovate: datasource=go depName=github.com/swaggo/swag
+SWAG_VERSION := v1.16.6
+# renovate: datasource=go depName=github.com/golangci/golangci-lint/v2
+GOLANGCI_LINT_VERSION := v2.14.0
+# renovate: datasource=go depName=golang.org/x/vuln
+GOVULNCHECK_VERSION := v1.9.0
 AIR := $(shell which air)
 # Only ask Go for its defaults when Go is actually installed. On a macOS CI runner
 # without it, $(GO) is empty and the shell call becomes `env GOOS`, which floods the
@@ -255,14 +265,22 @@ else
 endif
 
 .PHONY: setup/gotools
-setup/gotools: ## Install go tools
+setup/gotools: setup/gotools/golangci-lint setup/gotools/govulncheck ## Install go tools (editor tools float, linters are pinned)
 	$(GO) install golang.org/x/tools/gopls@latest
 	$(GO) install github.com/cweill/gotests/gotests@latest
 	$(GO) install github.com/josharian/impl@latest
 	$(GO) install github.com/haya14busa/goplay/cmd/goplay@latest
 	$(GO) install github.com/go-delve/delve/cmd/dlv@latest
-	$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
-	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+
+# CI installs only these two (not the editor tools above), through .github/actions/setup-golangci-lint
+# and setup-govulncheck.
+.PHONY: setup/gotools/golangci-lint
+setup/gotools/golangci-lint: ## Install the pinned golangci-lint
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+
+.PHONY: setup/gotools/govulncheck
+setup/gotools/govulncheck: ## Install the pinned govulncheck
+	$(GO) install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
 
 .PHONY: setup/ios
 setup/ios: setup/cocoapods ## Setup iOS development environment
@@ -277,7 +295,7 @@ endif
 
 .PHONY: setup/sqlc
 setup/sqlc: ## Install sqlc tool
-	$(GO) install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
+	$(GO) install github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION)
 
 .PHONY: setup/probe
 setup/probe: ## Install the Flutter Probe e2e CLI and its MCP server (probe, probe-mcp)
@@ -286,7 +304,7 @@ setup/probe: ## Install the Flutter Probe e2e CLI and its MCP server (probe, pro
 
 .PHONY: setup/swag
 setup/swag: ## Install swag tool
-	$(GO) install github.com/swaggo/swag/cmd/swag@latest
+	$(GO) install github.com/swaggo/swag/cmd/swag@$(SWAG_VERSION)
 
 .PHONY: setup/gremlins
 setup/gremlins: ## Install the gremlins mutation-testing tool (used by test/mutation/backend)
@@ -1600,7 +1618,7 @@ check/lint/flutter: generate/frontend/icons generate/frontend/sbom ## Lint Flutt
 .PHONY: check/lint/go
 check/lint/go: internal/server/public/stub.txt check/structure/go test/db-backend ## Check Go code
 	if ! command -v golangci-lint >/dev/null 2>&1; then
-		echo "golangci-lint is not installed. Run 'make setup/golangci-lint' first."
+		echo "golangci-lint is not installed. Run 'make setup/gotools' first."
 		exit 1
 	fi
 	# Lint the module's own packages, not whatever a build left under build/.
