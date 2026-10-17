@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/controllers/chat_controller.dart';
 import 'package:quark/models/calendar_view.dart';
-import 'package:quark/models/feature_flag.dart';
 import 'package:quark/models/trash_item.dart';
 import 'package:quark/pages/account_and_data_page.dart';
 import 'package:quark/pages/books_page.dart';
@@ -35,7 +34,6 @@ import 'package:quark/pages/users_page.dart';
 import 'package:quark/pages/vault_page.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
-import 'package:quark/services/feature_flags_service.dart';
 import 'package:quark/utils/code_viewer_files.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
@@ -630,8 +628,6 @@ final Listenable routerRefreshListenable = Listenable.merge([
   // An admin demoted while on an admin-only page is moved off it: the flag
   // changing re-runs the gate, which asks the Quark again (#1928).
   AppSettings.instance.isAdmin,
-  // A beta turned off moves anyone on its page to Files (#2421, #2542).
-  AppSettings.instance.featureFlags,
 ]);
 
 /// Every route in the app. It opens on the login page, and [authRedirect] sends a visitor who is signed out, or
@@ -985,47 +981,6 @@ const adminRoutes = {
 bool _isUnderAny(Set<String> routes, String location) =>
     routes.any((route) => location == route || location.startsWith('$route/'));
 
-/// How the gate below asks the Quark for its beta feature flags. A `var` so
-/// tests can answer without a server, like [authStatusProbe].
-Future<List<FeatureFlag>> Function() featureFlagsProbe =
-    FeatureFlagsService.list;
-
-/// The flags the gate below last had for one session on one Quark, so moving
-/// between a beta's views does not ask the Quark again on every navigation
-/// (#2935). [seen] is the [AppSettings.featureFlags] list at the time: a new
-/// one there — a sign-in, a reconnect, a `feature_flag_changed` event — is
-/// fresher than the cache and replaces it.
-({
-  String? host,
-  String? token,
-  List<FeatureFlag> seen,
-  List<FeatureFlag> flags,
-})?
-_featureFlagCache;
-
-/// Whether the Quark says the flag [key] is on. False when it cannot say.
-///
-/// Asks once per session on a Quark, then follows [AppSettings.featureFlags],
-/// which the settings events keep current.
-Future<bool> _featureIsEnabled(String key) async {
-  final settings = AppSettings.instance;
-  final host = settings.activeHost;
-  final token = settings.sessionToken;
-  final seen = settings.featureFlags.value;
-  final cache = _featureFlagCache;
-  try {
-    final flags = cache == null || cache.host != host || cache.token != token
-        ? await featureFlagsProbe()
-        : identical(cache.seen, seen)
-        ? cache.flags
-        : seen;
-    _featureFlagCache = (host: host, token: token, seen: seen, flags: flags);
-    return flags.any((flag) => flag.key == key && flag.enabled);
-  } catch (_) {
-    return false;
-  }
-}
-
 /// Whether the Quark says the signed-in caller is an admin. False when it
 /// cannot say.
 Future<bool> _callerIsAdmin() async {
@@ -1123,16 +1078,6 @@ Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
         ..showSnackBar(const SnackBar(content: Text(Errors.adminOnly)));
     });
     return AppRoutes.files;
-  }
-
-  // Slides is a beta an admin can turn off (#2868). Asked of the Quark like
-  // the admin pages above: a link or a reload must not open a page whose
-  // every request would 404.
-  for (final (route, flag) in const [(AppRoutes.slides, FeatureFlag.slides)]) {
-    if (AppSettings.instance.sessionToken != null &&
-        _isUnderAny({route}, location)) {
-      return await _featureIsEnabled(flag) ? null : AppRoutes.files;
-    }
   }
 
   // Already authenticated.

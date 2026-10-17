@@ -12,9 +12,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 )
 
-// Slides is the key of the slides beta's flag (#2868).
-const Slides = "slides"
-
 // ErrUnknownFlag is returned for a key the registry does not declare, which
 // includes every retired flag.
 var ErrUnknownFlag = errors.New("unknown feature flag")

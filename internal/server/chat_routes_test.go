@@ -18,9 +18,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TestChatRoutesAnswerWhenFlagIsOff checks chat and the calendar answer with
-// their flags stored off (#2577, #2610). Slides, still in beta, stays a 404
-// while its flag is off.
+// TestChatRoutesAnswerWhenFlagIsOff checks chat, the calendar, and slides
+// answer with their flags stored off (#2577, #2610, #2869).
 func TestChatRoutesAnswerWhenFlagIsOff(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
@@ -54,24 +53,30 @@ func TestChatRoutesAnswerWhenFlagIsOff(t *testing.T) {
 	setupRouters(engine, nil, deps)
 	t.Cleanup(deps.Background().Wait)
 
-	do := func(path string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodGet, path, nil)
+	do := func(method, path string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, path, nil)
 		req.Header.Set("Authorization", "Bearer "+admin.SessionToken)
 		w := httptest.NewRecorder()
 		engine.ServeHTTP(w, req)
 		return w
 	}
 
-	chat := do("/api/v0/chat/channels")
+	chat := do(http.MethodGet, "/api/v0/chat/channels")
 	if chat.Code != http.StatusOK || strings.Contains(chat.Body.String(), "turned off") {
 		t.Fatalf("GET /chat/channels = %d %s, want 200 with the flag stored off", chat.Code, chat.Body.String())
 	}
-	calendar := do("/api/v0/calendar/events?from=2026-10-01T00:00:00Z&to=2026-10-08T00:00:00Z")
+	calendar := do(http.MethodGet, "/api/v0/calendar/events?from=2026-10-01T00:00:00Z&to=2026-10-08T00:00:00Z")
 	if calendar.Code != http.StatusOK || strings.Contains(calendar.Body.String(), "turned off") {
 		t.Fatalf("GET /calendar/events = %d %s, want 200 with the flag stored off", calendar.Code, calendar.Body.String())
 	}
-	slides := do("/api/v0/files/export/pptx")
-	if slides.Code != http.StatusNotFound || !strings.Contains(slides.Body.String(), "turned off") {
-		t.Fatalf("GET /files/export/pptx = %d %s, want 404 while the slides flag is off", slides.Code, slides.Body.String())
+	// No filePath: the handler runs and refuses the request. A flag gate
+	// would have answered 404 "turned off" before that.
+	exportSlides := do(http.MethodGet, "/api/v0/files/export/pptx")
+	if exportSlides.Code != http.StatusBadRequest || strings.Contains(exportSlides.Body.String(), "turned off") {
+		t.Fatalf("GET /files/export/pptx = %d %s, want 400 with the flag gone", exportSlides.Code, exportSlides.Body.String())
+	}
+	importSlides := do(http.MethodPost, "/api/v0/files/import/pptx")
+	if importSlides.Code != http.StatusBadRequest || strings.Contains(importSlides.Body.String(), "turned off") {
+		t.Fatalf("POST /files/import/pptx = %d %s, want 400 with the flag gone", importSlides.Code, importSlides.Body.String())
 	}
 }

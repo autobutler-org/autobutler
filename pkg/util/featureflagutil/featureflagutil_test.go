@@ -27,36 +27,23 @@ func TestRegistry_EveryFlagIsDeclaredInFull(t *testing.T) {
 	}
 }
 
-// TestEnabled_DefaultWhenUnsetThenStored checks slides follows its registry
-// default until an admin sets it, and the set value after that.
-func TestEnabled_DefaultWhenUnsetThenStored(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "settings.json")
-	settingsutil.ResetForTesting(path)
-	if !featureflagutil.Enabled(featureflagutil.Slides) {
-		t.Fatal("slides should default on")
-	}
-	if featureflagutil.Enabled("no-such-flag") {
-		t.Error("an unknown flag should be off")
-	}
-	// Chat (#2577) and the calendar (#2610) left beta. Their keys are unknown,
-	// so they are off here, and the routes no longer consult the flags.
-	for _, key := range []string{"chat", "calendar"} {
+// TestEnabled_RetiredFlagsAreOff checks a key the registry does not declare
+// is off, including the flags that left beta: chat (#2577), the calendar
+// (#2610), and slides (#2869). None of them can be stored.
+func TestEnabled_RetiredFlagsAreOff(t *testing.T) {
+	settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
+	for _, key := range []string{"no-such-flag", "chat", "calendar", "slides"} {
 		if featureflagutil.Enabled(key) {
-			t.Errorf("the retired %s flag should be off", key)
+			t.Errorf("%s should be off", key)
+		}
+		_, err := featureflagutil.SetFlag(featureflagutil.SetFlagParams{Key: key, Enabled: false})
+		if !errors.Is(err, featureflagutil.ErrUnknownFlag) {
+			t.Errorf("SetFlag(%s) = %v; want ErrUnknownFlag", key, err)
 		}
 	}
-
-	result, err := featureflagutil.SetFlag(featureflagutil.SetFlagParams{Key: featureflagutil.Slides, Enabled: false})
-	if err != nil || result.Feature.Enabled || result.Feature.Key != featureflagutil.Slides {
-		t.Fatalf("SetFlag: %+v, %v", result, err)
-	}
-	settingsutil.ResetForTesting(path)
-	if featureflagutil.Enabled(featureflagutil.Slides) {
-		t.Error("slides should stay off after a reload")
-	}
 	list, err := featureflagutil.ListFlags(featureflagutil.ListFlagsParams{})
-	if err != nil || len(list.Features) != len(featureflagutil.Flags()) || list.Features[0].Enabled {
-		t.Errorf("ListFlags: %+v, %v", list, err)
+	if err != nil || len(list.Features) != 0 || len(featureflagutil.Flags()) != 0 {
+		t.Errorf("ListFlags = %+v, flags %d, err %v; want an empty registry", list, len(featureflagutil.Flags()), err)
 	}
 }
 

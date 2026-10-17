@@ -23,10 +23,7 @@ class FeatureFlag {
     enabled: json['enabled'] as bool? ?? false,
   );
 
-  /// The key of the slides beta (#2868).
-  static const slides = 'slides';
-
-  /// The flag's stable key, such as [slides].
+  /// The flag's stable key.
   final String key;
 
   /// The feature's name, for admins.

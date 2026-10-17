@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/controllers/chat_unread_controller.dart';
-import 'package:quark/models/feature_flag.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/utils/host_display.dart';
@@ -25,11 +24,9 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// more: the router checks with the Quark before it opens one of those pages,
 /// and the Quark refuses their requests from anyone else.
 ///
-/// Calendar is always offered. Slides is offered while an admin has its beta
-/// on, following [AppSettings.featureFlags]; the router asks the Quark again
-/// before it opens that page. Chat's row carries a dot when any channel holds
-/// an unread message (#2424): the drawer reads the counts as it opens and
-/// [ChatUnreadController] keeps them current.
+/// Calendar, Chat, and Slides are always offered. Chat's row carries a dot
+/// when any channel holds an unread message (#2424): the drawer reads the
+/// counts as it opens and [ChatUnreadController] keeps them current.
 ///
 /// The header names the active Quark (#2033) and, with more than one saved,
 /// switches between them (#2230). Switching goes through login: the router's
@@ -81,7 +78,6 @@ class _AppDrawerState extends State<AppDrawer> {
     return ListenableBuilder(
       listenable: Listenable.merge([
         settings.isAdmin,
-        settings.featureFlags,
         settings.activeHostNotifier,
         _unread,
       ]),
@@ -102,9 +98,7 @@ class _AppDrawerState extends State<AppDrawer> {
         onTapTrash: goTo(QuarkDrawerSection.trash, AppRoutes.trash),
         onTapDocs: goTo(QuarkDrawerSection.docs, AppRoutes.docs),
         onTapSheets: goTo(QuarkDrawerSection.sheets, AppRoutes.sheets),
-        onTapSlides: settings.isFeatureEnabled(FeatureFlag.slides)
-            ? goTo(QuarkDrawerSection.slides, AppRoutes.slides)
-            : null,
+        onTapSlides: goTo(QuarkDrawerSection.slides, AppRoutes.slides),
         onTapBooks: goTo(QuarkDrawerSection.books, AppRoutes.books),
         onTapChat: goTo(QuarkDrawerSection.chat, AppRoutes.chat),
         hasUnreadChat: _unread.hasUnread,

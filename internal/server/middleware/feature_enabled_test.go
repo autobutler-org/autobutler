@@ -1,9 +1,11 @@
 package middleware_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/server/middleware"
@@ -12,34 +14,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TestRequireFeatureEnabled checks a beta's route is reached while its flag
-// is on and answers 404 once an admin turns the beta off.
-func TestRequireFeatureEnabled(t *testing.T) {
-	for key, path := range map[string]string{
-		featureflagutil.Slides: "/api/v0/files/export/pptx",
-	} {
-		t.Run(key, func(t *testing.T) {
-			settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
-			gin.SetMode(gin.TestMode)
-			engine := gin.New()
-			engine.Group("", middleware.RequireFeatureEnabled(key)).GET(path, func(c *gin.Context) {
-				c.Status(http.StatusOK)
-			})
-			get := func() int {
-				w := httptest.NewRecorder()
-				engine.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
-				return w.Code
-			}
+// TestRequireFeatureEnabled_RetiredKeyStaysOff checks a key the registry no
+// longer declares, slides after it left beta (#2869), cannot be turned on
+// and its gate stays a 404.
+func TestRequireFeatureEnabled_RetiredKeyStaysOff(t *testing.T) {
+	settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
+	const key = "slides"
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	engine.Group("", middleware.RequireFeatureEnabled(key)).GET("/slides", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+	get := func() (int, string) {
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/slides", nil))
+		return w.Code, w.Body.String()
+	}
 
-			if code := get(); code != http.StatusOK {
-				t.Errorf("%s on: GET = %d, want 200", key, code)
-			}
-			if _, err := featureflagutil.SetFlag(featureflagutil.SetFlagParams{Key: key, Enabled: false}); err != nil {
-				t.Fatal(err)
-			}
-			if code := get(); code != http.StatusNotFound {
-				t.Errorf("%s off: GET = %d, want 404", key, code)
-			}
-		})
+	if code, body := get(); code != http.StatusNotFound || !strings.Contains(body, "turned off") {
+		t.Fatalf("GET = %d %s, want 404 while slides is unknown", code, body)
+	}
+	if _, err := featureflagutil.SetFlag(featureflagutil.SetFlagParams{Key: key, Enabled: true}); !errors.Is(err, featureflagutil.ErrUnknownFlag) {
+		t.Fatalf("SetFlag = %v; want ErrUnknownFlag", err)
+	}
+	if code, body := get(); code != http.StatusNotFound || !strings.Contains(body, "turned off") {
+		t.Fatalf("GET after SetFlag = %d %s, want 404", code, body)
 	}
 }
