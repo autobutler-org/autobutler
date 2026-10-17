@@ -17,6 +17,8 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/autobutler-org/quark/pkg/util/versionutil"
 
@@ -479,4 +481,33 @@ func archiveNameFor(goos, goarch string) (string, error) {
 // currentArchiveName is archiveNameFor for the running platform.
 func currentArchiveName() (string, error) {
 	return archiveNameFor(runtime.GOOS, runtime.GOARCH)
+}
+
+// updateInProgress stays set from the moment an install starts until this
+// process exits into it. A failed install clears it; a successful one does
+// not, because this process is still the one serving during ExitForRestart's
+// pause and a second download would only repeat the install (#3218).
+var (
+	restartMu        sync.Mutex
+	updateInProgress bool
+	processExit      = os.Exit
+	restartDelay     = 2 * time.Second
+	// applyUpdateFn is Update. Tests point it at a local release.
+	applyUpdateFn = Update
+)
+
+func beginUpdate() error {
+	restartMu.Lock()
+	defer restartMu.Unlock()
+	if updateInProgress {
+		return ErrUpdateInProgress
+	}
+	updateInProgress = true
+	return nil
+}
+
+func cancelUpdate() {
+	restartMu.Lock()
+	updateInProgress = false
+	restartMu.Unlock()
 }

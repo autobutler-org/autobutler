@@ -121,6 +121,29 @@ String shortGitSha(String commit) => (commit.isEmpty || commit == 'NOCOMMIT')
     ? ''
     : commit.substring(0, commit.length.clamp(0, 7));
 
+/// How often Settings asks for the installed version while a restart is in
+/// progress. A test passes a shorter one.
+const _updateRestartPoll = Duration(seconds: 1);
+
+/// How long Settings waits for the restarted Quark to report the version it
+/// just installed. Long enough for a container to exit and come back (#3218).
+const _updateRestartTimeout = Duration(seconds: 90);
+
+/// Whether [reported] is the release [requested], ignoring one leading "v".
+/// The available-version list and the installed semver don't always agree on
+/// that prefix.
+bool _sameQuarkRelease(String? reported, String requested) {
+  if (reported == null || reported.isEmpty || reported == 'NOSEMVER') {
+    return false;
+  }
+  String number(String value) {
+    final trimmed = value.trim();
+    return trimmed.startsWith('v') ? trimmed.substring(1) : trimmed;
+  }
+
+  return number(reported) == number(requested);
+}
+
 /// The Settings page, in tabs that each have their own URL (#2350): General
 /// (backend hosts, theme, auto-refresh, demo mode, a link to the drives),
 /// Account (sign out, then deleting the account and resetting the Quark),
@@ -139,12 +162,35 @@ class SettingsPage extends StatefulWidget {
     this.tab = SettingsTab.general,
     this.onTabSelected,
     this.featureFlags,
+    this.getInstalledVersion,
+    this.listAvailableVersions,
+    this.updateToVersion,
+    this.restartPollInterval = _updateRestartPoll,
+    this.restartTimeout = _updateRestartTimeout,
     super.key,
   });
 
   /// Drives the Features tab. Null builds one over the real service; a test
   /// passes one with a fake.
   final FeatureFlagsController? featureFlags;
+
+  /// Reads the installed version. Null calls [FilesService.getInstalledVersion].
+  /// A test passes a fake.
+  final Future<Map<String, dynamic>> Function()? getInstalledVersion;
+
+  /// Lists versions the Quark can update to. Null calls
+  /// [FilesService.listAvailableVersions]. A test passes a fake.
+  final Future<List<Map<String, dynamic>>> Function()? listAvailableVersions;
+
+  /// Installs [version]. Null calls [FilesService.updateToVersion]. A test
+  /// passes a fake.
+  final Future<void> Function(String version)? updateToVersion;
+
+  /// How often to ask for the installed version while the Quark restarts.
+  final Duration restartPollInterval;
+
+  /// How long to wait for the restarted Quark to report the requested version.
+  final Duration restartTimeout;
 
   /// The tab to show.
   final SettingsTab tab;
@@ -179,6 +225,8 @@ class _SettingsPageState extends State<SettingsPage> {
   String? _selectedUpdateVersion;
   bool _isLoadingVersionInfo = false;
   bool _isUpdatingVersion = false;
+  bool _isRestarting = false;
+  String? _updateError;
   String? _versionLoadError;
 
   bool _highContrast = false;
@@ -436,8 +484,8 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     try {
-      final installed = await FilesService.getInstalledVersion();
-      final versions = await FilesService.listAvailableVersions();
+      final installed = await _fetchInstalledVersion();
+      final versions = await _fetchAvailableVersions();
       if (!mounted) return;
 
       // A missing field is not a dev build — it is a Quark that answered with
@@ -482,34 +530,91 @@ class _SettingsPageState extends State<SettingsPage> {
     return launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
+  Future<Map<String, dynamic>> _fetchInstalledVersion() {
+    final fetch = widget.getInstalledVersion;
+    if (fetch != null) return fetch();
+    return FilesService.getInstalledVersion();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAvailableVersions() {
+    final fetch = widget.listAvailableVersions;
+    if (fetch != null) return fetch();
+    return FilesService.listAvailableVersions();
+  }
+
+  Future<void> _requestUpdate(String version) {
+    final update = widget.updateToVersion;
+    if (update != null) return update(version);
+    return FilesService.updateToVersion(version);
+  }
+
+  String? _semverOf(Map<String, dynamic> installed) =>
+      (installed['semver'] as String?) ?? (installed['version'] as String?);
+
+  /// Polls until the Quark reports [requested], including while the restart
+  /// takes the server down. The POST returns while the old process is still
+  /// serving (#3218), so the first answer is not the result.
+  Future<bool> _waitForRestartedVersion(String requested) async {
+    final intervalMs = widget.restartPollInterval.inMilliseconds;
+    final timeoutMs = widget.restartTimeout.inMilliseconds;
+    final attempts = intervalMs <= 0
+        ? 1
+        : (timeoutMs ~/ intervalMs).clamp(1, 1 << 30);
+    for (var i = 0; i < attempts; i++) {
+      await Future<void>.delayed(widget.restartPollInterval);
+      if (!mounted) return false;
+      try {
+        final installed = await _fetchInstalledVersion();
+        if (_sameQuarkRelease(_semverOf(installed), requested)) return true;
+      } catch (_) {
+        // The restart takes the server down. Keep waiting for it to come back.
+      }
+    }
+    return false;
+  }
+
   Future<void> _performUpdate() async {
     final version = _selectedUpdateVersion;
-    if (version == null || _isUpdatingVersion) return;
+    if (version == null || _isUpdatingVersion || _isRestarting) return;
 
     setState(() {
       _isUpdatingVersion = true;
+      _updateError = null;
     });
 
     try {
-      await FilesService.updateToVersion(version);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Update started for $version')));
-      await _loadVersionInfo();
+      await _requestUpdate(version);
     } catch (e) {
       debugPrint('[settings_page.dart] Error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Errors.message(e, 'start the update'))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUpdatingVersion = false;
-        });
-      }
+      setState(() => _isUpdatingVersion = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(Errors.update(e))));
+      return;
     }
+    if (!mounted) return;
+
+    setState(() {
+      _isUpdatingVersion = false;
+      _isRestarting = true;
+    });
+
+    final arrived = await _waitForRestartedVersion(version);
+    if (!mounted) return;
+    if (!arrived) {
+      setState(() {
+        _isRestarting = false;
+        _updateError = Errors.updateDidNotFinish;
+      });
+      return;
+    }
+
+    setState(() {
+      _isRestarting = false;
+      _updateError = null;
+    });
+    await _loadVersionInfo();
   }
 
   @override
@@ -661,7 +766,9 @@ class _SettingsPageState extends State<SettingsPage> {
               selectedVersion: _selectedUpdateVersion,
               isLoadingVersion: _isLoadingVersionInfo,
               isUpdating: _isUpdatingVersion,
+              isRestarting: _isRestarting,
               versionError: _versionLoadError,
+              updateError: _updateError,
               onSelectVersion: (v) =>
                   setState(() => _selectedUpdateVersion = v),
               onUpdate: _performUpdate,

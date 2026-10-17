@@ -10501,7 +10501,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Performs an update to the specified version",
+                "description": "Installs the version and restarts Quark. A second request while that restart is pending is rejected and does not download again.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10532,6 +10532,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict — an update is already restarting",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
