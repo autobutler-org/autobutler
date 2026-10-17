@@ -507,6 +507,24 @@ abstract final class Errors {
     _ => message(error, action),
   };
 
+  /// An update the Quark refused with a 409: one is already installing or
+  /// waiting to restart, so another try would download the release again
+  /// (#3218).
+  static const String updateAlreadyInProgress =
+      'An update is already in progress. Wait for Quark to finish restarting.';
+
+  /// The update was installed, but the Quark never reported the new version
+  /// before the page stopped waiting for the restart (#3218).
+  static const String updateDidNotFinish =
+      "Quark didn't finish restarting. Check that it's running, then try again.";
+
+  /// A failed update. A 409 gets [updateAlreadyInProgress]. Anything else
+  /// reads like [message] for starting the update.
+  static String update(Object? error) => switch (error) {
+    ApiException(statusCode: 409) => updateAlreadyInProgress,
+    _ => message(error, 'start the update'),
+  };
+
   /// The Quark answered, and what it said maps to copy worth the difference.
   /// Anything unmapped falls back to [couldNot] — a vague-but-true sentence
   /// beats a guess about a status the backend may not even return.

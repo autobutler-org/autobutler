@@ -471,12 +471,75 @@ func RunInstalledUpdate() error {
 	return syscall.Exec(target, os.Args, os.Environ())
 }
 
+// ErrUpdateInProgress is returned when an update is already installed and this
+// process is waiting to exit into it, or the install is still running. Another
+// attempt would download the release again (#3218).
+var ErrUpdateInProgress = errors.New("update already in progress")
+
+// ApplyUpdate installs version from source. It returns ErrUpdateInProgress,
+// and does not download, when an install is already running or this process is
+// already waiting to exit into one. A failed install can be tried again.
+func ApplyUpdate(source *UpdateSource, version string) error {
+	if err := beginUpdate(); err != nil {
+		return err
+	}
+	if err := applyUpdateFn(source, version); err != nil {
+		cancelUpdate()
+		return err
+	}
+	return nil
+}
+
+// SetApplyUpdateForTest replaces the installer ApplyUpdate runs. The returned
+// function restores the previous one. Tests use it to serve a release locally.
+func SetApplyUpdateForTest(fn func(*UpdateSource, string) error) (restore func()) {
+	previous := applyUpdateFn
+	applyUpdateFn = fn
+	return func() { applyUpdateFn = previous }
+}
+
+// SetRestartExitForTest replaces the exit a scheduled restart performs and
+// drops its pause, so a test can count restarts without ending the process.
+// The returned function restores both and clears the in-progress update.
+func SetRestartExitForTest(exit func(int)) (restore func()) {
+	restartMu.Lock()
+	previousExit := processExit
+	previousDelay := restartDelay
+	processExit = exit
+	restartDelay = 0
+	restartMu.Unlock()
+	return func() {
+		restartMu.Lock()
+		processExit = previousExit
+		restartDelay = previousDelay
+		updateInProgress = false
+		restartMu.Unlock()
+	}
+}
+
+// AllowInsecureFetchForTest permits http fetches to hosts outside the update
+// allowlist, so a test can serve a release from httptest. The returned
+// function restores the previous setting.
+func AllowInsecureFetchForTest() (restore func()) {
+	previous := allowHTTPInFetchURL
+	allowHTTPInFetchURL = true
+	return func() { allowHTTPInFetchURL = previous }
+}
+
 // ExitForRestart exits the process after a short pause, so the process manager
-// (systemd's Restart=always, or launchd) starts Quark again. The pause lets the
-// HTTP response that asked for the restart reach the client first, so call it
-// in a goroutine and return the response.
+// (systemd's Restart=always, Docker's unless-stopped, or launchd) starts Quark
+// again. The pause lets the HTTP response that asked for the restart reach the
+// client first, so call it in a goroutine and return the response.
+//
+// The version update handler marks the update in progress before this runs. A
+// second update during the pause is rejected: this process is still serving,
+// and accepting the request would download the release again (#3218).
 func ExitForRestart() {
 	fmt.Println("Exiting to allow process manager (launchctl/systemd) to restart...")
-	time.Sleep(2 * time.Second)
-	os.Exit(0)
+	restartMu.Lock()
+	delay := restartDelay
+	exit := processExit
+	restartMu.Unlock()
+	time.Sleep(delay)
+	exit(0)
 }

@@ -15,13 +15,14 @@ type UpdateRequest struct {
 
 // doUpdate godoc
 // @Summary Perform update
-// @Description Performs an update to the specified version
+// @Description Installs the version and restarts Quark. A second request while that restart is pending is rejected and does not download again.
 // @Tags version
 // @Accept json
 // @Produce json
 // @Param update body UpdateParams true "Update Request"
 // @Success 200 {object} UpdateRequest
 // @Failure 400 {object} serverutil.Response "Bad Request"
+// @Failure 409 {object} serverutil.Response "Conflict — an update is already restarting"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Security BearerAuth
 // @Router /version/update [post]
@@ -36,7 +37,10 @@ func doUpdate(c *gin.Context) *serverutil.Response {
 		)
 	}
 
-	if err := updateutil.Update(params.Source, params.Version); err != nil {
+	if err := updateutil.ApplyUpdate(params.Source, params.Version); err != nil {
+		if errors.Is(err, updateutil.ErrUpdateInProgress) {
+			return serverutil.Conflict(err)
+		}
 		return serverutil.InternalServerError(err)
 	}
 

@@ -23,7 +23,9 @@ class SettingsUpdatesTab extends StatelessWidget {
     required this.selectedVersion,
     required this.isLoadingVersion,
     required this.isUpdating,
+    this.isRestarting = false,
     required this.versionError,
+    this.updateError,
     required this.onSelectVersion,
     required this.onUpdate,
     required this.onOpenReleaseNotes,
@@ -58,8 +60,18 @@ class SettingsUpdatesTab extends StatelessWidget {
   /// Whether an update is being started.
   final bool isUpdating;
 
+  /// Whether the Quark is restarting into an update it just installed.
+  ///
+  /// The button stays disabled and reads "Restarting..." until the page hears
+  /// the new version, or gives up.
+  final bool isRestarting;
+
   /// Why the version could not be read, or null.
   final String? versionError;
+
+  /// Why the update did not finish, or null. Shown with the version still
+  /// installed, so a timed-out restart does not look successful.
+  final String? updateError;
 
   /// Called with the version the user picked.
   final ValueChanged<String?> onSelectVersion;
@@ -78,6 +90,7 @@ class SettingsUpdatesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final error = Theme.of(context).colorScheme.error;
     final linkInset = QuarkTokens.of(context).spacingSm;
+    final busy = isUpdating || isRestarting;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -152,7 +165,7 @@ class SettingsUpdatesTab extends StatelessWidget {
                       for (final v in availableVersions)
                         DropdownMenuItem<String>(value: v, child: Text(v)),
                     ],
-                    onChanged: (isLoadingVersion || isUpdating)
+                    onChanged: (isLoadingVersion || busy)
                         ? null
                         : onSelectVersion,
                     decoration: const InputDecoration(
@@ -164,14 +177,29 @@ class SettingsUpdatesTab extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: FilledButton.icon(
-                      onPressed: (selectedVersion == null || isUpdating)
+                      key: const ValueKey('settings_start_update'),
+                      onPressed: (selectedVersion == null || busy)
                           ? null
                           : onUpdate,
-                      icon: isUpdating
+                      icon: busy
                           ? const QuarkLoader(size: 14)
                           : const Icon(QuarkIcons.update),
-                      label: Text(isUpdating ? 'Updating...' : 'Start update'),
+                      label: Text(
+                        isRestarting
+                            ? 'Restarting...'
+                            : isUpdating
+                            ? 'Updating...'
+                            : 'Start update',
+                      ),
                     ),
+                  ),
+                ],
+                if (updateError != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    updateError!,
+                    key: const ValueKey('settings_update_error'),
+                    style: TextStyle(color: error),
                   ),
                 ],
                 if (hasHost) ...[
