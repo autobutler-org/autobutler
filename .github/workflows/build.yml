@@ -254,6 +254,13 @@ jobs:
         uses: ./.github/actions/setup-flutter
       - name: Setup GNU make
         uses: ./.github/actions/setup-gnu-make
+      # The macOS runner does not ship Go. hook/build.dart compiles the embedded
+      # tailnet while Flutter archives, and it fails closed when go is not on PATH.
+      # Same version the backend jobs install, from go.mod.
+      - name: Setup go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
       # Dependabot pull requests run with the secrets withheld, so the signing material
       # is empty and a signed build is impossible however correct the branch is. The
       # job-level `if` above cannot see that: dependabot's branches live in this
