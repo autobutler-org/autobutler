@@ -13,6 +13,13 @@
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "linux/appimage-builder-requirements.txt is a pip-compile lock for appimage-builder 1.1.0: emrichen needs pyaml<22 and appimage-builder needs packaging<22, so single-package bumps break it. Regenerate it as its header says instead.",
+      "matchFileNames": [
+        "linux/appimage-builder-requirements.txt"
+      ],
+      "enabled": false
     }
   ],
   "customManagers": [
