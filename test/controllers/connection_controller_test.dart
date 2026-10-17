@@ -27,6 +27,8 @@ void main() {
     Future<bool> Function(String address)? probe,
     bool autoDispose = true,
     Listenable? hostChanges,
+    Future<String?> Function(String upstream)? embeddedProxy,
+    Future<void> Function(String upstream)? warmEmbeddedTunnel,
   }) {
     final c = ConnectionController(
       activeHostChanges: hostChanges ?? ChangeNotifier(),
@@ -49,6 +51,10 @@ void main() {
           );
         }
       },
+      // The real tunnel is the phone. These tests inject the answer.
+      embeddedProxy: embeddedProxy ?? (_) async => null,
+      warmEmbeddedTunnel: warmEmbeddedTunnel ?? (_) async {},
+      watchEmbeddedTunnel: (_) {},
     );
     if (autoDispose) addTearDown(c.dispose);
     return c;
@@ -78,6 +84,24 @@ void main() {
     expect(c.mode, ConnectionMode.remote);
     expect(c.baseUrl, _remote);
     expect(probed, [_lan, _remote]);
+  });
+
+  test('uses the embedded proxy instead of the tailnet address', () async {
+    const proxy = 'http://127.0.0.1:9';
+    answering = {proxy};
+    String? asked;
+    final c = build(
+      embeddedProxy: (upstream) async {
+        asked = upstream;
+        return proxy;
+      },
+    );
+    await c.check();
+    expect(asked, _remote);
+    expect(c.mode, ConnectionMode.remote);
+    expect(c.baseUrl, proxy);
+    expect(probed, [_lan, proxy]);
+    expect(saved, isEmpty);
   });
 
   test('is offline when neither address answers', () async {
@@ -174,25 +198,37 @@ void main() {
         connected: true,
         remoteUrl: _remote,
       );
-      final c = build();
+      final warmed = <String>[];
+      final c = build(
+        warmEmbeddedTunnel: (upstream) async => warmed.add(upstream),
+      );
       await c.check();
       expect(saved, [(_lan, _remote)]);
+      expect(warmed, [_remote]);
     });
 
     test('clears it once remote access is off', () async {
       answering = {_lan};
       status = const RemoteAccessStatus(enabled: false);
-      final c = build();
+      final warmed = <String>[];
+      final c = build(
+        warmEmbeddedTunnel: (upstream) async => warmed.add(upstream),
+      );
       await c.check();
       expect(saved, [(_lan, null)]);
+      expect(warmed, ['']);
     });
 
     test('keeps it while remote access is on but reconnecting', () async {
       answering = {_lan};
       status = const RemoteAccessStatus(enabled: true);
-      final c = build();
+      final warmed = <String>[];
+      final c = build(
+        warmEmbeddedTunnel: (upstream) async => warmed.add(upstream),
+      );
       await c.check();
       expect(saved, isEmpty);
+      expect(warmed, [_remote]);
     });
 
     test('leaves it alone without a session to ask with', () async {

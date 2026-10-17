@@ -60,6 +60,14 @@ jobs:
       - name: Setup GNU make
         uses: ./.github/actions/setup-gnu-make
 
+      # The macOS runner does not ship Go. hook/build.dart compiles the embedded
+      # tailnet while Flutter archives, and it fails closed when go is not on PATH.
+      # Same version the backend jobs install, from go.mod.
+      - name: Setup go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
       - name: Prepare code signing
         env:
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}

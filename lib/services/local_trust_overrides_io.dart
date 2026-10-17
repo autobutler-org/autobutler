@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/local_trust.dart';
 import 'package:quark/services/local_trust_pin_io.dart';
+import 'package:quark/services/tunnel_token_client.dart';
 
 /// Applies [acceptsUnverifiedCertificate] to every [HttpClient] created in this
 /// isolate.
@@ -22,6 +23,10 @@ import 'package:quark/services/local_trust_pin_io.dart';
 /// does not loosen verification for any other host. A host that passes must
 /// also present a pinned certificate (#2721, see
 /// [acceptsReportedPinnedCertificate]).
+///
+/// Each client is also a [TunnelTokenHttpClient], so a request to the embedded
+/// tunnel's proxy carries the token the proxy asks for, whoever built the
+/// client.
 class LocalTrustHttpOverrides extends HttpOverrides {
   /// [chosenAddresses] lists the addresses the user picked; it defaults to the
   /// saved Quarks plus [activeBaseUrl] and is read again on every handshake, so
@@ -33,9 +38,11 @@ class LocalTrustHttpOverrides extends HttpOverrides {
 
   @override
   HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (cert, host, port) =>
-          trusts(host) && acceptsReportedPinnedCertificate(cert, host, port);
+    return TunnelTokenHttpClient(
+      super.createHttpClient(context)
+        ..badCertificateCallback = (cert, host, port) =>
+            trusts(host) && acceptsReportedPinnedCertificate(cert, host, port),
+    );
   }
 
   /// Whether a certificate that failed verification is accepted from [host].

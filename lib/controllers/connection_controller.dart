@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
+import 'package:quark/services/embedded_tunnel.dart';
 import 'package:quark/services/remote_access_service.dart';
 import 'package:quark/utils/connection_config.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -25,6 +26,13 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// [baseUrl] is what `apiBaseUrl` reads, so every request the app makes
 /// follows the switch. [mode] feeds the app bar's [ConnectionIndicator].
 ///
+/// On iOS and Android the remote address is the on-device proxy in front of
+/// the Quark's tailnet URL (#1881). [embeddedProxy] returns that proxy, or
+/// null where the app does not embed a node, and the tailnet URL is used as
+/// it stands. While a home check succeeds, [warmEmbeddedTunnel] pairs the
+/// node so the proxy is up before the phone leaves home. Coming back to the
+/// foreground restarts the node and checks again; the proxy port can change.
+///
 /// Service calls arrive as function parameters defaulting to the real ones,
 /// so a test passes fakes and never touches the network.
 class ConnectionController extends ChangeNotifier {
@@ -37,10 +45,19 @@ class ConnectionController extends ChangeNotifier {
         saveRemoteAddress =
         _appSaveRemoteAddress,
     Listenable? activeHostChanges,
+    Future<String?> Function(String upstream) embeddedProxy =
+        EmbeddedTunnel.proxyUrl,
+    Future<void> Function(String upstream) warmEmbeddedTunnel =
+        EmbeddedTunnel.warm,
+    void Function(void Function() onReconnected) watchEmbeddedTunnel =
+        EmbeddedTunnel.watchLifecycle,
   }) : _probe = probe,
        _readRemoteAccess = readRemoteAccess,
        _activeHost = activeHost,
        _saveRemoteAddress = saveRemoteAddress,
+       _embeddedProxy = embeddedProxy,
+       _warmEmbeddedTunnel = warmEmbeddedTunnel,
+       _watchEmbeddedTunnel = watchEmbeddedTunnel,
        _activeHostChanges =
            activeHostChanges ?? AppSettings.instance.activeHostNotifier;
 
@@ -52,6 +69,16 @@ class ConnectionController extends ChangeNotifier {
   final HostEntry? Function() _activeHost;
   final Future<void> Function(String hostAddress, String? remoteAddress)
   _saveRemoteAddress;
+
+  /// Replaces a tailnet URL with the on-device proxy in front of it.
+  final Future<String?> Function(String upstream) _embeddedProxy;
+
+  /// Pairs and starts the on-device node while the phone is at home.
+  /// An empty string stops it, because remote access is off.
+  final Future<void> Function(String upstream) _warmEmbeddedTunnel;
+
+  /// Registers the foreground restart. Called once from [start].
+  final void Function(void Function() onReconnected) _watchEmbeddedTunnel;
 
   /// Fires when the active Quark changes; [AppSettings.activeHostNotifier]
   /// unless a test passes its own.
@@ -89,6 +116,9 @@ class ConnectionController extends ChangeNotifier {
   void start() {
     if (kIsWeb || _started) return;
     _started = true;
+    _watchEmbeddedTunnel(() {
+      unawaited(check());
+    });
     _activeHostChanges.addListener(_onHostChanged);
     unawaited(check());
   }
@@ -122,13 +152,17 @@ class ConnectionController extends ChangeNotifier {
     }
     if (!isCurrent()) return;
 
-    final remote = host.remoteAddress;
-    if (remote != null &&
-        await _reaches(remote, ConnectionConfig.remoteProbeTimeout)) {
+    final stored = host.remoteAddress;
+    if (stored != null) {
+      final proxy = await _embeddedProxy(stored);
       if (!isCurrent()) return;
-      _set(ConnectionMode.remote, host: host.hostAddress, url: remote);
-      _settled(generation);
-      return;
+      final remote = (proxy != null && proxy.isNotEmpty) ? proxy : stored;
+      if (await _reaches(remote, ConnectionConfig.remoteProbeTimeout)) {
+        if (!isCurrent()) return;
+        _set(ConnectionMode.remote, host: host.hostAddress, url: remote);
+        _settled(generation);
+        return;
+      }
     }
     if (!isCurrent()) return;
 
@@ -187,6 +221,10 @@ class ConnectionController extends ChangeNotifier {
     if (remote != host.remoteAddress) {
       await _saveRemoteAddress(host.hostAddress, remote);
     }
+    if (!isCurrent()) return;
+    // Empty tells the phone to drop its node: remote access is off, or this
+    // Quark has never had an address. A tailnet URL pairs and starts it.
+    await _warmEmbeddedTunnel(remote ?? '');
   }
 
   void _set(ConnectionMode? mode, {String? host, String? url}) {
