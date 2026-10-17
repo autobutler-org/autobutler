@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/models/feature_flag.dart';
 import 'package:quark/pages/terms_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
+import 'package:quark/services/feature_flags_service.dart';
 import 'package:quark/utils/error_text.dart';
 
 /// #1624: accepting terms navigated to /files and left it to [authRedirect] to
@@ -98,6 +100,11 @@ void main() {
           path: AppRoutes.users,
           tabs: UsersTab.values,
           builder: (_, _) => const Scaffold(body: Text('users')),
+        ),
+        GoRoute(
+          path: '${AppRoutes.chat}/:channelId',
+          builder: (_, state) =>
+              Scaffold(body: Text('chat ${state.pathParameters['channelId']}')),
         ),
         GoRoute(path: AppRoutes.terms, builder: (_, _) => const TermsPage()),
       ],
@@ -535,6 +542,66 @@ void main() {
     await pumpGatedRouter(tester, initialLocation: AppRoutes.vault);
 
     expect(find.text('login'), findsOneWidget);
+  });
+
+  // #3257: a new user opening a chat link went through terms and sign-in and
+  // landed on Files, because the terms gate dropped where they were headed.
+  group('the first-run gates return to the route opened', () {
+    setUp(() {
+      featureFlagsProbe = () async => const [
+        FeatureFlag(
+          key: FeatureFlag.chat,
+          label: 'Chat',
+          description: '',
+          enabled: true,
+        ),
+      ];
+    });
+    tearDown(() async {
+      featureFlagsProbe = FeatureFlagsService.list;
+      await settings.setSessionToken(null);
+    });
+
+    testWidgets('through terms and sign-in', (tester) async {
+      await addUnacceptedHost();
+      authStatusProbe = () async => const AuthStatus(setupComplete: true);
+
+      await pumpGatedRouter(tester, initialLocation: '/chat/7');
+      expect(find.text('I Agree'), findsOneWidget);
+
+      await tester.tap(find.text('I Agree'));
+      await tester.pumpAndSettle();
+      expect(find.text('login'), findsOneWidget);
+
+      // Signing in stores the session, which re-runs the gate on /login.
+      await settings.setSessionToken('a-token');
+      await tester.pumpAndSettle();
+
+      expect(find.text('chat 7'), findsOneWidget);
+      expect(find.text('files'), findsNothing);
+    });
+
+    testWidgets('through terms alone, with a session already stored', (
+      tester,
+    ) async {
+      await addUnacceptedHost();
+      await settings.setSessionToken('a-token');
+      authStatusProbe = () async =>
+          throw StateError('must not probe with a live session');
+
+      await pumpGatedRouter(tester, initialLocation: '/chat/7');
+      await tester.tap(find.text('I Agree'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('chat 7'), findsOneWidget);
+    });
+
+    test('a link to another site is not followed', () {
+      expect(
+        destinationAfterSignIn('https://evil.example/chat'),
+        AppRoutes.files,
+      );
+    });
   });
 
   // The terms gate runs ahead of everything, so an unaccepted Quark sees terms

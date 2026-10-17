@@ -133,6 +133,26 @@ void main() {
     });
   }
 
+  // #3257: a conversation was titled like a channel, '# grace, ux-test'.
+  for (final size in const [narrowViewport, wideViewport]) {
+    testWidgets('a conversation shows the other person, no # at $size', (
+      tester,
+    ) async {
+      await pumpHeader(
+        tester,
+        size,
+        const ChatChannelHeader(name: 'grace', isDirect: true, isPrivate: true),
+      );
+
+      expect(find.text('grace'), findsOneWidget);
+      expect(find.textContaining('#'), findsNothing);
+
+      await pumpHeader(tester, size, const ChatChannelHeader(name: 'design'));
+      expect(find.text('# design'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   // #2603, #2605: the header and its settings menu are labeled 48dp targets.
   for (final size in const [narrowViewport, wideViewport]) {
     testWidgets('every control is a labeled 48dp target at $size', (

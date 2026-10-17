@@ -6,7 +6,8 @@ import '../../models/chat_permission_preset.dart';
 import '../../theme/quark_tokens.dart';
 import 'chat_unread_pill.dart';
 
-/// One channel in a `QuarkChannelList`: its name after a `#`, highlighted
+/// One channel in a `QuarkChannelList`: its name after a `#`, or after a
+/// person for a [ChatChannelItem.isDirect] conversation, highlighted
 /// when open, with a lock when it is private and, when it has
 /// [ChatChannelItem.permissions], what the signed-in account may do there as
 /// a preset or Custom. A channel with a [ChatChannelItem.unreadCount] above
@@ -75,7 +76,10 @@ class ChatChannelTile extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(tokens.radiusMd),
       ),
-      leading: const Icon(QuarkIcons.tag, size: 18),
+      leading: Icon(
+        channel.isDirect ? QuarkIcons.person_outline : QuarkIcons.tag,
+        size: 18,
+      ),
       minLeadingWidth: 0,
       title: Text(
         channel.name,

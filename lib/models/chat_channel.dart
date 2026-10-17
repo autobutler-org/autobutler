@@ -57,6 +57,22 @@ class ChatChannel {
   /// Whether the caller may post.
   bool get canSend => permissions.contains(ChatPermission.sendMessages);
 
+  /// The other person's username when this is a private conversation that
+  /// [me] is in, and null for any other channel (#3257).
+  ///
+  /// There is no conversation kind on the Quark: `startConversation` makes a
+  /// private channel named for both usernames, sorted, as `ada, bob`. So a
+  /// private channel with exactly two names, one of them [me], is one.
+  String? directPartner(String? me) {
+    if (!isPrivate || me == null) return null;
+    final names = name.split(', ');
+    if (names.length != 2) return null;
+    final self = me.toLowerCase();
+    if (names.first.toLowerCase() == self) return names.last;
+    if (names.last.toLowerCase() == self) return names.first;
+    return null;
+  }
+
   /// Reads one channel. Permission names this version doesn't know are
   /// dropped.
   factory ChatChannel.fromJson(Map<String, dynamic> json) => ChatChannel(

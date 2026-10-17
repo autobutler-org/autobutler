@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:quark/utils/playback_time.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 import 'package:video_player/video_player.dart';
 
 /// Transport controls for the audio player: scrubber, seek, play/pause, mute
@@ -120,8 +121,11 @@ class _AudioControlsState extends State<AudioControls> {
                   },
                   icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
                   iconSize: 40,
+                  // The theme's icon color would otherwise override the
+                  // filled button's own: a slate glyph on the accent (#3257).
                   style: IconButton.styleFrom(
                     padding: const EdgeInsets.all(16),
+                    foregroundColor: QuarkTokens.of(context).primaryForeground,
                   ),
                 ),
                 const SizedBox(width: 12),

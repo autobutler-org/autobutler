@@ -36,7 +36,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// The composer counts down near [ChatConfig.maxMessageLength] and won't
 /// send past it (#2503).
 ///
-/// While chat is locked, on web after a reload, the page asks for the
+/// While chat is locked, in a new browser tab, the page asks for the
 /// password before it shows anything else, saying why (#2494).
 ///
 /// Above the composer, a notice says where the open channel's encryption
@@ -350,7 +350,7 @@ class _ChatPageState extends State<ChatPage>
         isAdmin: _controller.isAdmin,
         selfUserId: int.tryParse(_controller.currentUserKey ?? ''),
       ),
-      name: '#${channel.name}',
+      name: _controller.titleOf(channel),
     );
   }
 
@@ -410,7 +410,7 @@ class _ChatPageState extends State<ChatPage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => ConfirmDeleteDialog(
-        title: 'Leave #${channel.name}?',
+        title: 'Leave ${_controller.titleOf(channel)}?',
         body:
             "You'll stop seeing its messages. To come back, someone who "
             'manages its members has to add you again.',
@@ -452,6 +452,7 @@ class _ChatPageState extends State<ChatPage>
         final openId = _windowFocused && channel != null
             ? '${channel.id}'
             : null;
+        final partner = channel == null ? null : c.directPartnerOf(channel);
         return QuarkPageScaffold(
           title: 'Chat',
           icon: QuarkIcons.forum_outlined,
@@ -487,7 +488,8 @@ class _ChatPageState extends State<ChatPage>
                   header: channel == null
                       ? null
                       : ChatChannelHeader(
-                          name: channel.name,
+                          name: partner ?? channel.name,
+                          isDirect: partner != null,
                           topic: channel.topic,
                           isPrivate: channel.isPrivate,
                           onSearch: c.canSearch ? c.toggleSearch : null,
@@ -609,7 +611,7 @@ class _ChatPageState extends State<ChatPage>
                           key: ValueKey('chat_composer_${channel?.id}'),
                           hintText: channel == null
                               ? 'Message'
-                              : 'Message #${channel.name}',
+                              : 'Message ${c.titleOf(channel)}',
                           permissions: channel == null
                               ? null
                               : c.selectedPermissions,

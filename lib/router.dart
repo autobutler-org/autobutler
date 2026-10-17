@@ -185,9 +185,16 @@ class AppRoutes {
 
   /// [login] remembering [from], the location a signed-out visitor asked
   /// for. Files is where signing in lands anyway, so it isn't remembered.
-  static String loginFrom(String from) => from == files
-      ? login
-      : Uri(path: login, queryParameters: {loginFromParam: from}).toString();
+  static String loginFrom(String? from) => _from(login, from);
+
+  /// [terms] remembering [from], so accepting them carries on to it, through
+  /// sign-in if need be (#3257).
+  static String termsFrom(String? from) => _from(terms, from);
+
+  static String _from(String path, String? from) =>
+      from == null || from == files
+      ? path
+      : Uri(path: path, queryParameters: {loginFromParam: from}).toString();
   static const recover = '/recover';
 
   /// Alias for [recover]: the address people guess for password recovery
@@ -1039,17 +1046,44 @@ Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
   // The terms page itself, or the redirect below loops.
   if (location == AppRoutes.terms) return null;
 
+  // Routes reachable without a session.
+  //
+  // /login is deliberately not in here (#1827). It used to be, and returning
+  // null for it meant the setup-vs-login decision only ever ran for a
+  // signed-out user landing on a *protected* route — so picking an unclaimed
+  // Quark from the login page left the user on a sign-in form that could only
+  // answer "invalid credentials". Falling through to the probe below is what
+  // sends them to /setup instead; activeHostNotifier is in
+  // routerRefreshListenable, so switching hosts re-runs this.
+  const publicRoutes = {
+    AppRoutes.setup,
+    AppRoutes.recover,
+    AppRoutes.forgotPassword,
+    AppRoutes.requestAccount,
+  };
+
+  // Where the visitor was headed, carried through every gate in turn — add a
+  // Quark, terms, sign-in — so the last one lands there rather than on Files
+  // (#2500, #3257). On /login it is the one login already carries.
+  final headedFor = location == AppRoutes.login
+      ? state.uri.queryParameters[AppRoutes.loginFromParam]
+      : _isUnderAny(publicRoutes, location)
+      ? null
+      : state.uri.toString();
+
   // No Quark configured at all. /setup and /recover are useless too — there is
   // no API base to talk to — so everything lands on login, which is where
   // hosts are added (#1639).
   if (AppSettings.instance.activeHost == null) {
-    return location == AppRoutes.login ? null : AppRoutes.login;
+    return location == AppRoutes.login ? null : AppRoutes.loginFrom(headedFor);
   }
 
   // Terms must be accepted for this Quark before anything else, including the
   // public routes below: with login as the landing page, connecting a Quark
   // from the login page still has to show terms straight away (#1631).
-  if (!AppSettings.instance.hasAcceptedTerms.value) return AppRoutes.terms;
+  if (!AppSettings.instance.hasAcceptedTerms.value) {
+    return AppRoutes.termsFrom(headedFor);
+  }
 
   // A stored session is honored on launch instead of asking for credentials
   // again (#1645). This sits above the public-route allowance below, which
@@ -1066,21 +1100,6 @@ Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
     );
   }
 
-  // Routes reachable without a session.
-  //
-  // /login is deliberately not in here (#1827). It used to be, and returning
-  // null for it meant the setup-vs-login decision only ever ran for a
-  // signed-out user landing on a *protected* route — so picking an unclaimed
-  // Quark from the login page left the user on a sign-in form that could only
-  // answer "invalid credentials". Falling through to the probe below is what
-  // sends them to /setup instead; activeHostNotifier is in
-  // routerRefreshListenable, so switching hosts re-runs this.
-  const publicRoutes = {
-    AppRoutes.setup,
-    AppRoutes.recover,
-    AppRoutes.forgotPassword,
-    AppRoutes.requestAccount,
-  };
   if (_isUnderAny(publicRoutes, location)) return null;
 
   // Admin-only pages (#1928). [AppSettings.isAdmin] is not persisted and
@@ -1129,7 +1148,7 @@ Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
   if (destination == location) return null;
   // The link they followed rides along, so signing in returns to it (#2500).
   return destination == AppRoutes.login
-      ? AppRoutes.loginFrom(state.uri.toString())
+      ? AppRoutes.loginFrom(headedFor)
       : destination;
 }
 
@@ -1182,16 +1201,20 @@ Future<String> destinationForSignedOutUser() async {
   }
 }
 
-/// Where to land once terms have just been accepted.
+/// Where to land once terms have just been accepted, on the way to [from],
+/// the location the terms gate interrupted (#3257).
 ///
 /// The terms page navigates here directly rather than bouncing through /files
 /// and trusting [authRedirect] to move the user on: that second hop silently
 /// did nothing whenever the status call failed (#1624).
-Future<String> destinationAfterAcceptingTerms() async {
+Future<String> destinationAfterAcceptingTerms([String? from]) async {
   final settings = AppSettings.instance;
   // No Quark configured is a login-page state now, not a file-browser one:
   // that is where hosts are added (#1639).
-  if (settings.activeHost == null) return AppRoutes.login;
-  if (settings.sessionToken != null) return AppRoutes.files;
-  return destinationForSignedOutUser();
+  if (settings.activeHost == null) return AppRoutes.loginFrom(from);
+  if (settings.sessionToken != null) return destinationAfterSignIn(from);
+  final destination = await destinationForSignedOutUser();
+  return destination == AppRoutes.login
+      ? AppRoutes.loginFrom(from)
+      : destination;
 }

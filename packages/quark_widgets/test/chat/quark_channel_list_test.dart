@@ -104,6 +104,34 @@ void main() {
     );
   });
 
+  // #3257: a conversation is a person, not a `#`.
+  testBothViewports('draws a conversation with a person', (tester, size) async {
+    await pumpAt(
+      tester,
+      const QuarkChannelList(
+        serverName: 'Home',
+        channels: [
+          ChatChannelItem(id: '1', name: 'general'),
+          ChatChannelItem(
+            id: '2',
+            name: 'grace',
+            isPrivate: true,
+            isDirect: true,
+          ),
+        ],
+      ),
+      size: size,
+    );
+
+    Finder iconIn(String id, IconData icon) => find.descendant(
+      of: find.byKey(ValueKey('channel_tile_$id')),
+      matching: find.byIcon(icon),
+    );
+    expect(iconIn('2', QuarkIcons.person_outline), findsOneWidget);
+    expect(iconIn('2', QuarkIcons.tag), findsNothing);
+    expect(iconIn('1', QuarkIcons.tag), findsOneWidget);
+  });
+
   testBothViewports('highlights the open channel', (tester, size) async {
     await pumpAt(
       tester,
