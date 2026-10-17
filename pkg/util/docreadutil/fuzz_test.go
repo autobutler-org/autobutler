@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 )
@@ -17,9 +18,14 @@ var fuzzLimits = Limits{MaxBlocks: 2000, MaxOutputBytes: 1 << 20, MaxHeldBytes: 
 // Convert's recover, so a panic fails the fuzz target rather than becoming
 // an error, and checks that what it writes is well formed.
 func readWithoutRecover(t *testing.T, data []byte, output Output) {
+	readFormatWithoutRecover(t, data, output, FormatDOCX, readDocx)
+}
+
+// readFormatWithoutRecover is readWithoutRecover for a format's reader.
+func readFormatWithoutRecover(t *testing.T, data []byte, output Output, format Format, read func(*emitter, io.ReaderAt, int64) error) {
 	var out bytes.Buffer
-	e := newEmitter(ConvertParams{Format: FormatDOCX, Output: output, Out: &out, Limits: fuzzLimits})
-	err := readDocx(e, bytes.NewReader(data), int64(len(data)))
+	e := newEmitter(ConvertParams{Format: format, Output: output, Out: &out, Limits: fuzzLimits})
+	err := read(e, bytes.NewReader(data), int64(len(data)))
 	if err != nil && !errors.Is(err, errTruncated) {
 		if !errors.Is(err, ErrMalformed) && !errors.Is(err, ErrTooLarge) {
 			t.Fatalf("an error that is neither malformed nor too large: %v", err)
