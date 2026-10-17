@@ -9,7 +9,8 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// reminder above it, and the loading and error states around it.
 ///
 /// On Day, Week and Month a horizontal swipe steps one span back or forward,
-/// the phone's stand-in for the arrows; see [CalendarSwipeDetector]. Upcoming shows due reminders in its
+/// the phone's stand-in for the arrows. The view tracks the finger and then
+/// snaps; see [CalendarSwipeDetector]. Upcoming shows due reminders in its
 /// own rows, so it has no reminder bar.
 ///
 /// A load that fails before anything has shown fills the body with a retry;
