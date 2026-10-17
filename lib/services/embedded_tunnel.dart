@@ -125,11 +125,27 @@ abstract final class EmbeddedTunnel {
   static Future<String?> proxyUrl(String upstream) =>
       impl.tunnelProxyUrl(upstream);
 
-  /// Pairs, if this phone has no node yet, and starts the proxy.
+  /// Starts the proxy for a node that already has state on disk.
   ///
   /// Called while the phone can still reach the Quark at home. An empty
-  /// [upstream] means remote access is off, and a running node is stopped.
+  /// [upstream] stops a running node: remote access is off, or this phone
+  /// has paused it. The first enrollment is [enroll]. This does not ask the
+  /// Quark for a key.
   static Future<void> warm(String upstream) => impl.tunnelWarm(upstream);
+
+  /// Joins the tailnet with a freshly issued key and starts the proxy.
+  ///
+  /// [authKey] is single-use. Later starts go through [warm] with an empty
+  /// key and the state this call leaves on disk.
+  static Future<void> enroll({
+    required String controlUrl,
+    required String authKey,
+    required String upstream,
+  }) => impl.tunnelEnroll(
+    controlUrl: controlUrl,
+    authKey: authKey,
+    upstream: upstream,
+  );
 
   /// Restarts the node when the app returns to the foreground, then calls
   /// [onReconnected] so the address check runs again. The port can change.

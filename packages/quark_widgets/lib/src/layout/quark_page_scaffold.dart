@@ -94,9 +94,16 @@ class QuarkPageScaffold extends StatelessWidget {
   /// the refresh slot.
   final PreferredSizeWidget? appBar;
 
+  /// Drawn under the app bar, above [body], when it returns a widget.
+  ///
+  /// The app sets this for a notice every page should show. Null, or a
+  /// function that returns null, leaves [body] as the scaffold body.
+  static Widget? Function(BuildContext context)? pauseBanner;
+
   @override
   Widget build(BuildContext context) {
     final leftHanded = QuarkHandedness.isLeftHanded(context);
+    final banner = pauseBanner?.call(context);
     return Scaffold(
       appBar:
           appBar ??
@@ -109,7 +116,14 @@ class QuarkPageScaffold extends StatelessWidget {
           ),
       drawer: leftHanded ? null : drawer,
       endDrawer: leftHanded ? drawer : null,
-      body: body,
+      body: banner == null
+          ? body
+          : Column(
+              children: [
+                banner,
+                Expanded(child: body),
+              ],
+            ),
       floatingActionButton: floatingActionButton,
       floatingActionButtonLocation: leftHanded
           ? FloatingActionButtonLocation.startFloat

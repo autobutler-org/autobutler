@@ -24,7 +24,6 @@ import 'dart:math';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:quark/services/remote_access_service.dart';
 import 'package:quark/services/tunnel_token_client.dart';
 
 @Native<
@@ -182,24 +181,10 @@ Future<void> tunnelWarm(String upstream) {
         return;
       }
       final root = await _rootDir();
+      // The first key comes from tunnelEnroll. Until that has left state
+      // on disk there is nothing here to rejoin.
+      if (!await _hasState(root)) return;
       final cfg = await _load(root);
-      if (!await _hasState(root)) {
-        final paired = await RemoteAccessService.pairDevice();
-        cfg
-          ..controlUrl = paired.controlUrl
-          ..upstream = paired.quarkAddress.isEmpty
-              ? upstream
-              : paired.quarkAddress;
-        await _save(root, cfg);
-        await _startNative(
-          stateDir: _statePath(root),
-          controlUrl: cfg.controlUrl,
-          authKey: paired.authKey,
-          hostname: cfg.hostname,
-          upstream: cfg.upstream,
-        );
-        return;
-      }
       cfg.upstream = upstream;
       await _save(root, cfg);
       if (!_running) {
@@ -219,6 +204,29 @@ Future<void> tunnelWarm(String upstream) {
         stackTrace: stack,
       );
     }
+  });
+}
+
+Future<void> tunnelEnroll({
+  required String controlUrl,
+  required String authKey,
+  required String upstream,
+}) {
+  if (!_mobile) return Future<void>.value();
+  return _serialized(() async {
+    final root = await _rootDir();
+    final cfg = await _load(root);
+    cfg
+      ..controlUrl = controlUrl
+      ..upstream = upstream;
+    await _save(root, cfg);
+    await _startNative(
+      stateDir: _statePath(root),
+      controlUrl: controlUrl,
+      authKey: authKey,
+      hostname: cfg.hostname,
+      upstream: upstream,
+    );
   });
 }
 

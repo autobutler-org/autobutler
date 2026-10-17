@@ -13,6 +13,7 @@ import 'package:quark/utils/file_browser_dialog_utils.dart';
 import 'package:quark/widgets/file_browser/file_browser_view.dart';
 import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_device_chips.dart';
 import 'package:quark/widgets/layout/app_drawer.dart';
+import 'package:quark/widgets/layout/remote_access_pause_banner.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -247,6 +248,7 @@ class _TrashPageState extends State<TrashPage>
           endDrawer: leftHanded ? drawer : null,
           body: Column(
             children: [
+              const RemoteAccessPauseBanner(),
               if (_controller.selectionMode)
                 FileSelectionBar(
                   selectedCount: _controller.selectedPaths.length,

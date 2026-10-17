@@ -14,6 +14,7 @@ class SettingsNetworkTab extends StatelessWidget {
     required this.isAdmin,
     required this.remoteAccess,
     required this.connectedDevices,
+    this.thisPhone,
     this.header,
     super.key,
   });
@@ -31,6 +32,10 @@ class SettingsNetworkTab extends StatelessWidget {
   /// The connected devices card, shown while a Quark is set.
   final Widget connectedDevices;
 
+  /// This phone's own remote access switch. Null leaves the section out,
+  /// including on web, where this phone does not run a node.
+  final Widget? thisPhone;
+
   /// Shown above the tab's content and scrolled with it, such as the
   /// page's disconnected banner; null shows nothing.
   final Widget? header;
@@ -47,6 +52,12 @@ class SettingsNetworkTab extends StatelessWidget {
           const SizedBox(height: 8),
           remoteAccess,
           const SizedBox(height: 24),
+          if (thisPhone != null) ...[
+            const Text('This phone', style: heading),
+            const SizedBox(height: 8),
+            thisPhone!,
+            const SizedBox(height: 24),
+          ],
         ],
         const Text('Connected devices', style: heading),
         const SizedBox(height: 8),
