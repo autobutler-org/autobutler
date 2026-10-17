@@ -28,3 +28,14 @@ String photoLocation(String relPath, {String? deviceName}) {
   if (deviceName == null) return folder.isEmpty ? 'Files' : folder;
   return folder.isEmpty ? deviceName : '$deviceName · $folder';
 }
+
+/// A maps search for the GPS position a photo was taken at (#3364).
+///
+/// A plain https link, so it works everywhere the app runs: a phone hands it
+/// to its maps app, a browser opens the maps page. The Quark cannot turn a
+/// position into a place name, so the search is for the coordinates.
+Uri photoMapUri(double latitude, double longitude) => Uri.https(
+  'www.google.com',
+  '/maps/search/',
+  {'api': '1', 'query': '$latitude,$longitude'},
+);
