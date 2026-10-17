@@ -22,7 +22,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/lib/pq v1.12.3
 	github.com/mholt/archiver/v4 v4.0.0-alpha.9
-	github.com/nwaples/rardecode/v2 v2.2.0
+	github.com/nwaples/rardecode/v2 v2.4.5
 	github.com/shirou/gopsutil/v4 v4.26.9
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
