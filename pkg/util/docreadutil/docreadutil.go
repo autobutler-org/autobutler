@@ -64,9 +64,31 @@
 // refused. A text box's paragraphs are shown where the box sits, since that
 // is how a captioned picture is written. Headers, footers and comments are
 // left out with a warning.
+//
+// # RTF
+//
+// The RTF reader is a tokenizer of its own over a buffered reader on the
+// file, which it reads once from start to end: RTF is a flat stream of
+// groups, control words and text, so it needs no random access. Text is
+// decoded from the \uN escapes Unicode is written as, skipping their
+// fallback, or else from the code page the document or its font names;
+// double-byte code pages written without \uN are not decoded, with a
+// warning. Headings come from \outlinelevel and the heading styles of the
+// style sheet, lists from \listtext and \pntext, and tables from \trowd
+// ... \row, with spans worked out from the cells' edges and from \clmrg
+// and \clvmrg, and nested tables from \itap and \nestcell. Footnotes are
+// held, bounded by [Limits.MaxHeldBytes], and follow the body under a
+// "Notes" heading. Groups nest at most 256 deep outside a group being
+// skipped.
+//
+// Pictures are inline data, shown as omitted blocks rather than images in
+// this version. They, \bin data, objects and every destination the reader
+// does not know are read through and discarded, never held. Objects,
+// shapes and equations become omitted blocks; fields show only their
+// result; headers, footers and comments are left out with a warning.
 package docreadutil
 
-// cspell:ignore DOCM docm
+// cspell:ignore DOCM docm clmrg clvmrg nestcell
 
 import (
 	"context"
@@ -90,6 +112,8 @@ const (
 	FormatDOCM Format = "docm"
 	// FormatODT is an OpenDocument text document.
 	FormatODT Format = "odt"
+	// FormatRTF is a Rich Text Format document.
+	FormatRTF Format = "rtf"
 )
 
 // Output chooses what [Convert] writes.
@@ -284,6 +308,8 @@ func FormatForName(name string) (Format, bool) {
 		return FormatDOCM, true
 	case ".odt":
 		return FormatODT, true
+	case ".rtf":
+		return FormatRTF, true
 	}
 	return "", false
 }
@@ -298,13 +324,15 @@ func Convert(params ConvertParams) (result ConvertResult, err error) {
 	if params.Source == nil || params.Out == nil {
 		return ConvertResult{}, errors.New("docreadutil: Convert needs a Source and an Out")
 	}
-	// Each format's reader; the RTF reader joins here.
+	// Each format's reader.
 	var read func(e *emitter, src io.ReaderAt, size int64) error
 	switch params.Format {
 	case FormatDOCX, FormatDOCM:
 		read = readDocx
 	case FormatODT:
 		read = readOdt
+	case FormatRTF:
+		read = readRTF
 	default:
 		return ConvertResult{}, fmt.Errorf("%w: %q", ErrUnsupportedFormat, params.Format)
 	}
