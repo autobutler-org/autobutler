@@ -10,6 +10,7 @@ import '../../models/calendar_event_item.dart';
 import '../calendar_dates.dart';
 import '../calendar_event_chip.dart';
 import '../calendar_labels.dart';
+import 'time_grid_event_semantics.dart';
 
 /// Lets one event block on `CalendarTimeGrid` be moved and resized, by a drag
 /// or from the keyboard (#2526).
@@ -297,6 +298,10 @@ class _TimeGridEventMoverState extends State<TimeGridEventMover> {
       // Neither takes the drag's cancel: the way that lost reports one just
       // before the way that won starts.
       child: GestureDetector(
+        // The block owns the label and the move actions. This detector's
+        // long-press node does not merge with that transparent hit-test
+        // node, so a touch hold would be an unlabeled target (#3251).
+        excludeFromSemantics: true,
         dragStartBehavior: DragStartBehavior.down,
         onLongPressStart: touch
             ? (d) => _start(d.globalPosition, d.localPosition, touch)
@@ -331,9 +336,12 @@ class _TimeGridEventMoverState extends State<TimeGridEventMover> {
       ),
     );
 
-    return Semantics(
+    // On the block's node, not a parent one. A transparent hit-test node
+    // does not merge, and a parent would leave the tap on a target the
+    // pointer can hit (#3251).
+    return TimeGridEventSemantics(
       hint: TimeGridEventMover.keysHint,
-      customSemanticsActions: {
+      actions: {
         const CustomSemanticsAction(label: 'Move $step minutes earlier'): () =>
             _nudge(minutes: -step),
         const CustomSemanticsAction(label: 'Move $step minutes later'): () =>

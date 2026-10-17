@@ -1,4 +1,4 @@
-import 'dart:ui' show SemanticsAction;
+import 'dart:ui' show SemanticsAction, SemanticsHitTestBehavior;
 
 import 'package:flutter/gestures.dart'
     show PointerDeviceKind, kLongPressTimeout;
@@ -225,6 +225,69 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('calendar_event_2_2026-09-29')));
     expect(tapped, _lunch);
   });
+
+  // #3251: the web semantics tree is on for every user, and a node with a tap
+  // action is a click target. A flick that finishes on that target arrives as
+  // a tap. The node stays a button a screen reader can press, and stays
+  // transparent so the pointer reaches the drag that pages the day.
+  testBothViewports(
+    'an empty hour and an event let a drag through and still take a tap',
+    (tester, size) async {
+      final taps = <String>[];
+      await pumpAt(
+        tester,
+        _grid(
+          days: [_today],
+          events: [_vet],
+          onSlotTap: (_) => taps.add('slot'),
+          onEventTap: (_) => taps.add('event'),
+          onEventReschedule: (_, _, _) {},
+        ),
+        size: size,
+      );
+      final handle = tester.ensureSemantics();
+      final slot = find.byKey(const ValueKey('calendar_slot_2026-09-29_13'));
+      final event = find.byKey(const ValueKey('calendar_event_3_2026-09-29'));
+
+      for (final target in [slot, event]) {
+        final node = tester.getSemantics(target);
+        final data = node.getSemanticsData();
+        expect(node.hitTestBehavior, SemanticsHitTestBehavior.transparent);
+        expect(data.flagsCollection.isButton, isTrue);
+        expect(data.hasAction(SemanticsAction.tap), isTrue);
+      }
+      // The mover's keys stay on the event, not a second node that would
+      // put the tap action back on a target the pointer can hit.
+      expect(
+        tester.getSemantics(event).getSemanticsData().hint,
+        contains('Alt'),
+      );
+
+      Future<void> flick(Finder target) async {
+        final gesture = await tester.startGesture(tester.getCenter(target));
+        await gesture.moveBy(
+          const Offset(-90, 0),
+          timeStamp: const Duration(milliseconds: 16),
+        );
+        await gesture.up(timeStamp: const Duration(milliseconds: 32));
+        await tester.pump();
+      }
+
+      await flick(slot);
+      await flick(event);
+      expect(taps, isEmpty);
+
+      tester
+          .getSemantics(slot)
+          .owner!
+          .performAction(tester.getSemantics(slot).id, SemanticsAction.tap);
+      await tester.pump();
+      await tester.tap(event);
+      await tester.pump();
+      expect(taps, ['slot', 'event']);
+      handle.dispose();
+    },
+  );
 
   testWidgets('the now line only shows on its own date', (tester) async {
     await pumpAt(

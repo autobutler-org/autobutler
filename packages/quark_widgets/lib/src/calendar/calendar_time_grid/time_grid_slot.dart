@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsHitTestBehavior;
+
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 
@@ -80,6 +82,13 @@ class _TimeGridSlotState extends State<TimeGridSlot> {
           // Excluding the child's semantics drops its tap too, so the node
           // carries its own, or a screen reader cannot press it (#2603).
           onTap: onTap,
+          // Quark turns the web semantics tree on for every user (#2599). A
+          // node with a tap action is then a click target, and a flick that
+          // finishes inside this hour arrives as a tap and opens New event
+          // instead of paging (#3251). Transparent hit testing lets the
+          // pointer through to the drag. The action stays for a real tap and
+          // for a screen reader.
+          hitTestBehavior: SemanticsHitTestBehavior.transparent,
           child: InkWell(
             key: ValueKey(
               'calendar_slot_${CalendarDates.key(widget.start)}_${widget.start.hour}',

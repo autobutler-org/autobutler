@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsHitTestBehavior;
+
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 
@@ -5,6 +7,7 @@ import '../../models/calendar_event_item.dart';
 import '../../theme/quark_tokens.dart';
 import '../calendar_event_chip.dart';
 import '../calendar_labels.dart';
+import 'time_grid_event_semantics.dart';
 
 /// One timed event drawn as a block on `CalendarTimeGrid`'s timeline.
 ///
@@ -65,6 +68,7 @@ class TimeGridEventBlock extends StatelessWidget {
     final showLocation = !narrow && item.location.isNotEmpty && height >= 64;
     final showReminder = !narrow && oneLine && item.reminderMinutes != null;
 
+    final reader = TimeGridEventSemantics.maybeOf(context);
     final title = Text(
       item.title,
       maxLines: narrow ? 3 : 1,
@@ -85,10 +89,15 @@ class TimeGridEventBlock extends StatelessWidget {
         range,
         if (item.location.isNotEmpty) item.location,
       ].join(', '),
+      hint: reader?.hint,
+      customSemanticsActions: reader?.actions,
       excludeSemantics: true,
       // Excluding the child's semantics drops its tap too, so the node
       // carries its own, or a screen reader cannot press it (#2603).
       onTap: onTap,
+      // Same as an empty hour: a tap target that also takes the pointer
+      // turns a flick into Edit event on the web (#3251).
+      hitTestBehavior: SemanticsHitTestBehavior.transparent,
       child: Material(
         color: Color.alphaBlend(color.withValues(alpha: 0.2), tokens.card),
         shape: RoundedRectangleBorder(
