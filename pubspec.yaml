@@ -62,7 +62,7 @@ dependencies:
   video_player: ^2.6.0
   web: ^1.1.1
   photo_manager: ^3.12.0
-  desktop_drop: ^0.8.4
+  desktop_drop: ^0.9.0
   go_router: ^18.0.1
   url_launcher: ^6.3.2
   web_socket_channel: ^3.0.3
@@ -106,7 +106,7 @@ dependencies:
   # is built with --dart-define=PROBE_AGENT=true; see lib/probe_bootstrap*.dart
   # and `make test/probe`. Kept as a regular dependency so lib/ can import it;
   # the dart-define + tree-shaking keep it inactive in normal/release builds.
-  flutter_probe_agent: ^0.25.0
+  flutter_probe_agent: ^0.26.0
   sodium: ^4.1.1+1
   # The in-app PDF viewer (#1184), built on PDFium. Its web WASM ships in the
   # app bundle, so the viewer works with no internet connection.
