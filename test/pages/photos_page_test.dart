@@ -119,5 +119,45 @@ void main() {
       expect(find.byType(PhotoGridTile), findsAtLeast(2));
       debugDefaultTargetPlatformOverride = null;
     });
+
+    // #3363: the page's own Focus held the focus, so the field's autofocus
+    // was ignored and the first keys typed after opening search were lost.
+    testWidgets('a $name search keeps every key typed straight away', (
+      tester,
+    ) async {
+      AppSettings.instance.demoMode.value = true;
+      addTearDown(() => AppSettings.instance.demoMode.value = false);
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      await pumpPhotos(tester, size);
+      await tester.pump();
+
+      await tester.tap(find.byKey(const ValueKey('photos_search')));
+      await tester.pump();
+      await tester.pump();
+
+      final editable = find.descendant(
+        of: find.byKey(const ValueKey('photos_search_field')),
+        matching: find.byType(EditableText),
+      );
+      expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
+
+      // Typed into whatever has the keyboard, the way a person types, not
+      // through enterText, which focuses the field itself first.
+      for (var i = 1; i <= 'beach'.length; i++) {
+        final text = 'beach'.substring(0, i);
+        tester.testTextInput.updateEditingValue(
+          TextEditingValue(
+            text: text,
+            selection: TextSelection.collapsed(offset: text.length),
+          ),
+        );
+        await tester.pump();
+      }
+
+      expect(tester.takeException(), isNull);
+      expect(tester.widget<EditableText>(editable).controller.text, 'beach');
+      expect(find.byType(PhotoGridTile), findsOneWidget);
+      debugDefaultTargetPlatformOverride = null;
+    });
   }
 }
