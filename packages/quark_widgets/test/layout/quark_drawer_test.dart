@@ -552,7 +552,6 @@ void main() {
     for (final section in [
       QuarkDrawerSection.calendar,
       QuarkDrawerSection.slides,
-      QuarkDrawerSection.chat,
     ]) {
       final row = find.byKey(ValueKey('drawer_${section.name}'));
       await tester.scrollUntilVisible(row, 50);
@@ -562,6 +561,12 @@ void main() {
         reason: section.name,
       );
     }
+    final chat = find.byKey(const ValueKey('drawer_chat'));
+    await tester.scrollUntilVisible(chat, 50);
+    expect(
+      find.descendant(of: chat, matching: find.byType(QuarkBetaBadge)),
+      findsNothing,
+    );
 
     for (final section in [
       QuarkDrawerSection.calendar,
@@ -720,14 +725,14 @@ void _ignore(int _) {
       matching: find.byKey(const ValueKey('drawer_chat_unread')),
     );
     expect(dot, findsOneWidget);
-    // Not color alone: a screen reader hears it, and the beta badge stays.
+    // Not color alone: a screen reader hears it.
     expect(find.bySemanticsLabel(RegExp('Unread messages')), findsOneWidget);
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('drawer_chat')),
         matching: find.byType(QuarkBetaBadge),
       ),
-      findsOneWidget,
+      findsNothing,
     );
     expect(tester.getSize(dot), const Size.square(8));
     expect(tester.takeException(), isNull);

@@ -23,16 +23,13 @@ class FeatureFlag {
     enabled: json['enabled'] as bool? ?? false,
   );
 
-  /// The key of the chat beta (#2414).
-  static const chat = 'chat';
-
   /// The key of the calendar beta (#2609).
   static const calendar = 'calendar';
 
   /// The key of the slides beta (#2868).
   static const slides = 'slides';
 
-  /// The flag's stable key, such as [chat].
+  /// The flag's stable key, such as [calendar].
   final String key;
 
   /// The feature's name, for admins.

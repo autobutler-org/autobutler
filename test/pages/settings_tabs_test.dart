@@ -43,10 +43,10 @@ void main() {
     settings.featureFlags.value = const [];
   }
 
-  const chat = FeatureFlag(
-    key: FeatureFlag.chat,
-    label: 'Chat',
-    description: 'Hides chat; stored data is kept.',
+  const calendar = FeatureFlag(
+    key: FeatureFlag.calendar,
+    label: 'Calendar',
+    description: 'Hides the calendar; stored events are kept.',
     enabled: true,
   );
 
@@ -61,7 +61,7 @@ void main() {
     await settings.setSessionToken('a-session');
     await settings.setUsername('ada');
     settings.isAdmin.value = true;
-    settings.featureFlags.value = const [chat];
+    settings.featureFlags.value = const [calendar];
   });
 
   tearDown(() async {
@@ -110,7 +110,7 @@ void main() {
     SettingsTab.network: 'Remote access',
     SettingsTab.updates: 'Quark version (installed)',
     SettingsTab.about: 'Software Bill of Materials',
-    SettingsTab.features: 'Hides chat; stored data is kept.',
+    SettingsTab.features: 'Hides the calendar; stored events are kept.',
   };
 
   const viewports = {'narrow': Size(360, 640), 'wide': Size(1280, 800)};
@@ -162,7 +162,10 @@ void main() {
     await pumpAt(tester, SettingsTab.features, const Size(1280, 800));
 
     expect(featuresTab(), findsNothing);
-    expect(find.byKey(const ValueKey('feature_flag_tile_chat')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('feature_flag_tile_calendar')),
+      findsNothing,
+    );
     // A link to the hidden tab shows General instead.
     expect(find.text('Backend hosts'), findsOneWidget);
   });
@@ -194,28 +197,28 @@ void main() {
       const Size(1280, 800),
       featureFlags: controller,
     );
-    final tile = find.byKey(const ValueKey('feature_flag_tile_chat'));
+    final tile = find.byKey(const ValueKey('feature_flag_tile_calendar'));
     await tester.scrollUntilVisible(tile, 200, scrollable: tabList());
 
     await tester.tap(tile);
     await tester.pump();
     await tester.tap(tile);
     await tester.pump();
-    expect(calls, [(FeatureFlag.chat, false)]);
+    expect(calls, [(FeatureFlag.calendar, false)]);
     expect(tester.widget<SwitchListTile>(tile).onChanged, isNull);
 
     saving.complete(
       const FeatureFlag(
-        key: FeatureFlag.chat,
-        label: 'Chat',
-        description: 'Hides chat; stored data is kept.',
+        key: FeatureFlag.calendar,
+        label: 'Calendar',
+        description: 'Hides the calendar; stored events are kept.',
         enabled: false,
       ),
     );
     await tester.pump();
     expect(calls, hasLength(1));
     expect(tester.widget<SwitchListTile>(tile).value, isFalse);
-    expect(settings.isFeatureEnabled(FeatureFlag.chat), isFalse);
+    expect(settings.isFeatureEnabled(FeatureFlag.calendar), isFalse);
   });
 
   testWidgets('links to the drives instead of listing them', (tester) async {

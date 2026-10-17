@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quark/models/feature_flag.dart';
 import 'package:quark/pages/terms_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
-import 'package:quark/services/feature_flags_service.dart';
 import 'package:quark/utils/error_text.dart';
 
 /// #1624: accepting terms navigated to /files and left it to [authRedirect] to
@@ -547,18 +545,7 @@ void main() {
   // #3257: a new user opening a chat link went through terms and sign-in and
   // landed on Files, because the terms gate dropped where they were headed.
   group('the first-run gates return to the route opened', () {
-    setUp(() {
-      featureFlagsProbe = () async => const [
-        FeatureFlag(
-          key: FeatureFlag.chat,
-          label: 'Chat',
-          description: '',
-          enabled: true,
-        ),
-      ];
-    });
     tearDown(() async {
-      featureFlagsProbe = FeatureFlagsService.list;
       await settings.setSessionToken(null);
     });
 

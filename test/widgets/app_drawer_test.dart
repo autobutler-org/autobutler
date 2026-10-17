@@ -90,6 +90,7 @@ void main() {
       QuarkDrawerSection.docs,
       QuarkDrawerSection.sheets,
       QuarkDrawerSection.books,
+      QuarkDrawerSection.chat,
       QuarkDrawerSection.system,
       QuarkDrawerSection.vault,
       QuarkDrawerSection.users,
@@ -105,13 +106,16 @@ void main() {
       find.byKey(const ValueKey('drawer_files')),
     );
     expect(files.selected, isTrue);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('drawer_chat')),
+        matching: find.byType(QuarkBetaBadge),
+      ),
+      findsNothing,
+    );
   });
 
-  for (final key in [
-    FeatureFlag.chat,
-    FeatureFlag.calendar,
-    FeatureFlag.slides,
-  ]) {
+  for (final key in [FeatureFlag.calendar, FeatureFlag.slides]) {
     testWidgets('offers $key, marked beta, only while its beta is on', (
       tester,
     ) async {
@@ -140,6 +144,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('drawer_vault')), findsNothing);
     expect(find.byKey(const ValueKey('drawer_users')), findsNothing);
+    expect(find.byKey(const ValueKey('drawer_chat')), findsOneWidget);
     expect(find.byKey(const ValueKey('drawer_settings')), findsOneWidget);
   });
 

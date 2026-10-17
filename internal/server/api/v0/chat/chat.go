@@ -7,8 +7,7 @@
 // marker, which the unread counts in the channel list are counted from. /chat/messages/:id/reactions adds an encrypted reaction
 // to a message and /chat/reactions/:id removes one. No route is admin-only;
 // admins may manage any channel but, like everyone else, list only the channels they are members of, and keys,
-// events and messages are for members alone. A channel the caller may not see is a 404, and every route is a 404 while an
-// admin has the chat feature flag turned off (PUT /settings/features/chat).
+// events and messages are for members alone. A channel the caller may not see is a 404.
 package v0_chat
 
 import "github.com/autobutler-org/quark/pkg/util/serverutil"

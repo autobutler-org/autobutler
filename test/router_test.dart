@@ -1090,9 +1090,9 @@ void main() {
     }
 
     Future<void> signIn({
-      required bool chatEnabled,
       bool calendarEnabled = true,
       bool slidesEnabled = true,
+      bool staleChatOff = false,
     }) async {
       await reset();
       await settings.addHost(
@@ -1102,12 +1102,13 @@ void main() {
       await settings.setSessionToken('token');
       authStatusProbe = () async => const AuthStatus(setupComplete: true);
       final flags = [
-        FeatureFlag(
-          key: FeatureFlag.chat,
-          label: 'Chat',
-          description: '',
-          enabled: chatEnabled,
-        ),
+        if (staleChatOff)
+          const FeatureFlag(
+            key: 'chat',
+            label: 'Chat',
+            description: '',
+            enabled: false,
+          ),
         FeatureFlag(
           key: FeatureFlag.calendar,
           label: 'Calendar',
@@ -1134,7 +1135,7 @@ void main() {
     });
 
     testWidgets('/chat opens general', (tester) async {
-      await signIn(chatEnabled: true);
+      await signIn();
       final r = await pumpGated(tester, AppRoutes.chat);
 
       expect(at(r), '/chat/general');
@@ -1142,24 +1143,27 @@ void main() {
     });
 
     testWidgets('a channel link is kept when chat is on', (tester) async {
-      await signIn(chatEnabled: true);
+      await signIn();
       final r = await pumpGated(tester, '/chat/12');
 
       expect(at(r), '/chat/12');
     });
 
-    testWidgets('chat turned off sends /chat to Files', (tester) async {
-      await signIn(chatEnabled: false);
-      for (final location in [AppRoutes.chat, '/chat/12']) {
-        final r = await pumpGated(tester, location);
-        expect(at(r), AppRoutes.files, reason: location);
-      }
+    testWidgets('a stored chat flag that is off still opens chat', (
+      tester,
+    ) async {
+      await signIn(staleChatOff: true);
+      final general = await pumpGated(tester, AppRoutes.chat);
+      expect(at(general), '/chat/general');
+
+      final channel = await pumpGated(tester, '/chat/12');
+      expect(at(channel), '/chat/12');
     });
 
     testWidgets('calendar turned off sends its views to Files (#2609)', (
       tester,
     ) async {
-      await signIn(chatEnabled: true, calendarEnabled: false);
+      await signIn(calendarEnabled: false);
       final r = await pumpGated(tester, '/calendar/week');
       expect(at(r), AppRoutes.files);
     });
@@ -1167,7 +1171,7 @@ void main() {
     testWidgets('slides turned off sends its pages to Files (#2868)', (
       tester,
     ) async {
-      await signIn(chatEnabled: true, slidesEnabled: false);
+      await signIn(slidesEnabled: false);
       for (final location in [
         AppRoutes.slides,
         '/slides/talks/q1.qslide',
@@ -1182,7 +1186,7 @@ void main() {
     testWidgets('moving between calendar views asks for the flags once', (
       tester,
     ) async {
-      await signIn(chatEnabled: true);
+      await signIn();
       // A cold deep link: nothing has loaded the flags for this session yet.
       settings.featureFlags.value = const [];
       await settings.setSessionToken('calendar-token');
@@ -1212,31 +1216,33 @@ void main() {
       expect(asked, 2);
     });
 
-    testWidgets('calendar on keeps its views, with chat off', (tester) async {
-      await signIn(chatEnabled: false);
+    testWidgets('calendar on keeps its views when a chat flag is off', (
+      tester,
+    ) async {
+      await signIn(staleChatOff: true);
       final r = await pumpGated(tester, '/calendar/week');
       expect(at(r), '/calendar/week');
     });
 
-    testWidgets('chat turned off under a signed-in member leaves /chat', (
+    testWidgets('refreshing flags keeps a signed-in member on chat', (
       tester,
     ) async {
-      await signIn(chatEnabled: true);
+      await signIn();
       final r = await pumpGated(tester, '/chat/12');
       expect(at(r), '/chat/12');
 
-      // What the feature_flag_changed event does once the Quark says off.
+      // What the feature_flag_changed event does. Chat is no longer a flag.
       featureFlagsProbe = () async => const [];
       settings.featureFlags.value = const [];
       await tester.pumpAndSettle();
 
-      expect(at(r), AppRoutes.files);
+      expect(at(r), '/chat/12');
     });
 
     testWidgets('the Features tab of Settings is for admins only (#2542)', (
       tester,
     ) async {
-      await signIn(chatEnabled: true);
+      await signIn();
       var r = await pumpGated(tester, '/settings/features');
       expect(at(r), AppRoutes.files);
 
@@ -1250,7 +1256,7 @@ void main() {
     testWidgets('a signed-out chat link comes back after signing in', (
       tester,
     ) async {
-      await signIn(chatEnabled: true);
+      await signIn();
       await settings.setSessionToken(null);
       final r = await pumpGated(tester, '/chat/12?x=1');
       expect(at(r), '/login?from=${Uri.encodeComponent('/chat/12?x=1')}');
@@ -1263,7 +1269,7 @@ void main() {
     testWidgets('a signed-out Files visit keeps the login URL bare', (
       tester,
     ) async {
-      await signIn(chatEnabled: true);
+      await signIn();
       await settings.setSessionToken(null);
       final r = await pumpGated(tester, AppRoutes.files);
       expect(at(r), AppRoutes.login);

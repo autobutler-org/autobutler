@@ -12,9 +12,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 )
 
-// Chat is the key of the chat beta's flag (#2414).
-const Chat = "chat"
-
 // Calendar is the key of the calendar beta's flag (#2609).
 const Calendar = "calendar"
 

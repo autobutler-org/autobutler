@@ -110,8 +110,8 @@ func (h featuresHarness) published() int {
 	}
 }
 
-// chatState returns chat's entry from GET /settings/features as user.
-func (h featuresHarness) chatState(t *testing.T, user string) featureflagutil.FlagState {
+// calendarState returns calendar's entry from GET /settings/features as user.
+func (h featuresHarness) calendarState(t *testing.T, user string) featureflagutil.FlagState {
 	t.Helper()
 	w := h.do(user, http.MethodGet, "/api/v0/settings/features", "")
 	if w.Code != http.StatusOK {
@@ -122,21 +122,24 @@ func (h featuresHarness) chatState(t *testing.T, user string) featureflagutil.Fl
 		t.Fatal(err)
 	}
 	for _, f := range got.Features {
-		if f.Key == featureflagutil.Chat {
+		if f.Key == "chat" {
+			t.Fatalf("retired chat flag still listed: %s", w.Body.String())
+		}
+		if f.Key == featureflagutil.Calendar {
 			return f
 		}
 	}
-	t.Fatalf("chat missing from %s", w.Body.String())
+	t.Fatalf("calendar missing from %s", w.Body.String())
 	return featureflagutil.FlagState{}
 }
 
 // TestListFeatures_DefaultForAnyUser checks a member can read the flags and
-// that chat reports its registry default while nobody has set it.
+// that calendar reports its registry default while nobody has set it.
 func TestListFeatures_DefaultForAnyUser(t *testing.T) {
 	h := newFeaturesHarness(t)
-	chat := h.chatState(t, "member")
-	if !chat.Enabled || !chat.Default || chat.SunsetIssue != 2577 || chat.Label == "" || chat.Description == "" {
-		t.Errorf("chat = %+v; want on by default, with its copy and sunset issue", chat)
+	calendar := h.calendarState(t, "member")
+	if !calendar.Enabled || !calendar.Default || calendar.SunsetIssue != 2610 || calendar.Label == "" || calendar.Description == "" {
+		t.Errorf("calendar = %+v; want on by default, with its copy and sunset issue", calendar)
 	}
 }
 
@@ -144,7 +147,7 @@ func TestListFeatures_DefaultForAnyUser(t *testing.T) {
 // reload, is what every user then reads, and tells open apps.
 func TestUpdateFeature_AdminPersists(t *testing.T) {
 	h := newFeaturesHarness(t)
-	w := h.do("admin", http.MethodPut, "/api/v0/settings/features/chat", `{"enabled":false}`)
+	w := h.do("admin", http.MethodPut, "/api/v0/settings/features/calendar", `{"enabled":false}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("PUT = %d: %s", w.Code, w.Body.String())
 	}
@@ -152,15 +155,15 @@ func TestUpdateFeature_AdminPersists(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Key != featureflagutil.Chat || got.Enabled {
-		t.Errorf("response = %+v; want chat off", got)
+	if got.Key != featureflagutil.Calendar || got.Enabled {
+		t.Errorf("response = %+v; want calendar off", got)
 	}
 	if n := h.published(); n != 1 {
 		t.Errorf("published %d feature_flag_changed events; want 1", n)
 	}
 	settingsutil.ResetForTesting(h.path)
-	if h.chatState(t, "member").Enabled {
-		t.Error("chat is on for a member after an admin turned it off")
+	if h.calendarState(t, "member").Enabled {
+		t.Error("calendar is on for a member after an admin turned it off")
 	}
 }
 
@@ -173,22 +176,23 @@ func TestUpdateFeature_Refusals(t *testing.T) {
 		name, user, path, body string
 		want                   int
 	}{
-		{"member", "member", "/api/v0/settings/features/chat", `{"enabled":false}`, http.StatusForbidden},
-		{"empty body", "admin", "/api/v0/settings/features/chat", `{}`, http.StatusBadRequest},
+		{"member", "member", "/api/v0/settings/features/calendar", `{"enabled":false}`, http.StatusForbidden},
+		{"empty body", "admin", "/api/v0/settings/features/calendar", `{}`, http.StatusBadRequest},
 		{"unknown key", "admin", "/api/v0/settings/features/nope", `{"enabled":true}`, http.StatusNotFound},
+		{"retired chat flag", "admin", "/api/v0/settings/features/chat", `{"enabled":false}`, http.StatusNotFound},
 		{"retired key", "admin", "/api/v0/settings/features/chatEnabled", `{"enabled":false}`, http.StatusNotFound},
 	} {
 		if w := h.do(tc.user, http.MethodPut, tc.path, tc.body); w.Code != tc.want {
 			t.Errorf("%s: PUT = %d, want %d: %s", tc.name, w.Code, tc.want, w.Body.String())
 		}
 	}
-	if !h.chatState(t, "admin").Enabled {
-		t.Error("a refused PUT turned chat off")
+	if !h.calendarState(t, "admin").Enabled {
+		t.Error("a refused PUT turned calendar off")
 	}
 	if n := h.published(); n != 0 {
 		t.Errorf("refused PUTs published %d events", n)
 	}
-	for _, key := range []string{"nope", "chatEnabled"} {
+	for _, key := range []string{"nope", "chat", "chatEnabled"} {
 		if _, set, _ := settingsutil.GetFeatureFlag(key); set {
 			t.Errorf("refused key %q was stored", key)
 		}

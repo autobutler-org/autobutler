@@ -1,0 +1,2 @@
+-- The previous value of featureFlags.chat is gone. Rolling back leaves chat
+-- on, which is also the flag's old default.

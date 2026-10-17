@@ -27,25 +27,30 @@ func TestRegistry_EveryFlagIsDeclaredInFull(t *testing.T) {
 	}
 }
 
-// TestEnabled_DefaultWhenUnsetThenStored checks chat follows its registry
+// TestEnabled_DefaultWhenUnsetThenStored checks calendar follows its registry
 // default until an admin sets it, and the set value after that.
 func TestEnabled_DefaultWhenUnsetThenStored(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "settings.json")
 	settingsutil.ResetForTesting(path)
-	if !featureflagutil.Enabled(featureflagutil.Chat) {
-		t.Fatal("chat should default on")
+	if !featureflagutil.Enabled(featureflagutil.Calendar) {
+		t.Fatal("calendar should default on")
 	}
 	if featureflagutil.Enabled("no-such-flag") {
 		t.Error("an unknown flag should be off")
 	}
+	// Chat left beta (#2577). Its key is unknown, so it is off here, and the
+	// routes no longer consult the flag.
+	if featureflagutil.Enabled("chat") {
+		t.Error("the retired chat flag should be off")
+	}
 
-	result, err := featureflagutil.SetFlag(featureflagutil.SetFlagParams{Key: featureflagutil.Chat, Enabled: false})
-	if err != nil || result.Feature.Enabled || result.Feature.Key != featureflagutil.Chat {
+	result, err := featureflagutil.SetFlag(featureflagutil.SetFlagParams{Key: featureflagutil.Calendar, Enabled: false})
+	if err != nil || result.Feature.Enabled || result.Feature.Key != featureflagutil.Calendar {
 		t.Fatalf("SetFlag: %+v, %v", result, err)
 	}
 	settingsutil.ResetForTesting(path)
-	if featureflagutil.Enabled(featureflagutil.Chat) {
-		t.Error("chat should stay off after a reload")
+	if featureflagutil.Enabled(featureflagutil.Calendar) {
+		t.Error("calendar should stay off after a reload")
 	}
 	list, err := featureflagutil.ListFlags(featureflagutil.ListFlagsParams{})
 	if err != nil || len(list.Features) != len(featureflagutil.Flags()) || list.Features[0].Enabled {

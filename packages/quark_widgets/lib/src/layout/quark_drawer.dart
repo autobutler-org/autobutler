@@ -37,7 +37,7 @@ enum QuarkDrawerSection {
   /// The book list: every PDF and EPUB on the Quark.
   books,
 
-  /// Chat, a beta: its row carries a [QuarkBetaBadge].
+  /// Chat.
   chat,
 
   /// The Quark itself: its health, its drives and its jobs.
@@ -54,11 +54,7 @@ enum QuarkDrawerSection {
 }
 
 /// The sections still in beta, whose rows carry a [QuarkBetaBadge].
-const _betaSections = {
-  QuarkDrawerSection.calendar,
-  QuarkDrawerSection.slides,
-  QuarkDrawerSection.chat,
-};
+const _betaSections = {QuarkDrawerSection.calendar, QuarkDrawerSection.slides};
 
 /// The sections for looking after the Quark, which follow the household's
 /// everyday pages under a "Manage" label.
@@ -94,7 +90,7 @@ const _manageSections = {
 /// (#2230). Adding and editing Quarks stays in Settings, a row below. With
 /// one it is a plain label.
 ///
-/// A section still in beta, Calendar, Slides and Chat for now, carries a
+/// A section still in beta, Calendar and Slides for now, carries a
 /// [QuarkBetaBadge] beside its label.
 ///
 /// With [hasUnreadChat], the Chat row ends its label in a small dot that a
@@ -186,8 +182,7 @@ class QuarkDrawer extends StatelessWidget {
   /// Called when the Books row is tapped. Null hides the row.
   final FutureOr<void> Function()? onTapBooks;
 
-  /// Called when the Chat row is tapped. Null hides the row, as when an admin
-  /// has turned the chat beta off.
+  /// Called when the Chat row is tapped. Null hides the row.
   final FutureOr<void> Function()? onTapChat;
 
   /// Whether a chat channel has messages this account has not read. Draws a

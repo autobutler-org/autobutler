@@ -155,10 +155,13 @@ func settingsPath() string {
 
 // migrations is the ordered history of settings.json. A file's
 // settingsVersion counts how many it has been through, and importFile runs
-// the rest. The list is closed: the settings are rows now, so a change to
-// them is a migration in internal/db/migrations.
+// the rest. A setting that already lives in a row changes in
+// internal/db/migrations. Retiring a flag is both: dropFeatureFlag here, so
+// an unimported file does not write the key back, and a database migration
+// that deletes the row an install already stored.
 var migrations = []migration{
 	moveChatEnabledToFeatureFlags, // 1: #2542
+	dropFeatureFlag("chat"),       // 2: #2577
 }
 
 // moveChatEnabledToFeatureFlags moves the chat switch #2421 stored as

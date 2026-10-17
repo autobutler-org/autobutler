@@ -16,7 +16,6 @@ import (
 // is on and answers 404 once an admin turns the beta off.
 func TestRequireFeatureEnabled(t *testing.T) {
 	for key, path := range map[string]string{
-		featureflagutil.Chat:     "/api/v0/chat/channels",
 		featureflagutil.Calendar: "/api/v0/calendar/events",
 		featureflagutil.Slides:   "/api/v0/files/export/pptx",
 	} {
