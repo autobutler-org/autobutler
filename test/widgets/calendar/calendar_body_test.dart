@@ -12,8 +12,9 @@ import '../../support/tap_target_guidelines.dart';
 /// the view on show under a banner with its own Try again (#2540). Also the
 /// week start it hands the month grid (#2539) and the empty month and day
 /// (#2538), the swipe that steps Day, Week and Month (#2885), the short touch
-/// swipe that follows the finger (#3250), and the hours kept in view across
-/// a step (#2887).
+/// swipe that follows the finger (#3250), a quick flick on the day grid that
+/// pages instead of opening an event (#3251), and the hours kept in view
+/// across a step (#2887).
 void main() {
   final today = CalendarDates.dateOnly(DateTime.now());
 
@@ -29,6 +30,8 @@ void main() {
     VoidCallback? onAddEvent,
     List<String>? log,
     DateTime? from,
+    void Function(CalendarEventItem item, DateTime start, DateTime end)?
+    onEventReschedule,
   }) async {
     final start = from ?? today;
     tester.view.physicalSize = size;
@@ -59,7 +62,8 @@ void main() {
             onDayTap: (_) {},
             onCreateOn: (_) => log?.add('create'),
             onCreateAt: (_) => log?.add('create'),
-            onEventTap: (_) {},
+            onEventTap: (_) => log?.add('edit'),
+            onEventReschedule: onEventReschedule,
             onAddEvent: onAddEvent ?? () {},
           ),
         ),
@@ -453,6 +457,72 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(offset(), early);
+      });
+    }
+  }
+
+  // #3251: a quick horizontal flick on the day grid pages. Over an empty
+  // hour it must not open New event, and over an event it must not open Edit.
+  // A tap that does not move still does. The mover is mounted, as on the page.
+  for (final size in const [narrowViewport, wideViewport]) {
+    for (final kind in const [
+      PointerDeviceKind.touch,
+      PointerDeviceKind.mouse,
+    ]) {
+      final pointer = kind.name;
+      testWidgets('day: a short flick on the grid pages and a tap still opens '
+          'at $size with a $pointer', (tester) async {
+        final log = <String>[];
+        final start = DateTime(today.year, today.month, today.day, 10);
+        final event = CalendarEventItem(
+          eventId: 7,
+          title: 'Vet',
+          start: start,
+          end: start.add(const Duration(minutes: 45)),
+        );
+        await pumpBody(
+          tester,
+          size,
+          view: CalendarView.day,
+          isInitialLoad: false,
+          occurrences: [event],
+          log: log,
+          onEventReschedule: (_, _, _) {},
+        );
+        final slot = find.byKey(
+          ValueKey('calendar_slot_${CalendarDates.key(today)}_9'),
+        );
+        final block = find.byKey(ValueKey('calendar_event_${event.key}'));
+
+        Future<void> flick(Finder target) async {
+          final gesture = await tester.startGesture(
+            tester.getCenter(target),
+            kind: kind,
+          );
+          await gesture.moveBy(
+            const Offset(-90, 0),
+            timeStamp: const Duration(milliseconds: 16),
+          );
+          await gesture.up(timeStamp: const Duration(milliseconds: 32));
+          await tester.pumpAndSettle();
+        }
+
+        await flick(slot);
+        expect(log, ['next']);
+        log.clear();
+
+        await flick(block);
+        expect(log, ['next']);
+        log.clear();
+
+        await tester.tap(slot, kind: kind);
+        await tester.pump();
+        expect(log, ['create']);
+        log.clear();
+
+        await tester.tap(block, kind: kind);
+        await tester.pump();
+        expect(log, ['edit']);
       });
     }
   }
