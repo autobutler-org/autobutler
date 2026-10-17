@@ -544,3 +544,37 @@ added outside Quark shows up once its thumbnail loads or after the next restart.
 - The heading is a button: it takes keyboard focus, answers Enter and Space, and a screen reader announces it as
   expanded or collapsed. Folded rows cannot be reached by Tab or a screen reader.
 - Under reduced motion the chevron changes without turning.
+
+---
+
+### JN-PH-026: Show an album as a slideshow on a dedicated screen
+
+**Preconditions:** An account with at least one album that has photos (JN-PH-012). A screen with a browser, such as a
+photo frame or a tablet, on the same network as the Quark.
+
+**Steps:**
+
+1. On the screen, open `/frame` on the Quark's address, for example `http://quark.local:8080/frame`.
+2. Sign in with your username and password. This takes about ten seconds on a small screen.
+3. Tap an album, such as **Favorites**.
+4. Tap the picture to open the menu, then **Albums** to pick another.
+
+**Expected result:**
+
+- After step 2 the page lists your own albums with their photo counts, and nobody else's.
+- After step 3 the screen goes fullscreen where the browser allows it and shows the album's photos in a random
+  order, a new one about every fifteen seconds, fading from one to the next. A photo is shown whole, never cropped.
+- The next time `/frame` opens, it starts the album you last picked without asking. The sign-in lasts as long as an
+  app sign-in does (30 days, renewed as the screen uses it).
+- Photos that are HEIC or RAW are shown as JPEG. Videos and other files in the album are skipped.
+- If the Quark cannot be reached, the screen keeps the picture it has, says so at the bottom, and tries again every
+  thirty seconds. If the sign-in has ended, the screen goes back to the sign-in form.
+- The menu has **Albums**, **Full screen**, **Sign out** and **Close**, and closes itself after ten seconds.
+
+**Notes:**
+
+- `/frame?album=<id>` plays one album, `&interval=<seconds>` changes the pace, and `&order=newest` or
+  `&order=oldest` plays in date order instead of shuffling.
+- The page is plain HTML, CSS and JavaScript with no framework, about 22 KB, so it runs on a screen too weak for the
+  app's web client. It uses the signed-in account, so what it can show is what that account can read.
+- Under reduced motion the photos change without fading.

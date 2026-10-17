@@ -33,6 +33,7 @@ import (
 	v0_version "github.com/autobutler-org/quark/internal/server/api/v0/version"
 	v0_versions "github.com/autobutler-org/quark/internal/server/api/v0/versions"
 	v0_videos "github.com/autobutler-org/quark/internal/server/api/v0/videos"
+	"github.com/autobutler-org/quark/internal/server/frame"
 	"github.com/autobutler-org/quark/internal/server/middleware"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/healthutil"
@@ -95,6 +96,8 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 }
 
 func setupStaticRoutes(engine *gin.Engine) error {
+	// /frame is its own small page, not part of the Flutter build. It is a real route, so the fallback below never sees it.
+	frame.Register(engine)
 	web, err := fs.Sub(public, "public")
 	if err != nil {
 		return err
