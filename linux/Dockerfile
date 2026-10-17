@@ -6,7 +6,7 @@
 # Ubuntu 22.04 because that is what linux/AppImageBuilder.yml's apt sources name and what
 # CI's runner is. The Makefile passes --platform: on Apple silicon linux/arm64 runs
 # natively and linux/amd64 under emulation.
-FROM ubuntu:22.04
+FROM ubuntu:26.04
 
 # The Makefile passes the version pubspec.yaml pins, the one CI's setup-flutter installs.
 ARG FLUTTER_VERSION
