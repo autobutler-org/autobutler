@@ -23,12 +23,17 @@ class _AgreeButtonState extends State<AgreeButton> {
   bool _accepting = false;
 
   Future<void> _accept() async {
+    // The location the terms gate interrupted, which the rest of the trip
+    // still leads to (#3257).
+    final from = GoRouterState.of(
+      context,
+    ).uri.queryParameters[AppRoutes.loginFromParam];
     setState(() => _accepting = true);
     await AppSettings.instance.acceptTerms();
     // Resolved here rather than by going to /files and leaving it to the
     // router's redirect: that redirect silently did nothing when the status
     // call failed, stranding the user on a signed-out file browser (#1624).
-    final destination = await destinationAfterAcceptingTerms();
+    final destination = await destinationAfterAcceptingTerms(from);
     if (!mounted) return;
     context.go(destination);
   }

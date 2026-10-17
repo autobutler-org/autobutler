@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
+import 'package:quark_widgets/src/chat/quark_message_list/chat_message_row.dart';
 import 'package:quark_widgets/src/chat/quark_message_list/chat_message_row/chat_message_body.dart';
+import 'package:quark_widgets/src/chat/quark_message_list/chat_message_row/chat_reaction_picker.dart';
 
 import '../support/pump.dart';
 
@@ -1518,5 +1520,156 @@ void main() {
       expect(mentionsIn(tester, 'm1'), isEmpty);
       expect(find.byKey(const ValueKey('message_mention_m1')), findsNothing);
     });
+  });
+
+  // #3257: opened from the keyboard, the reaction menu left focus on its
+  // button, so the arrow keys walked on to the next message's button and
+  // Enter opened that row's menu instead. And the first reaction grew the row
+  // upward, moving the button just used out from under the focus.
+  group('reacting from the keyboard (#3257)', () {
+    List<ChatMessageItem> thread(Set<String> reacted) => [
+      for (var i = 6; i >= 1; i--)
+        ChatMessageItem(
+          id: 'k$i',
+          authorId: i.isEven ? 'ada' : 'bob',
+          authorName: i.isEven ? 'Ada' : 'Bob',
+          sentAt: day2.add(Duration(minutes: i)),
+          body: 'line $i',
+          reactions: [
+            if (reacted.contains('k$i'))
+              const ChatReactionItem(emoji: '❤️', count: 1, reactedByMe: true),
+          ],
+        ),
+    ];
+
+    /// Tabs until focus is on [target]'s add-reaction button.
+    Future<void> tabTo(WidgetTester tester, String target) async {
+      for (var i = 0; i < 60; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        final focused = FocusManager.instance.primaryFocus?.context;
+        if (focused?.findAncestorWidgetOfExactType<IconButton>()?.key ==
+            ValueKey(target)) {
+          return;
+        }
+      }
+      fail('Tab never reached $target');
+    }
+
+    String? focusedMenuItem() => switch (FocusManager
+        .instance
+        .primaryFocus
+        ?.context
+        ?.findAncestorWidgetOfExactType<MenuItemButton>()
+        ?.key) {
+      ValueKey<String>(:final value) => value,
+      _ => null,
+    };
+
+    testBothViewports(
+      'the menu is the focused row\'s, and the row holds still',
+      (tester, size) async {
+        final reacted = <String>{};
+        final events = <String>[];
+        await pumpAt(
+          tester,
+          StatefulBuilder(
+            builder: (context, setState) => QuarkMessageList(
+              messages: thread(reacted),
+              onReact: (id, emoji) => setState(() {
+                events.add('$id $emoji');
+                reacted.add(id);
+              }),
+            ),
+          ),
+          size: size,
+        );
+        final button = find.byKey(const ValueKey('message_react_k3'));
+        final before = tester.getRect(button);
+
+        await tabTo(tester, 'message_react_k3');
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        expect(focusedMenuItem(), 'message_react_k3_👍');
+        // The menu stands against the button it came from.
+        final first = tester.getRect(
+          find.byKey(const ValueKey('message_react_k3_👍')),
+        );
+        final last = tester.getRect(
+          find.byKey(
+            ValueKey('message_react_k3_${ChatReactionPicker.choices.last}'),
+          ),
+        );
+        final menu = first.expandToInclude(last);
+        expect(
+          menu.top >= before.top - 1 || menu.bottom <= before.bottom + 1,
+          isTrue,
+          reason: 'menu $menu is away from its button $before',
+        );
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pump();
+        expect(focusedMenuItem(), 'message_react_k3_❤️');
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+
+        expect(events, ['k3 ❤️']);
+        expect(
+          find.byKey(const ValueKey('message_reaction_k3_❤️')),
+          findsOneWidget,
+        );
+        expect(tester.getRect(button), before);
+        expect(
+          FocusManager.instance.primaryFocus?.context
+              ?.findAncestorWidgetOfExactType<IconButton>()
+              ?.key,
+          const ValueKey('message_react_k3'),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testBothViewports('a pointer opens the menu without focusing into it', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(
+        tester,
+        QuarkMessageList(messages: thread(const {}), onReact: (_, _) {}),
+        size: size,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('message_react_k3')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('message_react_k3_👍')), findsOneWidget);
+      expect(focusedMenuItem(), isNull);
+    });
+  });
+
+  // #3257: text ran the whole width of a desktop window.
+  testBothViewports('wraps long text at a readable width', (
+    tester,
+    size,
+  ) async {
+    await pumpAt(
+      tester,
+      QuarkMessageList(
+        messages: [msg('long', day1, body: 'word ' * 200)],
+        onReact: (_, _) {},
+      ),
+      size: size,
+    );
+
+    final body = tester.getRect(
+      find.byKey(const ValueKey('message_body_long')),
+    );
+    expect(body.width, lessThanOrEqualTo(ChatMessageRow.maxBodyWidth));
+    // The buttons stay at the row's end, not after the text.
+    expect(
+      tester.getRect(find.byKey(const ValueKey('message_react_long'))).right,
+      greaterThan(size.width - 120),
+    );
+    expect(tester.takeException(), isNull);
   });
 }

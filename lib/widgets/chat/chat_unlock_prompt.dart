@@ -4,8 +4,9 @@ import 'package:quark/widgets/error_banner.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-/// What the chat page shows in place of chat while it is locked: on web after
-/// a reload, when the keys that open messages live only in memory (#2416).
+/// What the chat page shows in place of chat while it is locked: in a browser
+/// tab that has not opened the keys yet, which the tab then keeps open until
+/// it closes (#2416, #3257).
 ///
 /// It says why it asks (#2494): the [explanation] lines under the button
 /// cover which password, where the keys live, and that a wrong try is
@@ -49,7 +50,7 @@ class ChatUnlockPrompt extends StatefulWidget {
       QuarkIcons.lock_outline,
       'Your message keys are stored locked with that password, so only you '
           'can open them. A browser holds them open only until the tab '
-          'reloads or closes, which is why it asks again.',
+          'closes, which is why a new tab asks again.',
     ),
     (
       QuarkIcons.check_circle_outline,

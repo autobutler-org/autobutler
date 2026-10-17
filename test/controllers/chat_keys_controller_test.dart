@@ -228,25 +228,28 @@ void main() {
     expect(fresh.byPhrase, isNotNull);
   });
 
-  test('a web reload needs an unlock; native restores the cache', () async {
-    await controller(persist: false).signedIn(password: 'pw');
-    expect(keystore, isEmpty);
-    await controller().signedIn(password: 'pw');
+  test(
+    'without a cache a reload needs an unlock; with one it restores',
+    () async {
+      await controller(persist: false).signedIn(password: 'pw');
+      expect(keystore, isEmpty);
+      await controller().signedIn(password: 'pw');
 
-    final web = controller(persist: false);
-    await web.start();
-    expect(web.isUnlocked, isFalse);
-    await web.unlock('pw');
-    expect(web.isUnlocked, isTrue);
+      final web = controller(persist: false);
+      await web.start();
+      expect(web.isUnlocked, isFalse);
+      await web.unlock('pw');
+      expect(web.isUnlocked, isTrue);
 
-    final native = controller();
-    await native.start();
-    expect(native.isUnlocked, isTrue);
-    expect(
-      native.identity!.box.publicKey,
-      quark.stored!.publicKeys.boxPublicKey,
-    );
-  });
+      final native = controller();
+      await native.start();
+      expect(native.isUnlocked, isTrue);
+      expect(
+        native.identity!.box.publicKey,
+        quark.stored!.publicKeys.boxPublicKey,
+      );
+    },
+  );
 
   group('the split-key scheme (#2430)', () {
     final salt = _salt;

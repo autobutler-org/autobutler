@@ -14,6 +14,7 @@ class ChatChannelItem {
     required this.id,
     required this.name,
     this.isPrivate = false,
+    this.isDirect = false,
     this.permissions,
     this.unreadCount = 0,
     this.mentionCount = 0,
@@ -28,6 +29,10 @@ class ChatChannelItem {
   /// Whether the channel is shared with only some people rather than with
   /// everyone on the Quark. Private channels show a lock.
   final bool isPrivate;
+
+  /// Whether this is a private conversation with one other person, whose
+  /// name is then the [name]. Drawn with a person, not a `#`.
+  final bool isDirect;
 
   /// What the signed-in account may do in the channel, shown under its name
   /// as a preset or Custom. Null shows nothing.
@@ -48,6 +53,7 @@ class ChatChannelItem {
           other.id == id &&
           other.name == name &&
           other.isPrivate == isPrivate &&
+          other.isDirect == isDirect &&
           other.unreadCount == unreadCount &&
           other.mentionCount == mentionCount &&
           setEquals(other.permissions, permissions);
@@ -57,6 +63,7 @@ class ChatChannelItem {
     id,
     name,
     isPrivate,
+    isDirect,
     unreadCount,
     mentionCount,
     Object.hashAllUnordered(permissions ?? const <ChatPermission>{}),

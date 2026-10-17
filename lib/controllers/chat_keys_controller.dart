@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quark/models/chat_keys.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/chat_crypto.dart';
 import 'package:quark/services/chat_key_service.dart';
+import 'package:quark/utils/chat_identity_cache.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/recovery_phrase.dart';
 import 'package:sodium/sodium_sumo.dart';
@@ -26,8 +26,10 @@ import 'package:sodium/sodium_sumo.dart';
 /// none. [keysForRecovery] opens it with the phrase and re-wraps it under the
 /// new password for `/auth/recover`.
 ///
-/// On native the unwrapped seeds are cached in the platform keystore so a
-/// restart stays unlocked; on web they live only in memory, so after a reload
+/// The unwrapped seeds are cached so a restart stays unlocked: in the
+/// platform keystore on native, and in the tab's `sessionStorage` on the web,
+/// so a reload no longer asks for the password (#3257); see
+/// `readChatIdentityCache`. Without a cached identity, in a new tab say,
 /// [isUnlocked] is false until the page layer asks for the password and calls
 /// [unlock]. Either way a sign-out locks it and drops the cache.
 ///
@@ -52,18 +54,18 @@ class ChatKeysController extends ChangeNotifier {
     Future<void> Function(String key, String value)? writeCache,
     Future<void> Function(String key)? deleteCache,
     String? Function()? activeHost,
-    bool? persist,
+    bool persist = true,
     this.kdfParams = KdfParams.standard,
   }) : _loadCrypto = loadCrypto ?? ChatCrypto.load,
        _fetchMine = fetchMine ?? ChatKeyService.fetchMine,
        _putMine = putMine ?? ChatKeyService.putMine,
        _fetchForRecovery =
            fetchForRecovery ?? AuthService.fetchRecoveryChatKeys,
-       _readCache = readCache ?? _secureRead,
-       _writeCache = writeCache ?? _secureWrite,
-       _deleteCache = deleteCache ?? _secureDelete,
+       _readCache = readCache ?? readChatIdentityCache,
+       _writeCache = writeCache ?? writeChatIdentityCache,
+       _deleteCache = deleteCache ?? deleteChatIdentityCache,
        _activeHost = activeHost ?? (() => AppSettings.instance.activeHost),
-       _persist = persist ?? !kIsWeb;
+       _persist = persist;
 
   /// The app's controller.
   static final ChatKeysController instance = ChatKeysController();
@@ -87,12 +89,6 @@ class ChatKeysController extends ChangeNotifier {
   /// The Argon2id cost new wraps use.
   final KdfParams kdfParams;
 
-  static const _storage = FlutterSecureStorage();
-  static Future<String?> _secureRead(String key) => _storage.read(key: key);
-  static Future<void> _secureWrite(String key, String value) =>
-      _storage.write(key: key, value: value);
-  static Future<void> _secureDelete(String key) => _storage.delete(key: key);
-
   ChatCrypto? _crypto;
   ChatIdentity? _identity;
   String? _identityHost;
@@ -100,7 +96,7 @@ class ChatKeysController extends ChangeNotifier {
   /// The unlocked identity, or null while locked.
   ChatIdentity? get identity => _identity;
 
-  /// Whether chat can read and write: false on web after a reload until
+  /// Whether chat can read and write: false without a cached identity until
   /// [unlock].
   bool get isUnlocked => _identity != null;
 
@@ -361,8 +357,8 @@ class ChatKeysController extends ChangeNotifier {
     }
   }
 
-  /// Forgets the unlocked identity and, when [forget], the native cache for
-  /// the active Quark.
+  /// Forgets the unlocked identity and, when [forget], the cache for the
+  /// active Quark.
   Future<void> lock({bool forget = false}) async {
     final host = _identityHost ?? _activeHost();
     _setIdentity(null, null);

@@ -96,7 +96,7 @@ class ChatPendingSend {
 ///   names the open channel. `account_changed` — an account deleted, or a
 ///   profile picture changed — reloads both, so a stale name or picture
 ///   doesn't outlive it (#2563).
-/// - While [isLocked] (on web after a reload) nothing is decrypted; [unlock]
+/// - While [isLocked] (in a new browser tab) nothing is decrypted; [unlock]
 ///   takes the password and opens the channel.
 /// - What the account may do comes with the channel list, as the Quark
 ///   worked it out ([selectedPermissions]); a `chat_channel_changed` reload
@@ -539,13 +539,25 @@ class ChatController extends ChangeNotifier {
       if (c.isMember)
         ChatChannelItem(
           id: '${c.id}',
-          name: c.name,
+          name: directPartnerOf(c) ?? c.name,
+          isDirect: directPartnerOf(c) != null,
           isPrivate: c.isPrivate,
           permissions: c.permissions,
           unreadCount: _unread.countOf(c.id),
           mentionCount: _unreadMentions.countOf(c.id),
         ),
   ];
+
+  /// The other person in [channel] when it is a private conversation this
+  /// account is in, which is what it is called in place of its name
+  /// (#3257); null for a channel.
+  String? directPartnerOf(ChatChannel channel) =>
+      channel.directPartner(AppSettings.instance.username);
+
+  /// What [channel] is called in a sentence: the other person in a private
+  /// conversation, `#name` for a channel.
+  String titleOf(ChatChannel channel) =>
+      directPartnerOf(channel) ?? '#${channel.name}';
 
   /// For an admin, the channels they are not in, for `QuarkChannelList`'s
   /// other channels.

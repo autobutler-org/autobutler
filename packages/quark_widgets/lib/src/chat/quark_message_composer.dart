@@ -343,6 +343,11 @@ class _QuarkMessageComposerState extends State<QuarkMessageComposer> {
           final counter = over || max == null || -overBy! > max ~/ 10
               ? null
               : '${-overBy} characters left';
+          WidgetStateProperty<T?> disabledOr<T>(T disabled, [T? enabled]) =>
+              WidgetStateProperty.resolveWith(
+                (states) =>
+                    states.contains(WidgetState.disabled) ? disabled : enabled,
+              );
           final sendReason = message.isEmpty
               ? QuarkMessageComposer.blankHint
               : over
@@ -469,6 +474,22 @@ class _QuarkMessageComposerState extends State<QuarkMessageComposer> {
                     key: const ValueKey('message_composer_send'),
                     tooltip: sendReason ?? 'Send',
                     icon: const Icon(QuarkIcons.send_rounded),
+                    // The theme's icon color overrode the filled button's
+                    // own, a slate glyph on the accent at 1.4:1 in dark mode,
+                    // so the glyph is the accent's foreground. Material's
+                    // disabled fill, the text color at 12%, all but vanished
+                    // on a dark page, and the composer is empty most of the
+                    // time: disabled, it is an input outlined in
+                    // [QuarkTokens.outline] with a muted glyph, unlike the
+                    // filled button but 3:1 (#3257).
+                    style: ButtonStyle(
+                      backgroundColor: disabledOr(tokens.input),
+                      foregroundColor: disabledOr(
+                        tokens.mutedForeground,
+                        tokens.primaryForeground,
+                      ),
+                      side: disabledOr(BorderSide(color: tokens.outline)),
+                    ),
                     onPressed: sendReason == null ? _send : null,
                   ),
                 ],

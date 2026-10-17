@@ -11,7 +11,8 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// (#2498). With none set, as for a reader in `general`, there is no button.
 ///
 /// A private channel carries a lock whose tooltip says what that means
-/// (#2501).
+/// (#2501). A private conversation, [isDirect], is named for the other
+/// person, without the `#` (#3257).
 ///
 /// With [onSearch] set, a search button sits before the settings (#2429).
 ///
@@ -26,6 +27,7 @@ class ChatChannelHeader extends StatelessWidget {
     required this.name,
     this.topic = '',
     this.isPrivate = false,
+    this.isDirect = false,
     this.onSearch,
     this.onEdit,
     this.onMembers,
@@ -34,8 +36,13 @@ class ChatChannelHeader extends StatelessWidget {
     super.key,
   });
 
-  /// The channel's name, shown after `#`.
+  /// The channel's name, shown after `#`, or the other person's name when
+  /// [isDirect].
   final String name;
+
+  /// Whether this is a private conversation with one person, which drops
+  /// the `#`.
+  final bool isDirect;
 
   /// What the lock beside a private channel's name says.
   static const privateTooltip =
@@ -120,7 +127,7 @@ class ChatChannelHeader extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      '# $name',
+                      isDirect ? name : '# $name',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600),

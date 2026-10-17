@@ -152,6 +152,11 @@ class ChatMessageRow extends StatelessWidget {
     ];
   }
 
+  /// The widest a message's text runs before it wraps, about 80 characters
+  /// of body text: a line across a desktop window is too long to read
+  /// (#3257).
+  static const double maxBodyWidth = 600;
+
   /// The time drawn beside the author's name, as `HH:mm`.
   static String timeOf(DateTime at) =>
       '${at.hour.toString().padLeft(2, '0')}:'
@@ -273,42 +278,62 @@ class ChatMessageRow extends StatelessWidget {
                     ),
                   // The buttons stand beside the body, not the header: their
                   // 48dp sets the height of a short message, and beside the
-                  // header they would set it short of the rest (#2890).
+                  // header they would set it short of the rest (#2890). They
+                  // sit at the body's foot, level with its reactions: a
+                  // reversed list grows a row upward, and from the top the
+                  // first reaction moved the button just used from under the
+                  // pointer and the focus ring (#3257).
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            body,
-                            if (reacts && message.reactions.isNotEmpty)
-                              ChatReactionBar(
-                                messageId: message.id,
-                                reactions: message.reactions,
-                                onToggle: onReact,
+                        // At least as tall as the buttons, with the body at
+                        // its top, so the buttons' foot is the body's.
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minHeight: kMinInteractiveDimension,
+                          ),
+                          child: Align(
+                            alignment: AlignmentDirectional.topStart,
+                            heightFactor: 1,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxWidth: maxBodyWidth,
                               ),
-                            if (message.isUnverified)
-                              Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    QuarkIcons.warning_amber,
-                                    size: 14,
-                                    color: tokens.warning,
-                                  ),
-                                  SizedBox(width: tokens.spacingXs),
-                                  Flexible(
-                                    child: Text(
-                                      'Unverified',
-                                      style: TextStyle(
-                                        color: tokens.warning,
-                                        fontSize: 12,
-                                      ),
+                                  body,
+                                  if (reacts && message.reactions.isNotEmpty)
+                                    ChatReactionBar(
+                                      messageId: message.id,
+                                      reactions: message.reactions,
+                                      onToggle: onReact,
                                     ),
-                                  ),
+                                  if (message.isUnverified)
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          QuarkIcons.warning_amber,
+                                          size: 14,
+                                          color: tokens.warning,
+                                        ),
+                                        SizedBox(width: tokens.spacingXs),
+                                        Flexible(
+                                          child: Text(
+                                            'Unverified',
+                                            style: TextStyle(
+                                              color: tokens.warning,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                 ],
                               ),
-                          ],
+                            ),
+                          ),
                         ),
                       ),
                       if (reacts && onReact != null)
