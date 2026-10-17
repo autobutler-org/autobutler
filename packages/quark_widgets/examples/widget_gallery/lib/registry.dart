@@ -1,3 +1,4 @@
+// cspell:words reallocated
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -2368,6 +2369,82 @@ final List<GalleryEntry> registry = [
         onCancel: () => log('UploadTargetPicker.onCancel'),
         onConfirm: () => log('UploadTargetPicker.onConfirm'),
       ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'DriveHealthBadge',
+    group: 'Storage',
+    build: (context, log) => Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final verdict in DriveHealthVerdict.values)
+          DriveHealthBadge(id: verdict.name, verdict: verdict),
+      ],
+    ),
+  ),
+  GalleryEntry(
+    name: 'DriveHealthDetail',
+    group: 'Storage',
+    build: (context, log) {
+      var expanded = false;
+      return StatefulBuilder(
+        builder: (context, setState) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DriveHealthDetail(
+              id: 'gallery',
+              health: const DriveHealth(
+                verdict: DriveHealthVerdict.replaceSoon,
+                reason: 'This spinning drive is heavily used.',
+                smartStatus: 'failed',
+                reallocatedSectors: 12,
+                pendingSectors: 3,
+                powerOnHours: 60000,
+                temperatureCelsius: 41,
+                media: 'spinning',
+                linkSpeed: 'USB 2.0',
+                speedClass: 'slow',
+              ),
+              expanded: expanded,
+              onExpandedChanged: (open) {
+                log('DriveHealthDetail.onExpandedChanged($open)');
+                setState(() => expanded = open);
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text('Reduced motion'),
+            MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: DriveHealthDetail(
+                id: 'reduced',
+                health: const DriveHealth(
+                  verdict: DriveHealthVerdict.unknown,
+                  reason: 'The health tool is not installed.',
+                  speedClass: 'unknown',
+                ),
+                expanded: true,
+                onExpandedChanged: (open) =>
+                    log('DriveHealthDetail.reduced($open)'),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  ),
+  GalleryEntry(
+    name: 'DriveHealthAcknowledgment',
+    group: 'Storage',
+    build: (context, log) => DriveHealthAcknowledgment(
+      verdict: DriveHealthVerdict.replaceSoon,
+      reason: 'This spinning drive is heavily used.',
+      strongerWarning: true,
+      requiresAcknowledgment: true,
+      keepsExistingFiles: true,
+      addsBackup: true,
+      onConfirm: () => log('DriveHealthAcknowledgment.onConfirm'),
+      onCancel: () => log('DriveHealthAcknowledgment.onCancel'),
     ),
   ),
 

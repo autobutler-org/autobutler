@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/controllers/data_protection_controller.dart';
+import 'package:quark/controllers/drive_health_controller.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/data_protection_service.dart';
@@ -118,12 +119,27 @@ class _StorageTabState extends State<StorageTab>
   }
 
   Future<void> _showRoleDialog(StorageDevice device) async {
+    final health = DriveHealthController.view(device.health);
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) =>
-          RoleDialog(currentRole: device.role, isInternal: device.isInternal),
+      builder: (ctx) => RoleDialog(
+        currentRole: device.role,
+        isInternal: device.isInternal,
+        health: health,
+        healthId: DriveHealthController.idFor(device),
+      ),
     );
     if (result == null || result == device.role || !mounted) return;
+
+    final action = switch (result) {
+      'default-storage' => DriveHealthAction.setDefaultStorage,
+      'snapshot-backup' => DriveHealthAction.setBackupRole,
+      _ => null,
+    };
+    final gate = action == null
+        ? (proceed: true, acknowledgeHealth: false)
+        : await _confirmHealth(device, health, action);
+    if (!gate.proceed || !mounted) return;
 
     final creds = await _promptCredentials();
     if (creds == null || !mounted) return;
@@ -134,6 +150,7 @@ class _StorageTabState extends State<StorageTab>
         role: result,
         username: creds['username']!,
         password: creds['password']!,
+        acknowledgeHealth: gate.acknowledgeHealth,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -148,6 +165,40 @@ class _StorageTabState extends State<StorageTab>
     }
   }
 
+  /// Asks when [action] commits to a drive the Quark flagged. A canceled
+  /// dialog does not proceed. Replace soon sends `acknowledgeHealth`. Watch
+  /// never does. Assigning default storage to a drive the Quark marked worse
+  /// than the current one shows the stronger warning first.
+  Future<({bool proceed, bool acknowledgeHealth})> _confirmHealth(
+    StorageDevice device,
+    DriveHealth health,
+    DriveHealthAction action,
+  ) async {
+    final prompt = DriveHealthController.prompt(
+      verdict: health.verdict,
+      action: action,
+      worseThanDefault: device.health?.worseThanDefault ?? false,
+    );
+    if (prompt == null) return (proceed: true, acknowledgeHealth: false);
+
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => DriveHealthAcknowledgment(
+        id: DriveHealthController.idFor(device),
+        verdict: health.verdict,
+        reason: health.reason,
+        strongerWarning: prompt.strongerWarning,
+        requiresAcknowledgment: prompt.sendAcknowledgment,
+        keepsExistingFiles: prompt.keepsExistingFiles,
+        addsBackup: prompt.addsBackup,
+        onConfirm: () => Navigator.pop(ctx, true),
+        onCancel: () => Navigator.pop(ctx, false),
+      ),
+    );
+    if (accepted != true) return (proceed: false, acknowledgeHealth: false);
+    return (proceed: true, acknowledgeHealth: prompt.sendAcknowledgment);
+  }
+
   Future<Map<String, String>?> _promptCredentials() =>
       QuarkWidget.showDialog<Map<String, String>>(
         context,
@@ -155,6 +206,14 @@ class _StorageTabState extends State<StorageTab>
       );
 
   Future<void> _startBackup(StorageDevice target) async {
+    final health = DriveHealthController.view(target.health);
+    final gate = await _confirmHealth(
+      target,
+      health,
+      DriveHealthAction.startBackup,
+    );
+    if (!gate.proceed || !mounted) return;
+
     final creds = await _promptCredentials();
     if (creds == null || !mounted) return;
 
@@ -170,6 +229,7 @@ class _StorageTabState extends State<StorageTab>
         username: creds['username'],
         password: creds['password'],
         recoveryPassword: recoveryPassword.isNotEmpty ? recoveryPassword : null,
+        acknowledgeHealth: gate.acknowledgeHealth,
       );
       if (!mounted) return;
       setState(() => _activeBackupJobId = jobId);
