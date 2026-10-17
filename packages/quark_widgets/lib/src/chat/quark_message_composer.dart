@@ -60,6 +60,8 @@ class QuarkMessageComposer extends StatefulWidget {
   /// Creates a composer that hands what is written to [onSend].
   const QuarkMessageComposer({
     required this.onSend,
+    this.initialText = '',
+    this.onChanged,
     this.hintText = 'Message',
     this.permissions,
     this.isWaitingForKey = false,
@@ -73,6 +75,15 @@ class QuarkMessageComposer extends StatefulWidget {
   /// Called with the trimmed text when the user sends a message that is not
   /// blank.
   final ValueChanged<String> onSend;
+
+  /// Text already written, shown when the composer is created. A later
+  /// change to this value does not replace what is in the field; the caller
+  /// gives each channel its own composer.
+  final String initialText;
+
+  /// Called with the field's text each time it changes, including when a
+  /// send clears it. Restoring [initialText] does not call this.
+  final ValueChanged<String>? onChanged;
 
   /// The placeholder in the empty field.
   final String hintText;
@@ -156,6 +167,14 @@ class _QuarkMessageComposerState extends State<QuarkMessageComposer> {
   @override
   void initState() {
     super.initState();
+    final initial = widget.initialText;
+    if (initial.isNotEmpty) {
+      _text.value = TextEditingValue(
+        text: initial,
+        selection: TextSelection.collapsed(offset: initial.length),
+      );
+      _lastText = initial;
+    }
     _text.addListener(_onTextChanged);
   }
 
@@ -169,6 +188,7 @@ class _QuarkMessageComposerState extends State<QuarkMessageComposer> {
     if (_text.text != _lastText) {
       _lastText = _text.text;
       _highlight = 0;
+      widget.onChanged?.call(_text.text);
     }
     if (ChatMentions.queryAt(_text.text, _text.selection.baseOffset) == null) {
       _dismissedAt = null;

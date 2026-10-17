@@ -158,6 +158,7 @@ class ChatController extends ChangeNotifier {
     DateTime Function()? now,
     ChatUnreadController? unread,
     ChatUnreadMentionsController? unreadMentions,
+    String Function()? deviceKey,
   }) : _listChannels = listChannels,
        _listMembers = listMembers,
        _listAllChannels = listAllChannels,
@@ -190,7 +191,8 @@ class ChatController extends ChangeNotifier {
        _currentUserId =
            currentUserId ?? (() => AppSettings.instance.userId.value),
        _now = now ?? DateTime.now,
-       _unread = unread ?? ChatUnreadController.instance {
+       _unread = unread ?? ChatUnreadController.instance,
+       _deviceKey = deviceKey ?? (() => AppSettings.instance.activeHost ?? '') {
     _unreadMentions =
         unreadMentions ?? ChatUnreadMentionsController(unread: _unread);
     _wasUnlocked = _isUnlocked();
@@ -215,6 +217,10 @@ class ChatController extends ChangeNotifier {
       "This message couldn't be opened. It may have been changed after it "
       'was sent.';
 
+  /// Unsent composer text for this app session, keyed by Quark and channel.
+  /// It outlives the page and the controller. Nothing is written to disk.
+  static final Map<(String, int), String> _sessionDrafts = {};
+
   final ListChatChannelsFn _listChannels;
   final ListChatMembersFn _listMembers;
   final ListChatChannelsFn _listAllChannels;
@@ -235,6 +241,11 @@ class ChatController extends ChangeNotifier {
   final int? Function() _currentUserId;
   final DateTime Function() _now;
   final ChatUnreadController _unread;
+
+  /// The Quark these drafts belong to. The active host, unless a test
+  /// names one, so two Quarks on this device do not share a channel's text.
+  final String Function() _deviceKey;
+
   late final ChatUnreadMentionsController _unreadMentions;
   late final StreamSubscription<FileEvent> _events;
 
@@ -669,11 +680,36 @@ class ChatController extends ChangeNotifier {
     }
   }
 
+  /// The unsent text for [channelId] on this device, or empty when there
+  /// is none. Kept for the app session, including after this controller
+  /// is disposed.
+  String draftFor(int channelId) =>
+      _sessionDrafts[(_deviceKey(), channelId)] ?? '';
+
+  /// Remembers [text] as [channelId]'s draft on this device. Empty [text]
+  /// discards that draft and leaves every other channel's draft in place.
+  void setDraft(int channelId, String text) {
+    final key = (_deviceKey(), channelId);
+    if (text.isEmpty) {
+      _sessionDrafts.remove(key);
+    } else {
+      _sessionDrafts[key] = text;
+    }
+  }
+
+  /// Forgets every draft. Tests use it so one case cannot leak into the next.
+  @visibleForTesting
+  static void clearSessionDrafts() => _sessionDrafts.clear();
+
   /// Sends [text] to the open channel, showing it as pending at once. A
-  /// failure keeps it in [failedSends].
+  /// failure keeps it in [failedSends] with its own retry, so the composer
+  /// and the channel's draft are cleared at once; every other channel's
+  /// draft stays. A failed send still here when the controller is disposed
+  /// goes back into its channel's draft, so leaving chat never loses it.
   Future<void> send(String text) async {
     final channel = _selected;
     if (channel == null) return;
+    setDraft(channel.id, '');
     final pending = ChatPendingSend(
       id: 'pending_${_nextPending++}',
       channelId: channel.id,
@@ -1057,6 +1093,7 @@ class ChatController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _pending.where((p) => p.failed).forEach(_keepAsDraft);
     _events.cancel();
     _keyChanges.removeListener(_onKeysChanged);
     _unread.removeListener(_notify);
@@ -1248,9 +1285,23 @@ class ChatController extends ChangeNotifier {
       await messages.send(pending.text);
       discard(pending.id);
     } catch (e) {
+      if (_disposed) {
+        _keepAsDraft(pending);
+        return;
+      }
       _replacePending(pending.id, pending.withError(e));
       _notify();
     }
+  }
+
+  /// Puts unsent [pending] back at the front of its channel's draft, for
+  /// when nothing is left on screen to retry it from.
+  void _keepAsDraft(ChatPendingSend pending) {
+    final draft = draftFor(pending.channelId);
+    setDraft(
+      pending.channelId,
+      draft.isEmpty ? pending.text : '${pending.text}\n$draft',
+    );
   }
 
   void _replacePending(String id, ChatPendingSend replacement) {
