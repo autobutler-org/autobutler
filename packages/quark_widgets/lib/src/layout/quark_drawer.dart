@@ -19,7 +19,7 @@ enum QuarkDrawerSection {
   /// The photo library.
   photos,
 
-  /// The household calendar, a beta: its row carries a [QuarkBetaBadge].
+  /// The household calendar.
   calendar,
 
   /// Deleted files waiting to be restored or purged.
@@ -54,7 +54,7 @@ enum QuarkDrawerSection {
 }
 
 /// The sections still in beta, whose rows carry a [QuarkBetaBadge].
-const _betaSections = {QuarkDrawerSection.calendar, QuarkDrawerSection.slides};
+const _betaSections = {QuarkDrawerSection.slides};
 
 /// The sections for looking after the Quark, which follow the household's
 /// everyday pages under a "Manage" label.
@@ -90,8 +90,8 @@ const _manageSections = {
 /// (#2230). Adding and editing Quarks stays in Settings, a row below. With
 /// one it is a plain label.
 ///
-/// A section still in beta, Calendar and Slides for now, carries a
-/// [QuarkBetaBadge] beside its label.
+/// A section still in beta, Slides for now, carries a [QuarkBetaBadge]
+/// beside its label.
 ///
 /// With [hasUnreadChat], the Chat row ends its label in a small dot that a
 /// screen reader reads as "Unread messages". Whether anything is unread is
@@ -163,8 +163,7 @@ class QuarkDrawer extends StatelessWidget {
   /// Called when the Photos row is tapped. Null hides the row.
   final FutureOr<void> Function()? onTapPhotos;
 
-  /// Called when the Calendar row is tapped. Null hides the row, as when an
-  /// admin has turned the calendar beta off.
+  /// Called when the Calendar row is tapped. Null hides the row.
   final FutureOr<void> Function()? onTapCalendar;
 
   /// Called when the Trash row is tapped. Null hides the row.

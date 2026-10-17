@@ -1125,13 +1125,10 @@ Future<String?> authRedirect(BuildContext context, GoRouterState state) async {
     return AppRoutes.files;
   }
 
-  // The betas an admin can turn off (#2609, #2868). Asked of the Quark like
+  // Slides is a beta an admin can turn off (#2868). Asked of the Quark like
   // the admin pages above: a link or a reload must not open a page whose
   // every request would 404.
-  for (final (route, flag) in const [
-    (AppRoutes.calendar, FeatureFlag.calendar),
-    (AppRoutes.slides, FeatureFlag.slides),
-  ]) {
+  for (final (route, flag) in const [(AppRoutes.slides, FeatureFlag.slides)]) {
     if (AppSettings.instance.sessionToken != null &&
         _isUnderAny({route}, location)) {
       return await _featureIsEnabled(flag) ? null : AppRoutes.files;

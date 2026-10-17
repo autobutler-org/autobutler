@@ -43,10 +43,10 @@ void main() {
     settings.featureFlags.value = const [];
   }
 
-  const calendar = FeatureFlag(
-    key: FeatureFlag.calendar,
-    label: 'Calendar',
-    description: 'Hides the calendar; stored events are kept.',
+  const slides = FeatureFlag(
+    key: FeatureFlag.slides,
+    label: 'Slides',
+    description: 'Hides Slides; stored presentations are kept.',
     enabled: true,
   );
 
@@ -61,7 +61,7 @@ void main() {
     await settings.setSessionToken('a-session');
     await settings.setUsername('ada');
     settings.isAdmin.value = true;
-    settings.featureFlags.value = const [calendar];
+    settings.featureFlags.value = const [slides];
   });
 
   tearDown(() async {
@@ -110,7 +110,7 @@ void main() {
     SettingsTab.network: 'Remote access',
     SettingsTab.updates: 'Quark version (installed)',
     SettingsTab.about: 'Software Bill of Materials',
-    SettingsTab.features: 'Hides the calendar; stored events are kept.',
+    SettingsTab.features: 'Hides Slides; stored presentations are kept.',
   };
 
   const viewports = {'narrow': Size(360, 640), 'wide': Size(1280, 800)};
@@ -163,7 +163,7 @@ void main() {
 
     expect(featuresTab(), findsNothing);
     expect(
-      find.byKey(const ValueKey('feature_flag_tile_calendar')),
+      find.byKey(const ValueKey('feature_flag_tile_slides')),
       findsNothing,
     );
     // A link to the hidden tab shows General instead.
@@ -197,28 +197,28 @@ void main() {
       const Size(1280, 800),
       featureFlags: controller,
     );
-    final tile = find.byKey(const ValueKey('feature_flag_tile_calendar'));
+    final tile = find.byKey(const ValueKey('feature_flag_tile_slides'));
     await tester.scrollUntilVisible(tile, 200, scrollable: tabList());
 
     await tester.tap(tile);
     await tester.pump();
     await tester.tap(tile);
     await tester.pump();
-    expect(calls, [(FeatureFlag.calendar, false)]);
+    expect(calls, [(FeatureFlag.slides, false)]);
     expect(tester.widget<SwitchListTile>(tile).onChanged, isNull);
 
     saving.complete(
       const FeatureFlag(
-        key: FeatureFlag.calendar,
-        label: 'Calendar',
-        description: 'Hides the calendar; stored events are kept.',
+        key: FeatureFlag.slides,
+        label: 'Slides',
+        description: 'Hides Slides; stored presentations are kept.',
         enabled: false,
       ),
     );
     await tester.pump();
     expect(calls, hasLength(1));
     expect(tester.widget<SwitchListTile>(tile).value, isFalse);
-    expect(settings.isFeatureEnabled(FeatureFlag.calendar), isFalse);
+    expect(settings.isFeatureEnabled(FeatureFlag.slides), isFalse);
   });
 
   testWidgets('links to the drives instead of listing them', (tester) async {

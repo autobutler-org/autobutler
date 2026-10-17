@@ -12,9 +12,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
 )
 
-// Calendar is the key of the calendar beta's flag (#2609).
-const Calendar = "calendar"
-
 // Slides is the key of the slides beta's flag (#2868).
 const Slides = "slides"
 

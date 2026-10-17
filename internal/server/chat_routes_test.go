@@ -18,8 +18,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TestChatRoutesAnswerWhenFlagIsOff checks chat answers with the flag stored
-// off (#2577). Calendar, still in beta, stays a 404 while its flag is off.
+// TestChatRoutesAnswerWhenFlagIsOff checks chat and the calendar answer with
+// their flags stored off (#2577, #2610). Slides, still in beta, stays a 404
+// while its flag is off.
 func TestChatRoutesAnswerWhenFlagIsOff(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
@@ -28,6 +29,9 @@ func TestChatRoutesAnswerWhenFlagIsOff(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := settingsutil.SetFeatureFlag("calendar", false); err != nil {
+		t.Fatal(err)
+	}
+	if err := settingsutil.SetFeatureFlag("slides", false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -62,8 +66,12 @@ func TestChatRoutesAnswerWhenFlagIsOff(t *testing.T) {
 	if chat.Code != http.StatusOK || strings.Contains(chat.Body.String(), "turned off") {
 		t.Fatalf("GET /chat/channels = %d %s, want 200 with the flag stored off", chat.Code, chat.Body.String())
 	}
-	calendar := do("/api/v0/calendar/events")
-	if calendar.Code != http.StatusNotFound || !strings.Contains(calendar.Body.String(), "turned off") {
-		t.Fatalf("GET /calendar/events = %d %s, want 404 while the calendar flag is off", calendar.Code, calendar.Body.String())
+	calendar := do("/api/v0/calendar/events?from=2026-10-01T00:00:00Z&to=2026-10-08T00:00:00Z")
+	if calendar.Code != http.StatusOK || strings.Contains(calendar.Body.String(), "turned off") {
+		t.Fatalf("GET /calendar/events = %d %s, want 200 with the flag stored off", calendar.Code, calendar.Body.String())
+	}
+	slides := do("/api/v0/files/export/pptx")
+	if slides.Code != http.StatusNotFound || !strings.Contains(slides.Body.String(), "turned off") {
+		t.Fatalf("GET /files/export/pptx = %d %s, want 404 while the slides flag is off", slides.Code, slides.Body.String())
 	}
 }

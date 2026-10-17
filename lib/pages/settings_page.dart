@@ -9,7 +9,6 @@ import 'package:quark/controllers/change_password_controller.dart';
 import 'package:quark/controllers/feature_flags_controller.dart';
 import 'package:quark/controllers/notifications_controller.dart';
 import 'package:quark/controllers/remote_access_controller.dart';
-import 'package:quark/models/feature_flag.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
@@ -669,12 +668,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ? _setQuarkThemeColor
                   : null,
               defaultCalendarView: settings.defaultCalendarView.value,
-              // Hidden with the drawer's Calendar entry (#2609); the page
-              // already rebuilds as the flags change.
-              onDefaultCalendarViewChanged:
-                  settings.isFeatureEnabled(FeatureFlag.calendar)
-                  ? settings.setDefaultCalendarView
-                  : null,
+              onDefaultCalendarViewChanged: settings.setDefaultCalendarView,
               // Every type today is a backup reminder, which only an admin
               // receives, so only an admin has anything to switch (#2493).
               notifications: hasHost && isAdmin && settings.sessionToken != null

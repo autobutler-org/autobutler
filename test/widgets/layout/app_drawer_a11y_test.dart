@@ -34,7 +34,7 @@ void main() {
     // An admin with every beta on, so the drawer holds every row it can.
     settings.isAdmin.value = true;
     settings.featureFlags.value = [
-      for (final key in [FeatureFlag.calendar, FeatureFlag.slides])
+      for (final key in [FeatureFlag.slides])
         FeatureFlag(key: key, label: key, description: '', enabled: true),
     ];
   });

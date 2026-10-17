@@ -1072,6 +1072,11 @@ void main() {
                 Text('calendar ${state.pathParameters['view']}'),
           ),
           GoRoute(
+            path: '${AppRoutes.slides}/:path(.*)',
+            builder: (_, state) =>
+                Text('slides ${state.pathParameters['path']}'),
+          ),
+          GoRoute(
             path: AppRoutes.files,
             // A Scaffold like the real page: refusing an admin-only page
             // explains itself in a snack bar over Files (#2477).
@@ -1090,9 +1095,9 @@ void main() {
     }
 
     Future<void> signIn({
-      bool calendarEnabled = true,
       bool slidesEnabled = true,
       bool staleChatOff = false,
+      bool staleCalendarOff = false,
     }) async {
       await reset();
       await settings.addHost(
@@ -1109,12 +1114,13 @@ void main() {
             description: '',
             enabled: false,
           ),
-        FeatureFlag(
-          key: FeatureFlag.calendar,
-          label: 'Calendar',
-          description: '',
-          enabled: calendarEnabled,
-        ),
+        if (staleCalendarOff)
+          const FeatureFlag(
+            key: 'calendar',
+            label: 'Calendar',
+            description: '',
+            enabled: false,
+          ),
         FeatureFlag(
           key: FeatureFlag.slides,
           label: 'Slides',
@@ -1160,12 +1166,12 @@ void main() {
       expect(at(channel), '/chat/12');
     });
 
-    testWidgets('calendar turned off sends its views to Files (#2609)', (
+    testWidgets('a stored calendar flag that is off still opens calendar', (
       tester,
     ) async {
-      await signIn(calendarEnabled: false);
+      await signIn(staleCalendarOff: true);
       final r = await pumpGated(tester, '/calendar/week');
-      expect(at(r), AppRoutes.files);
+      expect(at(r), '/calendar/week');
     });
 
     testWidgets('slides turned off sends its pages to Files (#2868)', (
@@ -1183,18 +1189,17 @@ void main() {
     });
 
     // #2935: every view or week change used to ask the Quark for its flags.
-    testWidgets('moving between calendar views asks for the flags once', (
+    // The calendar is no longer a flag (#2610), so moving around it asks nothing.
+    testWidgets('moving between calendar views does not ask for the flags', (
       tester,
     ) async {
       await signIn();
-      // A cold deep link: nothing has loaded the flags for this session yet.
       settings.featureFlags.value = const [];
       await settings.setSessionToken('calendar-token');
-      final probe = featureFlagsProbe;
       var asked = 0;
-      featureFlagsProbe = () {
+      featureFlagsProbe = () async {
         asked++;
-        return probe();
+        return const [];
       };
 
       final r = await pumpGated(tester, '/calendar/week');
@@ -1208,9 +1213,33 @@ void main() {
         await tester.pumpAndSettle();
         expect(at(r), location);
       }
+      expect(asked, 0);
+
+      await settings.setSessionToken('other-token');
+      await tester.pumpAndSettle();
+      expect(asked, 0);
+    });
+
+    // The slides beta still asks once per session, then follows the cache.
+    testWidgets('moving between slides pages asks for the flags once', (
+      tester,
+    ) async {
+      await signIn();
+      settings.featureFlags.value = const [];
+      await settings.setSessionToken('slides-token');
+      final probe = featureFlagsProbe;
+      var asked = 0;
+      featureFlagsProbe = () {
+        asked++;
+        return probe();
+      };
+
+      final r = await pumpGated(tester, '/slides/talks/q1.qslide');
+      r.go('/slides/talks/q1.qslide/present');
+      await tester.pumpAndSettle();
+      expect(at(r), '/slides/talks/q1.qslide/present');
       expect(asked, 1);
 
-      // Another session is another answer.
       await settings.setSessionToken('other-token');
       await tester.pumpAndSettle();
       expect(asked, 2);

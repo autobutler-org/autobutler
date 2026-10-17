@@ -1,0 +1,2 @@
+-- The previous value of featureFlags.calendar is gone. Rolling back leaves
+-- the calendar on, which is also the flag's old default.

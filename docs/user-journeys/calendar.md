@@ -234,8 +234,7 @@ repeats forever.
 - A link that names a view still wins: `/calendar/day` opens Day.
 - Switching views on the Calendar page does not change the choice.
 
-**Notes:** The choice is kept on this device, not on the Quark: another phone or browser has its own (#2521). The
-control is hidden while the calendar is turned off for this Quark (#2609).
+**Notes:** The choice is kept on this device, not on the Quark: another phone or browser has its own (#2521).
 
 ---
 
