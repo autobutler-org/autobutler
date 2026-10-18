@@ -11,6 +11,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/autobutler-org/sprocket/pkg/sprocket"
 )
 
 // The fixtures in testdata are copied from sprocket's own test corpus
@@ -89,8 +91,25 @@ func TestProbeRejectsANonVideo(t *testing.T) {
 	if err := os.WriteFile(path, []byte("not a video"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Probe(context.Background(), path); err == nil {
-		t.Fatal("Probe of a text file succeeded")
+	if _, err := Probe(context.Background(), path); !errors.Is(err, ErrNotAVideo) || !errors.Is(err, sprocket.ErrUnsupportedContainer) {
+		t.Fatalf("Probe of a text file = %v, want ErrNotAVideo wrapping sprocket.ErrUnsupportedContainer", err)
+	}
+}
+
+// TestProbeKeepsWhySprocketRefused probes a clip cut short: the error is
+// ErrNotAVideo for the handlers and still carries sprocket's ErrCorrupt for
+// the logs (#3417).
+func TestProbeKeepsWhySprocketRefused(t *testing.T) {
+	clip, err := os.ReadFile(gopFixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "cut-short.mp4")
+	if err := os.WriteFile(path, clip[:len(clip)/2], 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Probe(context.Background(), path); !errors.Is(err, ErrNotAVideo) || !errors.Is(err, sprocket.ErrCorrupt) {
+		t.Fatalf("Probe of a truncated clip = %v, want ErrNotAVideo wrapping sprocket.ErrCorrupt", err)
 	}
 }
 

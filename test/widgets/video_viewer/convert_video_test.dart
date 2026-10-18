@@ -68,4 +68,20 @@ void main() {
 
     expect(find.text(Errors.transcode(error)), findsOneWidget);
   });
+
+  testWidgets('a failed enqueue names the conversion, not a generic problem', (
+    tester,
+  ) async {
+    await pumpAndConvert(
+      tester,
+      (relPath, {serial, required format}) async =>
+          throw const ApiException(500),
+    );
+
+    expect(find.text(Errors.transcodeNotQueued), findsOneWidget);
+    expect(
+      find.text(Errors.message(const ApiException(500), 'convert the video')),
+      findsNothing,
+    );
+  });
 }

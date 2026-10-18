@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/internal/db/dbtest"
 	v0_videos "github.com/autobutler-org/quark/internal/server/api/v0/videos"
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
@@ -53,6 +55,7 @@ type harness struct {
 	engine   *gin.Engine
 	filesDir string
 	registry vfs.Registry
+	database *db.DatabaseSqlc
 	queue    *jobutil.Queue
 	events   <-chan eventbus.Event
 }
@@ -99,7 +102,7 @@ func newHarness(t *testing.T) harness {
 		c.Next()
 	})
 	serverutil.RegisterRouterWithGroup(engine.Group("/api/v0"), v0_videos.NewRouter())
-	return harness{engine: engine, filesDir: filesDir, registry: registry, queue: queue, events: events}
+	return harness{engine: engine, filesDir: filesDir, registry: registry, database: database, queue: queue, events: events}
 }
 
 func (h harness) post(body string) *httptest.ResponseRecorder {
@@ -209,7 +212,7 @@ func TestTranscodeVideoRejectsBadRequests(t *testing.T) {
 		{"path traversal", transcodeBody("../../../../etc/passwd", "mkv", "original"), http.StatusBadRequest},
 		{"the files dir itself", transcodeBody(".", "mkv", "original"), http.StatusBadRequest},
 		{"missing source", transcodeBody("gone.mp4", "mkv", "original"), http.StatusNotFound},
-		{"source that is not a video", transcodeBody("notes.txt", "mkv", "original"), http.StatusNotFound},
+		{"source that is not a video", transcodeBody("notes.txt", "mkv", "original"), http.StatusUnprocessableEntity},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -506,5 +509,61 @@ func TestTrimNeverReplacesAFile(t *testing.T) {
 		if got, _ := os.ReadFile(filepath.Join(h.filesDir, name)); string(got) != "mine" {
 			t.Errorf("%s holds %q, want it untouched", name, got)
 		}
+	}
+}
+
+// TestAnUnreadableVideoIs422 asks every route about a file that is there but
+// does not read as a video: one that is not a video at all, and one cut short.
+// Each answers 422 saying the video can't be read, never the 404 a missing
+// file gets or a 500 (#3417).
+func TestAnUnreadableVideoIs422(t *testing.T) {
+	h := newHarness(t)
+	if err := os.WriteFile(filepath.Join(h.filesDir, "notes.mp4"), []byte("not a video"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	clip, err := os.ReadFile(gopFixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(h.filesDir, "cut-short.mp4"), clip[:len(clip)/2], 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, rel := range []string{"notes.mp4", "cut-short.mp4"} {
+		for name, w := range map[string]*httptest.ResponseRecorder{
+			"metadata":  h.get("/api/v0/videos/metadata?relPath=" + rel + "&serial=" + testSerial),
+			"formats":   h.get("/api/v0/videos/transcode/formats?relPath=" + rel + "&serial=" + testSerial),
+			"trim":      h.trim(fmt.Sprintf(`{"relPath":%q,"serial":%q,"startMs":0,"endMs":1000}`, rel, testSerial)),
+			"transcode": h.post(transcodeBody(rel, "mkv", "original")),
+		} {
+			if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "can't read this video") {
+				t.Errorf("%s of %s returned %d %s, want a 422 saying the video can't be read", name, rel, w.Code, w.Body.String())
+			}
+		}
+	}
+}
+
+// TestTranscodeEnqueueFailureIsLoggedAndNamed breaks the job store, as a
+// read-only database does on a device (#3422): the POST answers 500 with the
+// cause in its body, and the cause is logged, where before only gin's access
+// line reached the log.
+func TestTranscodeEnqueueFailureIsLoggedAndNamed(t *testing.T) {
+	h := newHarness(t)
+	h.writeClip(t, "clip.mp4")
+	if _, err := h.database.Db.Exec("DROP TABLE jobs"); err != nil {
+		t.Fatal(err)
+	}
+	var logged strings.Builder
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logged, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+
+	w := h.post(transcodeBody("clip.mp4", "mkv", "original"))
+	if w.Code != http.StatusInternalServerError || !strings.Contains(w.Body.String(), "couldn't queue the conversion") ||
+		!strings.Contains(w.Body.String(), "create job") {
+		t.Fatalf("POST returned %d %s, want a 500 naming the failed job insert", w.Code, w.Body.String())
+	}
+	if !strings.Contains(logged.String(), "create job") || !strings.Contains(logged.String(), "clip.mp4") {
+		t.Fatalf("log = %q, want the enqueue failure and the video it was for", logged.String())
 	}
 }

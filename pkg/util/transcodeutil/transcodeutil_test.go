@@ -675,7 +675,7 @@ func TestEnqueueRejectsBadRequests(t *testing.T) {
 		{"missing relPath", Params{Serial: testSerial, Format: "mp4"}, ErrInvalidPath},
 		{"path traversal", Params{RelPath: "../../../etc/passwd", Serial: testSerial, Format: "mp4"}, ErrInvalidPath},
 		{"missing source", Params{RelPath: "gone.mov", Serial: testSerial, Format: "mp4"}, ErrSourceNotFound},
-		{"not a video", Params{RelPath: "notes.txt", Serial: testSerial, Format: "mp4"}, ErrSourceNotFound},
+		{"not a video", Params{RelPath: "notes.txt", Serial: testSerial, Format: "mp4"}, videoutil.ErrNotAVideo},
 		// The internal drive is never asked in its place.
 		{"a device that is not attached", Params{RelPath: "clip.mp4", Serial: "unplugged", Format: "mkv"}, ErrSourceNotFound},
 		{"the device root", Params{RelPath: ".", Serial: testSerial, Format: "mkv"}, ErrInvalidPath},

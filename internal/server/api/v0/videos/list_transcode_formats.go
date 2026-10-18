@@ -11,14 +11,15 @@ import (
 
 // listTranscodeFormats godoc
 // @Summary List transcode formats
-// @Description Lists the video formats POST /videos/transcode writes, in display order. With relPath, only the ones the video there can be converted to: those whose container holds its codecs, leaving out its own format. Without it, every format the device writes, whatever a given video's codecs allow.
+// @Description Lists the video formats POST /videos/transcode writes, in display order. With relPath, only the ones the video there can be converted to: those whose container holds its codecs, leaving out its own format. Without it, every format the device writes, whatever a given video's codecs allow. A relPath that is missing is a 404; one that cannot be read as a video, damaged or in a container the device does not read, is a 422.
 // @Tags videos
 // @Produce json
 // @Param serial query string false "Device serial"
 // @Param relPath query string false "Relative path to the video the formats are for"
 // @Success 200 {object} transcodeFormatsResponse
-// @Failure 404 {object} serverutil.Response "Not Found"
 // @Failure 400 {object} serverutil.Response "Bad Request"
+// @Failure 404 {object} serverutil.Response "Not Found"
+// @Failure 422 {object} serverutil.Response "Unprocessable Entity — the file can't be read as a video"
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Security BearerAuth
 // @Router /videos/transcode/formats [get]
