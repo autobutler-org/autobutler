@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
@@ -16,7 +17,7 @@ import (
 
 // transcodeVideo godoc
 // @Summary Queue a video transcode
-// @Description Queues a background job that copies the source video's streams, without re-encoding them, into a new file beside it in one of the formats GET /videos/transcode/formats lists for it. A format that cannot hold the video's codecs, or that is its own, is a 400, and so is any quality but original. The output never overwrites a file. Follow the job with GET /jobs/{id} or the job_* events; an upload event announces the output file. Needs read access on the video and write access on its folder; the job runs as, and its output is owned by, the caller.
+// @Description Queues a background job that copies the source video's streams, without re-encoding them, into a new file beside it in one of the formats GET /videos/transcode/formats lists for it. A format that cannot hold the video's codecs, or that is its own, is a 400, and so is any quality but original. A file that can't be read as a video is a 422. The output never overwrites a file. Follow the job with GET /jobs/{id} or the job_* events; an upload event announces the output file. Needs read access on the video and write access on its folder; the job runs as, and its output is owned by, the caller.
 // @Tags videos
 // @Accept json
 // @Produce json
@@ -25,7 +26,8 @@ import (
 // @Failure 400 {object} serverutil.Response "Bad Request"
 // @Failure 403 {object} serverutil.Response "Forbidden"
 // @Failure 404 {object} serverutil.Response "Not Found"
-// @Failure 500 {object} serverutil.Response "Internal Server Error"
+// @Failure 422 {object} serverutil.Response "Unprocessable Entity — the file can't be read as a video"
+// @Failure 500 {object} serverutil.Response "Internal Server Error — the job could not be queued; the cause is logged"
 // @Security BearerAuth
 // @Router /videos/transcode [post]
 func transcodeVideo(c *gin.Context) *serverutil.Response {
@@ -66,8 +68,12 @@ func transcodeVideo(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(err)
 	case errors.Is(err, transcodeutil.ErrSourceNotFound):
 		return serverutil.NotFound(err)
+	case errors.Is(err, videoutil.ErrNotAVideo):
+		return unreadableVideo(err)
 	case err != nil:
-		return serverutil.InternalServerError(fmt.Errorf("queue transcode: %w", err))
+		// Nothing else records why, and the job was never created (#3422).
+		slog.Error("transcode: could not queue the conversion", "path", req.RelPath, "serial", req.Serial, "format", req.Format, "err", err)
+		return serverutil.InternalServerError(fmt.Errorf("couldn't queue the conversion: %w", err))
 	}
 
 	return serverutil.Accepted().WithContentType(serverutil.ContentTypeJSON).

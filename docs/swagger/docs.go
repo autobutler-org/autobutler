@@ -10920,6 +10920,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/serverutil.Response"
                         }
                     },
+                    "422": {
+                        "description": "Unprocessable Entity — the file can't be read as a video",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -10936,7 +10942,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Queues a background job that copies the source video's streams, without re-encoding them, into a new file beside it in one of the formats GET /videos/transcode/formats lists for it. A format that cannot hold the video's codecs, or that is its own, is a 400, and so is any quality but original. The output never overwrites a file. Follow the job with GET /jobs/{id} or the job_* events; an upload event announces the output file. Needs read access on the video and write access on its folder; the job runs as, and its output is owned by, the caller.",
+                "description": "Queues a background job that copies the source video's streams, without re-encoding them, into a new file beside it in one of the formats GET /videos/transcode/formats lists for it. A format that cannot hold the video's codecs, or that is its own, is a 400, and so is any quality but original. A file that can't be read as a video is a 422. The output never overwrites a file. Follow the job with GET /jobs/{id} or the job_* events; an upload event announces the output file. Needs read access on the video and write access on its folder; the job runs as, and its output is owned by, the caller.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10983,8 +10989,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/serverutil.Response"
                         }
                     },
+                    "422": {
+                        "description": "Unprocessable Entity — the file can't be read as a video",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal Server Error — the job could not be queued; the cause is logged",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -10999,7 +11011,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Lists the video formats POST /videos/transcode writes, in display order. With relPath, only the ones the video there can be converted to: those whose container holds its codecs, leaving out its own format. Without it, every format the device writes, whatever a given video's codecs allow.",
+                "description": "Lists the video formats POST /videos/transcode writes, in display order. With relPath, only the ones the video there can be converted to: those whose container holds its codecs, leaving out its own format. Without it, every format the device writes, whatever a given video's codecs allow. A relPath that is missing is a 404; one that cannot be read as a video, damaged or in a container the device does not read, is a 422.",
                 "produces": [
                     "application/json"
                 ],
@@ -11040,6 +11052,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/serverutil.Response"
                         }
                     },
+                    "422": {
+                        "description": "Unprocessable Entity — the file can't be read as a video",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -11056,7 +11074,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Copies the sub-clip [startMs, endMs] of the source video into a new file beside it without re-encoding (fast, lossless). The clip is shown from startMs: the frames back to the keyframe before it are kept but hidden, so they still decode. actualStartMs reports where the clip is shown from, which is startMs except where there is nothing to hide the lead-in behind or nothing to hide: a start before the video's first keyframe or past its last frame, or a TS output, begins at that keyframe instead. An endMs at or past the end of the video keeps the rest of it; a startMs at or past the end is a 400. The clip keeps the source's format where the device writes it and is an MP4 otherwise. The original file is not modified. An MPEG-TS source cannot be trimmed and is a 422. Needs read access on the video and write access on its folder; the caller owns the new clip.",
+                "description": "Copies the sub-clip [startMs, endMs] of the source video into a new file beside it without re-encoding (fast, lossless). The clip is shown from startMs: the frames back to the keyframe before it are kept but hidden, so they still decode. actualStartMs reports where the clip is shown from, which is startMs except where there is nothing to hide the lead-in behind or nothing to hide: a start before the video's first keyframe or past its last frame, or a TS output, begins at that keyframe instead. An endMs at or past the end of the video keeps the rest of it; a startMs at or past the end is a 400. The clip keeps the source's format where the device writes it and is an MP4 otherwise. The original file is not modified. An MPEG-TS source cannot be trimmed and is a 422, and so is a file that can't be read as a video. Needs read access on the video and write access on its folder; the caller owns the new clip.",
                 "consumes": [
                     "application/json"
                 ],
@@ -11104,7 +11122,7 @@ const docTemplate = `{
                         }
                     },
                     "422": {
-                        "description": "Unprocessable Entity — the video's container can't be trimmed",
+                        "description": "Unprocessable Entity — the video's container can't be trimmed, or the file can't be read as a video",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }

@@ -42,8 +42,8 @@ var (
 	// ErrInvalidPath is returned for an empty relPath, the device's root, or a
 	// path that escapes it.
 	ErrInvalidPath = errors.New("invalid relPath")
-	// ErrSourceNotFound is returned when the source is missing, is not a
-	// readable video, or is on a device that is not attached.
+	// ErrSourceNotFound is returned when the source is missing, is a folder,
+	// or is on a device that is not attached.
 	ErrSourceNotFound = errors.New("video not found or not readable")
 	// ErrCreatorForbidden fails a job whose creator can no longer read the
 	// source or write its folder (#1979).
@@ -84,8 +84,9 @@ type EnqueueResult struct {
 
 // Enqueue checks the request and queues the job. It returns ErrInvalidFormat,
 // ErrInvalidQuality, or ErrInvalidPath for a bad request, including a format
-// that cannot hold the source's codecs, and ErrSourceNotFound when the source
-// does not probe as a video or its device is not attached.
+// that cannot hold the source's codecs, ErrSourceNotFound when the source is
+// missing or its device is not attached, and videoutil.ErrNotAVideo when it
+// does not probe as a video.
 func Enqueue(ctx context.Context, params EnqueueParams) (EnqueueResult, error) {
 	src, err := resolveSource(ctx, params.Registry, params.Params)
 	if err != nil {

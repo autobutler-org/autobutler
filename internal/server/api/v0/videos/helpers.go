@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"net/http"
 	"path"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
@@ -22,6 +23,11 @@ var errNoAccess = errors.New("video not found")
 // errInvalidPath answers a relPath that cannot name a video: the device root,
 // or a path that escapes it.
 var errInvalidPath = errors.New("invalid relPath")
+
+// errUnreadableVideo is what a caller hears about a file that is there but
+// does not read as a video: damaged, or in a container sprocket does not
+// parse. sprocket's own reason follows it in the error for the logs.
+var errUnreadableVideo = errors.New("can't read this video: it may be damaged or in a format the device doesn't read")
 
 // errReadOnly is what a caller hears when they may see a video but not write
 // beside it.
@@ -74,15 +80,25 @@ func openVideo(c *gin.Context, deps deputil.Dependencies, serial, relPath string
 	return video, nil
 }
 
-// openError is the response to a video that could not be opened or read.
+// openError is the response to a video that could not be opened or read:
+// 404 for a missing file or a folder, and 422 for a file that does not read as
+// a video (#3417).
 func openError(err error, relPath string) *serverutil.Response {
 	switch {
 	case errors.Is(err, vfs.ErrPermissionDenied):
 		return serverutil.BadRequest(errInvalidPath)
-	case errors.Is(err, vfs.ErrNotFound), errors.Is(err, vfs.ErrIsDirectory), errors.Is(err, videoutil.ErrNotAVideo):
-		return serverutil.NotFound(fmt.Errorf("video not found or not readable: %s", relPath))
+	case errors.Is(err, vfs.ErrNotFound), errors.Is(err, vfs.ErrIsDirectory):
+		return serverutil.NotFound(fmt.Errorf("video not found: %s", relPath))
+	case errors.Is(err, videoutil.ErrNotAVideo):
+		return unreadableVideo(err)
 	}
 	return serverutil.InternalServerError(err)
+}
+
+// unreadableVideo is the 422 for err, a file that does not read as a video.
+func unreadableVideo(err error) *serverutil.Response {
+	return serverutil.NewResponse().WithStatusCode(http.StatusUnprocessableEntity).
+		WithError(fmt.Errorf("%w: %w", errUnreadableVideo, err))
 }
 
 // filesVFS is the files namespace of the device with serial, the internal

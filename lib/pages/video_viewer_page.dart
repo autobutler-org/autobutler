@@ -336,9 +336,9 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Errors.message(e, 'trim the video'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(Errors.trim(e))));
     } finally {
       if (mounted) setState(() => _exportingTrim = false);
     }

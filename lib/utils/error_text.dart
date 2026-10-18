@@ -221,10 +221,38 @@ abstract final class Errors {
   /// video, so the account has to be able to save files in its folder.
   static const String cantSaveInFolder = "You can't save files in that folder.";
 
-  /// A conversion that could not be started. A 403 gets [cantSaveInFolder].
+  /// A file that is there but that the Quark can't read as a video: damaged,
+  /// or in a container it doesn't parse. The Quark answers it with a 422
+  /// (#3417).
+  static const String unreadableVideo =
+      "Your Quark can't read this video. It may be damaged, or in a format "
+      "it doesn't support.";
+
+  /// A conversion the Quark accepted but couldn't queue: the job was never
+  /// created, so there is nothing to follow under Jobs (#3422).
+  static const String transcodeNotQueued =
+      "Your Quark couldn't queue the conversion, so no job was started. Try "
+      'again in a moment.';
+
+  /// A conversion that could not be started. A 403 gets [cantSaveInFolder],
+  /// a 422 [unreadableVideo], and a 500 [transcodeNotQueued].
   static String transcode(Object? error) => switch (error) {
     ApiException(statusCode: 403) => cantSaveInFolder,
+    ApiException(statusCode: 422) => unreadableVideo,
+    ApiException(statusCode: 500) => transcodeNotQueued,
     _ => message(error, 'convert the video'),
+  };
+
+  /// A trim the Quark refused with a 422: the video's container can't be cut
+  /// on the device, or the file can't be read as a video.
+  static const String cantTrimVideo =
+      "Your Quark can't trim this video. It may be damaged, or in a format "
+      "it can't cut.";
+
+  /// A trim that failed. A 422 gets [cantTrimVideo].
+  static String trim(Object? error) => switch (error) {
+    ApiException(statusCode: 422) => cantTrimVideo,
+    _ => message(error, 'trim the video'),
   };
 
   /// A PowerPoint file the Quark could not read: damaged, not really a

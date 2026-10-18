@@ -138,11 +138,41 @@ void main() {
   });
 
   group('Errors.transcode', () {
-    test('anything but a 403 reads like Errors.message', () {
+    test('a 422 says the video cannot be read', () {
+      expect(Errors.transcode(const ApiException(422)), Errors.unreadableVideo);
+    });
+
+    test('a 500 says the conversion was not queued', () {
+      expect(
+        Errors.transcode(const ApiException(500)),
+        Errors.transcodeNotQueued,
+      );
+      expect(
+        Errors.transcodeNotQueued,
+        isNot(Errors.message(const ApiException(500), 'convert the video')),
+      );
+    });
+
+    test('anything else but a 403 reads like Errors.message', () {
       for (final status in [404, 501]) {
         expect(
           Errors.transcode(ApiException(status)),
           Errors.message(ApiException(status), 'convert the video'),
+        );
+      }
+    });
+  });
+
+  group('Errors.trim', () {
+    test('a 422 says the video cannot be trimmed', () {
+      expect(Errors.trim(const ApiException(422)), Errors.cantTrimVideo);
+    });
+
+    test('anything else reads like Errors.message', () {
+      for (final status in [404, 500]) {
+        expect(
+          Errors.trim(ApiException(status)),
+          Errors.message(ApiException(status), 'trim the video'),
         );
       }
     });
