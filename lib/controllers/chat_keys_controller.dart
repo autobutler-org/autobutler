@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:quark/models/account_keys.dart';
 import 'package:quark/models/chat_keys.dart';
+import 'package:quark/services/account_crypto.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/chat_crypto.dart';

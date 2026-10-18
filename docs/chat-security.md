@@ -41,7 +41,7 @@ phraseKey    = HKDF-SHA256(phraseMaster, info = "recovery-wrap")  the phrase wra
 ```
 
 `normalize` trims and lowercases, as the Quark always has. The Quark stores only SHA-256 digests of `authKey` and
-`recoveryKey` (#2765). `ChatCrypto.deriveAuthKeys` and `deriveRecoveryKeys` in `lib/services/chat_crypto.dart` are
+`recoveryKey` (#2765). `AccountCrypto.deriveAuthKeys` and `deriveRecoveryKeys` in `lib/services/account_crypto.dart` are
 the construction, pinned by fixed test vectors.
 
 The recovery phrase is generated in the app now, not on the Quark: sixteen words from the Quark's own 256-word
@@ -66,7 +66,7 @@ The Quark stores one `user_chat_keys` row per account: the two public keys, the 
 
 ### Argon2id cost
 
-New wraps use 3 passes over 64 MiB (`KdfParams.standard` in `lib/models/chat_keys.dart`). With the shipped
+New wraps use 3 passes over 64 MiB (`KdfParams.standard` in `lib/models/account_keys.dart`). With the shipped
 sodium.js in Chrome on an Apple M2 Pro:
 
 | Passes | Memory  | Time   |
