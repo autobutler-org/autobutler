@@ -272,12 +272,19 @@ Covers browsing, uploading, downloading, and managing files via the file browser
 
 1. Navigate to the folder containing the image.
 2. Tap the image file.
+3. Press the previous and next arrows, or the left and right arrow keys.
 
 **Expected result:**
 
 - Image viewer opens (`ImageViewerPage`) at `/view/<path>`.
+- The opened photo is on screen before the folder listing returns. If that listing fails, the viewer stays on
+  the one photo.
+- The arrows then step through that folder's images by file name. They do not follow a custom column sort
+  (JN-FB-044).
 - Image is displayed correctly.
 - User can navigate back to the file browser.
+
+**Notes:** An archive preview (JN-FB-020) and the versions sheet (JN-FB-046) stay a single image.
 
 ---
 
