@@ -12,7 +12,7 @@ import 'package:sodium/sodium_sumo.dart';
 /// One Argon2id run over a secret is split by HKDF into per-purpose keys, so
 /// everything the account encrypts on the client opens with one password and
 /// one recovery phrase. Chat (`ChatCrypto`) wraps its identity seeds with
-/// this. The Quark never runs any of it: it is sent [AuthKeys.authKey] and
+/// this, and the vault its key ([generateVaultKey]). The Quark never runs any of it: it is sent [AuthKeys.authKey] and
 /// stores what [wrapWithKey] produces.
 class AccountCrypto {
   /// Wraps an initialized libsodium.
@@ -43,24 +43,26 @@ class AccountCrypto {
   ///
   /// ```text
   /// master  = Argon2id13(password, salt, params.opsLimit, params.memLimit), 32 bytes
-  /// authKey = HKDF-SHA256(ikm = master, salt = none, info = "auth"), 32 bytes
-  /// wrapKey = HKDF-SHA256(ikm = master, salt = none, info = "chat-wrap"), 32 bytes
+  /// authKey      = HKDF-SHA256(ikm = master, salt = none, info = "auth"), 32 bytes
+  /// wrapKey      = HKDF-SHA256(ikm = master, salt = none, info = "chat-wrap"), 32 bytes
+  /// vaultWrapKey = HKDF-SHA256(ikm = master, salt = none, info = "vault-wrap"), 32 bytes
   /// ```
   ///
   /// HKDF is RFC 5869 extract-then-expand, with the empty salt the RFC reads
   /// as 32 zero bytes. [salt] is the account's 16-byte auth salt from
   /// `GET /auth/salt`. The caller disposes the result.
   AuthKeys deriveAuthKeys(String password, Uint8List salt, KdfParams params) =>
-      _deriveSplit(password, salt, params, 'auth', 'chat-wrap');
+      _deriveSplit(password, salt, params, 'auth', 'chat-wrap', 'vault-wrap');
 
   /// The same construction over a recovery phrase (#2430): `authKey` is the
-  /// `recoveryKey` the Quark is sent in the phrase's place, and `wrapKey`
-  /// opens the chat identity's phrase wrap.
+  /// `recoveryKey` the Quark is sent in the phrase's place, `wrapKey` opens
+  /// the chat identity's phrase wrap, and `vaultWrapKey` the vault key's.
   ///
   /// ```text
   /// phraseMaster = Argon2id13(normalize(phrase), salt, params), 32 bytes
   /// recoveryKey  = HKDF-SHA256(phraseMaster, info = "recovery-auth"), 32 bytes
   /// wrapKey      = HKDF-SHA256(phraseMaster, info = "recovery-wrap"), 32 bytes
+  /// vaultWrapKey = HKDF-SHA256(phraseMaster, info = "recovery-vault-wrap"), 32 bytes
   /// ```
   ///
   /// [phrase] is normalized here ([normalizeRecoveryPhrase]), so a phrase
@@ -76,16 +78,20 @@ class AccountCrypto {
     params,
     'recovery-auth',
     'recovery-wrap',
+    'recovery-vault-wrap',
   );
 
   /// One Argon2id run over [secret], split by HKDF-SHA256 into a key sent
-  /// under [authInfo] and a wrap key under [wrapInfo].
+  /// under [authInfo], the chat wrap key under [wrapInfo] and the vault wrap
+  /// key under [vaultInfo]. Every purpose is its own expand of the one PRK,
+  /// so the vault costs no second Argon2id and no key opens another's wrap.
   AuthKeys _deriveSplit(
     String secret,
     Uint8List salt,
     KdfParams params,
     String authInfo,
     String wrapInfo,
+    String vaultInfo,
   ) {
     final hkdf = sodium.crypto.kdfHkdfSha256;
     final master = _derive(secret, salt, params);
@@ -103,6 +109,11 @@ class AccountCrypto {
             wrapKey: hkdf.expand(
               masterKey: prk,
               context: wrapInfo,
+              outLen: _aead.keyBytes,
+            ),
+            vaultWrapKey: hkdf.expand(
+              masterKey: prk,
+              context: vaultInfo,
               outLen: _aead.keyBytes,
             ),
           );
@@ -184,6 +195,37 @@ class AccountCrypto {
     }
   }
 
+  /// A new random per-account vault key (#3457): the XChaCha20-Poly1305 key
+  /// every vault item is encrypted under. It is made on the client and the
+  /// Quark only ever holds it wrapped. The caller disposes it.
+  SecureKey generateVaultKey() => _aead.keygen();
+
+  /// Wraps [vaultKey] under [wrapKey], an [AuthKeys.vaultWrapKey] derived
+  /// from the password or the recovery phrase, the same format as a chat
+  /// identity's wrap ([wrapWithKey]). [salt] is the account's auth salt. The
+  /// caller disposes both keys.
+  WrappedSecret wrapVaultKey(
+    SecureKey vaultKey,
+    SecureKey wrapKey,
+    Uint8List salt,
+  ) => vaultKey.runUnlockedSync((bytes) => wrapWithKey(bytes, wrapKey, salt));
+
+  /// Opens what [wrapVaultKey] produced. A wrong [wrapKey] throws a
+  /// [MessageException] carrying [wrongSecret]. The caller disposes both
+  /// [wrapKey] and the result.
+  SecureKey unwrapVaultKey(
+    WrappedSecret wrapped,
+    SecureKey wrapKey, {
+    required String wrongSecret,
+  }) {
+    final bytes = unwrapWithKey(wrapped, wrapKey, wrongSecret: wrongSecret);
+    try {
+      return sodium.secureCopy(bytes);
+    } finally {
+      bytes.fillRange(0, bytes.length, 0);
+    }
+  }
+
   SecureKey _derive(String secret, Uint8List salt, KdfParams params) =>
       sodium.crypto.pwhash.callStr(
         outLen: _aead.keyBytes,
@@ -197,14 +239,18 @@ class AccountCrypto {
 
 /// What [AccountCrypto.deriveAuthKeys] makes of a password, or
 /// [AccountCrypto.deriveRecoveryKeys] of a recovery phrase (#2430): the key
-/// the Quark is sent in the secret's place, and the key that wraps the chat
-/// identity and never leaves the client.
+/// the Quark is sent in the secret's place, and the keys that wrap the chat
+/// identity and the vault key, which never leave the client.
 ///
-/// Neither is to be logged or kept past the request it was derived for.
-/// [dispose] it once both have been used.
+/// None is to be logged or kept past the request it was derived for.
+/// [dispose] it once they have been used.
 class AuthKeys {
-  /// Pairs the two keys.
-  AuthKeys({required this.authKey, required this.wrapKey});
+  /// Groups the three keys.
+  AuthKeys({
+    required this.authKey,
+    required this.wrapKey,
+    required this.vaultWrapKey,
+  });
 
   /// The standard padded base64 of 32 bytes: `authKey`, or `recoveryKey`, on
   /// the wire.
@@ -214,6 +260,13 @@ class AuthKeys {
   /// phrase wrap.
   final SecureKey wrapKey;
 
-  /// Frees the wrap key.
-  void dispose() => wrapKey.dispose();
+  /// The XChaCha20-Poly1305 key of the vault key's password wrap, or its
+  /// phrase wrap (#3457).
+  final SecureKey vaultWrapKey;
+
+  /// Frees the wrap keys.
+  void dispose() {
+    wrapKey.dispose();
+    vaultWrapKey.dispose();
+  }
 }
