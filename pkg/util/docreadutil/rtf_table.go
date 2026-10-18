@@ -234,6 +234,9 @@ func buildRTFTable(read [][]rtfCell) []TableRow {
 	for _, row := range read {
 		out := TableRow{Cells: []TableCell{}}
 		col := 0
+		// into is the cell the previous cell of this row was merged into
+		// from below, so an across-merged follower joins it too.
+		var into *TableCell
 		for _, c := range row {
 			start, span := col, 1
 			if grid != nil && c.hasDef && c.def.right > c.left {
@@ -243,6 +246,10 @@ func buildRTFTable(read [][]rtfCell) []TableRow {
 				span = min(max(to-start, 1), maxSpan)
 			}
 			col = start + span
+			if c.def.hNext && into != nil {
+				into.Blocks = appendContent(into.Blocks, c.blocks)
+				continue
+			}
 			if c.def.hNext && len(out.Cells) > 0 {
 				prev := &out.Cells[len(out.Cells)-1]
 				prev.ColSpan = min(prev.ColSpan+span, maxSpan)
@@ -253,8 +260,10 @@ func buildRTFTable(read [][]rtfCell) []TableRow {
 				o := &rows[origin.row].Cells[origin.cell]
 				o.RowSpan++
 				o.Blocks = appendContent(o.Blocks, c.blocks)
+				into = o
 				continue
 			}
+			into = nil
 			out.Cells = append(out.Cells, TableCell{ColSpan: span, RowSpan: 1, Blocks: nonNil(c.blocks)})
 			if c.def.vFirst {
 				merging[start] = cellIndex{row: len(rows), cell: len(out.Cells) - 1}
