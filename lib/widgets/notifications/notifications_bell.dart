@@ -41,44 +41,44 @@ class NotificationsBell extends StatelessWidget {
         if (!controller.isSignedIn) return const SizedBox.shrink();
         final count = controller.notifications.length;
         final tokens = QuarkTokens.of(context);
-        return Badge(
-          isLabelVisible: count > 0,
-          // The tooltip already says the count; a screen reader should not
-          // read it twice.
-          label: ExcludeSemantics(
-            child: Text(
-              '$count',
-              style: const TextStyle(
-                fontFeatures: [FontFeature.tabularFigures()],
+        return QuarkBarIconButton(
+          key: const ValueKey('notifications_bell'),
+          icon: QuarkIcons.notifications_outlined,
+          tooltip: switch (count) {
+            0 => 'Notifications',
+            1 => '1 notification',
+            _ => '$count notifications',
+          },
+          onPressed: () {
+            // A backup goes stale with time alone, which no event
+            // announces, so opening the list asks again.
+            unawaited(controller.load());
+            showQuarkSheet<void>(
+              context,
+              title: 'Notifications',
+              builder: (sheetContext) => NotificationsList(
+                controller: controller,
+                onOpen: (notification) {
+                  Navigator.of(sheetContext).pop();
+                  onNavigate(notification.link);
+                },
+              ),
+            );
+          },
+          badge: Badge(
+            isLabelVisible: count > 0,
+            // The tooltip already says the count; a screen reader should not
+            // read it twice.
+            label: ExcludeSemantics(
+              child: Text(
+                '$count',
+                style: const TextStyle(
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
               ),
             ),
-          ),
-          backgroundColor: tokens.primary,
-          textColor: tokens.primaryForeground,
-          child: QuarkBarIconButton(
-            key: const ValueKey('notifications_bell'),
-            icon: QuarkIcons.notifications_outlined,
-            tooltip: switch (count) {
-              0 => 'Notifications',
-              1 => '1 notification',
-              _ => '$count notifications',
-            },
-            onPressed: () {
-              // A backup goes stale with time alone, which no event
-              // announces, so opening the list asks again.
-              unawaited(controller.load());
-              showQuarkSheet<void>(
-                context,
-                title: 'Notifications',
-                builder: (sheetContext) => NotificationsList(
-                  controller: controller,
-                  onOpen: (notification) {
-                    Navigator.of(sheetContext).pop();
-                    onNavigate(notification.link);
-                  },
-                ),
-              );
-            },
+            backgroundColor: tokens.primary,
+            textColor: tokens.primaryForeground,
           ),
         );
       },
