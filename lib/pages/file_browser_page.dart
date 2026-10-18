@@ -645,7 +645,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       fetchFuture = FilesService.listArchiveEntries(
         archive.archivePath,
         subPath: archive.subPath,
-        serial: serials?.firstOrNull,
+        serial: serialOrNull(archive.archiveSerial),
       );
     } else {
       fetchFuture = _controller.fetchFiles(listPath, serials: serials);
@@ -1209,6 +1209,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           archive.archivePath,
           entryPath,
           name: node.name,
+          serial: serialOrNull(archive.archiveSerial),
         );
         if (mounted && message != null) _showMessage(message);
       } catch (e) {
@@ -1371,7 +1372,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
       // Open the new .qsheet through the canonical files route.
       final qsheetPath = folder.isEmpty ? qsheetName : '$folder/$qsheetName';
-      _openResolvedFile(qsheetPath, FileKind.qsheet, qsheetName);
+      _openResolvedFile(
+        qsheetPath,
+        FileKind.qsheet,
+        qsheetName,
+        serial: serialOrNull(node.deviceSerial),
+      );
     } catch (e) {
       if (!mounted) return;
       _showMessage(Errors.message(e, 'convert the file'));
@@ -1437,6 +1443,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         qsheetPath,
         FileKind.qsheet,
         qsheetPath.split('/').last,
+        serial: serialOrNull(node.deviceSerial),
       );
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -1502,6 +1509,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       folder.isEmpty ? qsheetName : '$folder/$qsheetName',
       FileKind.qsheet,
       qsheetName,
+      serial: serialOrNull(node.deviceSerial),
     );
   }
 
@@ -1522,18 +1530,30 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
 
     final kind = fileKindForName(node.name);
+    // The file opens on the device it is listed on, which in a view of more
+    // than one drive is not the first one selected (#3337).
+    final serial = serialOrNull(node.deviceSerial);
     if (opensInCodeViewer(node.name)) {
-      _goToEditor(node.apiPath, AppRoutes.codeViewerPath(node.apiPath));
+      _goToEditor(
+        node.apiPath,
+        AppRoutes.codeViewerPath(node.apiPath, serial: serial),
+      );
       return;
     }
     // Markdown opens rendered (#2987).
     if (opensInMarkdownViewer(node.name)) {
-      _goToEditor(node.apiPath, AppRoutes.markdownViewerPath(node.apiPath));
+      _goToEditor(
+        node.apiPath,
+        AppRoutes.markdownViewerPath(node.apiPath, serial: serial),
+      );
       return;
     }
     // STL, OBJ, PLY, glTF and 3MF open in the 3D model viewer (#2988).
     if (opensInModelViewer(node.name)) {
-      _goToEditor(node.apiPath, AppRoutes.modelViewerPath(node.apiPath));
+      _goToEditor(
+        node.apiPath,
+        AppRoutes.modelViewerPath(node.apiPath, serial: serial),
+      );
       return;
     }
     switch (kind) {
@@ -1549,7 +1569,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         return _handleXlsxOpen(node);
       // Prose opens in the plaintext editor, at its own URL.
       case FileKind.text || FileKind.code:
-        _goToEditor(node.apiPath, AppRoutes.plaintextEditorPath(node.apiPath));
+        _goToEditor(
+          node.apiPath,
+          AppRoutes.plaintextEditorPath(node.apiPath, serial: serial),
+        );
         return;
       default:
         break;
@@ -1558,7 +1581,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // Everything else: the listing already says what the file is, so open
     // its viewer now rather than routing to the file's URL and waiting on a
     // stat first (#1564).
-    _openResolvedFile(node.apiPath, kind, node.name);
+    _openResolvedFile(node.apiPath, kind, node.name, serial: serial);
   }
 
   Future<void> _openArchiveFile(FileNode node) async {
@@ -1583,6 +1606,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           archive.archivePath,
           entryPath,
           name: node.name,
+          serial: serialOrNull(archive.archiveSerial),
         );
         if (mounted && message != null) _showMessage(message);
         return;
@@ -1591,6 +1615,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       final entry = await FilesService.downloadArchiveFileBytes(
         archive.archivePath,
         entryPath,
+        serial: serialOrNull(archive.archiveSerial),
         convertImages: true,
       );
       if (!mounted) return;
@@ -1952,10 +1977,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// stat on a deep link, or straight from the listing on a click. Every
   /// viewer opens before anything about the file is downloaded, so it can
   /// show its own loading state (#1564).
+  ///
+  /// [serial] is the device the file is on, null for the built-in drive. It
+  /// comes from the file itself, never from which devices the view shows: a
+  /// file on a second drive opened against the first one 404s (#3337).
   Future<void> _openResolvedFile(
     String filePath,
     FileKind kind,
     String fileName, {
+    String? serial,
     bool justCreated = false,
   }) async {
     if (!mounted) return;
@@ -1963,27 +1993,37 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // Source, config and log files open read-only and highlighted (#2991),
     // matching what clicking the row does.
     if (opensInCodeViewer(fileName)) {
-      _goToEditor(filePath, AppRoutes.codeViewerPath(filePath));
+      _goToEditor(filePath, AppRoutes.codeViewerPath(filePath, serial: serial));
       return;
     }
     // Markdown opens rendered (#2987).
     if (opensInMarkdownViewer(fileName)) {
-      _goToEditor(filePath, AppRoutes.markdownViewerPath(filePath));
+      _goToEditor(
+        filePath,
+        AppRoutes.markdownViewerPath(filePath, serial: serial),
+      );
       return;
     }
     // STL, OBJ, PLY, glTF and 3MF open in the 3D model viewer (#2988).
     if (opensInModelViewer(fileName)) {
-      _goToEditor(filePath, AppRoutes.modelViewerPath(filePath));
+      _goToEditor(
+        filePath,
+        AppRoutes.modelViewerPath(filePath, serial: serial),
+      );
       return;
     }
 
     switch (kind) {
       case FileKind.qdoc:
-        _goToEditor(filePath, AppRoutes.docFile(filePath), extra: justCreated);
+        _goToEditor(
+          filePath,
+          AppRoutes.docFile(filePath, serial: serial),
+          extra: justCreated,
+        );
         return;
 
       case FileKind.qsheet:
-        _goToEditor(filePath, AppRoutes.sheetFile(filePath));
+        _goToEditor(filePath, AppRoutes.sheetFile(filePath, serial: serial));
         return;
 
       case FileKind.qslide:
@@ -1993,7 +2033,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           filePath,
           AppRoutes.slideFile(
             filePath,
-            from: AppRoutes.containingFolder(filePath),
+            serial: serial,
+            from: AppRoutes.containingFolder(filePath, serial: serial ?? ''),
           ),
         );
         return;
@@ -2002,7 +2043,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       case FileKind.text || FileKind.code:
         // Matches what clicking the row does — without this a deep link to a
         // file the browser opens happily reports "No supported editor".
-        _goToEditor(filePath, AppRoutes.plaintextEditorPath(filePath));
+        _goToEditor(
+          filePath,
+          AppRoutes.plaintextEditorPath(filePath, serial: serial),
+        );
         return;
 
       // Every kind with an in-app viewer opens at its own /view URL, so a
@@ -2015,13 +2059,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           FileKind.audio ||
           FileKind.pdf:
       case _ when usesGenericFileViewer(kind):
-        _goToEditor(
-          filePath,
-          AppRoutes.viewFilePath(
-            filePath,
-            serial: _serialsForActiveDevices()?.firstOrNull,
-          ),
-        );
+        _goToEditor(filePath, AppRoutes.viewFilePath(filePath, serial: serial));
         return;
 
       default:
