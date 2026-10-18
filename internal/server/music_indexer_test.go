@@ -38,6 +38,17 @@ func flacTrack(title string) []byte {
 	return append(out, make([]byte, 64)...)
 }
 
+// countingVFS records each file Open reads, so a scan can show which files it reopened.
+type countingVFS struct {
+	vfs.VFS
+	opened []string
+}
+
+func (c *countingVFS) Open(ctx context.Context, p string) (vfs.File, error) {
+	c.opened = append(c.opened, p)
+	return c.VFS.Open(ctx, p)
+}
+
 // musicFixture is an indexer over a fresh database, a bus and two in-memory
 // devices: the internal drive and musicUSB.
 type musicFixture struct {
@@ -72,6 +83,23 @@ func newMusicFixture(t *testing.T) *musicFixture {
 	events, unsub := bus.Subscribe("test")
 	t.Cleanup(unsub)
 	return &musicFixture{indexer: indexer, database: database, bus: bus, registry: registry, events: events, devices: devices}
+}
+
+// countOpens wraps each device so later reads are counted. Writes already made
+// through the fixture stay visible, since the wrapper is the same filesystem.
+func (f *musicFixture) countOpens(t *testing.T) map[string]*countingVFS {
+	t.Helper()
+	out := map[string]*countingVFS{}
+	for serial, fsys := range f.devices {
+		wrapped := &countingVFS{VFS: fsys}
+		ns := vfs.FilesNamespace(serial)
+		f.registry.Unregister(ns)
+		if err := f.registry.Register(vfs.Namespace{ID: ns}, wrapped); err != nil {
+			t.Fatal(err)
+		}
+		out[serial] = wrapped
+	}
+	return out
 }
 
 func (f *musicFixture) write(t *testing.T, serial, p string, data []byte) {
@@ -343,6 +371,73 @@ func TestMusicRescanJob(t *testing.T) {
 	}
 	f.nextLibraryChange(t)
 	f.nextLibraryChange(t)
+}
+
+// prepareDivergedLibrary indexes four tracks, then deletes one, rewrites one
+// and adds one, so a later pass has something to drop, reread and skip.
+func prepareDivergedLibrary(t *testing.T, f *musicFixture) {
+	t.Helper()
+	f.write(t, "", "keep.flac", flacTrack("Keep"))
+	f.write(t, "", "gone.flac", flacTrack("Gone"))
+	f.write(t, "", "edit.flac", flacTrack("Edit"))
+	f.write(t, musicUSB, "usb.flac", flacTrack("USB"))
+	f.indexer.backfillAll()
+	if err := f.devices[""].Delete(context.Background(), "gone.flac", vfs.DeleteOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	f.write(t, "", "edit.flac", flacTrack("Edited"))
+	f.write(t, musicUSB, "new.flac", flacTrack("New"))
+}
+
+// TestMusicRescanJobMatchesAResync runs the job over a library that already
+// has rows. It indexes new files, rereads changed ones, drops rows whose
+// files are gone and leaves an unchanged file unopened, which is what a
+// resync does. Each progress report is the files walked so far over the row
+// count from the start of the scan, held below 1.
+func TestMusicRescanJobMatchesAResync(t *testing.T) {
+	scanned := newMusicFixture(t)
+	resynced := newMusicFixture(t)
+	prepareDivergedLibrary(t, scanned)
+	prepareDivergedLibrary(t, resynced)
+	opens := scanned.countOpens(t)
+
+	// Four rows at the start. The walk then sees edit, keep, new and usb,
+	// and the handler reports again when each device finishes.
+	var progress []float64
+	run := scanned.indexer.rescanHandler().Run
+	if err := run(context.Background(), []byte("{}"), func(p float64) { progress = append(progress, p) }); err != nil {
+		t.Fatal(err)
+	}
+	resynced.indexer.handle(eventbus.Event{Kind: eventbus.EventResync})
+
+	want := map[string]string{
+		":keep.flac":           "Keep",
+		":edit.flac":           "Edited",
+		musicUSB + ":usb.flac": "USB",
+		musicUSB + ":new.flac": "New",
+	}
+	scanned.wantTitles(t, want)
+	resynced.wantTitles(t, want)
+
+	wantProgress := []float64{0.25, 0.5, 0.5, 0.75, 0.99, 0.99}
+	if len(progress) != len(wantProgress) {
+		t.Fatalf("progress = %v, want %v", progress, wantProgress)
+	}
+	for i := range wantProgress {
+		if progress[i] != wantProgress[i] {
+			t.Fatalf("progress = %v, want %v", progress, wantProgress)
+		}
+	}
+
+	opened := map[string]bool{}
+	for serial, counter := range opens {
+		for _, p := range counter.opened {
+			opened[serial+":"+p] = true
+		}
+	}
+	if !opened[":edit.flac"] || !opened[musicUSB+":new.flac"] || len(opened) != 2 {
+		t.Fatalf("opened = %v, want the edited file and the new file", opened)
+	}
 }
 
 // TestMusicRescanJobCanceled stops at the first device once its context is
