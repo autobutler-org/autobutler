@@ -108,6 +108,7 @@ void main() {
       await controller.load();
 
       expect(controller.selectedIds, isEmpty);
+      expect(controller.hasSuggestions, isTrue);
 
       controller.toggle('USB1:Backups/beach.jpg');
       controller.toggle(':beach copy.jpg');
@@ -128,6 +129,69 @@ void main() {
       );
     },
   );
+
+  test('select suggested marks the spare identical copies and no similar '
+      'ones', () async {
+    final controller = _FakeQuark().controller();
+    await controller.load();
+
+    controller.selectSuggested();
+
+    expect(controller.selectedIds, {
+      'USB1:Backups/beach.jpg',
+      ':beach copy.jpg',
+    });
+    expect(controller.hasSuggestions, isFalse);
+  });
+
+  test('select suggested keeps a copy the user left unmarked', () async {
+    final controller = _FakeQuark().controller();
+    await controller.load();
+    controller.toggle(':Camera/beach.jpg');
+
+    controller.selectSuggested();
+
+    expect(controller.selectedIds, {':Camera/beach.jpg', ':beach copy.jpg'});
+  });
+
+  test('clears every mark', () async {
+    final controller = _FakeQuark().controller();
+    await controller.load();
+    controller.selectSuggested();
+    controller.toggle(':Edits/dog.jpg');
+
+    controller.clearSelection();
+
+    expect(controller.selectedIds, isEmpty);
+  });
+
+  test('lists the marked copies in the order the page shows them', () async {
+    final controller = _FakeQuark().controller();
+    await controller.load();
+
+    controller.toggle(':Edits/dog.jpg');
+    controller.toggle(':beach copy.jpg');
+
+    expect(controller.selectedPhotos.map((p) => p.id), [
+      ':beach copy.jpg',
+      ':Edits/dog.jpg',
+    ]);
+  });
+
+  test('hands each copy\'s path and drive to its thumbnail', () async {
+    final controller = _FakeQuark().controller();
+    await controller.load();
+
+    expect(controller.thumbnailSource('USB1:Backups/beach.jpg'), (
+      path: 'Backups/beach.jpg',
+      serial: 'USB1',
+    ));
+    expect(controller.thumbnailSource(':Camera/dog.jpg'), (
+      path: 'Camera/dog.jpg',
+      serial: '',
+    ));
+    expect(controller.thumbnailSource('nope'), isNull);
+  });
 
   test('a group always keeps one copy', () async {
     final controller = _FakeQuark().controller();
