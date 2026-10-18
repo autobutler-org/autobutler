@@ -1,9 +1,9 @@
 # Music library: scan, tags, cover art, search
 
-**Status: proposal, nothing built.** Design for #2982 under the local media epic #2993. It sets out the options
-for the two decisions that need the owner's call: which tag reader to use, and where the index lives. It
-recommends one of each and then splits the work into sub-tickets that can land one at a time. The sub-tickets
-are not filed until an option is chosen.
+**Status: approved design, in progress.** Design for #2982 under the local media epic #2993. The owner approved its
+recommendations: the tag reader and the index both follow the recommended option. The schema, the `musicutil`
+service, the indexer and cover art have landed; the sections below still describe the HTTP API and the app, which
+are being built as the sub-tickets land.
 
 ## What the issue asks for
 
