@@ -207,6 +207,40 @@ func TestMusicIndexerFollowsFileEvents(t *testing.T) {
 	f.nextLibraryChange(t)
 }
 
+// TestMusicIndexerFollowsRenameIntoAndOutOfAudio drops the library row when
+// song.mp3 is renamed to notes.txt, without opening the file, and indexes
+// the renamed file when notes.txt is renamed to song.mp3. A move rewrites a
+// path without reading it; crossing the audio boundary is a second step.
+func TestMusicIndexerFollowsRenameIntoAndOutOfAudio(t *testing.T) {
+	f := newMusicFixture(t)
+	f.write(t, "", "song.mp3", flacTrack("Alpha"))
+	f.indexer.handle(eventbus.Event{Kind: eventbus.EventUpload, Path: "song.mp3"})
+	f.wantTitles(t, map[string]string{":song.mp3": "Alpha"})
+	f.nextLibraryChange(t)
+
+	opens := f.countOpens(t)
+	ctx := context.Background()
+	if err := f.devices[""].Move(ctx, "song.mp3", "notes.txt"); err != nil {
+		t.Fatal(err)
+	}
+	f.indexer.handle(eventbus.Event{Kind: eventbus.EventMove, Path: "song.mp3", NewPath: "notes.txt"})
+	f.wantTitles(t, map[string]string{})
+	f.nextLibraryChange(t)
+	if len(opens[""].opened) != 0 {
+		t.Fatalf("opened = %v, want nothing while renaming out of audio", opens[""].opened)
+	}
+
+	if err := f.devices[""].Move(ctx, "notes.txt", "song.mp3"); err != nil {
+		t.Fatal(err)
+	}
+	f.indexer.handle(eventbus.Event{Kind: eventbus.EventMove, Path: "notes.txt", NewPath: "song.mp3"})
+	f.wantTitles(t, map[string]string{":song.mp3": "Alpha"})
+	f.nextLibraryChange(t)
+	if got := opens[""].opened; len(got) != 1 || got[0] != "song.mp3" {
+		t.Fatalf("opened = %v, want song.mp3", got)
+	}
+}
+
 // TestMusicIndexerIgnoresNonAudio writes no row and announces nothing for a
 // file that is not audio.
 func TestMusicIndexerIgnoresNonAudio(t *testing.T) {
