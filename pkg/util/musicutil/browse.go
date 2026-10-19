@@ -61,7 +61,7 @@ func listTracks(params ListTracksParams) (ListTracksResult, error) {
 
 	// Walk the sorted matches in batches, counting every readable one for
 	// the total and keeping those that fall on the requested page.
-	result := ListTracksResult{Tracks: make([]Track, 0, limit)}
+	result := ListTracksResult{Tracks: make([]Track, 0, min(limit, MaxLimit))}
 	list.Limit = streamBatch
 	for list.Offset = 0; ; list.Offset += streamBatch {
 		rows, err := q.ListMusicTracks(params.Ctx, list)
