@@ -635,6 +635,28 @@ func TestOdtHeadersFootersAndCommentsAreNamed(t *testing.T) {
 	}
 }
 
+func TestOdtCommentTextStaysOutOfTheDocument(t *testing.T) {
+	comment := `<office:annotation><dc:creator>Ann</dc:creator><dc:date>2024-01-01</dc:date>` +
+		odtPara("", "secret remark") + `</office:annotation>`
+	d := odtDoc{body: odtPara("", "before "+comment+"after") +
+		`<table:table><table:table-row><table:table-cell>` + odtPara("", "cell"+comment) + `</table:table-cell></table:table-row></table:table>`}
+	s, result := readOdtStream(t, d, Limits{})
+	equalTexts(t, texts(s.blocks), "before after", "table[cell]")
+	for _, leak := range []string{"secret", "remark", "Ann", "2024"} {
+		for _, b := range s.blocks {
+			if strings.Contains(plain(b), leak) {
+				t.Errorf("comment text %q leaked into %+v", leak, b)
+			}
+		}
+	}
+	if s.end.Words != 3 {
+		t.Errorf("words = %d; comment words must not count", s.end.Words)
+	}
+	if !slices.Equal(result.Warnings, []string{warnComments}) {
+		t.Errorf("warnings = %q", result.Warnings)
+	}
+}
+
 func TestOdtAlignmentAndCounts(t *testing.T) {
 	d := odtDoc{
 		styles: `<style:style style:name="Centered" style:family="paragraph"><style:paragraph-properties fo:text-align="center"/></style:style>`,
