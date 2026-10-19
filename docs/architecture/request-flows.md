@@ -112,20 +112,36 @@ it, which keeps it with a heartbeat, so several instances can share the queue. E
 
 ## Vault unlock
 
+Each account's vault is end-to-end encrypted (#3456). The Quark stores the account's vault key only wrapped and
+every item only as ciphertext, so unlocking is work the app does; the Quark serves bytes it cannot open.
+
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as VaultService
-    participant MW as middleware
-    participant H as api/v0/vault (admin)
-    participant C as vaultcrypto.VaultSession
-    participant VDB as vault tables<br/>(quark.db or vault.db)
+    actor U as User
+    participant App as VaultController<br/>AccountCrypto
+    participant H as api/v0/vault<br/>(signed-in, not admin)
+    participant V as vaultutil
+    participant DB as vault_keys · vault_items
 
-    App->>MW: POST /vault/unlock (master password)
-    MW->>MW: vault rate limiter, 1 attempt per 2 s per IP
-    MW->>H: admin only
-    H->>VDB: vault_config (salt, encrypted check value)
-    H->>C: Argon2id derive key, decrypt check value, hold key in memory
-    H-->>App: unlocked
-    Note over C,VDB: drive unplugged → device monitor locks the session<br/>and publishes vault_device_disconnected
+    App->>H: GET /vault/key
+    H->>V: GetKey(caller's user id)
+    V->>DB: the caller's row only
+    H-->>App: wrapped key + kdfParams, or 404 (no vault yet: offer setup)
+    U->>App: login password
+    App->>App: Argon2id over the auth salt, HKDF "vault-wrap",<br/>open the wrapped key (a wrong password sends nothing)
+    App->>H: GET /vault/items
+    H-->>App: the caller's items: ciphertext, nonce, formatVersion
+    App->>App: XChaCha20-Poly1305 open each item in memory
+    Note over App: search, folders, import and export run on the decrypted items.<br/>Lock, 15 min idle or sign-out forgets the key
 ```
+
+Setup is the same in reverse: the app makes a random 32-byte key, wraps it under the password's `vault-wrap` key,
+and under the recovery phrase's `recovery-vault-wrap` key when the user typed the phrase at setup, and stores it
+with `PUT /vault/key`. That request carries the password's auth key as `password`, which the Quark re-confirms
+first (403 for any other password, under the sign-in rate limit), so the key is only ever wrapped under the login
+password. It refuses a second key with 409, so a vault's key is never replaced, only re-wrapped. A password change, a recovery and a new recovery phrase send the key re-wrapped as `vaultKey` in
+`PUT /auth/password`, `POST /auth/recover` and `PUT /auth/recovery-key`, in the same transaction as the credential
+(`POST /auth/recover/vault-key` hands a recovery the wrapped key first). Every write publishes `vault_changed`,
+which `accessutil.FilterEvent` delivers only to the account whose vault it is, so its other sessions read the
+vault again. `DELETE /vault` removes the key and every item, the way out for a vault nothing opens any more.

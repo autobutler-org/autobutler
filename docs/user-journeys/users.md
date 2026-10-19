@@ -62,7 +62,7 @@ Every journey assumes the user is signed in as an admin unless its preconditions
 **Expected result:**
 
 - The row is marked **Admin**.
-- That person's drawer gains **Users** and **Vault** without signing out.
+- That person's drawer gains **Users** without signing out.
 
 ---
 
@@ -79,8 +79,8 @@ Every journey assumes the user is signed in as an admin unless its preconditions
 **Expected result:**
 
 - The row is no longer marked **Admin**.
-- That person loses **Users** and **Vault** from their drawer without signing out, and is moved to `/files` if they
-  were on one of those pages.
+- That person loses **Users** from their drawer without signing out, and is moved to `/files` if they were on it.
+  Their own vault stays theirs.
 
 ---
 

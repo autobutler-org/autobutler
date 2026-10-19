@@ -58,6 +58,10 @@ authKey = HKDF-SHA256(ikm = master, salt = none, info = "auth"), 32 bytes       
 recoveryKey = HKDF-SHA256(ikm = master, salt = none, info = "recovery-auth"), 32 bytes (secret = phrase, lowercased and trimmed)
 ```
 
+The same `master` also yields the keys that wrap the chat identity and the vault key on the client (`chat-wrap` and
+`vault-wrap` for the password, `recovery-wrap` and `recovery-vault-wrap` for the phrase). They are never sent; see
+[Chat security](chat-security.md#split-keys-2430).
+
 Each key is sent as the standard base64 of its 32 bytes; anything else is a 400. `ChatCrypto` in the app is the
 reference implementation, and `authutil.DeriveKey`, which `quark auth-key` runs, is pinned to the same test vectors.
 
@@ -182,7 +186,8 @@ curl -X POST http://localhost:8080/api/v0/auth/recover \
 
 This replaces the auth key, clears any password hash, invalidates all existing sessions, and gives you a fresh token.
 Your recovery phrase stays the same. `/auth/recover/keys` takes the same `recoveryKey` and returns the chat keys to
-re-wrap first. A wrong key, an unknown username and an account with no recovery key all get the same 400.
+re-wrap first, and `/auth/recover/vault-key` the wrapped vault key; `/auth/recover` takes them back re-wrapped as
+`chatKeys` and `vaultKey`. A wrong key, an unknown username and an account with no recovery key all get the same 400.
 
 An account with `legacyRecovery: true` and a phrase the Quark once made recovers with that phrase once:
 
@@ -202,20 +207,22 @@ for an account that has no recovery key. An account that has one refuses every r
 - **New accounts.** `/auth/setup` and `/auth/request-account` take `recoveryKey` beside `authKey`. The Quark never
   makes a phrase. An account made without one, and every account an admin adds, has no recovery credential until a
   sign-in gives it one.
-- **Giving an account a key.** `PUT /api/v0/auth/recovery-key` with a session, body `{password, recoveryKey,
-  chatKeys?}`, stores the key and answers 204. `password` carries the caller's auth key, so a stolen session cannot
-  replace the recovery credential; a wrong or missing one is a 403 and nothing is written. `chatKeys` is the chat
-  identity re-wrapped under the new phrase, stored in the same transaction, as `/auth/recover` takes it. The login
-  response carries `legacyRecovery: true` for an account with no recovery key, which tells the app to do this.
+- **Giving an account a key.** `PUT /api/v0/auth/recovery-key` with a session, body
+  `{password, recoveryKey, chatKeys?, vaultKey?}`, stores the key and answers 204. `password` carries the caller's
+  auth key, so a stolen session cannot replace the recovery credential; a wrong or missing one is a 403 and nothing
+  is written. `chatKeys` and `vaultKey` are the chat identity and the vault key re-wrapped under the new phrase,
+  stored in the same transaction, as `/auth/recover` takes them. The login response carries `legacyRecovery: true`
+  for an account with no recovery key, which tells the app to do this.
 
 ### Changing a password
 
-`PUT /api/v0/auth/password` with a session, body `{password, newAuthKey, chatKeys?}`, answers 204. `password` carries
-the auth key of the password the account has now, so a stolen session cannot change it; a wrong or missing one is a
-403, a raw password a 426, and nothing is written. `newAuthKey` is derived from the new password and the salt
-`GET /auth/salt` returns, which the account keeps. `chatKeys` is the chat identity re-wrapped under the new password,
-stored in the same transaction, as `/auth/recover` takes it. Every other session of the account is signed out in that
-transaction and the caller's stays signed in (#3181), and the route shares the sign-in rate limit (#3022).
+`PUT /api/v0/auth/password` with a session, body `{password, newAuthKey, chatKeys?, vaultKey?}`, answers 204.
+`password` carries the auth key of the password the account has now, so a stolen session cannot change it; a wrong
+or missing one is a 403, a raw password a 426, and nothing is written. `newAuthKey` is derived from the new password
+and the salt `GET /auth/salt` returns, which the account keeps. `chatKeys` and `vaultKey` are the chat identity and
+the vault key re-wrapped under the new password, stored in the same transaction, as `/auth/recover` takes them.
+Every other session of the account is signed out in that transaction and the caller's stays signed in (#3181), and
+the route shares the sign-in rate limit (#3022).
 
 ## Check setup status
 

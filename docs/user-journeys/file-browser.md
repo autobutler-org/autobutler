@@ -834,8 +834,7 @@ it, so what changed while the client was away shows without a manual refresh.
 
 **Notes:**
 
-- **Open Vault** is offered only to an admin, and appears once the app has heard from the Quark that the account is
-  one.
+- **Open Vault** is offered to every account, since each has a vault of its own (JN-VT-000).
 - The card is owed from **Get started**. Leaving the wizard before that, by reloading on the recovery phrase or theme
   step, lands on Files without it.
 - What is remembered is per device and per Quark, so another browser signed in to the same Quark shows no card.

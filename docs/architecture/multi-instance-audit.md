@@ -6,19 +6,19 @@ one database and one file store). It is the multi-instance counterpart of [capac
 
 The question asked of every row: **if a different instance served the next request, what would go wrong?**
 
-**Short version.** Quark assumes it is the only process in three places that destroy data, and those come
-before anything else. A fourth is fixed: startup used to reset the database when the recorded schema version was
-dirty or unknown to the binary (D1, D2), and since #3127 it refuses to start instead.
+**Short version.** Quark assumes it is the only process in two places that destroy data, and those come
+before anything else. Two more are fixed: startup used to reset the database when the recorded schema version was
+dirty or unknown to the binary (D1, D2), and since #3127 it refuses to start instead; and a vault password change
+used to re-key every entry and re-unlock only the instance that served it (S4), which went with the server-side
+vault crypto in #3456.
 
 1. Startup and shutdown empty `<data dir>/tmp` (F1), which holds every instance's in-flight uploads and
    transcodes.
 2. File version history serializes its index rewrite with in-process mutexes (S5). Two instances saving one file
    delete each other's snapshot as a stray.
-3. A vault password change re-keys every entry and re-unlocks only the instance that served it (S4). Any other
-   instance keeps writing entries under the old key.
 
 After those, the largest group is state that is simply invisible to the other instance: the event bus and every
-cache hanging off it, upload sessions, download tokens, vault unlock state, the settings cache, and job cancel.
+cache hanging off it, upload sessions, download tokens, the settings cache, and job cancel.
 Sessions, job claiming, and most row-level work are already safe because they are single guarded SQL statements.
 
 ## Method
@@ -70,9 +70,9 @@ in a default-isolation transaction. SQLite's single writer makes them correct; u
 concurrent demotions can each see the other as the survivor. Fixed in #3171: each transaction takes a row lock
 before it counts.
 
-Every `sql.Open` outside tests: `internal/db/connect.go:23` (main), `:46` (vault file);
-`pkg/backup/vault_export.go:53`, `pkg/backup/vault_import.go:25`, `pkg/backup/chat_export.go:72` (backup
-transport files). All name the `sqlite` driver.
+Every `sql.Open` outside tests: `internal/db/connect.go` (main), `internal/db/migration_state.go`,
+`pkg/util/settingsutil/settingsutil.go` (the settings import), and `pkg/backup/ciphertext_backup.go` (the chat
+and vault backup files). All name the `sqlite` driver. The vault file's went with #3456.
 
 ## Events and the caches behind them
 
@@ -120,16 +120,16 @@ or lease column, which was the cause of J1 through J3; #2966 added `owner` and `
 | S1 | `pkg/util/uploadutil/uploadutil.go:253-263`; `pkg/util/uploadutil/session_store.go:29`, `:90` | `SessionStore.sessions`: id, owner, offset and an open file per resumable upload, staged at `<data dir>/tmp/upload-sessions/upload-*.part` | A chunk on another instance gets 404. The client restarts the file from zero, at most 3 times (`lib/services/upload_manager.dart`), so a multi-chunk upload almost never completes without affinity | failed request | #2967 | Session rows in the database, staged bytes on the share, a per-session lock for the append |
 | S2 | `pkg/util/uploadutil/uploadutil.go:38`, `:42`; `session_store.go:331` | 32 sessions per account and 256 overall, counted over the local map | Both caps, and the staged-disk bound, multiply by N | security | #2967 (unnamed) | Count in the database |
 | S3 | `pkg/util/downloadutil/downloadutil.go:45-50`; `internal/server/middleware/middleware.go:279-301` | `TokenStore.tokens`: 60 s unused, then a 10 minute idle window for range resumes | The browser's GET lands on B and gets a JSON 401 saved as the file; the app never sees an error because the download is a plain link | failed request | #2967 | A signed token (a keyed hash over user, path, serial, expiry) or a table |
-| S4 | `pkg/util/vaultcrypto/vaultcrypto.go:45-51`; `pkg/util/deputil/deputil.go:202`; `pkg/util/vaultutil/config.go:239-241` | `VaultSession`: the derived key, one per process, auto-lock checked lazily against `unlockedAt` | Unlock on A, locked on B: the page flips every refresh. Lock on A leaves B unlocked. `ChangePassword` on A re-keys every entry and re-unlocks only A, so B writes new entries under the old key | data loss | #2967 (password change unnamed) | See the constraints in #2967's comments: never store or broadcast the key. Add a key generation to `vault_config` and reject a session holding a stale one |
+| S4 | `pkg/util/vaultutil/vaultutil.go`; `lib/controllers/vault_controller.dart` | Vault unlock state. Fixed in #3456: the Quark holds none. `VaultSession` is gone; the app opens the account's vault key and keeps it in memory, and a password change re-wraps that one key rather than re-keying the items | Every instance serves the same wrapped key and ciphertext rows, and locking or unlocking is the app's own state | safe | #3456 | None needed |
 | S5 | `pkg/util/fileversionutil/fileversionutil.go:94-101`; `pkg/util/fileversionutil/helpers.go:310-343` | 64 striped mutexes around read index, copy snapshot, `commit`. `commit` writes the index, then deletes every file in the store the index does not list | Two instances snapshot one file: both read the old index, and the second `commit` deletes the first's snapshot as a stray | data loss | #2967 | A cross-instance lock per store path, or the index in the database |
 | S6 | `pkg/util/fileversionutil/fileversionutil.go:97-100` | `pending`: folders a file was trashed from since startup, swept on a local `trash_changed` | Delete on A, empty trash on B: no sweep, orphaned `.quark-versions` stores stay on disk. Already true across a restart | wasted work | #2965 (unnamed) | Relay, or a periodic sweep under a lock |
-| S7 | `pkg/util/ratelimitutil/ratelimitutil.go:27-32`; `pkg/util/deputil/deputil.go:138`, `:144`, `:153` | Three `Limiter`s: per-IP token buckets for auth and vault, per-account for chat | Each limit is N times looser. The vault unlock limiter is the master password's only brute-force bound | security | #2967 | Shared counters for auth and vault |
+| S7 | `pkg/util/ratelimitutil/ratelimitutil.go:27-32`; `pkg/util/deputil/deputil.go` | Two `Limiter`s: a per-IP token bucket for auth, per-account for chat. The vault unlock limiter is gone with #3456: a wrong vault password fails in the app and sends nothing, so there is no unlock route left to bound | Each limit is N times looser | security | #2967 | Shared counters for auth. The vault half is resolved by #3456 |
 | S8 | `pkg/util/ratelimitutil/ratelimitutil.go:139-146`; `pkg/util/deputil/deputil.go:147` | `LoginGuard`: failure counts, lockouts, and the addresses each account has signed in from. In memory on purpose (#1861) | Thresholds multiply by N, a lockout on A does not hold on B, and a rollout clears them all | security | #2967 | A table keyed on a hash; household boxes keep the in-memory guard |
 | S9 | `pkg/util/settingsutil/settingsutil.go` (`Load`, `Bind`); `sql/queries/settings.sql` | The Quark's settings. Fixed in #3083: one row per setting in the `settings` table, read by a query on every use with no cache, and each setter writes its own row. `settings.json` is imported on the first start and set aside | Every instance reads the same rows, and a change to one setting cannot revert another | safe | #3083 | None needed |
 | S10 | `pkg/util/settingsutil/settingsutil.go` (`AuthSaltSecret`) | The 32 random bytes keying the deterministic salt for unknown usernames. Fixed in #3083: an instance that finds none offers its own with insert-or-ignore and reads back what the database kept | Two instances on a fresh install end up with the same secret | safe | #3083 | None needed |
 | S11 | `pkg/util/requestlogutil/requestlogutil.go` | The account-request history. Fixed in #3083: an insert into `account_request_history` and a trim to the newest `MaxEntries`, with no process-local lock and no temp file | Two admins deciding on different instances both land | safe | #3083 | None needed |
 | S12 | `pkg/util/usersettingsutil/usersettingsutil.go` | Per-account settings. Fixed in #3083: one row per account in `user_settings`, removed with the account by its foreign key | Any instance reads and writes the same row | safe | #3083 | None needed |
-| S13 | `pkg/util/deputil/dependencies.go:50-51`, `:242-249`; `internal/server/server.go:291-309` | `vaultDB`: a handle to `<device data dir>/vault.db`, swapped on a location change, falling back to the main database when unset | A location change on A swaps only A's handle. An instance that cannot see the device silently serves the main database's vault tables, a different vault | wrong data | #2969 (unnamed) | No external vault location in multi-instance mode; fail closed, no fallback |
+| S13 | `internal/db/migrations/037_per_account_vault.up.sql` | The vault's database. Fixed in #3456: there is no `vaultDB` handle and no vault location; `vault_keys` and `vault_items` are ordinary tables in the main database | Every instance reads the same rows | safe | #3456 | None needed |
 | S14 | `pkg/util/iosemutil/iosemutil.go:74-93`; `pkg/util/downloadutil/downloadutil.go:145` | IO semaphores and zip slots sized from `runtime.NumCPU()`; the copy class is 2 because of the one disk | CPU classes are right per host. The copy class, bound by the shared disk, becomes 2N | safe | none needed | Keep per instance; note it in [capacity](capacity.md) |
 | S15 | `pkg/util/healthutil/healthutil.go:39-52` | `Collector`: a 5 s sample of this host, and the "CPU high since" marker | `/health` reports whichever host answered; the hostname and numbers alternate per poll | wrong data | #2970 (unnamed) | Label with the instance id |
 
@@ -156,10 +156,10 @@ the path: put it on the share, or keep it on the instance.
 | F9 | `pkg/backup/last_snapshot.go` | When the last snapshot backup completed. Fixed in #3083: the `lastSnapshotBackup` row of the `settings` table | Every instance reports the same time | safe | #3083 | None needed |
 | F10 | `pkg/util/storageutil/disk_probe.go:62-63`, `:145` | `.quark-probe-tmp`, a fixed name in the device data dir, truncated and removed per probe | Two probes destroy each other's file; the bogus speed class is cached for an hour | wrong data | #2968 (unnamed) | `os.CreateTemp` |
 | F11 | `pkg/util/fileutil/xlsx.go:103` | `.<stem>.qsheet.converting`, a fixed temp name in the user's folder | Two conversions of one file collide. Possible in one process today | failed request | #2968 (unnamed) | A unique temp name |
-| F12 | `pkg/backup/vault_export.go` (`stageVaultExport`, `commitStagedVault`) | `vault_backup.db`. Fixed in #3084: built under a temp name of its own by the request that starts the backup, and renamed into place by the job | Two exports never write one file, and a failed one leaves the previous backup whole | safe | #3084 | None needed |
+| F12 | `pkg/backup/ciphertext_backup.go` (`ciphertextBackup.export`) | `vault_items_backup.db`, which replaced `vault_backup.db` in #3460. Fixed in #3084: built under a temp name of its own and renamed into place, as `chat_backup.db` is | Two exports never write one file, and a failed one leaves the previous backup whole | safe | #3084 | None needed |
 | F13 | `pkg/backup/chat_export.go` (`ExportChat`) | `chat_backup.db`. Fixed in #3084: the temp name is unique to each export | Two exports no longer share a temp | safe | #3084 | None needed |
 | F14 | `pkg/util/tlsutil/tlsutil.go:27-46`; `pkg/util/tlsutil/helpers.go:26-44` | `<data dir>/certs/server.crt` and `.key`, regenerated at startup when the certificate does not name this host | On a shared root, hosts with different names overwrite each other's pair at every start, and an interleaving leaves a certificate whose key does not match. Per-instance, clients see a different certificate per request | failed request | uncovered | Terminate TLS at the load balancer in multi-instance mode |
-| F15 | `pkg/util/vaultutil/location.go:23`, `:219`; `internal/db/vault_schema.go` | `<device data dir>/vault.db`, a SQLite file outside the migration set | A PostgreSQL main database does not remove it | data loss | #2968 (raised in its comments) | With S13: the vault stays in the main database |
+| F15 | `internal/db/migrations/038_drop_household_vault.up.sql` | `<device data dir>/vault.db`. Fixed in #3456: the external vault file and `internal/db/vault_schema.go` are gone, and the vault is in the migration set | A PostgreSQL main database holds the vault like any other table | safe | #3456 | None needed |
 | F16 | `pkg/util/storageutil/dir.go:112-113`; `pkg/util/storageutil/auto_mount.go:22-50` | `<data dir>/mounts/<serial>/` mount points | On a shared root, a mount point made on A's host is an empty directory on B's | wrong data | #2969 | Instance-local |
 | F17 | `internal/install/install.go:77-118` | `useradd --system quark` with no fixed uid | Two hosts give `quark` different user ids, so files one writes to the share can be unreadable by the other. Containers built from one image do not have this | failed request | #2968 (unnamed) | Pin the uid and gid |
 
@@ -177,7 +177,7 @@ or lock file anywhere in the backend; the only `O_EXCL` is the fallback in F3.
 | M4 | `pkg/util/updateutil/helpers.go:217`; `internal/server/api/v0/version/do_update.go:39-43` | The in-app update replaces the binary and exits the instance that got the request | One instance updates and migrates the schema under the others, which then meet D2 | data loss | #2969 | Off in this mode; the image is the version |
 | M5 | `pkg/util/updateutil/updateutil.go:457-472`; `cmd/quark/serve/serve.go:32` | `RunInstalledUpdate` execs a newer binary from `$QUARK_UPDATE_DIR`, which the container image puts in the data volume | On a shared volume every instance jumps version at its next restart, uncoordinated | data loss | #2969 (unnamed) | Ignore the update dir in this mode |
 | M6 | `internal/server/server.go:140`, `:358-418` | `usbDeviceMonitor`: 5 s ticker, auto-mounts with `sudo mount`, `handled` map | Per-host. Two instances on one host race the mount | wasted work | #2969 | Off in this mode |
-| M7 | `internal/server/server.go:139`, `:311-351` | `vaultDeviceMonitor`: 10 s ticker, `wasConnected := true` | An instance without the drive sees a disconnect on its first tick, locks its vault session and announces it | wrong data | #2969 | Off in this mode |
+| M7 | `internal/server/server.go` | `vaultDeviceMonitor`. Fixed in #3456: removed, with the `vault_device_*` and `vault_storage_changed` events, since the vault no longer lives on a drive | Nothing to disagree about | safe | #3456 | None needed |
 | M8 | `pkg/util/storageutil/service.go:115-132`, `:285-301`; `pkg/vfs/registry.go:5`; `pkg/util/deputil/deputil.go:180-195` | `StorageService` device caches (10 s), the devices-changed listeners, and the VFS registry built from them | `files` is the same everywhere. `files:<serial>` exists only where the drive is, and a mount or unmount re-syncs only the instance that served it | failed request | #2969 (unnamed) | Devices in this mode are configured shared mounts, not detected hardware |
 | M9 | `pkg/util/deputil/deputil.go:156-162`; `pkg/util/sshutil/sshutil.go:28`; `pkg/util/hostnameutil/hostnameutil.go:80` | `sshSystem`, `hostnameSystem`, `repairSystem`: act on the host that served the request | An SSH key revoked on A is still valid on B. A rename changes one host and regenerates its certificate (F14) | security | #2969 (unnamed) | Off in this mode, with the pages saying why |
 | M10 | `internal/install/dns_sd.go:9-38` | Avahi service file advertising `_quark._tcp` on port 443 | Every host advertises, so the app lists one install N times and pins itself to an instance behind the load balancer's back | wrong data | #2969 (unnamed) | Do not advertise in this mode |
@@ -202,7 +202,7 @@ or lock file anywhere in the backend; the only `O_EXCL` is the fallback in F3.
 | C3 | `lib/utils/auto_refresh_mixin.dart:116` | Pages with the mixin refetch every 15 s by default; the user can turn it off | Bounds E1's staleness on those pages. It does not cover the jobs badge, notifications, feature flags or a hostname change | wrong data | #2965 | Not a fix; fix E1 |
 | C4 | `lib/widgets/system/storage_tab.dart` (`_pollStatus`) | The 2 s backup status poll. Fixed in #3084: the status comes out of the job row (J12), and a 404 ends the poll | Any instance answers. A transient error on one instance is retried on the next tick | safe | #3084 | None needed |
 | C5 | `lib/services/authenticated_service.dart:131-133` | Any 401 means the token is dead everywhere, so the client signs out | Safe while every instance reads the same `sessions` table and outages answer 503 | safe | #2955 (trap) | Read-your-writes for sessions; no 401 for a local reason |
-| C6 | `lib/pages/vault_page.dart:79`; `lib/services/vault_service.dart:228-239` | "Unlocked" holds until auto-lock | Follows S4: the unlock form reappears every refresh | failed request | #2967 | Follows S4 |
+| C6 | `lib/controllers/vault_controller.dart` | "Unlocked". Fixed in #3456: it is the key the app opened, not state on the Quark | Any instance serves the ciphertext an unlocked app reads, so the unlock form never reappears on a refresh | safe | #3456 | None needed |
 
 ## Uncovered: proposed new sub-issues
 
@@ -227,13 +227,13 @@ issue's shape:
   shutdown should release jobs to `pending` (J6). Done for J1 to J4 and J6 to J9. The backfills (J10, J11, D11)
   are still open: skipping one on a lone device that restarts would leave files out of the
   index until its next boot.
-- **#2967**: the vault password change loses data, on top of the unlock-state problems (S4). The upload caps
+- **#2967**: the vault password change and unlock state (S4, C6) are resolved by #3456. The upload caps
   multiply (S2).
 - **#2968**: the tmp wipe (F1) and the transcode staging reaper (F2) delete other instances' live files, which
   is worse than "orphaned staging". Client thumbnails and avatars are durable data in directories that look like
   caches (F7, F8).
 - **#2969**: add `RunInstalledUpdate` (M5), the storage service and VFS registry (M8), SSH, hostname and repair
-  (M9), DNS-SD (M10), the external vault location (S13, F15), and TLS (F14).
+  (M9), DNS-SD (M10), and TLS (F14). The external vault location (S13, F15) is gone with #3456.
 - **#2970**: `NoRoute` returning HTML for API paths (U2), unknown job kinds (J5), the post-response cleanup
   goroutine (J13), and auth capability probing (U5).
 

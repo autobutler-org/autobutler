@@ -191,7 +191,7 @@ In Kubernetes, put the URL in a `Secret` and reference it from the Deployment's 
 - **One replica is still the rule**, and `strategy: Recreate` with it. PostgreSQL removes the database's reason
   for that and none of the others: the file store on a `ReadWriteOnce` volume, the event bus, running jobs and
   the tailnet identity each belong to one process. Running several instances is #2964.
-- **Not everything works yet.** Content search, snapshot backup and moving the vault to a drive answer `501`
+- **Not everything works yet.** Content search and snapshot backup answer `501`
   with the issue that tracks them; [the full list](architecture/data.md#what-does-not-work-on-postgresql-yet) is
   in the data architecture page. There is no tool yet to move an existing SQLite install's data across (#2962).
 
@@ -276,7 +276,7 @@ instead, unset `QUARK_INSECURE` and set `HTTPS_PORT`.
 
 ## Behind a proxy
 
-Quark rate-limits login, setup, account recovery and vault unlock per client IP. It takes that IP
+Quark rate-limits login, setup and account recovery per client IP. It takes that IP
 from `X-Forwarded-For`, and whether the connection was HTTPS from `X-Forwarded-Proto`, only when the
 direct peer is a trusted proxy. Anyone else could put any address in those headers.
 

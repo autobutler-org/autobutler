@@ -12,10 +12,11 @@ Every account is one of two kinds.
 
 | | Member | Admin |
 | --- | --- | --- |
-| Sign in, use Files, Photos, Chat and the rest | Yes | Yes |
+| Sign in, use Files, Photos, Chat, their own Vault and the rest | Yes | Yes |
 | Own home folder (`users/<name>`) | Yes | Yes |
 | Share their own files and folders | Yes | Yes |
-| See the **Users** page and **Vault** in the drawer | No | Yes |
+| See the **Users** page in the drawer | No | Yes |
+| Open someone else's **Vault** | No | No |
 | Add, turn off, delete accounts; approve account requests | No | Yes |
 | Make or remove admins; manage groups | No | Yes |
 | Browse every folder, including other people's homes (**All files**) | No | Yes |

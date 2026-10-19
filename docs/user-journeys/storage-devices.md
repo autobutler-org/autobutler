@@ -151,17 +151,10 @@ Covers the System page's Storage tab (`/system/storage`) — listing, mounting, 
 
 ---
 
-### JN-SD-009: Vault storage location indicator
+### JN-SD-009: Vault storage location indicator (retired)
 
-**Preconditions:** Vault is initialized and assigned to a specific device.
-
-**Steps:**
-
-1. Navigate to `/system/storage`.
-
-**Expected result:**
-
-- The device holding vault data is visually marked (icon or label).
+Retired by #3456: each account's vault lives in the main database, not on a drive, so no device is marked as
+holding it.
 
 ---
 
@@ -183,7 +176,6 @@ including one that is not mounted.
 
 - Every drive action is admin-only on the Quark (#1899). The page hides the buttons (#1928), and the Quark still
   refuses the requests.
-- The drawer has no Vault entry for this account either (see JN-VT-000 in vault.md).
 
 ---
 

@@ -44,15 +44,15 @@ order, and which ones a given account sees.
 
 **Expected result:**
 
-- The everyday pages are **Files**, **Photos**, **Calendar**, **Docs**, **Sheets**, **Slides**, **Books**, **Chat**.
-  There is no **Vault** row (JN-VT-000).
+- The everyday pages are **Files**, **Photos**, **Calendar**, **Docs**, **Sheets**, **Slides**, **Books**, **Chat**,
+  **Vault**. **Vault** opens the account's own vault (JN-VT-000).
 - The **Manage** heading is still there, with **Trash**, **System** and **Settings** under it. There is no **Users**
   row (JN-USR-002).
 
 **Notes:**
 
 - A row for a feature still in beta appears or disappears without a reload when an admin turns that beta on or off.
-  Slides, Calendar, and Chat stay listed. Changing the account's admin role shows or hides **Users** and **Vault**
+  Slides, Calendar, and Chat stay listed. Changing the account's admin role shows or hides **Users**
   (JN-USR-003, JN-USR-004).
 - Hiding a row decides what the drawer shows and nothing more. Opening a hidden page by its address is refused
   separately.

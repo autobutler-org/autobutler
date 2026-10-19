@@ -3,7 +3,8 @@
 Chat messages are end-to-end encrypted: only the members of a channel can read them, and the Quark stores
 ciphertext it can't open. This page covers the identity keys that make that possible (#2416) and what they
 protect against, then the channel keys and key grants built on them (#2417), then the messages encrypted under
-those keys (#2418) and the reactions on them (#2426).
+those keys (#2418) and the reactions on them (#2426). The password vault is encrypted with the same account keys,
+and [The vault](#the-vault) covers it.
 
 ## Identity keys
 
@@ -28,17 +29,22 @@ it) in the browser.
 The app never sends the Quark a secret that opens a wrap, apart from the one move of a legacy account to keys (see
 [The legacy claim](#what-it-doesnt-protect-against)). Each secret goes through one Argon2id run over the
 account's 16-byte auth salt (`GET /api/v0/auth/salt`), and HKDF-SHA256 splits the result into a key the Quark is
-sent and a key that wraps the identity and stays on the device:
+sent and keys that wrap what the account encrypts and stay on the device:
 
 ```text
-master       = Argon2id13(password, authSalt)
-authKey      = HKDF-SHA256(master, info = "auth")                 sent in the password's place
-wrapKey      = HKDF-SHA256(master, info = "chat-wrap")            the password wrap's key
+master          = Argon2id13(password, authSalt)
+authKey         = HKDF-SHA256(master, info = "auth")                       sent in the password's place
+wrapKey         = HKDF-SHA256(master, info = "chat-wrap")                  the password wrap's key
+vaultWrapKey    = HKDF-SHA256(master, info = "vault-wrap")                 the vault key's password wrap
 
-phraseMaster = Argon2id13(normalize(phrase), authSalt)
-recoveryKey  = HKDF-SHA256(phraseMaster, info = "recovery-auth")  sent in the phrase's place
-phraseKey    = HKDF-SHA256(phraseMaster, info = "recovery-wrap")  the phrase wrap's key
+phraseMaster    = Argon2id13(normalize(phrase), authSalt)
+recoveryKey     = HKDF-SHA256(phraseMaster, info = "recovery-auth")        sent in the phrase's place
+phraseKey       = HKDF-SHA256(phraseMaster, info = "recovery-wrap")        the phrase wrap's key
+phraseVaultKey  = HKDF-SHA256(phraseMaster, info = "recovery-vault-wrap")  the vault key's phrase wrap
 ```
+
+Each purpose is its own HKDF expand of one Argon2id run, so the vault costs no second Argon2id and no key opens
+another purpose's wrap. The vault keys are described under [The vault](#the-vault).
 
 `normalize` trims and lowercases, as the Quark always has. The Quark stores only SHA-256 digests of `authKey` and
 `recoveryKey` (#2765). `AccountCrypto.deriveAuthKeys` and `deriveRecoveryKeys` in `lib/services/account_crypto.dart` are
@@ -376,6 +382,42 @@ nothing until a channel is fetched and decrypted. Which of the two is an open de
 - `PUT /api/v0/chat/channels/:id/read` takes `{messageId}` and needs `read_messages`: anyone else gets 404,
   delegated managers and admins included, and so does an id that names no message in the channel.
 - `GET /api/v0/chat/channels` carries `unreadCount` on each channel.
+
+## The vault
+
+The password vault (#3456) is end-to-end encrypted with the same two secrets, one vault per account. The app makes
+a random 32-byte vault key and stores it on the Quark only wrapped, in the format of an identity wrap: under
+`vaultWrapKey` and, when the app has the phrase, under `phraseVaultKey`, both over the auth salt, in a
+`vault_keys` row beside `kdf_params` (`argon2id13+hkdf-sha256+recovery` with a phrase wrap,
+`argon2id13+hkdf-sha256` without). Each item, entry or folder alike, is XChaCha20-Poly1305 under the vault key
+with a fresh random nonce, and its additional data binds what it is and the layout of its plaintext:
+
+```text
+ad = utf8("quark-vault-item-v1") || 0x00 || formatVersion as one byte
+```
+
+So a chat wrap does not open as an item, and an item re-labeled with another `formatVersion` does not open at all.
+`AccountCrypto.encryptVaultItem` in `lib/services/account_crypto.dart` is the construction. The Quark stores the
+ciphertext, the nonce and `formatVersion`, and nothing else about an item.
+
+- **Unlock.** The vault opens with the login password, which derives `vaultWrapKey` in the app; there is no
+  separate vault password. A wrong password fails to open the wrap and sends nothing. The open key and the
+  decrypted items live in memory only, and are forgotten on lock, after 15 minutes idle, and at sign-out.
+- **Credential changes.** A password change, a recovery and a new recovery phrase send the vault key re-wrapped as
+  `vaultKey` beside `chatKeys`, stored in the same transaction. The phrase wrap is kept across a password change.
+  Setup sends the login password's auth key beside the wraps, and the Quark re-confirms it before storing the key,
+  so the password wrap is always under the login password that these flows re-wrap from. Setup takes the recovery
+  phrase as an optional field and, when it is filled in, stores the phrase wrap with the
+  first `PUT /api/v0/vault/key`. Nothing checks that phrase against the Quark, so a mistyped one is stored and
+  never opens the vault. A vault set up without the phrase has no phrase wrap until the account is given a new
+  phrase (`PUT /api/v0/auth/recovery-key`); until then a recovery cannot open it.
+- **No admin recovery.** Nobody holds a copy of the vault key. An account that loses both its password and its
+  phrase wrap loses the vault, and `DELETE /api/v0/vault` lets it start a new one.
+- **Isolation.** Every vault route acts on the caller's own rows, and `vault_changed` reaches only the owner's
+  sessions. An admin reads another account's vault as not found.
+
+The threat model below applies as it does to chat: someone with the disk, a backup or the database reads only
+ciphertext, and a malicious running Quark, or the web app it serves, can still capture the password.
 
 ## Rate limits
 

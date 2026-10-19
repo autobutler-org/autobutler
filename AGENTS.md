@@ -257,7 +257,7 @@ Every query lives in `sql/queries/*.sql` and reaches Go as generated code in `in
   `*db.UnsupportedError` naming the feature and the issue that tracks it, which every handler answers as
   `501`. Add the feature to the list in
   [`docs/architecture/data.md`](docs/architecture/data.md#what-does-not-work-on-postgresql-yet). A file Quark
-  opens as SQLite itself (a vault on a drive, a backup) needs no guard.
+  opens as SQLite itself (a backup file) needs no guard.
 - **Queries and schema are written for two engines, SQLite and PostgreSQL (#2955).** Before writing a query
   read [`sql/queries/AGENTS.md`](sql/queries/AGENTS.md); before writing a migration read
   [`internal/db/AGENTS.md`](internal/db/AGENTS.md). Each directory's `CLAUDE.md` imports its `AGENTS.md`.

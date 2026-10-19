@@ -278,8 +278,13 @@ Every implementation keeps one contract, which `pkg/vfs/conformance_test.go` hol
 
 ## The vault
 
-Each account has a vault of its own, encrypted on the client (#3456). `vault_keys` holds the account's vault
-key, wrapped under its password and, when the client had it, its recovery phrase; `vault_items` holds the items
-as ciphertext under that key. The Quark never sees a key or a plaintext. A snapshot copies both tables as they
-are into `vault_items_backup.db`, and `backup.ImportVault` restores them ([Backup](backup.md)). The household
-vault of `005_vault`, one master password for everyone, is dropped by `038_drop_household_vault`.
+Each account has a vault of its own, encrypted on the client (#3456). `vault_keys` holds the account's vault key,
+wrapped under its password and, when the user gave it at setup or the account has had a new phrase since, its
+recovery phrase; `vault_items` holds the items as ciphertext under that key. Entries and folders are both items:
+what an item is, and its name, URL, username, password, notes, two-factor secret and folder, all live inside the
+ciphertext, so no column says anything about the content. Every query in `sql/queries/vault.sql` takes the
+account's `user_id`, so no call, an admin's included, reaches another account's rows. The Quark never sees a key or
+a plaintext: the app derives and opens everything ([Chat security](../chat-security.md#split-keys-2430) has the key
+derivation). A snapshot copies both tables as they are into `vault_items_backup.db`, and `backup.ImportVault`
+restores them ([Backup](backup.md)). The household vault of `005_vault`, one master password for everyone, is
+dropped by `038_drop_household_vault`.

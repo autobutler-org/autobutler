@@ -131,8 +131,8 @@ make test/db/postgres
   factory reset. It runs the same journey on SQLite and fails on any step the two answer differently, apart
   from the ones PostgreSQL refuses by design.
 - **What differs at run time** (`pkg/util/sqlutil`, `pkg/util/searchutil`, `pkg/backup`). A unique violation
-  is recognized from each engine's driver, the SQLite-only features are refused by name, and the vault backup
-  round-trips with PostgreSQL as the live database.
+  is recognized from each engine's driver, the SQLite-only features, the chat and vault backups among them, are
+  refused by name.
 
 Each test creates a schema of its own and drops it, so your data is left alone.
 

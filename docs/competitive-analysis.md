@@ -165,7 +165,7 @@ Worth stating plainly, because the tables above are mostly deficits and that is 
   course in DSM 7.3 after sales fell. That reversal left NVMe still restricted and deduplication still
   gated. We have no equivalent and should keep it that way, loudly.
 - **A password vault.** No mainstream NAS ships one. It is a genuine differentiator and it is done well —
-  encrypted, device-gated, with import/export.
+  one per account, end-to-end encrypted on the client, with import/export.
 - **One coherent app.** Competitors split functionality across a dozen mobile apps (DS File, DS Photo,
   Synology Drive, Synology Photos…), which is a recurring complaint. Quark is one client for everything.
 - **Perceptual-hash duplicate detection**, which several paid competitors don't do at all.

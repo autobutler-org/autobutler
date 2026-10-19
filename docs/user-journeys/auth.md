@@ -128,6 +128,9 @@ Covers first-boot setup, login, logout, and password recovery.
   **Continue**; Back stays on the phrase until then. The old phrase stops working.
 - Once an account has a phrase the app made, recovering it sends only a key derived from the phrase, unless the
   Quark answers that the account has none, as a reset Quark does; then the phrase goes out that once, as above.
+- The account's vault survives the recovery only if its key has a phrase wrap: the phrase was typed at vault setup
+  (JN-VT-001), or the account was given a new phrase after setup. Otherwise the vault stays under the old password
+  and can only be started over (JN-VT-021).
 
 ---
 
@@ -396,7 +399,7 @@ from before auth keys; or a Quark that has not been updated to take auth keys.
 - A Quark that answers that an account is old always gets the password once, beside the key, even from a device
   that signed in to it with the key before, since a reset or reinstalled Quark answers that way.
 - An old account still holding a session from an older app, asked for its password again (deleting the account, a
-  drive's role, the vault's storage location), is told "Sign out and sign in again, then try this again.", since
+  drive's role), is told "Sign out and sign in again, then try this again.", since
   only the sign-in form moves it to a key.
 
 ---
