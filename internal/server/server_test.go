@@ -152,15 +152,16 @@ func TestAccessLog_RedactsQueryToken(t *testing.T) {
 	}
 }
 
-// mountUsbDevice implements the two UsbDevice calls mountedUsbSerials makes;
+// mountUsbDevice implements the UsbDevice calls the mount-monitor tests make;
 // any other call panics on the nil embedded interface.
 type mountUsbDevice struct {
 	storageutil.UsbDevice
-	serial, mountPath string
+	serial, mountPath, path string
 }
 
 func (d mountUsbDevice) GetSerial() string    { return d.serial }
 func (d mountUsbDevice) GetMountPath() string { return d.mountPath }
+func (d mountUsbDevice) GetPath() string      { return d.path }
 
 // TestMountedUsbSerials checks the set usbDeviceMonitor compares between
 // ticks: a pulled drive leaves it, so the VFS device namespaces re-sync (#2639).
@@ -172,5 +173,48 @@ func TestMountedUsbSerials(t *testing.T) {
 	})
 	if len(got) != 1 || !got["A"] {
 		t.Errorf("mountedUsbSerials = %v, want only A", got)
+	}
+}
+
+// TestUsbAutoMounter_FailureWaitsForAnotherAppearance verifies that an
+// unmountable drive is tried once while it remains connected. Removing and
+// reconnecting it starts a new appearance and permits one more attempt
+// (#3433).
+func TestUsbAutoMounter_FailureWaitsForAnotherAppearance(t *testing.T) {
+	device := mountUsbDevice{serial: "A", path: "/sys/bus/usb/devices/1-1"}
+	calls := 0
+	mounter := newUsbAutoMounter(func(storageutil.UsbDevice) (*storageutil.AutoMountResult, error) {
+		calls++
+		return nil, fmt.Errorf("mount failed")
+	})
+
+	for range 3 {
+		outcomes := mounter.mount([]storageutil.UsbDevice{device})
+		if len(outcomes) > 1 {
+			t.Fatalf("one poll returned %d mount outcomes, want at most one", len(outcomes))
+		}
+	}
+	if calls != 1 {
+		t.Fatalf("mount calls while device remained connected = %d, want 1", calls)
+	}
+
+	mounter.mount(nil)
+	mounter.mount([]storageutil.UsbDevice{device})
+	if calls != 2 {
+		t.Fatalf("mount calls after reconnect = %d, want 2", calls)
+	}
+}
+
+func TestUsbAutoMounter_DeviceIdentityChangeAllowsAnotherAttempt(t *testing.T) {
+	calls := 0
+	mounter := newUsbAutoMounter(func(storageutil.UsbDevice) (*storageutil.AutoMountResult, error) {
+		calls++
+		return nil, fmt.Errorf("mount failed")
+	})
+
+	mounter.mount([]storageutil.UsbDevice{mountUsbDevice{serial: "A", path: "/sys/bus/usb/devices/1-1"}})
+	mounter.mount([]storageutil.UsbDevice{mountUsbDevice{serial: "A", path: "/sys/bus/usb/devices/1-2"}})
+	if calls != 2 {
+		t.Fatalf("mount calls after identity change = %d, want 2", calls)
 	}
 }

@@ -396,8 +396,7 @@ func usbDeviceMonitor(deps deputil.Dependencies) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	// Track serials we've already handled so we don't reattempt on every tick.
-	handled := make(map[string]bool)
+	autoMounter := newUsbAutoMounter(storageutil.AutoMountDevice)
 
 	// An enumeration failure is usually permanent, so log it on transition
 	// rather than on every 5s tick — otherwise one bad host produces 17k
@@ -424,26 +423,20 @@ func usbDeviceMonitor(deps deputil.Dependencies) {
 		}
 		mounted = nowMounted
 
-		for _, device := range devices {
-			serial := device.GetSerial()
-			if serial == "" || handled[serial] {
-				continue
-			}
-			if device.GetMountPath() != "" {
-				handled[serial] = true // already mounted — no action needed
-				continue
-			}
-
-			result, err := storageutil.AutoMountDevice(device)
+		for _, outcome := range autoMounter.mount(devices) {
+			serial := outcome.device.GetSerial()
+			result, err := outcome.result, outcome.err
 			if err != nil {
 				log.Printf("[storage] usbDeviceMonitor: failed to auto-mount %s: %v", serial, err)
 				if result == nil {
-					continue // mount itself failed — retry next tick
+					continue // mount itself failed — wait for another device appearance
 				}
 				// Mount succeeded but data-dir init failed — still mark handled.
 			}
+			if result == nil {
+				continue // device became mounted between enumeration and the attempt
+			}
 
-			handled[serial] = true
 			deps.StorageService().InvalidateDeviceCache()
 			deps.EventBus().Publish(eventbus.Event{
 				Kind: eventbus.EventVaultStorageChanged,
@@ -452,6 +445,64 @@ func usbDeviceMonitor(deps deputil.Dependencies) {
 			log.Printf("[storage] auto-mounted new device %s at %s", serial, result.MountTargetPath)
 		}
 	}
+}
+
+type usbAutoMountOutcome struct {
+	device storageutil.UsbDevice
+	result *storageutil.AutoMountResult
+	err    error
+}
+
+// usbAutoMounter remembers each physical appearance it has considered. A
+// failed mount must not be attempted again on every five-second poll: sudo may
+// count each non-interactive authentication failure toward an account lockout
+// (#3433). Once a device disappears, the same serial may be tried again when
+// it is reconnected.
+type usbAutoMounter struct {
+	handled     map[string]string
+	mountDevice func(storageutil.UsbDevice) (*storageutil.AutoMountResult, error)
+}
+
+func newUsbAutoMounter(
+	mountDevice func(storageutil.UsbDevice) (*storageutil.AutoMountResult, error),
+) *usbAutoMounter {
+	return &usbAutoMounter{
+		handled:     make(map[string]string),
+		mountDevice: mountDevice,
+	}
+}
+
+func (m *usbAutoMounter) mount(devices []storageutil.UsbDevice) []usbAutoMountOutcome {
+	present := make(map[string]string, len(devices))
+	for _, device := range devices {
+		if serial := device.GetSerial(); serial != "" {
+			present[serial] = device.GetPath()
+		}
+	}
+	for serial, identity := range m.handled {
+		currentIdentity, ok := present[serial]
+		if !ok || currentIdentity != identity {
+			delete(m.handled, serial)
+		}
+	}
+
+	var outcomes []usbAutoMountOutcome
+	for _, device := range devices {
+		serial := device.GetSerial()
+		identity := device.GetPath()
+		handledIdentity, handled := m.handled[serial]
+		if serial == "" || handled && handledIdentity == identity {
+			continue
+		}
+		m.handled[serial] = identity
+		if device.GetMountPath() != "" {
+			continue
+		}
+
+		result, err := m.mountDevice(device)
+		outcomes = append(outcomes, usbAutoMountOutcome{device: device, result: result, err: err})
+	}
+	return outcomes
 }
 
 // mountedUsbSerials is the set of serials of the USB devices that are mounted.

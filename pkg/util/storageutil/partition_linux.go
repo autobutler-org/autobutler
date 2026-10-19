@@ -61,16 +61,16 @@ func (p *partition) MountCommand(mountTargetPath string) *exec.Cmd {
 		// need uid/gid mount options so the quark service user can write.
 		uid, gid := mountServiceUID()
 		return exec.Command(
-			"sudo", "mount",
+			"sudo", "-n", "mount",
 			"-o", fmt.Sprintf("uid=%s,gid=%s", uid, gid),
 			p.path, mountTargetPath,
 		)
 	}
-	return exec.Command("sudo", "mount", p.path, mountTargetPath)
+	return exec.Command("sudo", "-n", "mount", p.path, mountTargetPath)
 }
 
 func UnmountCommand(mountTargetPath string) *exec.Cmd {
-	return exec.Command("sudo", "umount", mountTargetPath)
+	return exec.Command("sudo", "-n", "umount", mountTargetPath)
 }
 
 func (p *partition) MountPath() (string, error) {
