@@ -185,7 +185,7 @@ says updates are manual, and an admin starts each one (JN-ST-009). Designed auto
 
 ### JN-ST-011: Enable remote access
 
-**Preconditions:** User is signed in as an admin and on the Network tab of Settings (`/settings/network`). Remote access is currently off. The app is a debug or profile build: release builds say **Coming soon** until the app can run its own tunnel (#2857, #2876).
+**Preconditions:** User is signed in as an admin and on the Network tab of Settings (`/settings/network`). Remote access is currently off.
 
 **Steps:**
 

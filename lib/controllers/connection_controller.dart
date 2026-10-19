@@ -81,7 +81,6 @@ class ConnectionController extends ChangeNotifier {
         EmbeddedTunnel.enroll,
     Future<bool> Function() nodeRejected = _appNodeRejected,
     DateTime Function() now = DateTime.now,
-    bool remoteAccessAvailable = RemoteAccessConfig.enableAvailable,
   }) : _probe = probe,
        _readRemoteAccess = readRemoteAccess,
        _activeHost = activeHost,
@@ -99,7 +98,6 @@ class ConnectionController extends ChangeNotifier {
        _enroll = enroll,
        _nodeRejected = nodeRejected,
        _now = now,
-       _remoteAccessAvailable = remoteAccessAvailable,
        _activeHostChanges =
            activeHostChanges ?? AppSettings.instance.activeHostNotifier;
 
@@ -117,11 +115,6 @@ class ConnectionController extends ChangeNotifier {
 
   /// Starts the on-device node, or stops it when the upstream is empty.
   final Future<void> Function(String upstream) _warmEmbeddedTunnel;
-
-  /// [RemoteAccessConfig.enableAvailable]. While false, as in a release
-  /// build that still says **Coming soon**, this phone never pairs and never
-  /// starts its node, even when an admin turned remote access on at the Quark.
-  final bool _remoteAccessAvailable;
 
   /// Registers the foreground restart. Called once from [start].
   final void Function(void Function() onReconnected) _watchEmbeddedTunnel;
@@ -354,10 +347,7 @@ class ConnectionController extends ChangeNotifier {
     bool Function() isCurrent,
   ) async {
     if (!isCurrent()) return;
-    if (!_remoteAccessAvailable ||
-        _pause != null ||
-        remote == null ||
-        remote.isEmpty) {
+    if (_pause != null || remote == null || remote.isEmpty) {
       await _warmEmbeddedTunnel('');
       return;
     }
@@ -469,7 +459,7 @@ class ConnectionController extends ChangeNotifier {
     final host = _activeHost()?.hostAddress;
     await _forgetPause(host);
     final remote = _activeHost()?.remoteAddress;
-    if (_remoteAccessAvailable && remote != null && remote.isNotEmpty) {
+    if (remote != null && remote.isNotEmpty) {
       await _warmEmbeddedTunnel(remote);
     }
     await check();

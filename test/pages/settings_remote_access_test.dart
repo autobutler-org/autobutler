@@ -131,17 +131,11 @@ void main() {
   }
 
   // #2358: the Quark enrolls itself as its own household, so an admin is
-  // offered setup. Release builds say Coming soon instead (#2857); tests run
-  // a debug build.
+  // offered setup.
   testWidgets('offers an admin setup', (tester) async {
     await pumpWithStatus(tester, {'enabled': false, 'connected': false});
 
     expect(find.byKey(const ValueKey('remote_access_set_up')), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('remote_access_coming_soon')),
-      findsNothing,
-    );
-    expect(find.text('Coming soon'), findsNothing);
   });
 
   testWidgets('tells a non-admin who can turn it on', (tester) async {
@@ -154,10 +148,6 @@ void main() {
     expect(
       find.byKey(const ValueKey('remote_access_member_note')),
       findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey('remote_access_coming_soon')),
-      findsNothing,
     );
   });
 

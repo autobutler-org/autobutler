@@ -47,7 +47,6 @@ void main() {
     Listenable? hostChanges,
     Future<String?> Function(String upstream)? embeddedProxy,
     Future<void> Function(String upstream)? warmEmbeddedTunnel,
-    bool remoteAccessAvailable = true,
   }) {
     final c = ConnectionController(
       activeHostChanges: hostChanges ?? ChangeNotifier(),
@@ -106,7 +105,6 @@ void main() {
           },
       nodeRejected: () async => nodeRejected,
       now: () => clock(),
-      remoteAccessAvailable: remoteAccessAvailable,
     );
     if (autoDispose) addTearDown(c.dispose);
     return c;
@@ -413,21 +411,6 @@ void main() {
       expect(warmed, [_remote]);
       expect(c.pairingError, isNull);
     });
-
-    test(
-      'never pairs or starts the node where remote access is not offered',
-      () async {
-        connectedAtHome();
-        host = HostEntry(name: 'Home', hostAddress: _lan);
-        final c = build(remoteAccessAvailable: false);
-        await c.check();
-        await c.resumeRemoteAccess();
-        expect(pairCalls, 0);
-        expect(pairings, isEmpty);
-        expect(enrolled, isEmpty);
-        expect(warmed.where((upstream) => upstream.isNotEmpty), isEmpty);
-      },
-    );
 
     test('does not pair when this phone already has a key', () async {
       connectedAtHome();
