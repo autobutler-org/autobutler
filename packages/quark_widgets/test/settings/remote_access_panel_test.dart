@@ -87,26 +87,6 @@ void main() {
     expect(note.data, contains('Ask an admin'));
   });
 
-  testBothViewports('says coming soon when it is not available', (
-    tester,
-    size,
-  ) async {
-    await pump(
-      tester,
-      const RemoteAccessPanel(
-        state: RemoteAccessState.off,
-        isAdmin: true,
-        available: false,
-      ),
-      size,
-    );
-    expect(
-      find.byKey(const ValueKey('remote_access_coming_soon')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const ValueKey('remote_access_set_up')), findsNothing);
-  });
-
   testBothViewports('turning the switch off asks to turn off', (
     tester,
     size,

@@ -20,7 +20,7 @@ import 'remote_access_panel/remote_access_status_line.dart';
 /// [failure].
 ///
 /// Key prefixes: `remote_access_retry`, `remote_access_set_up`,
-/// `remote_access_coming_soon`, `remote_access_member_note`,
+/// `remote_access_member_note`,
 /// `remote_access_switch`, `remote_access_turn_off`,
 /// `remote_access_try_again`, `remote_access_get_help`, and
 /// `remote_access_status_<state>` on the status line.
@@ -43,7 +43,6 @@ class RemoteAccessPanel extends StatelessWidget {
     required this.isAdmin,
     this.isLoading = false,
     this.isWorking = false,
-    this.available = true,
     this.error,
     this.failure,
     this.failureSteps = const [],
@@ -66,10 +65,6 @@ class RemoteAccessPanel extends StatelessWidget {
 
   /// Whether a change is in flight. Disables every control.
   final bool isWorking;
-
-  /// Whether remote access can be set up from here yet. False says it is
-  /// coming soon in place of the set-up button.
-  final bool available;
 
   /// Why the state could not be read, in the caller's words, or null. Shown
   /// with a Retry button in place of the panel.
@@ -124,14 +119,7 @@ class RemoteAccessPanel extends StatelessWidget {
       children = [
         const RemoteAccessIntro(),
         RemoteAccessStatusLine(state: state),
-        if (!available)
-          Text(
-            'Coming soon. Your Quark is reachable on your home network in '
-            'the meantime.',
-            key: const ValueKey('remote_access_coming_soon'),
-            style: caption,
-          )
-        else if (isAdmin) ...[
+        if (isAdmin) ...[
           FilledButton(
             key: const ValueKey('remote_access_set_up'),
             onPressed: isWorking ? null : onSetUp,

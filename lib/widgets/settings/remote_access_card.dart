@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:quark/controllers/remote_access_controller.dart';
 import 'package:quark/services/remote_access_service.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/utils/remote_access_config.dart';
 import 'package:quark/widgets/settings/help_support_card.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -82,7 +81,6 @@ class RemoteAccessCard extends StatelessWidget {
       isAdmin: isAdmin,
       isLoading: isLoading,
       isWorking: isWorking,
-      available: RemoteAccessConfig.enableAvailable,
       error: error == null
           ? null
           : (disconnected ? quarkDisconnectedShort : error),
