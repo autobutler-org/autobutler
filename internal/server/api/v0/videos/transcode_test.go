@@ -17,6 +17,7 @@ import (
 
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/internal/db/dbtest"
+	v0_jobs "github.com/autobutler-org/quark/internal/server/api/v0/jobs"
 	v0_videos "github.com/autobutler-org/quark/internal/server/api/v0/videos"
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
@@ -54,10 +55,15 @@ func (fakeUsb) GetSerial() string { return testSerial }
 type harness struct {
 	engine   *gin.Engine
 	filesDir string
+	// dataDir is the disk's data dir, whose tmp area stages conversions.
+	dataDir  string
 	registry vfs.Registry
 	database *db.DatabaseSqlc
 	queue    *jobutil.Queue
 	events   <-chan eventbus.Event
+	// principal is who every request acts as: the system unless a test
+	// changes it.
+	principal *accessutil.Principal
 }
 
 // newHarness mounts the videos router over a fake USB disk and a real temp
@@ -65,6 +71,15 @@ type harness struct {
 // worker is not started, so jobs stay pending unless a test calls runWorker.
 func newHarness(t *testing.T) harness {
 	t.Helper()
+	return newHarnessWithRemux(t, nil)
+}
+
+// newHarnessWithRemux is newHarness with the jobs router mounted beside the
+// videos one and remux doing the conversions; nil is the real remux.
+func newHarnessWithRemux(t *testing.T, remux transcodeutil.RemuxFunc) harness {
+	t.Helper()
+	// Anything that falls back to the system data dir lands in a temp HOME.
+	t.Setenv("HOME", t.TempDir())
 	mountPoint := t.TempDir()
 	filesDir := filepath.Join(mountPoint, "quark", "data", "files")
 	if err := os.MkdirAll(filesDir, 0o755); err != nil {
@@ -84,7 +99,7 @@ func newHarness(t *testing.T) harness {
 	queue.Register(jobutil.RegisterParams{
 		Kind: transcodeutil.Kind,
 		Handler: transcodeutil.NewHandler(transcodeutil.NewHandlerParams{
-			Storage: storage, Registry: registry, Database: database, EventBus: bus,
+			Storage: storage, Registry: registry, Database: database, EventBus: bus, Remux: remux,
 		}),
 	})
 	deps := deputil.NewDependencies().
@@ -94,15 +109,22 @@ func newHarness(t *testing.T) harness {
 		WithEventBus(bus).
 		WithJobQueue(queue)
 
+	system := accessutil.System
+	principal := &system
+
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
 	engine.Use(func(c *gin.Context) {
 		c = ctxutil.With(c, "deps", deps)
-		c = ctxutil.With(c, "principal", accessutil.System)
+		c = ctxutil.With(c, "principal", *principal)
 		c.Next()
 	})
 	serverutil.RegisterRouterWithGroup(engine.Group("/api/v0"), v0_videos.NewRouter())
-	return harness{engine: engine, filesDir: filesDir, registry: registry, database: database, queue: queue, events: events}
+	serverutil.RegisterRouterWithGroup(engine.Group("/api/v0"), v0_jobs.NewRouter())
+	return harness{
+		engine: engine, filesDir: filesDir, dataDir: filepath.Dir(filesDir), registry: registry,
+		database: database, queue: queue, events: events, principal: principal,
+	}
 }
 
 func (h harness) post(body string) *httptest.ResponseRecorder {
