@@ -288,6 +288,27 @@ class AuthService {
     );
   }
 
+  /// The [refreshAccount] still running, if there is one.
+  ///
+  /// The events socket's first open can land while the start-up refresh is
+  /// in flight. That open is not a reconnect, so it waits and sees whether
+  /// the refresh failed before trying again (#3465).
+  static Future<void>? _accountRefresh;
+
+  /// True when the last [refreshAccount] for a signed-in session threw.
+  ///
+  /// A failed call keeps the previous [AppSettings.isAdmin], which is false
+  /// on launch. The first socket open retries once when this is set.
+  static bool _accountRefreshFailed = false;
+
+  /// Whether the events socket has opened once since [watchAccount].
+  ///
+  /// Later opens are reconnects and refresh on their own (#3209).
+  static bool _openedAccountSocket = false;
+
+  static final List<StreamSubscription<dynamic>> _accountWatchSubscriptions =
+      [];
+
   /// Fetches the signed-in user's admin flag again into [AppSettings.isAdmin],
   /// their id and picture version into [AppSettings.userId] and
   /// [AppSettings.avatarUpdatedAt], the beta feature flags into
@@ -295,10 +316,20 @@ class AuthService {
   /// into [AppSettings.themeColor] (#2740). The Quark's theme color needs no session,
   /// so it is fetched for the sign-in page too.
   ///
-  /// Without a session there is no admin and no account. A failed call keeps the last known
-  /// value: it only decides what the app shows, and the Quark still refuses
-  /// admin-only requests from a non-admin.
-  static Future<void> refreshAccount() async {
+  /// Without a session there is no admin and no account. A failed call keeps
+  /// the last known value: it only decides what the app shows, and the Quark
+  /// still refuses admin-only requests from a non-admin. [watchAccount] asks
+  /// again on the events socket's first open when this fails, so a start-up
+  /// miss does not leave [AppSettings.isAdmin] false for the session (#3465).
+  static Future<void> refreshAccount() {
+    final run = _refreshAccount();
+    _accountRefresh = run;
+    return run.whenComplete(() {
+      if (identical(_accountRefresh, run)) _accountRefresh = null;
+    });
+  }
+
+  static Future<void> _refreshAccount() async {
     final settings = AppSettings.instance;
     unawaited(SettingsService.refreshThemeColor());
     if (settings.sessionToken == null) {
@@ -306,6 +337,7 @@ class AuthService {
       settings.userId.value = null;
       settings.avatarUpdatedAt.value = null;
       settings.featureFlags.value = const [];
+      _accountRefreshFailed = false;
       return;
     }
     unawaited(FeatureFlagsService.refresh());
@@ -317,7 +349,9 @@ class AuthService {
       if (status.username != null) {
         await settings.setUsername(status.username);
       }
+      _accountRefreshFailed = false;
     } catch (e) {
+      _accountRefreshFailed = true;
       debugPrint('[auth_service.dart] refreshAccount failed: $e');
     }
   }
@@ -329,27 +363,82 @@ class AuthService {
   /// changed, so a demoted admin loses admin-only entries without signing out.
   /// The Quark closes the socket of the account whose role changed instead of
   /// sending it that event, so every reconnect refreshes too. The first
-  /// connection does not: the refresh below already covers it, and following
-  /// it as well asked the Quark everything twice on every load (#3209).
+  /// connection does not refresh on its own: the refresh below already covers
+  /// a successful start, and following the open as well asked the Quark
+  /// everything twice on every load (#3209). A failed start-up refresh is the
+  /// exception. The first open, which is not a reconnect, tries it once more
+  /// (#3465).
   static void watchAccount() {
+    stopWatchingAccount();
     AppSettings.instance.sessionTokenNotifier.addListener(refreshAccount);
     // Switching between two Quarks that are both signed out moves no session,
     // and the sign-in page still wants the new Quark's theme color (#2740).
     AppSettings.instance.activeHostNotifier.addListener(
       SettingsService.refreshThemeColor,
     );
-    EventsService.instance.events.listen((event) {
-      if (event.kind == 'account_changed') refreshAccount();
-      // An admin flipped a beta on or off; members follow it live (#2542).
-      if (event.kind == 'feature_flag_changed') FeatureFlagsService.refresh();
-      // An admin changed the Quark's default theme color (#2740).
-      if (event.kind == 'public_settings_changed') {
-        SettingsService.refreshThemeColor();
-      }
-    });
-    EventsService.instance.reconnects.listen((_) => refreshAccount());
+    _accountWatchSubscriptions.add(
+      EventsService.instance.events.listen(_onAccountEvent),
+    );
+    // Subscribed before [EventsService.start], so the first open is not missed.
+    _accountWatchSubscriptions.add(
+      EventsService.instance.connections.listen(
+        (_) => _onAccountSocketOpened(),
+      ),
+    );
+    _accountWatchSubscriptions.add(
+      EventsService.instance.reconnects.listen((_) => refreshAccount()),
+    );
     EventsService.instance.start();
     refreshAccount();
+  }
+
+  /// Drops the listeners [watchAccount] installed.
+  ///
+  /// [watchAccount] calls this first, so a later call replaces those listeners
+  /// instead of stacking a second copy. Safe when nothing is watching.
+  @visibleForTesting
+  static void stopWatchingAccount() {
+    AppSettings.instance.sessionTokenNotifier.removeListener(refreshAccount);
+    AppSettings.instance.activeHostNotifier.removeListener(
+      SettingsService.refreshThemeColor,
+    );
+    for (final subscription in _accountWatchSubscriptions) {
+      subscription.cancel();
+    }
+    _accountWatchSubscriptions.clear();
+    _accountRefresh = null;
+    _accountRefreshFailed = false;
+    _openedAccountSocket = false;
+  }
+
+  static void _onAccountEvent(FileEvent event) {
+    if (event.kind == 'account_changed') refreshAccount();
+    // An admin flipped a beta on or off; members follow it live (#2542).
+    if (event.kind == 'feature_flag_changed') FeatureFlagsService.refresh();
+    // An admin changed the Quark's default theme color (#2740).
+    if (event.kind == 'public_settings_changed') {
+      SettingsService.refreshThemeColor();
+    }
+  }
+
+  /// Retries a failed start-up [refreshAccount] on the socket's first open.
+  ///
+  /// The open often lands before that call has heard back. Waiting for it
+  /// keeps a successful start to one load (#3209) and still recovers when it
+  /// failed (#3465). A later open is a reconnect and refreshes on its own,
+  /// including when this one retry also failed.
+  static void _onAccountSocketOpened() {
+    if (_openedAccountSocket) return;
+    _openedAccountSocket = true;
+    unawaited(_retryAccountRefreshIfFailed());
+  }
+
+  static Future<void> _retryAccountRefreshIfFailed() async {
+    final inFlight = _accountRefresh;
+    if (inFlight != null) await inFlight;
+    if (!_accountRefreshFailed) return;
+    _accountRefreshFailed = false;
+    await refreshAccount();
   }
 
   /// Creates the owner account on first boot.

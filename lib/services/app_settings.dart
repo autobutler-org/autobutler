@@ -225,7 +225,8 @@ class AppSettings {
   ///
   /// Kept current by [AuthService.watchAccount] from `GET /auth/status`. It
   /// only decides what the app shows (the Quark enforces admin-only routes
-  /// itself), so it is not persisted: every launch asks again.
+  /// itself), so it is not persisted: every launch asks again. A failed
+  /// start-up ask is retried when the events socket first opens (#3465).
   final ValueNotifier<bool> isAdmin = ValueNotifier(false);
 
   /// The signed-in account's id on the current [activeHost], null without a
