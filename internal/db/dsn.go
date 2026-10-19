@@ -40,8 +40,8 @@ import "strings"
 // _foreign_keys=on enforces the references the schema already declares. SQLite
 // parses REFERENCES clauses whether or not enforcement is on and simply ignores
 // them when it is off, so every ON DELETE CASCADE in the migration set — a
-// user's sessions, an album's items and its child albums, a vault folder's
-// subfolders — was documentation rather than behavior. With it on, those
+// user's sessions, an album's items and its child albums, an account's vault
+// items — was documentation rather than behavior. With it on, those
 // cascades run and an insert naming a parent that does not exist fails instead
 // of creating an orphan.
 const connectionParams = "_time_format=datetime&_timezone=UTC&_foreign_keys=on&_pragma=busy_timeout(5000)"

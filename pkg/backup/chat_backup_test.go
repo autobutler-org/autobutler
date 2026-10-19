@@ -2,7 +2,9 @@ package backup
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -153,6 +155,17 @@ func assertRows(t *testing.T, d *sql.DB, query string, want ...string) {
 	}
 }
 
+// fileChecksum is the hex SHA-256 of the file at path.
+func fileChecksum(t *testing.T, path string) string {
+	t.Helper()
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(content)
+	return hex.EncodeToString(sum[:])
+}
+
 func exportChat(t *testing.T, d *sql.DB) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -172,10 +185,7 @@ func TestChatBackup_RoundTrip(t *testing.T) {
 
 	dir := exportChat(t, database.Db)
 	backupPath := filepath.Join(dir, backupChatFilename)
-	sumBefore, err := BackupVaultChecksum(backupPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	sumBefore := fileChecksum(t, backupPath)
 
 	// Wipe, then stand the Quark back up the way a restore finds it: the same
 	// accounts, and the keys and grant a client made for general at sign-in.
@@ -208,10 +218,7 @@ func TestChatBackup_RoundTrip(t *testing.T) {
 		}
 	}
 
-	sumAfter, err := BackupVaultChecksum(backupPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	sumAfter := fileChecksum(t, backupPath)
 	if sumAfter != sumBefore {
 		t.Error("the restore changed the backup file")
 	}
@@ -363,9 +370,7 @@ func TestChatBackupSchema_MatchesLiveTables(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer backupDB.Close()
-	if err := db.InitChatBackupSchema(backupDB); err != nil {
-		t.Fatalf("InitChatBackupSchema: %v", err)
-	}
+	chatExec(t, backupDB, db.ChatBackupSchemaDDL)
 
 	for _, table := range chatBackupTables {
 		query := "SELECT cid, name FROM pragma_table_info('" + table + "') ORDER BY cid"
@@ -420,23 +425,17 @@ func TestExportChat_FailureKeepsThePreviousBackup(t *testing.T) {
 	seedChat(t, database.Db)
 	dir := exportChat(t, database.Db)
 	backupPath := filepath.Join(dir, backupChatFilename)
-	want, err := BackupVaultChecksum(backupPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	want := fileChecksum(t, backupPath)
 
 	// The last table copied, so the failure lands with the file half written.
 	restore := dbtest.HideTable(t, database.Db, "chat_reactions")
-	_, err = ExportChat(context.Background(), database.Db, dir)
+	_, err := ExportChat(context.Background(), database.Db, dir)
 	restore()
 	if err == nil {
 		t.Fatal("ExportChat succeeded without chat_reactions")
 	}
 
-	got, err := BackupVaultChecksum(backupPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	got := fileChecksum(t, backupPath)
 	if got != want {
 		t.Error("a failed export changed the previous backup")
 	}
@@ -481,9 +480,10 @@ func TestChatBackup_LeavesNoAttachedConnectionInThePool(t *testing.T) {
 	}
 }
 
-func TestSnapshotBackup_ExportsChat(t *testing.T) {
+func TestSnapshotBackup_ExportsChatAndVault(t *testing.T) {
 	database := dbtest.NewDB(t)
 	seedChat(t, database.Db)
+	seedVault(t, database.Db, vaultOwner{"alice", randomBytes(t, 32), []string{"a", "b"}})
 	src := makeSource(t, "Drive A", "SERIAL-A", map[string]string{"a.txt": "a"})
 	target := makeTarget(t)
 	job := newJob("TARGET")
@@ -491,7 +491,7 @@ func TestSnapshotBackup_ExportsChat(t *testing.T) {
 	err := SnapshotBackup(context.Background(), SnapshotBackupParams{
 		TargetDeviceSerial: "TARGET",
 		Job:                job,
-		ChatDB:             database.Db,
+		LiveDB:             database.Db,
 	}, []SourceDevice{src}, target.VFS)
 	if err != nil {
 		t.Fatalf("SnapshotBackup: %v", err)
@@ -501,8 +501,10 @@ func TestSnapshotBackup_ExportsChat(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := manifest.Files[backupChatFilename]; !ok {
-		t.Errorf("the manifest does not cover %s: %v", backupChatFilename, manifest.Files)
+	for _, name := range []string{backupChatFilename, backupVaultFilename} {
+		if _, ok := manifest.Files[name]; !ok {
+			t.Errorf("the manifest does not cover %s: %v", name, manifest.Files)
+		}
 	}
 
 	// What the snapshot wrote is what a restore reads.
@@ -514,5 +516,12 @@ func TestSnapshotBackup_ExportsChat(t *testing.T) {
 	}
 	if result.Messages != 4 {
 		t.Errorf("restored %d messages from the snapshot, want 4", result.Messages)
+	}
+	vault, err := ImportVault(context.Background(), live, target.FilesDir)
+	if err != nil {
+		t.Fatalf("ImportVault: %v", err)
+	}
+	if vault.Items != 2 {
+		t.Errorf("restored %d vault items from the snapshot, want 2", vault.Items)
 	}
 }

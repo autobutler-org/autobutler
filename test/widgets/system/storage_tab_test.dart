@@ -13,15 +13,19 @@ import 'package:quark/widgets/storage_devices/snapshot_backup_dialog.dart';
 import 'package:quark/widgets/system/storage_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// #3102: the Storage tab's credentials and snapshot backup dialogs own their
-/// text controllers, so closing one and letting it animate out never rebuilds
-/// a field with a disposed controller.
+/// The Storage tab's dialogs: the credentials dialog owns its text
+/// controllers, so closing it and letting it animate out never rebuilds a
+/// field with a disposed controller (#3102), and a snapshot backup asks for
+/// no password at all (#3460).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const secureStorage = MethodChannel(
     'plugins.it_nomads.com/flutter_secure_storage',
   );
+
+  /// The body of the last snapshot backup the tab started.
+  Object? backupBody;
 
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -34,6 +38,7 @@ void main() {
   });
 
   setUp(() async {
+    backupBody = null;
     SharedPreferences.setMockInitialValues({
       'hosts': jsonEncode([
         {'name': 'Home', 'hostAddress': 'http://quark.local'},
@@ -51,7 +56,7 @@ void main() {
             'devices': [
               {
                 'name': 'Backups',
-                'serial': 'USB2',
+                'usbInfo': {'serial': 'USB2'},
                 'mountPoint': '/mnt/backups',
                 'role': 'snapshot-backup',
                 'isEnabled': true,
@@ -60,6 +65,10 @@ void main() {
           }),
           200,
         );
+      }
+      if (request.url.path == '/api/v0/storage/devices/snapshot-backup') {
+        backupBody = jsonDecode(request.body);
+        return http.Response(jsonEncode({'jobId': '7'}), 202);
       }
       return http.Response(jsonEncode({'error': ''}), 404);
     });
@@ -71,8 +80,8 @@ void main() {
     sharedHttpClientFactory = buildLocalTrustHttpClient;
   });
 
-  /// Pumps the tab and opens the credentials dialog from "Back Up".
-  Future<void> openCredentials(WidgetTester tester) async {
+  /// Pumps the tab and taps [button] on the drive's card.
+  Future<void> openFromCard(WidgetTester tester, String button) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -80,7 +89,7 @@ void main() {
       const MaterialApp(home: Scaffold(body: StorageTab())),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Back Up'));
+    await tester.tap(find.text(button));
     await tester.pumpAndSettle();
   }
 
@@ -98,31 +107,44 @@ void main() {
   testWidgets('the credentials dialog closes without a disposed controller', (
     tester,
   ) async {
-    await openCredentials(tester);
+    await openFromCard(tester, 'Set Role');
+    await tester.tap(find.text('Unassigned'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CredentialsDialog), findsOneWidget);
     await tester.enterText(find.widgetWithText(TextField, 'Username'), 'grace');
     await tester.enterText(find.widgetWithText(TextField, 'Password'), 'pw');
 
     await closeWith(tester, 'Cancel');
 
     expect(find.byType(CredentialsDialog), findsNothing);
-    expect(find.byType(SnapshotBackupDialog), findsNothing);
   });
 
-  testWidgets('the backup dialog closes without a disposed controller', (
-    tester,
-  ) async {
-    await openCredentials(tester);
-    await tester.enterText(find.widgetWithText(TextField, 'Username'), 'grace');
-    await tester.enterText(find.widgetWithText(TextField, 'Password'), 'pw');
-    await closeWith(tester, 'Continue');
+  testWidgets('a snapshot backup asks for no password', (tester) async {
+    await openFromCard(tester, 'Back Up');
+
+    expect(find.byType(CredentialsDialog), findsNothing);
     expect(find.byType(SnapshotBackupDialog), findsOneWidget);
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Recovery password (optional)'),
-      'recovery-pw',
+    expect(
+      find.descendant(
+        of: find.byType(SnapshotBackupDialog),
+        matching: find.byType(TextField),
+      ),
+      findsNothing,
     );
 
     await closeWith(tester, 'Cancel');
 
     expect(find.byType(SnapshotBackupDialog), findsNothing);
+    expect(backupBody, isNull);
+  });
+
+  testWidgets('Start Backup sends the target and nothing else', (tester) async {
+    await openFromCard(tester, 'Back Up');
+
+    await closeWith(tester, 'Start Backup');
+
+    expect(backupBody, {'targetDeviceSerial': 'USB2'});
+    // Unmounts the tab, which stops its status poll.
+    await tester.pumpWidget(const SizedBox());
   });
 }

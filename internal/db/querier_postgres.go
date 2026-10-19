@@ -170,20 +170,6 @@ func (a *postgresQueries) CreateUser(ctx context.Context, arg CreateUserParams) 
 	return User(row), err
 }
 
-func (a *postgresQueries) CreateVaultConfig(ctx context.Context, arg CreateVaultConfigParams) error {
-	return a.q.CreateVaultConfig(ctx, pgdb.CreateVaultConfigParams(arg))
-}
-
-func (a *postgresQueries) CreateVaultEntry(ctx context.Context, arg CreateVaultEntryParams) (VaultEntry, error) {
-	row, err := a.q.CreateVaultEntry(ctx, pgdb.CreateVaultEntryParams(arg))
-	return VaultEntry(row), err
-}
-
-func (a *postgresQueries) CreateVaultFolder(ctx context.Context, arg CreateVaultFolderParams) (VaultFolder, error) {
-	row, err := a.q.CreateVaultFolder(ctx, pgdb.CreateVaultFolderParams(arg))
-	return VaultFolder(row), err
-}
-
 func (a *postgresQueries) CreateVaultItem(ctx context.Context, arg CreateVaultItemParams) (VaultItem, error) {
 	row, err := a.q.CreateVaultItem(ctx, pgdb.CreateVaultItemParams(arg))
 	return VaultItem(row), err
@@ -332,14 +318,6 @@ func (a *postgresQueries) DeleteUserSessions(ctx context.Context, userID int64) 
 
 func (a *postgresQueries) DeleteVFSMetadataKey(ctx context.Context, arg DeleteVFSMetadataKeyParams) error {
 	return a.q.DeleteVFSMetadataKey(ctx, pgdb.DeleteVFSMetadataKeyParams(arg))
-}
-
-func (a *postgresQueries) DeleteVaultEntry(ctx context.Context, id int64) error {
-	return a.q.DeleteVaultEntry(ctx, id)
-}
-
-func (a *postgresQueries) DeleteVaultFolder(ctx context.Context, id int64) error {
-	return a.q.DeleteVaultFolder(ctx, id)
 }
 
 func (a *postgresQueries) DeleteVaultItem(ctx context.Context, arg DeleteVaultItemParams) (int64, error) {
@@ -557,21 +535,6 @@ func (a *postgresQueries) GetUserSettings(ctx context.Context, userID int64) (st
 	return a.q.GetUserSettings(ctx, userID)
 }
 
-func (a *postgresQueries) GetVaultConfig(ctx context.Context) (VaultConfig, error) {
-	row, err := a.q.GetVaultConfig(ctx)
-	return VaultConfig(row), err
-}
-
-func (a *postgresQueries) GetVaultEntry(ctx context.Context, id int64) (VaultEntry, error) {
-	row, err := a.q.GetVaultEntry(ctx, id)
-	return VaultEntry(row), err
-}
-
-func (a *postgresQueries) GetVaultFolder(ctx context.Context, id int64) (VaultFolder, error) {
-	row, err := a.q.GetVaultFolder(ctx, id)
-	return VaultFolder(row), err
-}
-
 func (a *postgresQueries) GetVaultItem(ctx context.Context, arg GetVaultItemParams) (VaultItem, error) {
 	row, err := a.q.GetVaultItem(ctx, pgdb.GetVaultItemParams(arg))
 	return VaultItem(row), err
@@ -580,10 +543,6 @@ func (a *postgresQueries) GetVaultItem(ctx context.Context, arg GetVaultItemPara
 func (a *postgresQueries) GetVaultKey(ctx context.Context, userID int64) (VaultKey, error) {
 	row, err := a.q.GetVaultKey(ctx, userID)
 	return VaultKey(row), err
-}
-
-func (a *postgresQueries) GetVaultLocation(ctx context.Context) (string, error) {
-	return a.q.GetVaultLocation(ctx)
 }
 
 func (a *postgresQueries) HeartbeatJobs(ctx context.Context, owner string) ([]int64, error) {
@@ -714,18 +673,6 @@ func (a *postgresQueries) ListAllChatChannels(ctx context.Context) ([]ListAllCha
 	items := make([]ListAllChatChannelsRow, len(rows))
 	for i, row := range rows {
 		items[i] = ListAllChatChannelsRow(row)
-	}
-	return items, nil
-}
-
-func (a *postgresQueries) ListAllVaultEntriesForReEncrypt(ctx context.Context) ([]ListAllVaultEntriesForReEncryptRow, error) {
-	rows, err := a.q.ListAllVaultEntriesForReEncrypt(ctx)
-	if err != nil || rows == nil {
-		return nil, err
-	}
-	items := make([]ListAllVaultEntriesForReEncryptRow, len(rows))
-	for i, row := range rows {
-		items[i] = ListAllVaultEntriesForReEncryptRow(row)
 	}
 	return items, nil
 }
@@ -1214,42 +1161,6 @@ func (a *postgresQueries) ListVFSMetadataPathsByKeyValue(ctx context.Context, ar
 	return a.q.ListVFSMetadataPathsByKeyValue(ctx, pgdb.ListVFSMetadataPathsByKeyValueParams(arg))
 }
 
-func (a *postgresQueries) ListVaultEntries(ctx context.Context) ([]ListVaultEntriesRow, error) {
-	rows, err := a.q.ListVaultEntries(ctx)
-	if err != nil || rows == nil {
-		return nil, err
-	}
-	items := make([]ListVaultEntriesRow, len(rows))
-	for i, row := range rows {
-		items[i] = ListVaultEntriesRow(row)
-	}
-	return items, nil
-}
-
-func (a *postgresQueries) ListVaultEntriesWithoutHost(ctx context.Context) ([]ListVaultEntriesWithoutHostRow, error) {
-	rows, err := a.q.ListVaultEntriesWithoutHost(ctx)
-	if err != nil || rows == nil {
-		return nil, err
-	}
-	items := make([]ListVaultEntriesWithoutHostRow, len(rows))
-	for i, row := range rows {
-		items[i] = ListVaultEntriesWithoutHostRow(row)
-	}
-	return items, nil
-}
-
-func (a *postgresQueries) ListVaultFolders(ctx context.Context) ([]VaultFolder, error) {
-	rows, err := a.q.ListVaultFolders(ctx)
-	if err != nil || rows == nil {
-		return nil, err
-	}
-	items := make([]VaultFolder, len(rows))
-	for i, row := range rows {
-		items[i] = VaultFolder(row)
-	}
-	return items, nil
-}
-
 func (a *postgresQueries) ListVaultItems(ctx context.Context, userID int64) ([]VaultItem, error) {
 	rows, err := a.q.ListVaultItems(ctx, userID)
 	if err != nil || rows == nil {
@@ -1420,10 +1331,6 @@ func (a *postgresQueries) SetUserStatus(ctx context.Context, arg SetUserStatusPa
 	return a.q.SetUserStatus(ctx, pgdb.SetUserStatusParams(arg))
 }
 
-func (a *postgresQueries) SetVaultLocation(ctx context.Context, deviceSerial string) error {
-	return a.q.SetVaultLocation(ctx, deviceSerial)
-}
-
 func (a *postgresQueries) SignChatChannelEvent(ctx context.Context, arg SignChatChannelEventParams) (int64, error) {
 	return a.q.SignChatChannelEvent(ctx, pgdb.SignChatChannelEventParams(arg))
 }
@@ -1453,26 +1360,6 @@ func (a *postgresQueries) UpdateJobDetail(ctx context.Context, arg UpdateJobDeta
 
 func (a *postgresQueries) UpdateJobProgress(ctx context.Context, arg UpdateJobProgressParams) (int64, error) {
 	return a.q.UpdateJobProgress(ctx, pgdb.UpdateJobProgressParams(arg))
-}
-
-func (a *postgresQueries) UpdateVaultConfigPassword(ctx context.Context, arg UpdateVaultConfigPasswordParams) error {
-	return a.q.UpdateVaultConfigPassword(ctx, pgdb.UpdateVaultConfigPasswordParams(arg))
-}
-
-func (a *postgresQueries) UpdateVaultEntry(ctx context.Context, arg UpdateVaultEntryParams) error {
-	return a.q.UpdateVaultEntry(ctx, pgdb.UpdateVaultEntryParams(arg))
-}
-
-func (a *postgresQueries) UpdateVaultEntryCiphertext(ctx context.Context, arg UpdateVaultEntryCiphertextParams) error {
-	return a.q.UpdateVaultEntryCiphertext(ctx, pgdb.UpdateVaultEntryCiphertextParams(arg))
-}
-
-func (a *postgresQueries) UpdateVaultEntryHost(ctx context.Context, arg UpdateVaultEntryHostParams) error {
-	return a.q.UpdateVaultEntryHost(ctx, pgdb.UpdateVaultEntryHostParams(arg))
-}
-
-func (a *postgresQueries) UpdateVaultFolder(ctx context.Context, arg UpdateVaultFolderParams) error {
-	return a.q.UpdateVaultFolder(ctx, pgdb.UpdateVaultFolderParams(arg))
 }
 
 func (a *postgresQueries) UpdateVaultItem(ctx context.Context, arg UpdateVaultItemParams) (VaultItem, error) {

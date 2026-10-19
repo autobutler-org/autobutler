@@ -43,28 +43,6 @@ func ConnectToDatabase() (*DatabaseSqlc, error) {
 	return &database, nil
 }
 
-func ConnectToVaultDatabase(dbPath string) (*DatabaseSqlc, error) {
-	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
-		return nil, fmt.Errorf("failed to create vault db directory: %v", err)
-	}
-
-	var database DatabaseSqlc
-	var err error
-	database.Db, err = sql.Open("sqlite", DSN(dbPath))
-	if err != nil {
-		return nil, fmt.Errorf("failed to open vault database: %v", err)
-	}
-
-	if err := InitVaultSchema(database.Db); err != nil {
-		database.Db.Close()
-		return nil, fmt.Errorf("failed to init vault schema: %v", err)
-	}
-
-	database.Queries = pooledQueries(database.Db)
-
-	return &database, nil
-}
-
 // maxOpenConns bounds the pool every sqlc query draws from. Each connection
 // costs a file descriptor and its own page cache, and the device has four
 // cores, so more connections than this only queue inside SQLite instead of

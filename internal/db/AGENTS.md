@@ -98,8 +98,8 @@ engine behind it can change without touching a caller.
   branch on it needs a query both engines accept, or a per-engine query, instead.
 - **The one thing a caller may do is refuse.** A feature built on raw SQL only SQLite accepts starts with
   `db.RequireSQLite(sqlDB, "<Feature>", <issue>)` and returns its `*db.UnsupportedError`, which `serverutil`
-  answers as `501`. Today that is content search, the chat backup and with it the snapshot backup, and moving
-  the vault to or from a drive.
+  answers as `501`. Today that is content search, and the chat and vault backups and with them the snapshot
+  backup.
 - **An error inside `db.InTx` ends the transaction.** On PostgreSQL a failed statement aborts it and every
   later statement is refused, where SQLite carries on. Return the error, a unique violation included
   (`sqlutil.IsUniqueConstraintErr` recognizes both engines'), and never continue past one.

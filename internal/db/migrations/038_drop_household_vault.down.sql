@@ -1,8 +1,7 @@
-package db
+-- Recreates the household vault exactly as 005_vault defined it, empty but for
+-- the vault_location seed row.
 
-import "database/sql"
-
-const VaultSchemaDDL = `
+-- Singleton configuration row holding vault-wide crypto parameters.
 CREATE TABLE IF NOT EXISTS vault_config (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     salt BLOB NOT NULL,
@@ -15,6 +14,7 @@ CREATE TABLE IF NOT EXISTS vault_config (
     created_at DATETIME NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Organizational folders for vault entries.
 CREATE TABLE IF NOT EXISTS vault_folders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS vault_folders (
     created_at DATETIME NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Credential entries. Sensitive fields are in the encrypted ciphertext blob.
+-- name and url_host are plaintext for search/sort without requiring decryption.
 CREATE TABLE IF NOT EXISTS vault_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -36,9 +38,13 @@ CREATE TABLE IF NOT EXISTS vault_entries (
 
 CREATE INDEX IF NOT EXISTS idx_vault_entries_folder ON vault_entries(folder_id);
 CREATE INDEX IF NOT EXISTS idx_vault_entries_url_host ON vault_entries(url_host);
-`
 
-func InitVaultSchema(d *sql.DB) error {
-	_, err := d.Exec(VaultSchemaDDL)
-	return err
-}
+-- Which storage device holds the vault. A singleton like vault_config; the
+-- empty serial means the vault lives in quark.db on the appliance itself.
+CREATE TABLE IF NOT EXISTS vault_location (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    device_serial TEXT NOT NULL DEFAULT '',
+    updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+);
+
+INSERT OR IGNORE INTO vault_location (id, device_serial) VALUES (1, '');

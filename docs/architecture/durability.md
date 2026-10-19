@@ -33,17 +33,9 @@ flag. [Data](data.md#main-schema) has the full list of what startup does with a 
 
 | Write                                  | Commit point                                                       |
 | -------------------------------------- | ------------------------------------------------------------------ |
-| Vault setup                            | one `INSERT` of the config row (salt, verification blob)           |
-| Entry and folder create, edit, delete  | one statement each                                                 |
-| Master password change                 | one transaction re-encrypts every entry and swaps the config       |
-| Vault import                           | one transaction                                                    |
-| Moving the vault to another device     | see below                                                          |
-
-Moving the vault (`vaultutil.SetLocation`) spans two databases, so no single transaction covers it. It runs in the
-one order every crash point survives: the copy commits on the target (replacing any earlier partial copy), then
-the main database records the new location, and only then is the source emptied. A crash before the location
-moves leaves the vault where it was; a crash after leaves a stale, still-encrypted copy on the old device, which
-the next move onto that device replaces.
+| Vault setup                            | one `INSERT` of the account's wrapped vault key                    |
+| Vault item create, edit, delete        | one statement each                                                 |
+| Chat or vault restore from a backup    | one transaction                                                    |
 
 ## PostgreSQL
 
@@ -54,7 +46,7 @@ What Quark should require of PostgreSQL, and what a backup of such an install co
 is the operator's to get right. The orderings above that span more than one statement are transactions on
 PostgreSQL too.
 
-The vault on a drive (`vault.db`) and the files a backup writes stay SQLite on every backend, so this section
+The files a backup writes stay SQLite on every backend, so this section
 changes nothing for them, and the Files section below is the same on both.
 
 ## Files
@@ -103,9 +95,7 @@ In plain English, for support copy:
 - **An upload that was still in progress when the power went out is lost** and has to be started again. It never
   shows up as a broken file.
 - **An upload finished in the last moment before the cut** is either there, whole, or not there at all.
-- **A vault change still being saved** is either saved or not; the vault always opens with the master password.
-- **Moving the vault to a USB drive** can leave an old encrypted copy on the device it moved from if the power
-  cut came at the very end; it is replaced the next time the vault moves back there.
+- **A vault change still being saved** is either saved or not.
 - Hidden `.vfs-write-*` temp files interrupted by a power cut stay on disk (hidden from listings) until
   something removes them. They cost space, not correctness.
 - A drive or SD card that lies about flushing, or fails outright, is a hardware failure no software ordering can
@@ -113,8 +103,7 @@ In plain English, for support copy:
 
 ## How it is tested
 
-- Unit tests pin each ordering rule: `storageutil/durable_test.go`, `vaultutil/location_test.go`,
-  `backup/vault_migrate_test.go`. The state files above each have a test that hard-links the old file before
+- Unit tests pin each ordering rule: `storageutil/durable_test.go`. The state files above each have a test that hard-links the old file before
   rewriting it, so a write that truncates in place shows up as the link changing:
   `storageutil/trash_durable_test.go`, `tlsutil/tlsutil_test.go`, `backup/manifest_test.go`.
 - `make test/chaos/powercut` runs the real write paths on [LazyFS](https://github.com/dsrhaslab/lazyfs), a FUSE

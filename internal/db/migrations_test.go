@@ -149,7 +149,7 @@ func TestMigrationsApplyCleanly(t *testing.T) {
 		"device_names", "device_roles",
 		"connected_devices",
 		"photo_albums", "photo_album_items", "photo_rotations", "photo_favorites", "photo_hashes",
-		"vault_config", "vault_folders", "vault_entries", "vault_location",
+		"vault_keys", "vault_items",
 		"file_content", "file_content_fts",
 		"music_tracks", "music_tracks_fts",
 		"vfs_metadata", "vfs_db_entries",
@@ -190,16 +190,8 @@ func TestMigrationsApplyCleanly(t *testing.T) {
 		}
 	}
 
-	// The vault location singleton is seeded by the migration, not by the app.
-	var located int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM vault_location WHERE id = 1`).Scan(&located); err != nil {
-		t.Fatalf("count vault_location: %v", err)
-	}
-	if located != 1 {
-		t.Errorf("vault_location seed row missing, got %d rows", located)
-	}
-
-	// So is the one calendar every account shares (#1144).
+	// The one calendar every account shares is seeded by the migration, not by
+	// the app (#1144).
 	var calendars int
 	if err := conn.QueryRow(`SELECT COUNT(*) FROM calendars WHERE is_default = 1 AND name = 'Personal'`).Scan(&calendars); err != nil {
 		t.Fatalf("count calendars: %v", err)

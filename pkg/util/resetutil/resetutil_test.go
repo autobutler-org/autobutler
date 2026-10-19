@@ -92,7 +92,7 @@ func TestWatch_StaysQuietWhileTheInstallStands(t *testing.T) {
 	reset := watch(t, watching)
 
 	// Ordinary writes from the other instance are not a reset.
-	if _, err := resetting.Db.Exec(`UPDATE vault_location SET device_serial = 'abc' WHERE id = 1`); err != nil {
+	if _, err := resetting.Db.Exec(`UPDATE calendars SET name = 'Personal' WHERE is_default = 1`); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	select {

@@ -301,9 +301,9 @@ void main() {
     );
     await tester.tap(find.text('Use this drive anyway'));
     await tester.pumpAndSettle();
-    await signIn(tester);
+    // A backup asks for no password (#3460): the confirmation is next.
     await tester.tap(find.widgetWithText(TextButton, 'Start Backup'));
-    await pumpWhileDeriving(tester);
+    await tester.pumpAndSettle();
 
     final backup = sent.where(
       (r) => r.method == 'POST' && r.url.path.endsWith('/snapshot-backup'),

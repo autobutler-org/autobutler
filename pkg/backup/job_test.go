@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/jobutil"
 	"github.com/autobutler-org/quark/pkg/util/sqlutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
-	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
@@ -319,37 +317,46 @@ func TestGetSnapshotBackupStatus_UnknownJobIsNotFound(t *testing.T) {
 	}
 }
 
-// The job only moves a vault export the request already built, so its params
-// hold a file name and no secret (#3084).
-func TestSnapshotBackupJob_CommitsTheStagedVaultExport(t *testing.T) {
-	const recoveryPassword = "recovery-password-456"
-	d, queries, liveKey := setupLiveVaultDB(t, "master-password-123")
-	defer vaultcrypto.ZeroKey(liveKey)
-	addTestEntry(t, d, liveKey, "GitHub", "alice", "gh-secret")
-	f := newJobFixture(t, &db.DatabaseSqlc{Db: d, Queries: queries})
-
-	staged, err := stageVaultExport(context.Background(), queries, liveKey, recoveryPassword, f.target)
-	if err != nil {
-		t.Fatal(err)
-	}
+// A snapshot asks for nothing but its target (#3460, #3463): the job params
+// hold no secret, and the drive gets every account's vault and the chat as
+// the ciphertext they are.
+func TestSnapshotBackupJob_ExportsTheVaultWithNoPassword(t *testing.T) {
+	ctx := context.Background()
+	database := dbtest.NewDB(t)
+	addChatUsers(t, database.Db, "alice", "bob")
+	seedVault(t, database.Db,
+		vaultOwner{"alice", randomBytes(t, 32), []string{"a", "b"}},
+		vaultOwner{"bob", randomBytes(t, 32), []string{"c"}})
+	f := newJobFixture(t, database)
 	a := f.instance(nil)
-	queued, err := a.queue.Enqueue(context.Background(), jobutil.EnqueueParams{
-		Kind:   Kind,
-		Name:   "Snapshot backup",
-		Params: JobParams{TargetDeviceSerial: targetSerial, VaultExport: staged},
+
+	result, err := StartSnapshotBackup(StartSnapshotBackupParams{
+		Ctx:                ctx,
+		Queries:            database.Queries,
+		LiveDB:             database.Db,
+		Registry:           f.registry,
+		Queue:              a.queue,
+		TargetDeviceSerial: targetSerial,
 	})
 	if err != nil {
+		t.Fatalf("StartSnapshotBackup: %v", err)
+	}
+	id, err := strconv.ParseInt(result.JobID, 10, 64)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if want := `{"targetDeviceSerial":"` + targetSerial + `","vaultExport":"` + staged + `"}`; string(queued.Job.Params) != want {
-		t.Errorf("job params = %s, want %s", queued.Job.Params, want)
+	row, err := database.Queries.GetJob(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"targetDeviceSerial":"` + targetSerial + `"}`; row.Params != want {
+		t.Errorf("job params = %s, want %s", row.Params, want)
 	}
 	a.run(t)
-	jobID := strconv.FormatInt(queued.Job.ID, 10)
-	f.waitStatus(t, jobID, BackupStatusCompleted)
+	f.waitStatus(t, result.JobID, BackupStatusCompleted)
 
 	assertNoTemps(t, f.target)
-	manifest, err := ReadManifest(context.Background(), localFS(t, f.target))
+	manifest, err := ReadManifest(ctx, localFS(t, f.target))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,58 +364,13 @@ func TestSnapshotBackupJob_CommitsTheStagedVaultExport(t *testing.T) {
 		t.Errorf("the manifest covers %v, want the vault and chat exports", manifest.Files)
 	}
 
-	// A run removes its staged export however it ends, so a retry is refused
-	// up front rather than failing on the missing file.
-	if err := NewHandler(NewHandlerParams{}).Validate(queued.Job.Params); err == nil {
-		t.Error("a backup with a vault export may be retried")
-	}
-}
-
-func TestSnapshotBackupJob_MissingStagedVaultExportFailsTheJob(t *testing.T) {
-	f := newJobFixture(t, dbtest.NewDB(t))
-	a := f.instance(nil)
-	queued, err := a.queue.Enqueue(context.Background(), jobutil.EnqueueParams{
-		Kind:   Kind,
-		Name:   "Snapshot backup",
-		Params: JobParams{TargetDeviceSerial: targetSerial, VaultExport: storageutil.WriteTempPrefix + "gone-" + backupVaultFilename},
-	})
+	live := dbtest.NewDB(t).Db
+	addChatUsers(t, live, "alice", "bob")
+	restored, err := ImportVault(ctx, live, f.target)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("ImportVault: %v", err)
 	}
-	a.run(t)
-	job := f.waitStatus(t, strconv.FormatInt(queued.Job.ID, 10), BackupStatusFailed)
-	if !strings.Contains(job.ErrorMsg, "start a new backup") {
-		t.Errorf("error = %q, want it to say to start a new backup", job.ErrorMsg)
-	}
-}
-
-// A staged export left by a crashed run is removed by the next backup, and
-// one young enough to be another request's is not.
-func TestRemoveStaleStagedVaults(t *testing.T) {
-	dir := t.TempDir()
-	stale := storageutil.WriteTempPrefix + "old-" + backupVaultFilename
-	fresh := storageutil.WriteTempPrefix + "new-" + backupVaultFilename
-	for _, name := range []string{stale, stale + "-journal", fresh, backupVaultFilename} {
-		writeTestFile(t, dir, name, "x")
-	}
-	old := time.Now().Add(-2 * stagedVaultMaxAge)
-	for _, name := range []string{stale, stale + "-journal", backupVaultFilename} {
-		if err := os.Chtimes(filepath.Join(dir, name), old, old); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	removeStaleStagedVaults(dir)
-
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var names []string
-	for _, entry := range entries {
-		names = append(names, entry.Name())
-	}
-	if want := []string{fresh, backupVaultFilename}; strings.Join(names, ",") != strings.Join(want, ",") {
-		t.Errorf("left %v, want %v", names, want)
+	if restored.Accounts != 2 || restored.Items != 3 {
+		t.Errorf("restored %+v from the snapshot, want 2 accounts and 3 items", restored)
 	}
 }

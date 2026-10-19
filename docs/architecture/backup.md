@@ -1,7 +1,7 @@
 # Backup
 
 `pkg/backup` copies a Quark onto a managed device that holds the `snapshot-backup` role. This page covers what a
-snapshot holds, how the chat tables get into it and back out, how an admin is reminded to take one, and how
+snapshot holds, how the chat and vault tables get into it and back out, how an admin is reminded to take one, and how
 protected the files are. How the file copies survive a power cut is in
 [Durability](durability.md).
 
@@ -12,8 +12,8 @@ protected the files are. How the file copies survive a power cut is in
 | Entry                             | What it is                                                                | Written by       |
 | --------------------------------- | ------------------------------------------------------------------------- | ---------------- |
 | `<device>_<serial>/`, `internal/` | every other managed device's files, one directory per source device       | `SnapshotBackup` |
-| `vault_backup.db`                 | the vault, re-encrypted under a recovery password; only when one is given | `ExportVault`    |
 | `chat_backup.db`                  | the chat tables                                                           | `ExportChat`     |
+| `vault_items_backup.db`           | every account's vault key and vault items                                 | `ExportVault`    |
 | `backup_manifest.json`            | the SHA-256 and size of every file above                                  | `WriteManifest`  |
 
 The rest of `quark.db` is not in a snapshot. Accounts, sessions, groups, albums and access grants are lost with
@@ -37,6 +37,9 @@ The export attaches the file to a connection of the live database and copies eac
 file is one moment of the chat. It is built under a temp name and renamed over the previous `chat_backup.db`, so
 a failed export leaves the last good one in place. `quark.db` is not in WAL mode, so a write to it waits for the
 copy to finish; that is the limit to revisit if a history ever takes more than a few seconds to copy.
+
+The export is one case of `ciphertextBackup` (`pkg/backup/ciphertext_backup.go`), which the vault export
+shares: a file name, a schema, the tables to copy, and the restore's steps.
 
 Chat attachments (#2425) are planned as files on the internal device. The snapshot already copies every source
 device's files as streams, so they need nothing from the chat export.
@@ -74,6 +77,28 @@ it with the password or recovery phrase they had when the backup was taken. `Imp
 it could not match in `UnmatchedUsers`.
 
 No handler calls `ImportChat` yet; the restore route and its page are still to come (#2428).
+
+## The vault export
+
+`ExportVault` runs on every snapshot beside the chat export and, like it, asks for no password (#3460). Each
+account's vault items are encrypted on the client under that account's vault key, and the key is stored only
+wrapped under the account's password and, when the client had it, its recovery phrase. The copy of
+`vault_keys` and `vault_items` is exactly as private as the database it came from, and a restored vault opens
+with the password or phrase that opened it before.
+
+`vault_items_backup.db` is a SQLite file whose schema is `internal/db/vault_items_backup_schema.go`: the two
+vault tables with the live columns and none of the constraints, plus a `users` table holding only an id and a
+username. Its `user_version` is `db.VaultItemsBackupVersion`. It is built exactly as `chat_backup.db` is. The
+name is not `vault_backup.db`, which older snapshots hold: that is the household vault, re-encrypted under a
+recovery password, which this build no longer reads.
+
+## Restoring the vault
+
+`ImportVault` restores `vault_items_backup.db` in one transaction, the way `ImportChat` restores the chat, and
+like it has no route yet (#2428). It restores only while no account has a vault item (`ErrVaultNotEmpty`).
+Accounts are matched by username. A matched account's vault key replaces any its first sign-in on the new
+install made, and its items come back byte for byte under their old ids. An account that is not here is
+skipped, and its username comes back in `UnmatchedUsers`.
 
 ## Backup reminders
 
@@ -176,7 +201,7 @@ Assigning `default-storage` or `snapshot-backup`, and starting a snapshot backup
 that role, refuses a `replace-soon` drive with 409 unless the body sets `acknowledgeHealth`. Watch does not
 block. Unknown does not count as healthy and does not block. Switching default storage onto a drive in worse
 health than the current one uses a stronger 409 sentence. Acknowledging leaves files already on the drive in
-place. A snapshot copies onto the target and removes only the temp files that copy, and the vault and chat
+place. A snapshot copies onto the target and removes only the temp files that copy, and the chat and vault
 exports, create for themselves (`SnapshotBackup` writes through `vfs.CopyBetween`, which lands a file under its
 real name only once the copy is whole). It does not erase the rest of the drive.
 

@@ -31,22 +31,18 @@ const detailInterval = time.Second
 var ErrBackupJobNotFound = errors.New("backup job not found")
 
 // JobParams is what a snapshot backup job stores. The API hands a job's
-// params to any signed-in client, so nothing secret goes here: the vault
-// export is built by the request that starts the backup, and the job only
-// carries the name of the file it left on the target.
+// params to any signed-in client, so nothing secret goes here, and a snapshot
+// needs nothing secret to run.
 type JobParams struct {
 	// TargetDeviceSerial is the device backed up onto. The per-target lock
 	// reads it out of the stored params.
 	TargetDeviceSerial string `json:"targetDeviceSerial"`
-	// VaultExport is the staged vault export's file name on the target. Empty
-	// means the backup carries no vault export.
-	VaultExport string `json:"vaultExport,omitempty"`
 }
 
 // NewHandlerParams configures NewHandler.
 type NewHandlerParams struct {
 	// Database holds the job rows a running backup saves its counts to, and
-	// the chat tables it exports.
+	// the chat and vault tables it exports.
 	Database *db.DatabaseSqlc
 	// Storage lists the managed devices to copy from.
 	Storage *storageutil.StorageService
@@ -63,8 +59,7 @@ type NewHandlerParams struct {
 // the sources up again, so it sees what is attached to the instance running
 // it, copies every source onto the target, and saves its phase and counts to
 // the job row as it goes, where [GetSnapshotBackupStatus] reads them from any
-// instance. A staged vault export is removed when the run ends, however it
-// ends, so Validate refuses to retry a backup that had one.
+// instance.
 //
 // ponytail: one lane, so an instance runs one backup at a time and a second
 // target's backup waits behind the first. Give it a lane per target if two
@@ -78,9 +73,6 @@ func NewHandler(params NewHandlerParams) jobutil.Handler {
 			var job JobParams
 			if err := json.Unmarshal(raw, &job); err != nil {
 				return fmt.Errorf("decode backup params: %w", err)
-			}
-			if job.VaultExport != "" {
-				return errors.New("a backup with a vault export cannot be retried; start a new backup")
 			}
 			return nil
 		},
@@ -98,9 +90,6 @@ func runSnapshotJob(ctx context.Context, params NewHandlerParams, raw json.RawMe
 	target, err := fileutil.FilesVFS(params.Registry, jobParams.TargetDeviceSerial)
 	if err != nil {
 		return ErrTargetNotManaged
-	}
-	if jobParams.VaultExport != "" {
-		defer discardVaultExport(context.WithoutCancel(ctx), jobParams.VaultExport, target)
 	}
 	sources, err := gatherSourceDevices(params.Storage, params.Registry, jobParams.TargetDeviceSerial)
 	if err != nil {
@@ -139,8 +128,7 @@ func runSnapshotJob(ctx context.Context, params NewHandlerParams, raw json.RawMe
 		},
 		Save:        save,
 		EventBus:    params.EventBus,
-		VaultExport: jobParams.VaultExport,
-		ChatDB:      params.Database.Db,
+		LiveDB:      params.Database.Db,
 		IOSemaphore: params.IOSemaphore,
 		Queries:     params.Database.Queries,
 	}, sources, target)

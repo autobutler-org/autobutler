@@ -1,7 +1,5 @@
 package db
 
-import "database/sql"
-
 // ChatBackupVersion is the format of the chat backup file, stored in its
 // user_version. It moves when ChatBackupSchemaDDL does, and a restore refuses
 // a version it does not know rather than guess at its columns.
@@ -123,10 +121,3 @@ CREATE TABLE chat_reactions (
     created_at  DATETIME NOT NULL
 );
 `
-
-// InitChatBackupSchema creates the chat backup tables in d, a database file
-// that holds nothing yet.
-func InitChatBackupSchema(d *sql.DB) error {
-	_, err := d.Exec(ChatBackupSchemaDDL)
-	return err
-}

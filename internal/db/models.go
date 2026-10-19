@@ -327,37 +327,6 @@ type UserSetting struct {
 	Settings string
 }
 
-type VaultConfig struct {
-	ID                int64
-	Salt              []byte
-	Argon2Memory      int64
-	Argon2Iterations  int64
-	Argon2Parallelism int64
-	VerificationBlob  []byte
-	VerificationNonce []byte
-	AutoLockSeconds   int64
-	CreatedAt         time.Time
-}
-
-type VaultEntry struct {
-	ID         int64
-	Name       string
-	UrlHost    string
-	FolderID   sql.NullInt64
-	Ciphertext []byte
-	Nonce      []byte
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-}
-
-type VaultFolder struct {
-	ID        int64
-	Name      string
-	ParentID  sql.NullInt64
-	SortOrder int64
-	CreatedAt time.Time
-}
-
 type VaultItem struct {
 	ID            int64
 	UserID        int64
@@ -377,12 +346,6 @@ type VaultKey struct {
 	KdfParams         string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
-}
-
-type VaultLocation struct {
-	ID           int64
-	DeviceSerial string
-	UpdatedAt    time.Time
 }
 
 type VfsDbEntry struct {

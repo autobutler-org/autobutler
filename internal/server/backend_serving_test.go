@@ -229,7 +229,7 @@ var unsupportedOnPostgres = map[string]struct {
 		method: http.MethodPost, path: "/api/v0/storage/devices/snapshot-backup",
 		body:     map[string]string{"targetDeviceSerial": "no-such-device"},
 		sqlite:   `400 {"error":"target device must have the snapshot-backup role"}`,
-		postgres: `501 {"error":"a snapshot backup includes the chat: Chat backup is not supported on the PostgreSQL backend yet (#2963)"}`,
+		postgres: `501 {"error":"a snapshot backup includes the chat and the vault: Chat backup is not supported on the PostgreSQL backend yet (#2963)"}`,
 	},
 }
 

@@ -8,7 +8,7 @@ import 'package:http/testing.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/services/storage_service.dart';
-import 'package:quark/widgets/storage_devices/credentials_dialog.dart';
+import 'package:quark/widgets/storage_devices/snapshot_backup_dialog.dart';
 import 'package:quark/widgets/storage_devices/role_dialog.dart';
 import 'package:quark/widgets/system/storage_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -165,7 +165,7 @@ void main() {
     await tester.tap(find.text('Start a backup'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(CredentialsDialog), findsOneWidget);
+    expect(find.byType(SnapshotBackupDialog), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

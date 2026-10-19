@@ -214,21 +214,15 @@ class _StorageTabState extends State<StorageTab>
     );
     if (!gate.proceed || !mounted) return;
 
-    final creds = await _promptCredentials();
-    if (creds == null || !mounted) return;
-
-    final recoveryPassword = await QuarkWidget.showDialog<String>(
+    final confirmed = await QuarkWidget.showDialog<bool>(
       context,
       builder: (ctx) => SnapshotBackupDialog(targetName: target.name),
     );
-    if (recoveryPassword == null || !mounted) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       final jobId = await StorageService.startSnapshotBackup(
         targetDeviceSerial: target.serial,
-        username: creds['username'],
-        password: creds['password'],
-        recoveryPassword: recoveryPassword.isNotEmpty ? recoveryPassword : null,
         acknowledgeHealth: gate.acknowledgeHealth,
       );
       if (!mounted) return;

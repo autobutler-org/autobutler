@@ -16,7 +16,6 @@ import 'package:quark/widgets/layout/app_drawer.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/vault/entry_detail_page.dart';
 import 'package:quark/widgets/vault/entry_editor_page.dart';
-import 'package:quark/widgets/vault/restore/vault_restore_dialog.dart';
 import 'package:quark/widgets/vault/vault_device_disconnected_view.dart';
 import 'package:quark/widgets/vault/vault_entry_list.dart';
 import 'package:quark/widgets/vault/vault_error_view.dart';
@@ -160,12 +159,6 @@ class _VaultPageState extends State<VaultPage>
                 leadingIcon: const Icon(QuarkIcons.upload_rounded),
                 onPressed: () => _showImportDialog(context),
                 child: const Text('Import'),
-              ),
-              MenuItemButton(
-                key: const ValueKey('vault_restore_backup'),
-                leadingIcon: const Icon(QuarkIcons.usb_outlined),
-                onPressed: _showRestoreDialog,
-                child: const Text('Restore from backup drive'),
               ),
               MenuItemButton(
                 key: const ValueKey('vault_export_json'),
@@ -380,14 +373,6 @@ class _VaultPageState extends State<VaultPage>
         );
       }
     }
-  }
-
-  /// Restores from a backup drive (#1665). The status is reloaded however the
-  /// dialog closes: a restore changed the entries, and a vault that locked
-  /// itself first needs the unlock form.
-  Future<void> _showRestoreDialog() async {
-    await VaultRestoreDialog.show(context);
-    if (mounted) _loadStatus();
   }
 
   Future<void> _doExport(String format) async {

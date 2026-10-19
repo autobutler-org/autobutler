@@ -1653,11 +1653,10 @@ type DeleteAccountResult struct {
 // session, leaving the caller logged out.
 //
 // DeleteAccount removes the caller's own users row and nothing else. The other
-// three aspects are a factory reset rather than a per-user delete: users is the
-// only table in the schema that has a user at all — photos, the vault, device
-// roles and the search index carry no user_id, and vault_location is a
-// CHECK (id = 1) singleton — so "delete this user's data" is not expressible
-// against it (#1759). Only the account row itself is.
+// three aspects are a factory reset rather than a per-user delete: photos,
+// device roles and the search index carry no user_id, so "delete this user's
+// data" is not expressible against them (#1759). Only the account row itself
+// is, along with what cascades from it.
 //
 // The aspects map onto disk as:
 //
@@ -1666,14 +1665,14 @@ type DeleteAccountResult struct {
 //     so the setup flow re-triggers rather than the appliance becoming
 //     unreachable.
 //
-//   - DeleteDatabase: the appliance's database, quark.db. An internal vault
-//     lives in quark.db itself (migration 005), so it goes with it; a separate vault.db file exists only on an external device.
+//   - DeleteDatabase: the appliance's database, quark.db, every account's
+//     vault with it.
 //
 //   - DeleteFiles: the file trees the appliance owns, <dataDir>/files and the
 //     mount-point scaffolding under <dataDir>/mounts.
 //
 //   - DeleteDevices: the quark data directory on each attached external
-//     device, which is what carries an off-appliance vault.
+//     device.
 //
 // Order is deliberate. The account goes first, through DeleteUser, because it
 // is the one aspect that can be refused: the only active admin cannot delete

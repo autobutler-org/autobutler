@@ -1493,7 +1493,7 @@ test/integration/backend: check/db internal/server/public/stub.txt ## Run backen
 # Packages test/mutation/backend mutates: pure business logic with fast tests (#2855).
 # Run one with MUTATION_PACKAGES=./pkg/util/authutil (a trailing /... is accepted).
 MUTATION_PACKAGES ?= ./pkg/util/authutil ./pkg/util/accessutil ./pkg/util/grouputil \
-	./pkg/util/ratelimitutil ./pkg/util/vaultcrypto
+	./pkg/util/ratelimitutil
 
 # gremlins copies the whole module into a work directory per worker, so a run can
 # take tens of GB under $$TMPDIR; point TMPDIR at a disk-backed directory if /tmp is

@@ -1,7 +1,6 @@
 # Vault Journeys
 
-Covers the Vault (`/vault`) — password manager setup, entry management, folders, import/export, restore from a
-backup drive.
+Covers the Vault (`/vault`) — password manager setup, entry management, folders, import/export.
 
 The vault is admin-only (#1899): every journey in this file except JN-VT-000 assumes the user is signed in as an
 admin.
@@ -341,33 +340,9 @@ passwords), or another manager's CSV.
 
 ---
 
-### JN-VT-019: Restore the vault from a backup drive
+### JN-VT-019: Restore the vault from a backup drive (retired)
 
-**Preconditions:** Vault is unlocked. A drive that holds a vault backup is plugged in and enabled: one a snapshot
-backup (JN-SD-008) wrote to with a recovery password. The user knows that recovery password.
+The app no longer offers this (#3460). A snapshot backup (JN-SD-008) copies every account's vault, as ciphertext
+with its wrapped key, into `vault_items_backup.db` and asks for no recovery password. Restoring that file waits on
+the restore route chat restore will use (#2428). `POST /api/v0/vault/import-backup` is gone.
 
-**Steps:**
-
-1. Open the vault overflow menu.
-2. Select **Restore from backup drive**.
-3. Pick the drive. A lone drive is already picked.
-4. Enter the recovery password.
-5. Select **Restore**.
-6. Read the summary, then select **Done**.
-
-**Expected result:**
-
-- **Restore** stays disabled until a drive is picked and a recovery password is entered.
-- The summary counts the entries and folders restored, and the ones already in the vault that were left unchanged.
-  It reads, for example, "Restored 3 entries." and "2 entries were already in your vault and were left unchanged."
-- Restored entries appear in the vault list once the dialog closes. Nothing already in the vault is overwritten or
-  duplicated.
-- A wrong recovery password, or a drive with no vault backup on it, keeps the dialog open and reads "Couldn't
-  restore from that drive. Check the recovery password, and that the drive holds a vault backup."
-- With no enabled external drive, the dialog says no backup drive was found and offers **Check again**.
-
-**Notes:**
-
-- The menu only exists while the vault is unlocked. If the vault locks itself before the restore runs, the dialog
-  closes and the unlock screen shows.
-- This is not JN-VT-017, which reads an export file. It calls `POST /api/v0/vault/import-backup` (#1665).

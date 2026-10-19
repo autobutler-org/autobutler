@@ -83,9 +83,6 @@ type Querier interface {
 	CreatePendingUser(ctx context.Context, arg CreatePendingUserParams) (User, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	CreateVaultConfig(ctx context.Context, arg CreateVaultConfigParams) error
-	CreateVaultEntry(ctx context.Context, arg CreateVaultEntryParams) (VaultEntry, error)
-	CreateVaultFolder(ctx context.Context, arg CreateVaultFolderParams) (VaultFolder, error)
 	CreateVaultItem(ctx context.Context, arg CreateVaultItemParams) (VaultItem, error)
 	// CreateVaultKey stores an account's first vault key. A second create is a
 	// unique violation rather than a replace, so a client can never overwrite the
@@ -161,8 +158,6 @@ type Querier interface {
 	DeleteUserPathAccess(ctx context.Context, arg DeleteUserPathAccessParams) (int64, error)
 	DeleteUserSessions(ctx context.Context, userID int64) error
 	DeleteVFSMetadataKey(ctx context.Context, arg DeleteVFSMetadataKeyParams) error
-	DeleteVaultEntry(ctx context.Context, id int64) error
-	DeleteVaultFolder(ctx context.Context, id int64) error
 	// DeleteVaultItem removes one of an account's items. Another account's id
 	// deletes nothing.
 	DeleteVaultItem(ctx context.Context, arg DeleteVaultItemParams) (int64, error)
@@ -240,19 +235,14 @@ type Querier interface {
 	// chat identity, which any signed-in account may read.
 	GetUserChatPublicKeys(ctx context.Context, userID int64) (GetUserChatPublicKeysRow, error)
 	GetUserSettings(ctx context.Context, userID int64) (string, error)
-	GetVaultConfig(ctx context.Context) (VaultConfig, error)
-	GetVaultEntry(ctx context.Context, id int64) (VaultEntry, error)
-	GetVaultFolder(ctx context.Context, id int64) (VaultFolder, error)
 	// GetVaultItem returns one of an account's items. Another account's id finds
 	// nothing.
 	GetVaultItem(ctx context.Context, arg GetVaultItemParams) (VaultItem, error)
 	// The per-account vault (#3458). Every query below takes the account's
-	// user_id, so no call can reach another account's rows. The household vault
-	// queries above go with their tables (#3460).
+	// user_id, so no call can reach another account's rows.
 	// GetVaultKey returns an account's wrapped vault key. Only the account itself
 	// may be served it.
 	GetVaultKey(ctx context.Context, userID int64) (VaultKey, error)
-	GetVaultLocation(ctx context.Context) (string, error)
 	// An instance's heartbeat: every job it is still running, which it compares
 	// with what it has in memory to learn of one canceled or reclaimed elsewhere.
 	HeartbeatJobs(ctx context.Context, owner string) ([]int64, error)
@@ -285,7 +275,6 @@ type Querier interface {
 	// ListAllChatChannels is every channel on the Quark, for an admin looking
 	// for the ones they are not in (#2422), ordered as ListChatChannelsForUser.
 	ListAllChatChannels(ctx context.Context) ([]ListAllChatChannelsRow, error)
-	ListAllVaultEntriesForReEncrypt(ctx context.Context) ([]ListAllVaultEntriesForReEncryptRow, error)
 	// A one-off event is listed when it overlaps [range_start, range_end). A
 	// repeating event is listed when its series starts before range_end and has
 	// not ended before ended_before (#2535), since any of its occurrences may fall
@@ -420,9 +409,6 @@ type Querier interface {
 	ListVFSMetadata(ctx context.Context, arg ListVFSMetadataParams) ([]ListVFSMetadataRow, error)
 	ListVFSMetadataPathsByKey(ctx context.Context, arg ListVFSMetadataPathsByKeyParams) ([]string, error)
 	ListVFSMetadataPathsByKeyValue(ctx context.Context, arg ListVFSMetadataPathsByKeyValueParams) ([]string, error)
-	ListVaultEntries(ctx context.Context) ([]ListVaultEntriesRow, error)
-	ListVaultEntriesWithoutHost(ctx context.Context) ([]ListVaultEntriesWithoutHostRow, error)
-	ListVaultFolders(ctx context.Context) ([]VaultFolder, error)
 	// ListVaultItems returns every item of an account, oldest first.
 	ListVaultItems(ctx context.Context, userID int64) ([]VaultItem, error)
 	// LockActiveAdmins changes nothing: it is a no-op UPDATE run for the row locks
@@ -550,7 +536,6 @@ type Querier interface {
 	// SetUserStatus moves an account from one status to another in one
 	// conditional update, so two admins acting at once cannot both succeed.
 	SetUserStatus(ctx context.Context, arg SetUserStatusParams) (int64, error)
-	SetVaultLocation(ctx context.Context, deviceSerial string) error
 	// SignChatChannelEvent attaches the actor's signature to an event, once.
 	SignChatChannelEvent(ctx context.Context, arg SignChatChannelEventParams) (int64, error)
 	// TombstoneChatMessage wipes a message's ciphertext and marks it deleted,
@@ -564,11 +549,6 @@ type Querier interface {
 	// The owner guard keeps an instance whose job was reclaimed from writing to a
 	// run that is no longer its own.
 	UpdateJobProgress(ctx context.Context, arg UpdateJobProgressParams) (int64, error)
-	UpdateVaultConfigPassword(ctx context.Context, arg UpdateVaultConfigPasswordParams) error
-	UpdateVaultEntry(ctx context.Context, arg UpdateVaultEntryParams) error
-	UpdateVaultEntryCiphertext(ctx context.Context, arg UpdateVaultEntryCiphertextParams) error
-	UpdateVaultEntryHost(ctx context.Context, arg UpdateVaultEntryHostParams) error
-	UpdateVaultFolder(ctx context.Context, arg UpdateVaultFolderParams) error
 	// UpdateVaultItem replaces one of an account's items. Another account's id
 	// updates nothing and returns no row.
 	UpdateVaultItem(ctx context.Context, arg UpdateVaultItemParams) (VaultItem, error)
