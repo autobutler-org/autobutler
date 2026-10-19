@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -17,8 +18,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
-	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
-	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +27,10 @@ import (
 // That client lives in another repository, so nothing else here would notice
 // a renamed field or a changed status code. A change that breaks this test
 // needs a matching change in the extension.
+//
+// The vault half is the per-account vault of #3459: the extension fetches the
+// account's wrapped vault key, opens it on its own, and reads and writes items
+// the Quark stores as ciphertext.
 func TestExtensionContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
@@ -38,37 +41,23 @@ func TestExtensionContract(t *testing.T) {
 	if _, err := authutil.Setup(ctx, authutil.SetupParams{Database: database, Files: vfs.NewMemVFS("files"), Username: "admin", AuthKey: dbtest.AuthKey("admin-password"), SaltSecret: dbtest.SaltSecret}); err != nil {
 		t.Fatalf("authutil.Setup: %v", err)
 	}
-	hash, err := authutil.HashKey(dbtest.AuthKey("pending-password"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := database.Queries.CreateUser(ctx, db.CreateUserParams{Username: "pending", AuthKeyHash: hash}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := database.Queries.SetUserStatus(ctx, db.SetUserStatusParams{ToStatus: authutil.StatusPending, Username: "pending", FromStatus: authutil.StatusActive}); err != nil {
-		t.Fatal(err)
+	for _, account := range []struct{ name, status string }{{"pending", authutil.StatusPending}, {"member", authutil.StatusActive}} {
+		hash, err := authutil.HashKey(dbtest.AuthKey(account.name + "-password"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := database.Queries.CreateUser(ctx, db.CreateUserParams{Username: account.name, AuthKeyHash: hash}); err != nil {
+			t.Fatal(err)
+		}
+		if account.status == authutil.StatusActive {
+			continue
+		}
+		if _, err := database.Queries.SetUserStatus(ctx, db.SetUserStatusParams{ToStatus: account.status, Username: account.name, FromStatus: authutil.StatusActive}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	session := vaultcrypto.NewVaultSession()
-	if _, err := vaultutil.Setup(ctx, vaultutil.SetupParams{Queries: database.Queries, Session: session, MasterPassword: "vault-master-password"}); err != nil {
-		t.Fatalf("vaultutil.Setup: %v", err)
-	}
-	key, ok := session.Key()
-	if !ok {
-		t.Fatal("vault not unlocked after setup")
-	}
-	created, err := vaultutil.CreateEntry(ctx, vaultutil.CreateEntryParams{
-		Queries: database.Queries,
-		Key:     key,
-		Fields:  vaultutil.EntryFields{Name: "GitHub", URL: "https://github.com/login", Username: "alice", Password: "gh-pass", TOTPSecret: "JBSWY3DPEHPK3PXP"},
-	})
-	vaultcrypto.ZeroKey(key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	entryPath := "/api/v0/vault/entries/" + jsonNumber(created.Entry.ID)
-
-	deps := deputil.NewDependencies().WithDatabase(database).WithVaultSession(session)
+	deps := deputil.NewDependencies().WithDatabase(database)
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
 	middleware.Use(engine, deps)
@@ -77,7 +66,7 @@ func TestExtensionContract(t *testing.T) {
 	// database closes (#2772).
 	t.Cleanup(deps.Background().Wait)
 
-	do := func(method, path, token string, body any) (int, map[string]any) {
+	do := func(method, path, token string, body any) (int, any) {
 		t.Helper()
 		var reader io.Reader
 		if body != nil {
@@ -94,13 +83,20 @@ func TestExtensionContract(t *testing.T) {
 		}
 		w := httptest.NewRecorder()
 		engine.ServeHTTP(w, req)
-		decoded := map[string]any{}
+		var decoded any
 		if w.Body.Len() > 0 {
 			if err := json.Unmarshal(w.Body.Bytes(), &decoded); err != nil {
-				t.Fatalf("%s %s: body is not a JSON object: %s", method, path, w.Body.String())
+				t.Fatalf("%s %s: body is not JSON: %s", method, path, w.Body.String())
 			}
 		}
 		return w.Code, decoded
+	}
+	// doObject is do for a response whose body is a JSON object.
+	doObject := func(method, path, token string, body any) (int, map[string]any) {
+		t.Helper()
+		code, decoded := do(method, path, token, body)
+		object, _ := decoded.(map[string]any)
+		return code, object
 	}
 
 	// The extension signs in with an auth key (#2430): the salt, then the key
@@ -109,103 +105,118 @@ func TestExtensionContract(t *testing.T) {
 	// whose error is a sentence to show the user. The password beside the key
 	// is the one-time upgrade of a legacy account, and an account that has a
 	// key is checked by it.
-	code, body := do(http.MethodGet, "/api/v0/auth/salt?username=admin", "", nil)
+	code, body := doObject(http.MethodGet, "/api/v0/auth/salt?username=admin", "", nil)
 	expectStatus(t, "salt", code, http.StatusOK)
 	expectString(t, "salt", body, "salt")
 	expectBool(t, "salt legacy", body, "legacy")
 	expectBool(t, "salt legacyRecovery", body, "legacyRecovery")
 
 	authKey := dbtest.AuthKey("admin-password")
-	code, body = do(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "admin", "authKey": authKey})
+	code, body = doObject(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "admin", "authKey": authKey})
 	expectStatus(t, "login with an auth key", code, http.StatusOK)
 	token := expectString(t, "auth key login token", body, "token")
 
-	code, body = do(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "admin", "password": "admin-password"})
+	code, body = doObject(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "admin", "password": "admin-password"})
 	expectStatus(t, "login with the raw password", code, http.StatusUpgradeRequired)
 	expectString(t, "raw password error", body, "error")
 
-	code, _ = do(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "admin", "password": "admin-password", "authKey": authKey})
+	code, _ = doObject(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "admin", "password": "admin-password", "authKey": authKey})
 	expectStatus(t, "login with the password beside the auth key", code, http.StatusOK)
 
-	code, _ = do(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "admin", "authKey": dbtest.AuthKey("wrong")})
+	code, _ = doObject(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "admin", "authKey": dbtest.AuthKey("wrong")})
 	expectStatus(t, "login with a wrong auth key", code, http.StatusUnauthorized)
 
-	code, body = do(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "pending", "authKey": dbtest.AuthKey("pending-password")})
+	code, body = doObject(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "pending", "authKey": dbtest.AuthKey("pending-password")})
 	expectStatus(t, "login to a pending account", code, http.StatusForbidden)
 	if status := expectString(t, "refusal status", body, "status"); status != authutil.StatusPending {
 		t.Errorf("refusal status = %q, want %q", status, authutil.StatusPending)
 	}
 	expectString(t, "refusal error", body, "error")
 
-	code, body = do(http.MethodGet, "/api/v0/vault/status", "", nil)
-	expectStatus(t, "vault status without a token", code, http.StatusUnauthorized)
+	code, body = doObject(http.MethodPost, "/api/v0/auth/login", "", map[string]string{"username": "member", "authKey": dbtest.AuthKey("member-password")})
+	expectStatus(t, "member login", code, http.StatusOK)
+	memberToken := expectString(t, "member login token", body, "token")
+
+	code, body = doObject(http.MethodGet, "/api/v0/vault/key", "", nil)
+	expectStatus(t, "vault key without a token", code, http.StatusUnauthorized)
 	if msg := expectString(t, "missing-token error", body, "error"); msg != "authentication required" {
-		t.Errorf("missing-token error = %q; the extension tells an expired session from a wrong vault password by this text", msg)
+		t.Errorf("missing-token error = %q; the extension tells an expired session from everything else by this text", msg)
 	}
 
-	code, body = do(http.MethodGet, "/api/v0/vault/status", token, nil)
-	expectStatus(t, "vault status", code, http.StatusOK)
-	expectBool(t, "status.initialized", body, "initialized")
-	expectBool(t, "status.locked", body, "locked")
-	expectBool(t, "status.deviceConnected", body, "deviceConnected")
-	expectNumber(t, "status.autoLockSeconds", body, "autoLockSeconds")
+	// An account with no vault: 404 for the key, and items cannot be added.
+	code, body = doObject(http.MethodGet, "/api/v0/vault/key", token, nil)
+	expectStatus(t, "vault key before setup", code, http.StatusNotFound)
+	expectString(t, "no vault error", body, "error")
+	item := func(fill byte) map[string]any {
+		return map[string]any{"ciphertext": b64(fill, 48), "nonce": b64(fill, 24), "formatVersion": 1}
+	}
+	code, body = doObject(http.MethodPost, "/api/v0/vault/items", token, item(1))
+	expectStatus(t, "create an item before setup", code, http.StatusConflict)
+	expectString(t, "no vault on create error", body, "error")
 
-	code, body = do(http.MethodGet, "/api/v0/vault/entries", token, nil)
-	expectStatus(t, "list entries", code, http.StatusOK)
-	expectEntryList(t, body)
+	// Setting the vault up re-confirms the login password's auth key, so the
+	// key is never wrapped under anything else (#3461).
+	key := map[string]any{
+		"password":          dbtest.AuthKey("wrong"),
+		"wrappedByPassword": b64(1, 72), "saltPw": b64(1, 16),
+		"wrappedByPhrase": b64(2, 72), "saltRp": b64(2, 16),
+		"kdfParams": map[string]any{"alg": "argon2id13", "opsLimit": 3, "memLimit": 67108864},
+	}
+	code, body = doObject(http.MethodPut, "/api/v0/vault/key", token, key)
+	expectStatus(t, "set the vault up with a wrong password", code, http.StatusForbidden)
+	expectString(t, "wrong password error", body, "error")
+	key["password"] = authKey
+	code, body = doObject(http.MethodPut, "/api/v0/vault/key", token, key)
+	expectStatus(t, "set the vault up", code, http.StatusCreated)
+	expectKey(t, "created key", body, key)
 
-	code, body = do(http.MethodGet, entryPath, token, nil)
-	expectStatus(t, "get entry", code, http.StatusOK)
-	expectNumber(t, "entry.id", body, "id")
-	for _, field := range []string{"name", "url", "urlHost", "username", "password", "totpSecret"} {
-		expectString(t, "entry."+field, body, field)
+	code, body = doObject(http.MethodPut, "/api/v0/vault/key", token, key)
+	expectStatus(t, "set the vault up again", code, http.StatusConflict)
+	expectString(t, "vault exists error", body, "error")
+
+	code, body = doObject(http.MethodGet, "/api/v0/vault/key", token, nil)
+	expectStatus(t, "vault key", code, http.StatusOK)
+	expectKey(t, "vault key", body, key)
+
+	code, body = doObject(http.MethodPost, "/api/v0/vault/items", token, item(1))
+	expectStatus(t, "create an item", code, http.StatusCreated)
+	expectItem(t, "created item", body, item(1))
+	itemPath := "/api/v0/vault/items/" + jsonNumber(body["id"])
+
+	code, listed := do(http.MethodGet, "/api/v0/vault/items", token, nil)
+	expectStatus(t, "list items", code, http.StatusOK)
+	items, ok := listed.([]any)
+	if !ok || len(items) != 1 {
+		t.Fatalf("items = %v, want an array of the one item", listed)
+	}
+	listedItem, _ := items[0].(map[string]any)
+	expectItem(t, "listed item", listedItem, item(1))
+
+	code, body = doObject(http.MethodGet, itemPath, token, nil)
+	expectStatus(t, "get an item", code, http.StatusOK)
+	expectItem(t, "item", body, item(1))
+
+	code, body = doObject(http.MethodPut, itemPath, token, item(2))
+	expectStatus(t, "replace an item", code, http.StatusOK)
+	expectItem(t, "replaced item", body, item(2))
+
+	// Another account, the member, finds none of the admin's items.
+	for _, method := range []string{http.MethodGet, http.MethodPut, http.MethodDelete} {
+		code, body = doObject(method, itemPath, memberToken, item(3))
+		expectStatus(t, "another account's "+method, code, http.StatusNotFound)
+		expectString(t, "another account's "+method+" error", body, "error")
 	}
 
-	code, body = do(http.MethodGet, "/api/v0/vault/entries/999999", token, nil)
-	expectStatus(t, "get a missing entry", code, http.StatusNotFound)
-	expectString(t, "missing entry error", body, "error")
+	code, body = doObject(http.MethodGet, "/api/v0/vault/items/999999", token, nil)
+	expectStatus(t, "get a missing item", code, http.StatusNotFound)
+	expectString(t, "missing item error", body, "error")
 
-	code, body = do(http.MethodPost, "/api/v0/vault/generate", token, map[string]any{"length": 16, "uppercase": true, "lowercase": true, "digits": true, "symbols": true, "avoidAmbiguous": true})
-	expectStatus(t, "generate", code, http.StatusOK)
-	if password := expectString(t, "generated password", body, "password"); len(password) != 16 {
-		t.Errorf("generated %d characters, want the requested 16", len(password))
-	}
+	code, _ = doObject(http.MethodDelete, itemPath, token, nil)
+	expectStatus(t, "delete an item", code, http.StatusNoContent)
+	code, _ = doObject(http.MethodGet, itemPath, token, nil)
+	expectStatus(t, "get a deleted item", code, http.StatusNotFound)
 
-	code, body = do(http.MethodPost, "/api/v0/vault/entries", token, map[string]string{"name": "example.com", "url": "https://example.com", "username": "bob", "password": "pw"})
-	expectStatus(t, "create entry", code, http.StatusOK)
-	expectNumber(t, "created entry id", body, "id")
-
-	code, body = do(http.MethodPut, entryPath, token, map[string]any{
-		"name": "GitHub", "url": "https://github.com/login", "username": "alice", "password": "new-pass",
-		"notes": "", "totpSecret": "JBSWY3DPEHPK3PXP", "customFields": []any{}, "folderId": nil,
-	})
-	expectStatus(t, "replace entry", code, http.StatusOK)
-	expectNumber(t, "replaced entry id", body, "id")
-
-	code, _ = do(http.MethodPost, "/api/v0/vault/lock", token, nil)
-	expectStatus(t, "lock", code, http.StatusOK)
-
-	code, body = do(http.MethodGet, entryPath, token, nil)
-	expectStatus(t, "get entry while locked", code, 423)
-	if msg := expectString(t, "locked error", body, "error"); !strings.HasPrefix(msg, "vault is locked") {
-		t.Errorf("locked error = %q; the extension strips a leading \"vault is locked\" to show the reason", msg)
-	}
-
-	code, body = do(http.MethodGet, "/api/v0/vault/entries", token, nil)
-	expectStatus(t, "list entries while locked", code, http.StatusOK)
-	expectEntryList(t, body)
-
-	code, body = do(http.MethodPost, "/api/v0/vault/unlock", token, map[string]string{"masterPassword": "wrong"})
-	expectStatus(t, "unlock with a wrong password", code, http.StatusUnauthorized)
-	if msg := expectString(t, "wrong-password error", body, "error"); msg == "authentication required" {
-		t.Error("a wrong vault password must not read like a missing session")
-	}
-
-	code, body = do(http.MethodPost, "/api/v0/vault/unlock", token, map[string]string{"masterPassword": "vault-master-password"})
-	expectStatus(t, "unlock", code, http.StatusOK)
-	expectBool(t, "unlock.locked", body, "locked")
-
-	preflight := httptest.NewRequest(http.MethodOptions, "/api/v0/vault/entries", nil)
+	preflight := httptest.NewRequest(http.MethodOptions, "/api/v0/vault/items", nil)
 	preflight.Header.Set("Origin", "chrome-extension://abcdefghijklmnop")
 	preflight.Header.Set("Access-Control-Request-Method", http.MethodGet)
 	preflight.Header.Set("Access-Control-Request-Headers", "authorization,content-type")
@@ -224,13 +235,18 @@ func TestExtensionContract(t *testing.T) {
 		t.Error("CORS must not allow credentials; the extension sends a bearer token, never cookies")
 	}
 
-	code, _ = do(http.MethodPost, "/api/v0/auth/logout", token, nil)
+	code, _ = doObject(http.MethodPost, "/api/v0/auth/logout", token, nil)
 	expectStatus(t, "logout", code, http.StatusOK)
-	code, _ = do(http.MethodGet, "/api/v0/vault/status", token, nil)
-	expectStatus(t, "vault status after logout", code, http.StatusUnauthorized)
+	code, _ = doObject(http.MethodGet, "/api/v0/vault/key", token, nil)
+	expectStatus(t, "vault key after logout", code, http.StatusUnauthorized)
 }
 
-func jsonNumber(id int64) string {
+// b64 is the standard base64 of n bytes of fill.
+func b64(fill byte, n int) string {
+	return base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{fill}, n))
+}
+
+func jsonNumber(id any) string {
 	encoded, _ := json.Marshal(id)
 	return string(encoded)
 }
@@ -265,28 +281,32 @@ func expectNumber(t *testing.T, what string, body map[string]any, key string) {
 	}
 }
 
-func expectEntryList(t *testing.T, body map[string]any) {
+// expectKey checks a served vault key carries the wraps and salts that were
+// stored, as base64 strings, and kdfParams as the same object.
+func expectKey(t *testing.T, what string, body, want map[string]any) {
 	t.Helper()
-	entries, ok := body["entries"].([]any)
-	if !ok || len(entries) == 0 {
-		t.Fatalf("entries is %T with %d items, want a non-empty array", body["entries"], len(entries))
-	}
-	for _, raw := range entries {
-		entry, ok := raw.(map[string]any)
-		if !ok {
-			t.Fatalf("entry is %T, want an object", raw)
-		}
-		expectNumber(t, "list entry id", entry, "id")
-		for _, field := range []string{"name", "urlHost", "createdAt", "updatedAt"} {
-			expectString(t, "list entry "+field, entry, field)
-		}
-		if folder, present := entry["folderId"]; !present {
-			t.Error("list entry has no folderId key; the extension expects null or a number")
-		} else if _, isNumber := folder.(float64); folder != nil && !isNumber {
-			t.Errorf("list entry folderId is %T, want null or a number", folder)
-		}
-		if _, leaked := entry["password"]; leaked {
-			t.Error("the entry list must not carry passwords")
+	for _, field := range []string{"wrappedByPassword", "saltPw", "wrappedByPhrase", "saltRp"} {
+		if got := expectString(t, what+"."+field, body, field); got != want[field] {
+			t.Errorf("%s.%s = %q, want %q", what, field, got, want[field])
 		}
 	}
+	params, ok := body["kdfParams"].(map[string]any)
+	if !ok || params["alg"] != "argon2id13" {
+		t.Errorf("%s.kdfParams = %v, want the object that was stored", what, body["kdfParams"])
+	}
+}
+
+// expectItem checks a served vault item carries its id, the ciphertext and
+// nonce that were stored as base64 strings, its formatVersion and timestamps.
+func expectItem(t *testing.T, what string, body, want map[string]any) {
+	t.Helper()
+	expectNumber(t, what+".id", body, "id")
+	for _, field := range []string{"ciphertext", "nonce"} {
+		if got := expectString(t, what+"."+field, body, field); got != want[field] {
+			t.Errorf("%s.%s = %q, want %q", what, field, got, want[field])
+		}
+	}
+	expectNumber(t, what+".formatVersion", body, "formatVersion")
+	expectString(t, what+".createdAt", body, "createdAt")
+	expectString(t, what+".updatedAt", body, "updatedAt")
 }

@@ -15,13 +15,13 @@ import (
 
 // changePassword godoc
 // @Summary Change the caller's password
-// @Description Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it; nothing changes if any part fails. Every other session of the account is signed out in the same transaction; this one stays signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.
+// @Description Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it, and vaultKey likewise replaces the wraps of the account's vault key (storing it as the first when the account has none) and publishes vault_changed to the account's sessions; nothing changes if any part fails. Every other session of the account is signed out in the same transaction; this one stays signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param body body changePasswordBody true "The caller's auth key, the new password's auth key and optionally the re-wrapped chat keys"
+// @Param body body changePasswordBody true "The caller's auth key, the new password's auth key and optionally the re-wrapped chat keys and vault key"
 // @Success 204
-// @Failure 400 {object} serverutil.Response "a malformed newAuthKey or chatKeys"
+// @Failure 400 {object} serverutil.Response "a malformed newAuthKey, chatKeys or vaultKey"
 // @Failure 401 {object} serverutil.Response "no session, or the session's account no longer exists"
 // @Failure 403 {object} serverutil.Response "the auth key is wrong or missing"
 // @Failure 426 {object} serverutil.Response "password is a raw password: the app is too old"
@@ -44,9 +44,9 @@ func changePassword(c *gin.Context) *serverutil.Response {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return serverutil.BadRequest(err)
 	}
-	// Only the shape of the chat keys is checked here. ChangePassword checks
-	// the caller's auth key before it or this step writes anything.
-	afterChange, err := storeChatKeys(c.Request.Context(), req.ChatKeys)
+	// Only the shape of the keys is checked here. ChangePassword checks the
+	// caller's auth key before it or this step writes anything.
+	afterChange, announce, err := storeRewrappedKeys(c.Request.Context(), *deps, req.ChatKeys, req.VaultKey)
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
@@ -72,9 +72,7 @@ func changePassword(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	if afterChange != nil {
-		notifyChatKeyNeeded(c.Request.Context(), *deps)
-	}
+	announce()
 	return serverutil.NewResponse().WithStatusCode(http.StatusNoContent)
 }
 

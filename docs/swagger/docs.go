@@ -2158,7 +2158,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it; nothing changes if any part fails. Every other session of the account is signed out in the same transaction; this one stays signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.",
+                "description": "Re-confirms the caller with password, which carries the auth key of the password the account has now, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then replaces the account's auth key with newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new password, exactly as /auth/recover stores it, and vaultKey likewise replaces the wraps of the account's vault key (storing it as the first when the account has none) and publishes vault_changed to the account's sessions; nothing changes if any part fails. Every other session of the account is signed out in the same transaction; this one stays signed in. Shares the sign-in rate limit, and the body is at most 8 KiB.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2171,7 +2171,7 @@ const docTemplate = `{
                 "summary": "Change the caller's password",
                 "parameters": [
                     {
-                        "description": "The caller's auth key, the new password's auth key and optionally the re-wrapped chat keys",
+                        "description": "The caller's auth key, the new password's auth key and optionally the re-wrapped chat keys and vault key",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2185,7 +2185,7 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "400": {
-                        "description": "a malformed newAuthKey or chatKeys",
+                        "description": "a malformed newAuthKey, chatKeys or vaultKey",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -2225,7 +2225,7 @@ const docTemplate = `{
         },
         "/auth/recover": {
             "post": {
-                "description": "Resets the named account's password using its recoveryKey, the standard base64 of the 32-byte key the client derived from the phrase and the salt GET /auth/salt returned. A wrong key, an unknown username and an account with no recovery key all read as a wrong phrase. newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the same salt, replaces the account's auth key and clears its password hash. An account GET /auth/salt calls legacyRecovery recovers once with its raw recoveryPhrase in place of recoveryKey, beside newAuthKey and newRecoveryKey, the key of a phrase the client just generated: the reset stores both keys and clears the phrase and password hashes. An account with a recovery key refuses every phrase as a wrong one. A recoveryPhrase without both new keys, or a newPassword, is what only an app from before auth keys sends, and is refused with 426 (#2430). chatKeys, when sent, replaces the account's chat identity in the same transaction: the client fetched it from /auth/recover/keys, opened it with the phrase and re-wrapped it under the new password (#2416). The body is at most 8 KiB.",
+                "description": "Resets the named account's password using its recoveryKey, the standard base64 of the 32-byte key the client derived from the phrase and the salt GET /auth/salt returned. A wrong key, an unknown username and an account with no recovery key all read as a wrong phrase. newAuthKey, the standard base64 of the 32-byte key the client derived from the new password and the same salt, replaces the account's auth key and clears its password hash. An account GET /auth/salt calls legacyRecovery recovers once with its raw recoveryPhrase in place of recoveryKey, beside newAuthKey and newRecoveryKey, the key of a phrase the client just generated: the reset stores both keys and clears the phrase and password hashes. An account with a recovery key refuses every phrase as a wrong one. A recoveryPhrase without both new keys, or a newPassword, is what only an app from before auth keys sends, and is refused with 426 (#2430). chatKeys, when sent, replaces the account's chat identity in the same transaction: the client fetched it from /auth/recover/keys, opened it with the phrase and re-wrapped it under the new password (#2416). vaultKey, when sent, likewise replaces the wraps of the account's vault key in the same transaction, fetched from /auth/recover/vault-key and re-wrapped the same way (storing it as the first when the account has none), and publishes vault_changed to the account's sessions (#3459). The body is at most 8 KiB.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2238,7 +2238,7 @@ const docTemplate = `{
                 "summary": "Recover account",
                 "parameters": [
                     {
-                        "description": "The account, its recovery key or legacy phrase, the new keys, and optionally its re-wrapped chat keys",
+                        "description": "The account, its recovery key or legacy phrase, the new keys, and optionally its re-wrapped chat keys and vault key",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2339,6 +2339,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/recover/vault-key": {
+            "post": {
+                "description": "The vault's half of the first step of recovering an account (#3459), beside POST /auth/recover/keys for chat. Checks the recovery key exactly as /auth/recover does, changes nothing, and returns the account's wrapped vault key so the client can open it with the phrase wrap key and send it back re-wrapped under the new password as vaultKey in /auth/recover. Needs no session and shares the sign-in rate limit. An unknown username or a wrong key reads as a wrong phrase. A legacy account, one GET /auth/salt calls legacyRecovery, may send its raw recoveryPhrase in place of recoveryKey, as /auth/recover/keys takes it.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Fetch the vault key for account recovery",
+                "parameters": [
+                    {
+                        "description": "The account and its recovery key, or a legacy account's phrase",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_auth.recoverChatKeysBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vaultutil.Key"
+                        }
+                    },
+                    "400": {
+                        "description": "a wrong key or phrase, an unknown username, or a missing or malformed key",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "status is pending or disabled",
+                        "schema": {
+                            "$ref": "#/definitions/v0_auth.accountRefusal"
+                        }
+                    },
+                    "404": {
+                        "description": "the account has no vault",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/recovery-key": {
             "put": {
                 "security": [
@@ -2346,7 +2410,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Re-confirms the caller with password, which carries the auth key, exactly as DELETE /auth/account takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then gives the signed-in account the recovery key its client derived from a recovery phrase the client generated, (#2430). recoveryKey is the standard base64 of the 32-byte key derived from the phrase and the salt GET /auth/salt returned. chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new phrase, exactly as /auth/recover stores it; nothing changes if any part fails. The client calls this after a sign-in whose response says legacyRecovery, such as the first sign-in of an account an admin created. Shares the sign-in rate limit, and the body is at most 8 KiB.",
+                "description": "Re-confirms the caller with password, which carries the auth key, exactly as DELETE /auth/account takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then gives the signed-in account the recovery key its client derived from a recovery phrase the client generated, (#2430). recoveryKey is the standard base64 of the 32-byte key derived from the phrase and the salt GET /auth/salt returned. chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new phrase, exactly as /auth/recover stores it, and vaultKey likewise replaces the wraps of the account's vault key (storing it as the first when the account has none) and publishes vault_changed to the account's sessions; nothing changes if any part fails. The client calls this after a sign-in whose response says legacyRecovery, such as the first sign-in of an account an admin created. Shares the sign-in rate limit, and the body is at most 8 KiB.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2359,7 +2423,7 @@ const docTemplate = `{
                 "summary": "Set the caller's recovery key",
                 "parameters": [
                     {
-                        "description": "The caller's auth key, the new recovery key and optionally the re-wrapped chat keys",
+                        "description": "The caller's auth key, the new recovery key and optionally the re-wrapped chat keys and vault key",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2373,7 +2437,7 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "400": {
-                        "description": "a malformed recoveryKey or chatKeys",
+                        "description": "a malformed recoveryKey, chatKeys or vaultKey",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -9726,547 +9790,64 @@ const docTemplate = `{
                 }
             }
         },
-        "/vault/change-password": {
-            "put": {
+        "/vault": {
+            "delete": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Re-derives the vault key from a new master password and re-encrypts every entry under it.",
-                "consumes": [
-                    "application/json"
+                "description": "Deletes every item of the caller's vault and its vault key in one transaction, so an account locked out of its vault, having lost both its password and its recovery phrase, can start over with PUT /vault/key. An account with no vault gets 204 too. Publishes vault_changed to the caller's sessions.",
+                "tags": [
+                    "vault"
                 ],
+                "summary": "Delete the caller's vault",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/vault/items": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns every item of the caller's vault, entries and folders alike, oldest first, as stored: ciphertext and nonce in base64 and the client's formatVersion. What an item is lives inside its ciphertext. An account with no vault gets an empty list.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "vault"
                 ],
-                "summary": "Change the master password",
-                "parameters": [
-                    {
-                        "description": "Current and new master password",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.changePasswordRequest"
-                        }
-                    }
-                ],
+                "summary": "List the caller's vault items",
                 "responses": {
                     "200": {
-                        "description": "changed and reEncrypted flags",
+                        "description": "OK",
                         "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/vaultutil.Item"
+                            }
                         }
                     },
                     "401": {
-                        "description": "Incorrect current password",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/entries": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns every entry's clear-text metadata. Passwords and notes stay encrypted; read one entry to decrypt it.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "List vault entries",
-                "responses": {
-                    "200": {
-                        "description": "entries: array of vaultutil.EntryListItem",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Encrypts a new entry with the unlocked vault key and stores it.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Create a vault entry",
-                "parameters": [
-                    {
-                        "description": "Entry fields",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.createEntryRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vaultutil.EntryDetail"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/entries/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Decrypts and returns one entry in full, including its password. Requires the vault unlocked.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Get a decrypted vault entry",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Entry ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vaultutil.EntryDetail"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Replaces an entry wholesale: any field omitted from the body is cleared, not kept.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Update a vault entry",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Entry ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Replacement entry fields",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.createEntryRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "id of the updated entry",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Removes one entry from the vault.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Delete a vault entry",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Entry ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "deleted flag",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/export": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Decrypts every entry and returns it as a download. This is plaintext secrets, so the response is never cached.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Export the vault in the clear",
-                "parameters": [
-                    {
-                        "enum": [
-                            "json",
-                            "csv"
-                        ],
-                        "type": "string",
-                        "description": "json (default) or csv",
-                        "name": "format",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vaultutil.ExportJSON"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/folders": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns every folder. Folder names are not encrypted.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "List vault folders",
-                "responses": {
-                    "200": {
-                        "description": "folders: array of vaultutil.Folder",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Adds a folder, optionally nested under a parent.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Create a vault folder",
-                "parameters": [
-                    {
-                        "description": "Folder fields",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.createFolderRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vaultutil.Folder"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/folders/{id}": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Renames or re-parents one folder.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Update a vault folder",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Folder ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Replacement folder fields",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.createFolderRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "id of the updated folder",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -10279,71 +9860,13 @@ const docTemplate = `{
                     }
                 }
             },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Removes one folder.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Delete a vault folder",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Folder ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "deleted flag",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/generate": {
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns a random password. An absent or unparsable body falls back to 20 characters of every class.",
+                "description": "Stores a new item, an entry or a folder, encrypted on the client under the caller's vault key: a non-empty ciphertext, a nonce of at most 64 bytes, both base64, and formatVersion, the client's plaintext layout version, at least 1. The body is at most 1 MiB. The caller must have set its vault up with PUT /vault/key first, or gets 409. Publishes vault_changed with the new item's id to the caller's sessions.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10353,349 +9876,27 @@ const docTemplate = `{
                 "tags": [
                     "vault"
                 ],
-                "summary": "Generate a password",
+                "summary": "Add an item to the caller's vault",
                 "parameters": [
                     {
-                        "description": "Generator options",
-                        "name": "body",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.generateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "generated password",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/import": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Takes an uploaded export and writes its entries in. Existing name plus host matches are skipped, not duplicated.",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Import entries from a file",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Export file",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Source format: auto, json, bitwarden, proton, google or csv; sniffed from the bytes when absent",
-                        "name": "format",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/vaultutil.ImportResult"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/import-backup": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Reads the encrypted backup on a managed device, unlocks it with its recovery password, and merges it in.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Import a vault backup from a device",
-                "parameters": [
-                    {
-                        "description": "Device serial and recovery password",
+                        "description": "The encrypted item",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v0_vault.importBackupRequest"
+                            "$ref": "#/definitions/vaultutil.ItemFields"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/vaultutil.ImportResult"
+                            "$ref": "#/definitions/vaultutil.Item"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "423": {
-                        "description": "Vault is locked",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "503": {
-                        "description": "Vault storage device is disconnected",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/lock": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Drops the in-memory vault key immediately, before the auto-lock window expires.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Lock the vault",
-                "responses": {
-                    "200": {
-                        "description": "locked flag",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/setup": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates the vault with a master password and leaves it unlocked. Fails if it already exists.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Initialize the vault",
-                "parameters": [
-                    {
-                        "description": "Master password",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.setupRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "initialized and locked flags",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/status": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Reports whether the vault is initialized and unlocked, its auto-lock window, and which device holds it.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Get vault status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.vaultStatusResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/vault/storage-location": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns which device the vault is stored on",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Get vault storage location",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.storageLocationResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Migrates vault data to a different device. Requires vault unlocked and admin auth.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "vault"
-                ],
-                "summary": "Change vault storage location",
-                "parameters": [
-                    {
-                        "description": "Migration request",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v0_vault.setStorageLocationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
+                        "description": "an item of the wrong size or shape",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -10706,14 +9907,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/serverutil.Response"
                         }
                     },
-                    "423": {
-                        "description": "Locked",
+                    "409": {
+                        "description": "the caller has no vault yet",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
                     },
-                    "426": {
-                        "description": "password is a raw password, not the auth key: the app is too old",
+                    "413": {
+                        "description": "a body over 1 MiB",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -10723,24 +9924,68 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
-                    },
-                    "501": {
-                        "description": "Moving the vault is not supported on the PostgreSQL backend yet",
-                        "schema": {
-                            "$ref": "#/definitions/serverutil.Response"
-                        }
                     }
                 }
             }
         },
-        "/vault/unlock": {
-            "post": {
+        "/vault/items/{id}": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Derives the vault key from the master password and holds it for the auto-lock window.",
+                "description": "Returns one item of the caller's vault as stored. Another account's item id, or one that names nothing, is a 404, for an admin too.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vault"
+                ],
+                "summary": "Get one of the caller's vault items",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Item id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vaultutil.Item"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "the caller has no item with that id",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Replaces an item's ciphertext, nonce and formatVersion, with the body POST /vault/items takes, at most 1 MiB. Another account's item id, or one that names nothing, is a 404, for an admin too, and changes nothing. Publishes vault_changed with the item's id to the caller's sessions.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10750,33 +9995,224 @@ const docTemplate = `{
                 "tags": [
                     "vault"
                 ],
-                "summary": "Unlock the vault",
+                "summary": "Replace one of the caller's vault items",
                 "parameters": [
                     {
-                        "description": "Master password",
+                        "type": "integer",
+                        "description": "Item id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The re-encrypted item",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v0_vault.unlockRequest"
+                            "$ref": "#/definitions/vaultutil.ItemFields"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "locked flag",
+                        "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/vaultutil.Item"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "an item of the wrong size or shape",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
                     },
                     "401": {
-                        "description": "Incorrect master password",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "the caller has no item with that id",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "413": {
+                        "description": "a body over 1 MiB",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes one item of the caller's vault. Another account's item id, or one that names nothing, is a 404, for an admin too, and deletes nothing. Publishes vault_changed with the item's id to the caller's sessions.",
+                "tags": [
+                    "vault"
+                ],
+                "summary": "Delete one of the caller's vault items",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Item id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "the caller has no item with that id",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/vault/key": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the caller's vault key, wrapped on the client under the login password and, when present, the recovery phrase. Byte fields are base64 and kdfParams is the client's own object. The Quark never opens it. 404 means the caller has no vault yet and the client should set one up with PUT /vault/key.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vault"
+                ],
+                "summary": "Get the caller's wrapped vault key",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vaultutil.Key"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "the caller has no vault yet",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Re-confirms the caller with password, which carries the auth key of the login password, exactly as PUT /auth/recovery-key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. The vault key's password wrap is opened, and re-wrapped on every password change, with the login password, so a vault wrapped under any other password would be lost at the next change. Then stores the caller's first vault key, a random key the client made and wrapped under the login password (wrappedByPassword, at most 512 bytes, with its 16-byte Argon2id salt saltPw) and optionally the recovery phrase (wrappedByPhrase and saltRp, both or neither), with the client's kdfParams object. Byte fields are base64 and the body is at most 8 KiB. The key is never replaced here: an account that already has one gets 409, and its wraps change only beside the credential that wraps them, through vaultKey on PUT /auth/password, PUT /auth/recovery-key and POST /auth/recover. Publishes vault_changed to the caller's sessions. Shares the sign-in rate limit.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vault"
+                ],
+                "summary": "Set up the caller's vault",
+                "parameters": [
+                    {
+                        "description": "The caller's auth key and the wrapped vault key; createdAt and updatedAt are ignored",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_vault.createVaultKeyBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/vaultutil.Key"
+                        }
+                    },
+                    "400": {
+                        "description": "a key of the wrong size or shape",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "password is not the caller's auth key",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "the caller already has a vault",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "413": {
+                        "description": "a body over 8 KiB",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "426": {
+                        "description": "password is a raw password: the app is too old",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -13169,6 +12605,14 @@ const docTemplate = `{
                 "password": {
                     "description": "Password re-confirms the caller with the auth key of the password it has\nnow, so a session alone cannot change the password, as delete-account\ntakes it. A raw password is refused with 426 (#2430).",
                     "type": "string"
+                },
+                "vaultKey": {
+                    "description": "VaultKey is the account's vault key re-wrapped under the new password,\nstored in the same transaction. Absent leaves it as it is.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/vaultutil.Key"
+                        }
+                    ]
                 }
             }
         },
@@ -13273,6 +12717,14 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                },
+                "vaultKey": {
+                    "description": "VaultKey is the account's vault key re-wrapped under the new password,\nstored in the same transaction (#3459). Absent leaves it as it is.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/vaultutil.Key"
+                        }
+                    ]
                 }
             }
         },
@@ -13332,6 +12784,14 @@ const docTemplate = `{
                 "recoveryKey": {
                     "description": "RecoveryKey is the standard base64 of the 32-byte key the client derived\nfrom the phrase it generated and the account's auth salt.",
                     "type": "string"
+                },
+                "vaultKey": {
+                    "description": "VaultKey is the account's vault key re-wrapped under the new phrase,\nstored in the same transaction. Absent leaves it as it is.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/vaultutil.Key"
+                        }
+                    ]
                 }
             }
         },
@@ -14520,188 +13980,47 @@ const docTemplate = `{
                 }
             }
         },
-        "v0_vault.changePasswordRequest": {
+        "v0_vault.createVaultKeyBody": {
             "type": "object",
-            "required": [
-                "currentPassword",
-                "newPassword"
-            ],
             "properties": {
-                "currentPassword": {
+                "createdAt": {
                     "type": "string"
                 },
-                "newPassword": {
+                "kdfParams": {
+                    "description": "KdfParams is the client's JSON object recording the Argon2id cost.",
+                    "type": "object"
+                },
+                "password": {
+                    "description": "Password is the standard base64 auth key of the caller's login\npassword, as DELETE /auth/account and PUT /auth/recovery-key take it.",
                     "type": "string"
-                }
-            }
-        },
-        "v0_vault.createEntryRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "customFields": {
+                },
+                "saltPw": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/vaultutil.CustomField"
+                        "type": "integer"
                     }
                 },
-                "folderId": {
-                    "type": "integer"
+                "saltRp": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
-                "name": {
+                "updatedAt": {
                     "type": "string"
                 },
-                "notes": {
-                    "type": "string"
+                "wrappedByPassword": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
-                "password": {
-                    "type": "string"
-                },
-                "totpSecret": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "v0_vault.createFolderRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "parentId": {
-                    "type": "integer"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                }
-            }
-        },
-        "v0_vault.generateRequest": {
-            "type": "object",
-            "properties": {
-                "avoidAmbiguous": {
-                    "type": "boolean"
-                },
-                "digits": {
-                    "type": "boolean"
-                },
-                "length": {
-                    "type": "integer"
-                },
-                "lowercase": {
-                    "type": "boolean"
-                },
-                "symbols": {
-                    "type": "boolean"
-                },
-                "uppercase": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "v0_vault.importBackupRequest": {
-            "type": "object",
-            "required": [
-                "deviceSerial",
-                "recoveryPassword"
-            ],
-            "properties": {
-                "deviceSerial": {
-                    "type": "string"
-                },
-                "recoveryPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "v0_vault.setStorageLocationRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "targetDeviceSerial": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "v0_vault.setupRequest": {
-            "type": "object",
-            "required": [
-                "masterPassword"
-            ],
-            "properties": {
-                "masterPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "v0_vault.storageLocationResponse": {
-            "type": "object",
-            "properties": {
-                "deviceConnected": {
-                    "type": "boolean"
-                },
-                "deviceName": {
-                    "type": "string"
-                },
-                "deviceSerial": {
-                    "type": "string"
-                },
-                "isExternal": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "v0_vault.unlockRequest": {
-            "type": "object",
-            "required": [
-                "masterPassword"
-            ],
-            "properties": {
-                "masterPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "v0_vault.vaultStatusResponse": {
-            "type": "object",
-            "properties": {
-                "autoLockSeconds": {
-                    "type": "integer"
-                },
-                "deviceConnected": {
-                    "type": "boolean"
-                },
-                "initialized": {
-                    "type": "boolean"
-                },
-                "lockReason": {
-                    "type": "string"
-                },
-                "locked": {
-                    "type": "boolean"
-                },
-                "storageDevice": {
-                    "type": "string"
+                "wrappedByPhrase": {
+                    "description": "WrappedByPhrase and SaltRp are both present or both absent.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -15035,153 +14354,93 @@ const docTemplate = `{
                 }
             }
         },
-        "vaultutil.CustomField": {
+        "vaultutil.Item": {
             "type": "object",
             "properties": {
-                "hidden": {
-                    "type": "boolean"
+                "ciphertext": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
-                "name": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "vaultutil.EntryDetail": {
-            "type": "object",
-            "properties": {
                 "createdAt": {
                     "type": "string"
                 },
-                "customFields": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/vaultutil.CustomField"
-                    }
-                },
-                "folderId": {
+                "formatVersion": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "name": {
+                "nonce": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "vaultutil.ItemFields": {
+            "type": "object",
+            "properties": {
+                "ciphertext": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "formatVersion": {
+                    "description": "FormatVersion is the client's version of the plaintext layout, at\nleast 1.",
+                    "type": "integer"
+                },
+                "nonce": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "vaultutil.Key": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
                     "type": "string"
                 },
-                "notes": {
-                    "type": "string"
+                "kdfParams": {
+                    "description": "KdfParams is the client's JSON object recording the Argon2id cost.",
+                    "type": "object"
                 },
-                "password": {
-                    "type": "string"
+                "saltPw": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
-                "totpSecret": {
-                    "type": "string"
+                "saltRp": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "updatedAt": {
                     "type": "string"
                 },
-                "url": {
-                    "type": "string"
-                },
-                "urlHost": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "vaultutil.ExportEntry": {
-            "type": "object",
-            "properties": {
-                "customFields": {
+                "wrappedByPassword": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/vaultutil.CustomField"
+                        "type": "integer"
                     }
                 },
-                "folderName": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "totpSecret": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                },
-                "urlHost": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "vaultutil.ExportJSON": {
-            "type": "object",
-            "properties": {
-                "entries": {
+                "wrappedByPhrase": {
+                    "description": "WrappedByPhrase and SaltRp are both present or both absent.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/vaultutil.ExportEntry"
+                        "type": "integer"
                     }
-                },
-                "folders": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "vaultutil.Folder": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "parentId": {
-                    "type": "integer"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                }
-            }
-        },
-        "vaultutil.ImportResult": {
-            "type": "object",
-            "properties": {
-                "errors": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "ignored": {
-                    "type": "integer"
-                },
-                "imported": {
-                    "type": "integer"
-                },
-                "skipped": {
-                    "type": "integer"
                 }
             }
         }
@@ -15203,7 +14462,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v0",
 	Schemes:          []string{},
 	Title:            "Quark API",
-	Description:      "The REST API a Quark device serves to its Flutter clients. Every endpoint except\n/auth/setup, /auth/login, /auth/salt, /auth/recover, /auth/recover/keys,\n/auth/request-account and /auth/status needs a session token. Sign in with POST /auth/login,\nthen click Authorize and enter the word Bearer, a space, and the token. Login takes the auth\nkey a client derives from the password and the salt GET /auth/salt returns; the password\nalone is refused with 426 (#2430). A script gets that key from quark auth-key,\ngiven this Quark's address as --host and the username as -u (#2713).",
+	Description:      "The REST API a Quark device serves to its Flutter clients. Every endpoint except\n/auth/setup, /auth/login, /auth/salt, /auth/recover, /auth/recover/keys,\n/auth/recover/vault-key, /auth/request-account and /auth/status needs a session token. Sign in with POST /auth/login,\nthen click Authorize and enter the word Bearer, a space, and the token. Login takes the auth\nkey a client derives from the password and the salt GET /auth/salt returns; the password\nalone is refused with 426 (#2430). A script gets that key from quark auth-key,\ngiven this Quark's address as --host and the username as -u (#2713).",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

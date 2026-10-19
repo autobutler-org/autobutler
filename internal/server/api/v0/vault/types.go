@@ -9,114 +9,23 @@ type router struct{}
 
 func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
-		setupVaultRoute,
-		unlockVaultRoute,
-		lockVaultRoute,
-		getVaultStatusRoute,
-		listVaultEntriesRoute,
-		getVaultEntryRoute,
-		createVaultEntryRoute,
-		updateVaultEntryRoute,
-		deleteVaultEntryRoute,
-		listVaultFoldersRoute,
-		createVaultFolderRoute,
-		updateVaultFolderRoute,
-		deleteVaultFolderRoute,
-		generateVaultPasswordRoute,
-		changeVaultPasswordRoute,
-		importVaultBackupRoute,
-		importVaultRoute,
-		exportVaultRoute,
-		getVaultStorageLocationRoute,
-		setVaultStorageLocationRoute,
+		getVaultKeyRoute,
+		createVaultKeyRoute,
+		deleteVaultRoute,
+		listVaultItemsRoute,
+		createVaultItemRoute,
+		getVaultItemRoute,
+		updateVaultItemRoute,
+		deleteVaultItemRoute,
 	}
 }
 
-type changePasswordRequest struct {
-	CurrentPassword string `json:"currentPassword" binding:"required"`
-	NewPassword     string `json:"newPassword" binding:"required"`
-}
-
-type generateRequest struct {
-	Length         int  `json:"length"`
-	Uppercase      bool `json:"uppercase"`
-	Lowercase      bool `json:"lowercase"`
-	Digits         bool `json:"digits"`
-	Symbols        bool `json:"symbols"`
-	AvoidAmbiguous bool `json:"avoidAmbiguous"`
-}
-
-type vaultStatusResponse struct {
-	Initialized     bool   `json:"initialized"`
-	Locked          bool   `json:"locked"`
-	AutoLockSeconds int64  `json:"autoLockSeconds"`
-	StorageDevice   string `json:"storageDevice"`
-	DeviceConnected bool   `json:"deviceConnected"`
-	LockReason      string `json:"lockReason,omitempty"`
-}
-
-type storageLocationResponse struct {
-	DeviceSerial    string `json:"deviceSerial"`
-	IsExternal      bool   `json:"isExternal"`
-	DeviceConnected bool   `json:"deviceConnected"`
-	DeviceName      string `json:"deviceName"`
-}
-
-type importBackupRequest struct {
-	DeviceSerial     string `json:"deviceSerial" binding:"required"`
-	RecoveryPassword string `json:"recoveryPassword" binding:"required"`
-}
-
-type setStorageLocationRequest struct {
-	TargetDeviceSerial string `json:"targetDeviceSerial"`
-	Username           string `json:"username" binding:"required"`
-	Password           string `json:"password" binding:"required"`
-}
-
-type setupRequest struct {
-	MasterPassword string `json:"masterPassword" binding:"required"`
-}
-
-type unlockRequest struct {
-	MasterPassword string `json:"masterPassword" binding:"required"`
-}
-
-type createEntryRequest struct {
-	Name         string                  `json:"name" binding:"required"`
-	URL          string                  `json:"url"`
-	Username     string                  `json:"username"`
-	Password     string                  `json:"password"`
-	Notes        string                  `json:"notes"`
-	TOTPSecret   string                  `json:"totpSecret"`
-	CustomFields []vaultutil.CustomField `json:"customFields"`
-	FolderID     *int64                  `json:"folderId"`
-}
-
-// fields maps the request onto the service's entry input.
-func (r createEntryRequest) fields() vaultutil.EntryFields {
-	return vaultutil.EntryFields{
-		Name:         r.Name,
-		URL:          r.URL,
-		Username:     r.Username,
-		Password:     r.Password,
-		Notes:        r.Notes,
-		TOTPSecret:   r.TOTPSecret,
-		CustomFields: r.CustomFields,
-		FolderID:     r.FolderID,
-	}
-}
-
-type createFolderRequest struct {
-	Name      string `json:"name" binding:"required"`
-	ParentID  *int64 `json:"parentId"`
-	SortOrder int64  `json:"sortOrder"`
-}
-
-// fields maps the request onto the service's folder input.
-func (r createFolderRequest) fields() vaultutil.FolderFields {
-	return vaultutil.FolderFields{
-		Name:      r.Name,
-		ParentID:  r.ParentID,
-		SortOrder: r.SortOrder,
-	}
+// createVaultKeyBody is what PUT /vault/key reads: the wrapped vault key and
+// password, the caller's auth key, which re-confirms that the key is wrapped
+// under the account's login password.
+type createVaultKeyBody struct {
+	vaultutil.Key
+	// Password is the standard base64 auth key of the caller's login
+	// password, as DELETE /auth/account and PUT /auth/recovery-key take it.
+	Password string `json:"password"`
 }

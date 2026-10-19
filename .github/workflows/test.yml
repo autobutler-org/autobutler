@@ -146,7 +146,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - name: Cut the power under uploads and the vault
+      - name: Cut the power under uploads
         run: |
           # A pull request built from main still pins public.ecr.aws in the
           # power-cut Dockerfile. That registry answers 429, and the Makefile

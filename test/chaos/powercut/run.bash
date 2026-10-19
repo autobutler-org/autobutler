@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
-# Cuts the power under Quark's upload and vault write paths and checks what is
-# left (#2517). Each case mounts a fresh LazyFS, starts the powercut writer on
+# Cuts the power under Quark's upload write paths and checks what is left
+# (#2517). Each case mounts a fresh LazyFS, starts the powercut writer on
 # it, and arms a crash fault: at the next file-system call matching the fault,
 # LazyFS drops everything that was never flushed and kills itself, which is what
 # a power cut does to the page cache. The checker then reads the directory
@@ -50,12 +50,6 @@ CASES=(
     "upload|timing=after::op=link::from_rgx=/\.vfs-write-::to_rgx=/file-"
     # Any flush at all.
     "upload|timing=before::op=fsync::from_rgx=/"
-    # A vault transaction whose journal is on disk and whose database is not.
-    "vault|timing=after::op=fsync::from_rgx=vault\.db-journal"
-    # Halfway through writing pages into the vault database.
-    "vault|timing=after::op=write::from_rgx=vault\.db$"
-    # The commit point: the journal is about to be deleted.
-    "vault|timing=before::op=unlink::from_rgx=vault\.db-journal"
 )
 
 rm -rf "$WORK_DIR"
@@ -135,7 +129,7 @@ EOF
         failures=$((failures + 1))
     fi
     printf '%-4s %-22s cut %-25s %s\n' "$verdict" "$name" "$cut" \
-        "$(grep -m 1 -E '^(upload|vault):' "$dir/check.log" || tail -n 1 "$dir/check.log")" | tee -a "$SUMMARY"
+        "$(grep -m 1 -E '^upload:' "$dir/check.log" || tail -n 1 "$dir/check.log")" | tee -a "$SUMMARY"
     if [[ "$verdict" == "FAIL" ]]; then
         sed -n '1,12s/^/     /p' "$dir/check.log"
     fi

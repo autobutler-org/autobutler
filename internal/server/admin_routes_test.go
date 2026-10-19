@@ -112,26 +112,6 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 		{http.MethodDelete, "/api/v0/auth/account?database=true"},
 		{http.MethodDelete, "/api/v0/auth/account?files=true"},
 		{http.MethodDelete, "/api/v0/auth/account?devices=true"},
-		{http.MethodGet, "/api/v0/vault/status"},
-		{http.MethodPost, "/api/v0/vault/setup"},
-		{http.MethodPost, "/api/v0/vault/unlock"},
-		{http.MethodPost, "/api/v0/vault/lock"},
-		{http.MethodGet, "/api/v0/vault/entries"},
-		{http.MethodGet, "/api/v0/vault/entries/1"},
-		{http.MethodPost, "/api/v0/vault/entries"},
-		{http.MethodPut, "/api/v0/vault/entries/1"},
-		{http.MethodDelete, "/api/v0/vault/entries/1"},
-		{http.MethodGet, "/api/v0/vault/folders"},
-		{http.MethodPost, "/api/v0/vault/folders"},
-		{http.MethodPut, "/api/v0/vault/folders/1"},
-		{http.MethodDelete, "/api/v0/vault/folders/1"},
-		{http.MethodPost, "/api/v0/vault/generate"},
-		{http.MethodPut, "/api/v0/vault/change-password"},
-		{http.MethodPost, "/api/v0/vault/import-backup"},
-		{http.MethodPost, "/api/v0/vault/import"},
-		{http.MethodGet, "/api/v0/vault/export"},
-		{http.MethodGet, "/api/v0/vault/storage-location"},
-		{http.MethodPut, "/api/v0/vault/storage-location"},
 		{http.MethodGet, "/api/v0/ssh/status"},
 		// No body or no fingerprint, so the admin stops at a 400.
 		{http.MethodPut, "/api/v0/ssh/enabled"},
@@ -172,6 +152,11 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 		// Account-only deletion stays self-service; with no password the
 		// member's account stays in place.
 		{http.MethodDelete, "/api/v0/auth/account?account=true"},
+		// Every account has a vault of its own (#3459). The member has none
+		// yet, so these list nothing or stop at a 400 or 409.
+		{http.MethodGet, "/api/v0/vault/items"},
+		{http.MethodPut, "/api/v0/vault/key"},
+		{http.MethodPost, "/api/v0/vault/items"},
 	}
 	for _, r := range open {
 		if got := do(r.method, r.path, member.SessionToken); got == http.StatusUnauthorized || got == http.StatusForbidden || got == http.StatusNotFound {

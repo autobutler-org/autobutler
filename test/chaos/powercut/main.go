@@ -1,4 +1,4 @@
-// Command powercut drives Quark's real write paths on a LazyFS mount and checks
+// Command powercut drives Quark's real upload write paths on a LazyFS mount and checks
 // what a simulated power cut left behind (#2517).
 //
 // It runs in two phases. "write" performs a stream of operations against the
@@ -9,8 +9,8 @@
 // every acknowledged operation is intact, and nothing half-written is presented
 // as complete.
 //
-//	powercut write upload|vault <dir> <ledger>
-//	powercut check upload|vault <dir> <ledger>
+//	powercut write upload <dir> <ledger>
+//	powercut check upload <dir> <ledger>
 package main
 
 import (
@@ -21,7 +21,7 @@ import (
 
 func main() {
 	if len(os.Args) != 5 {
-		fmt.Fprintln(os.Stderr, "usage: powercut write|check upload|vault <dir> <ledger>")
+		fmt.Fprintln(os.Stderr, "usage: powercut write|check upload <dir> <ledger>")
 		os.Exit(2)
 	}
 	phase, scenario, dir, ledgerPath := os.Args[1], os.Args[2], os.Args[3], os.Args[4]
@@ -31,12 +31,8 @@ func main() {
 	switch phase + " " + scenario {
 	case "write upload":
 		err = withLedger(ledgerPath, func(l *ledger) error { return writeUploads(ctx, dir, l) })
-	case "write vault":
-		err = withLedger(ledgerPath, func(l *ledger) error { return writeVault(ctx, dir, l) })
 	case "check upload":
 		err = checkUploads(dir, ledgerPath)
-	case "check vault":
-		err = checkVault(ctx, dir, ledgerPath)
 	default:
 		err = fmt.Errorf("unknown phase or scenario %q %q", phase, scenario)
 	}

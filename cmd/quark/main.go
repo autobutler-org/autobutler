@@ -18,7 +18,7 @@ import (
 // @version					v0
 // @description				The REST API a Quark device serves to its Flutter clients. Every endpoint except
 // @description				/auth/setup, /auth/login, /auth/salt, /auth/recover, /auth/recover/keys,
-// @description				/auth/request-account and /auth/status needs a session token. Sign in with POST /auth/login,
+// @description				/auth/recover/vault-key, /auth/request-account and /auth/status needs a session token. Sign in with POST /auth/login,
 // @description				then click Authorize and enter the word Bearer, a space, and the token. Login takes the auth
 // @description				key a client derives from the password and the salt GET /auth/salt returns; the password
 // @description				alone is refused with 426 (#2430). A script gets that key from quark auth-key,

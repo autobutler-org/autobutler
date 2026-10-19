@@ -120,10 +120,6 @@ func deleteAccount(c *gin.Context) *serverutil.Response {
 		if err != nil {
 			return serverutil.InternalServerError(fmt.Errorf("failed to list external devices: %w", err))
 		}
-		// An off-appliance vault lives inside one of those directories, so its
-		// handle has to be closed before the directory goes or the process
-		// keeps writing to an unlinked file.
-		(*deps).ClearVaultDB()
 	}
 
 	result, err := authutil.DeleteAccount(c.Request.Context(), authutil.DeleteAccountParams{

@@ -18,19 +18,17 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/sshutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/util/uploadutil"
-	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/quark/pkg/util/workerutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
 type dependencies struct {
-	accessCache      *accessutil.Cache
-	authRateLimiter  *ratelimitutil.Limiter
-	background       sync.WaitGroup
-	byTypeCache      *fileutil.ByTypeCache
-	chatRateLimiter  *ratelimitutil.Limiter
-	loginGuard       *ratelimitutil.LoginGuard
-	vaultRateLimiter *ratelimitutil.Limiter
+	accessCache     *accessutil.Cache
+	authRateLimiter *ratelimitutil.Limiter
+	background      sync.WaitGroup
+	byTypeCache     *fileutil.ByTypeCache
+	chatRateLimiter *ratelimitutil.Limiter
+	loginGuard      *ratelimitutil.LoginGuard
 
 	database       *db.DatabaseSqlc
 	downloadTokens *downloadutil.TokenStore
@@ -44,9 +42,6 @@ type dependencies struct {
 	ioSemaphore    *iosemutil.Semaphore
 	storageService *storageutil.StorageService
 	uploadSessions *uploadutil.SessionStore
-	vaultDB        *db.DatabaseSqlc
-	vaultDBMu      sync.RWMutex
-	vaultSession   *vaultcrypto.VaultSession
 	vfsRegistry    vfs.Registry
 	metadataStore  vfs.MetadataStore
 	jobQueue       *jobutil.Queue
@@ -167,10 +162,6 @@ func (d *dependencies) WithAccessCache(cache *accessutil.Cache) Dependencies {
 	return d
 }
 
-func (d *dependencies) VaultRateLimiter() *ratelimitutil.Limiter {
-	return d.vaultRateLimiter
-}
-
 func (d *dependencies) Database() *db.DatabaseSqlc {
 	return d.database
 }
@@ -220,39 +211,6 @@ func (d *dependencies) UploadSessions() *uploadutil.SessionStore {
 
 func (d *dependencies) WithUploadSessions(store *uploadutil.SessionStore) Dependencies {
 	d.uploadSessions = store
-	return d
-}
-
-func (d *dependencies) VaultDB() *db.DatabaseSqlc {
-	d.vaultDBMu.RLock()
-	defer d.vaultDBMu.RUnlock()
-	if d.vaultDB != nil {
-		return d.vaultDB
-	}
-	return d.database
-}
-
-func (d *dependencies) SetVaultDB(database *db.DatabaseSqlc) {
-	d.vaultDBMu.Lock()
-	defer d.vaultDBMu.Unlock()
-	d.vaultDB = database
-}
-
-func (d *dependencies) ClearVaultDB() {
-	d.vaultDBMu.Lock()
-	defer d.vaultDBMu.Unlock()
-	if d.vaultDB != nil {
-		d.vaultDB.Db.Close()
-		d.vaultDB = nil
-	}
-}
-
-func (d *dependencies) VaultSession() *vaultcrypto.VaultSession {
-	return d.vaultSession
-}
-
-func (d *dependencies) WithVaultSession(session *vaultcrypto.VaultSession) Dependencies {
-	d.vaultSession = session
 	return d
 }
 

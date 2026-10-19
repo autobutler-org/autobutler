@@ -39,3 +39,24 @@ func TestRequestAccountPath_ExemptAndRateLimited(t *testing.T) {
 	}
 	t.Error("50 requests from one IP never hit 429")
 }
+
+// TestVaultKeyPut_SharesTheAuthLimit checks that setting a vault up, which
+// re-confirms the login password, shares the per-IP sign-in limit, while
+// reading the key back does not (#3461).
+func TestVaultKeyPut_SharesTheAuthLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	middleware.Use(engine, deputil.NewDependencies())
+	const path = "/api/v0/vault/key"
+	for range 50 {
+		if doMiddlewareReq(engine, httptest.NewRequest(http.MethodGet, path, nil)).Code == http.StatusTooManyRequests {
+			t.Fatal("GET of the vault key hit the sign-in limit")
+		}
+	}
+	for range 50 {
+		if doMiddlewareReq(engine, httptest.NewRequest(http.MethodPut, path, nil)).Code == http.StatusTooManyRequests {
+			return
+		}
+	}
+	t.Error("50 PUTs from one IP never hit 429")
+}

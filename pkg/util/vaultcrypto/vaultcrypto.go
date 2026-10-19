@@ -1,5 +1,6 @@
-// Package vaultcrypto derives vault keys with Argon2id, encrypts vault data
-// with AES-256-GCM, and holds the derived key in an auto-locking session.
+// Package vaultcrypto derives household vault keys with Argon2id and encrypts
+// vault data with AES-256-GCM. Only the vault backup in pkg/backup still uses it,
+// until that moves to the per-account vault (#3460).
 package vaultcrypto
 
 import (
@@ -10,8 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
-	"time"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -38,21 +37,6 @@ type Argon2Params struct {
 	Memory      uint32 // KiB (default 65536 = 64MB)
 	Iterations  uint32 // time cost (default 3)
 	Parallelism uint8  // threads (default 4)
-}
-
-// VaultSession holds the derived encryption key in memory while the vault is unlocked.
-// The key is zeroed on lock or timeout.
-type VaultSession struct {
-	mu         sync.RWMutex
-	key        []byte
-	unlockedAt time.Time
-	timeout    time.Duration
-	lockReason string
-}
-
-// NewVaultSession creates a new locked vault session.
-func NewVaultSession() *VaultSession {
-	return &VaultSession{}
 }
 
 // DefaultParams returns recommended Argon2id parameters for vault key derivation.
