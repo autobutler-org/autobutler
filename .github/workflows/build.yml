@@ -185,6 +185,9 @@ jobs:
           fetch-depth: 0
       - name: Install Linux build dependencies
         run: |
+          # The hosted x64 image enables Microsoft's apt feed, but this build uses
+          # only Ubuntu packages. Do not let an outage there block the Linux build.
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
           sudo apt-get update
           xargs sudo apt-get install -y < linux/apt-packages.txt
       - name: Setup Flutter
