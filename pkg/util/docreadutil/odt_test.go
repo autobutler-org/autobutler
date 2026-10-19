@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -376,6 +377,65 @@ func TestOdtNumberFormats(t *testing.T) {
 	for _, c := range cases {
 		if got := odtNumber(c.n, c.format, c.sync); got != c.want {
 			t.Errorf("odtNumber(%d, %q, %v) = %q, want %q", c.n, c.format, c.sync, got, c.want)
+		}
+	}
+}
+
+// TestOdtTableCellSpans keeps table:number-columns-spanned and
+// table:number-rows-spanned on the block model. A covered cell is left
+// out, including one that holds text, and a row of only covered cells
+// stays so the span still has that row.
+func TestOdtTableCellSpans(t *testing.T) {
+	d := odtDoc{body: `<table:table>` +
+		`<table:table-row>` +
+		odtCell(`table:number-columns-spanned="2" table:number-rows-spanned="2"`, "Anchor") +
+		`<table:covered-table-cell>` + odtPara("", "hidden") + `</table:covered-table-cell>` +
+		odtCell("", "Side") +
+		`</table:table-row>` +
+		`<table:table-row>` +
+		`<table:covered-table-cell table:number-columns-spanned="2"/>` +
+		`<table:covered-table-cell/>` +
+		`</table:table-row>` +
+		`<table:table-row>` +
+		odtCell(`table:number-columns-spanned="1" table:number-rows-spanned="1"`, "Plain") +
+		odtCell(`table:number-rows-spanned="2"`, "Tall") +
+		odtCell("", "Corner") +
+		`</table:table-row>` +
+		`<table:table-row>` +
+		odtCell("", "Below") +
+		`<table:covered-table-cell/>` +
+		odtCell(`table:number-columns-spanned="1"`, "End") +
+		`</table:table-row>` +
+		`<table:table-row>` +
+		odtCell(`table:number-columns-spanned="3"`, "Wide") +
+		`<table:covered-table-cell/><table:covered-table-cell/>` +
+		`</table:table-row>` +
+		`</table:table>`}
+	s, _ := readOdtStream(t, d, Limits{})
+	if len(s.blocks) != 1 || s.blocks[0].Type != BlockTable {
+		t.Fatalf("blocks = %v", texts(s.blocks))
+	}
+	shape := func(row TableRow) []string {
+		out := make([]string, 0, len(row.Cells))
+		for _, c := range row.Cells {
+			out = append(out, strings.Join(texts(c.Blocks), "/")+":"+strconv.Itoa(c.ColSpan)+"x"+strconv.Itoa(c.RowSpan))
+		}
+		return out
+	}
+	want := [][]string{
+		{"Anchor:2x2", "Side:1x1"},
+		{}, // covered by Anchor; the row stays and lists no cell
+		{"Plain:1x1", "Tall:1x2", "Corner:1x1"},
+		{"Below:1x1", "End:1x1"},
+		{"Wide:3x1"},
+	}
+	rows := s.blocks[0].Rows
+	if len(rows) != len(want) {
+		t.Fatalf("rows = %d, want %d", len(rows), len(want))
+	}
+	for i := range want {
+		if got := shape(rows[i]); !slices.Equal(got, want[i]) {
+			t.Errorf("row %d = %v, want %v", i, got, want[i])
 		}
 	}
 }
