@@ -347,19 +347,25 @@ type KeyframeParams struct {
 	Source string
 	// At is the time the keyframe is taken nearest to.
 	At time.Duration
+	// MaxDimension caps the longer side of the decoded frame in pixels.
+	// Zero leaves the frame at its own size, and a frame already inside the
+	// cap is left alone.
+	MaxDimension int
 }
 
 // KeyframeResult is what a Keyframe decoded.
 type KeyframeResult struct {
-	// Image is the keyframe at its own size, the way up a player shows it:
-	// the rotation an MP4 track carries is already applied.
+	// Image is the keyframe the way up a player shows it: the rotation an MP4
+	// track carries is already applied. MaxDimension on the request caps its
+	// longer side; zero leaves it at its own size.
 	Image image.Image
 }
 
 // Keyframe decodes the keyframe of Source nearest At, without running
 // anything outside the process. It reads that one sample rather than the
-// file, and holds one decoded frame. A time past the end takes the last
-// keyframe. A codec with no decoder returns ErrNoDecoder.
+// file, and holds one decoded frame. MaxDimension caps the longer side of
+// that frame; zero leaves it at its own size. A time past the end takes the
+// last keyframe. A codec with no decoder returns ErrNoDecoder.
 func Keyframe(params KeyframeParams) (KeyframeResult, error) {
 	src, err := os.Open(params.Source)
 	if err != nil {
@@ -370,7 +376,9 @@ func Keyframe(params KeyframeParams) (KeyframeResult, error) {
 	if err != nil {
 		return KeyframeResult{}, err
 	}
-	frame, err := sprocket.Thumbnail(src, stat.Size(), params.At, sprocket.ThumbnailOptions{})
+	frame, err := sprocket.Thumbnail(src, stat.Size(), params.At, sprocket.ThumbnailOptions{
+		MaxDimension: params.MaxDimension,
+	})
 	if errors.Is(err, sprocket.ErrUnsupportedCodec) {
 		return KeyframeResult{}, fmt.Errorf("%w: %w", ErrNoDecoder, err)
 	}

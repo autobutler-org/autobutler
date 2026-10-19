@@ -60,6 +60,23 @@ func TestGenerateRendersAV1AndVP8Video(t *testing.T) {
 	}
 }
 
+// TestVideoFramePassesTheTierLongerSideToKeyframe: the tier's longer side is
+// what sprocket must cap the keyframe to. These clips are 128x72, so a 48x80
+// tier (longer side 80) comes back 80x45, and a square tier uses that side.
+func TestVideoFramePassesTheTierLongerSideToKeyframe(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	for _, name := range []string{"av1-opus.webm", "vp8-vorbis.webm"} {
+		frame, err := videoFrame(context.Background(), filepath.Join("..", "videoutil", "testdata", name), 48, 80)
+		if err != nil {
+			t.Errorf("videoFrame %s: %v", name, err)
+			continue
+		}
+		if size := frame.Bounds().Size(); size != image.Pt(80, 45) {
+			t.Errorf("videoFrame %s at 48x80 is %v, want 80x45 so the longer side reached the keyframe decode", name, size)
+		}
+	}
+}
+
 // TestGenerateReportsAVideoCodecWithNoDecoder: H.264 and HEVC are a client's
 // to render, so they fail with an error the caller can tell from a broken file.
 func TestGenerateReportsAVideoCodecWithNoDecoder(t *testing.T) {
