@@ -469,6 +469,25 @@ func TestRTFFootnoteLandsUnderNotesHeading(t *testing.T) {
 	}
 }
 
+// TestRTFCommentLeftOutOfDocument pins that an annotation group, starred or
+// not, contributes none of its text to the blocks and only a warning.
+func TestRTFCommentLeftOutOfDocument(t *testing.T) {
+	for _, ann := range []string{`{\*\annotation Secret remark.}`, `{\annotation Secret remark.}`} {
+		s, result := readRTFStream(t, rtfDoc(`Before `+ann+`after.\par`), Limits{})
+		for _, b := range s.blocks {
+			if strings.Contains(plain(b), "Secret") {
+				t.Errorf("%s: comment text leaked into %q", ann, texts(s.blocks))
+			}
+		}
+		if want := []string{"Before after."}; !reflect.DeepEqual(texts(s.blocks), want) {
+			t.Errorf("%s: blocks = %q, want %q", ann, texts(s.blocks), want)
+		}
+		if want := []string{"Comments are not shown"}; !reflect.DeepEqual(result.Warnings, want) {
+			t.Errorf("%s: warnings = %q, want %q", ann, result.Warnings, want)
+		}
+	}
+}
+
 func TestRTFPageBreaks(t *testing.T) {
 	s, _ := readRTFStream(t, rtfDoc(`a\page b\par\pard\pagebb c\par\pard\pagebb\page d\par\pard{\footnote n\page m}\sect e\sect\sect`), Limits{})
 	want := []string{"a", "pageBreak:", "b", "pageBreak:", "c", "pageBreak:", "d", "e", "Notes", "nm"}
