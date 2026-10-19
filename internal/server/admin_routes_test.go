@@ -143,6 +143,8 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 		{http.MethodGet, "/api/v0/hostname"},
 		// No body, so the admin stops at a 400 and nothing is renamed.
 		{http.MethodPut, "/api/v0/hostname"},
+		// The graph has no job queue, so the admin's scan is never queued.
+		{http.MethodPost, "/api/v0/music/rescan"},
 	}
 	for _, r := range gated {
 		if got := do(r.method, r.path, member.SessionToken); got != http.StatusForbidden {
@@ -165,6 +167,8 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 		{http.MethodGet, "/api/v0/storage/devices/status"},
 		// Anyone who can share needs to know who they can share with.
 		{http.MethodGet, "/api/v0/access/principals"},
+		// The library lists only what the caller can read.
+		{http.MethodGet, "/api/v0/music/status"},
 		// Account-only deletion stays self-service; with no password the
 		// member's account stays in place.
 		{http.MethodDelete, "/api/v0/auth/account?account=true"},

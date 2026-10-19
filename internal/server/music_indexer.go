@@ -23,7 +23,7 @@ import (
 // musicRescanKind is the jobutil kind of a full music library scan: every
 // device, through musicutil.BackfillDevice. It is queued on first start and
 // by an admin from Settings.
-const musicRescanKind = "music_rescan"
+const musicRescanKind = musicutil.RescanKind
 
 const (
 	// musicChangedDelay is the least time between two music_library_changed
@@ -144,9 +144,7 @@ func (m *musicIndexer) run(deps deputil.Dependencies) {
 func (m *musicIndexer) startup() {
 	ctx := context.Background()
 	if m.firstStart(ctx) {
-		if _, err := m.jobs.Enqueue(ctx, jobutil.EnqueueParams{
-			Kind: musicRescanKind, Name: "Scan the music library", Params: struct{}{},
-		}); err != nil {
+		if _, err := musicutil.Rescan(musicutil.RescanParams{Ctx: ctx, Jobs: m.jobs}); err != nil {
 			log.Printf("[music-indexer] queue the first scan: %v", err)
 		} else {
 			return

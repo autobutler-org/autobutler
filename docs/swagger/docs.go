@@ -6657,6 +6657,363 @@ const docTemplate = `{
                 }
             }
         },
+        "/music/albums": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a page of albums ordered by album artist and title, and how many there are. An album is listed when the caller can read one of its tracks, and its counts, year and cover come from those tracks alone. coverSerial and coverPath name the track to ask the thumbnail endpoint for.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "music"
+                ],
+                "summary": "List music albums",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keep one album artist's albums, compared without case; empty names the untagged artist",
+                        "name": "artist",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Albums to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size: 50 when absent, at most 200",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_music.AlbumsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/music/artists": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a page of album artists by name, and how many there are, counted over the tracks the caller can read.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "music"
+                ],
+                "summary": "List music artists",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Artists to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size: 50 when absent, at most 200",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_music.ArtistsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/music/genres": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns every genre by name, counted over the tracks the caller can read.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "music"
+                ],
+                "summary": "List music genres",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_music.GenresResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/music/rescan": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Queues a full scan of every device, which reads each changed audio file and drops the tracks whose files are gone. Its progress shows as a music_rescan job. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "music"
+                ],
+                "summary": "Rescan the music library",
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/jobutil.Job"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/music/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Matches the query against title, artist, album artist, album and genre, best ranked first, and returns only tracks the caller can read. The snippet is tag text with the matched terms in \u003cb\u003e…\u003c/b\u003e; escape it before rendering it as HTML. Answers 501 when the database is PostgreSQL (#2958).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "music"
+                ],
+                "summary": "Search the music library",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search text; FTS5 column filters such as artist:nina pass through",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Most results: 50 when absent, at most 200",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_music.SearchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/music/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns how many tracks the caller can read, when the last full scan finished, and the scan pending or running now, so an empty Music page can say \"scanning\" rather than \"no music\".",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "music"
+                ],
+                "summary": "Get the music library's status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/musicutil.StatusResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/music/tracks": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a sorted page of the tracks the caller can read, and how many there are. The default order is album order: album artist, album, disc, track; every sort breaks ties that way.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "music"
+                ],
+                "summary": "List music tracks",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keep one album's tracks",
+                        "name": "albumKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Keep one album artist's tracks, compared without case; empty names the untagged artist",
+                        "name": "artist",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Keep one genre's tracks, compared without case; empty names the untagged genre",
+                        "name": "genre",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "title",
+                            "artist",
+                            "album",
+                            "added",
+                            "year"
+                        ],
+                        "type": "string",
+                        "description": "Sort key; album order when absent",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "description": "Sort direction",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tracks to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size: 50 when absent, at most 200",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_music.TracksResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/notifications": {
             "get": {
                 "security": [
@@ -12078,6 +12435,158 @@ const docTemplate = `{
                 "StatusCanceled"
             ]
         },
+        "musicutil.Album": {
+            "type": "object",
+            "properties": {
+                "albumArtist": {
+                    "type": "string"
+                },
+                "albumKey": {
+                    "type": "string"
+                },
+                "coverPath": {
+                    "type": "string"
+                },
+                "coverSerial": {
+                    "description": "CoverSerial and CoverPath name the track to ask the thumbnail endpoint\nfor: one with cover art when any has it, otherwise the first.",
+                    "type": "string"
+                },
+                "durationMs": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "trackCount": {
+                    "type": "integer"
+                },
+                "year": {
+                    "description": "Year is the earliest tagged year among the tracks, 0 when none is.",
+                    "type": "integer"
+                }
+            }
+        },
+        "musicutil.Artist": {
+            "type": "object",
+            "properties": {
+                "albumCount": {
+                    "type": "integer"
+                },
+                "coverPath": {
+                    "type": "string"
+                },
+                "coverSerial": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "trackCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "musicutil.Genre": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "trackCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "musicutil.SearchResult": {
+            "type": "object",
+            "properties": {
+                "snippet": {
+                    "description": "Snippet is the best-matching tag with the matched terms in \u003cb\u003e…\u003c/b\u003e.\nIt is tag text from a file: escape it before rendering as HTML.",
+                    "type": "string"
+                },
+                "track": {
+                    "$ref": "#/definitions/musicutil.Track"
+                }
+            }
+        },
+        "musicutil.StatusResult": {
+            "type": "object",
+            "properties": {
+                "lastScanAt": {
+                    "description": "LastScanAt is when the newest finished scan completed, null when none\nis on record.",
+                    "type": "string"
+                },
+                "scanJobId": {
+                    "description": "ScanJobID is the scan pending or running now, absent when there is\nnone.",
+                    "type": "integer"
+                },
+                "trackCount": {
+                    "description": "TrackCount is how many tracks the caller can read.",
+                    "type": "integer"
+                }
+            }
+        },
+        "musicutil.Track": {
+            "type": "object",
+            "properties": {
+                "album": {
+                    "description": "Album is the album title.",
+                    "type": "string"
+                },
+                "albumArtist": {
+                    "description": "AlbumArtist is the album artist, the track artist when untagged.",
+                    "type": "string"
+                },
+                "albumKey": {
+                    "description": "AlbumKey identifies the album: album artist, album, device and folder.",
+                    "type": "string"
+                },
+                "artist": {
+                    "description": "Artist is the track artist.",
+                    "type": "string"
+                },
+                "discNo": {
+                    "description": "DiscNo is the disc number, 0 when untagged.",
+                    "type": "integer"
+                },
+                "durationExact": {
+                    "description": "DurationExact is false when DurationMs is a bitrate estimate.",
+                    "type": "boolean"
+                },
+                "durationMs": {
+                    "description": "DurationMs is the playing time, 0 when unknown.",
+                    "type": "integer"
+                },
+                "genre": {
+                    "description": "Genre is the genre.",
+                    "type": "string"
+                },
+                "hasCover": {
+                    "description": "HasCover reports embedded or folder cover art.",
+                    "type": "boolean"
+                },
+                "relPath": {
+                    "description": "RelPath is the file's path within the device's files namespace.",
+                    "type": "string"
+                },
+                "serial": {
+                    "description": "Serial is the device holding the file, '' for the internal drive.",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Title is the tagged title, or the file name without its extension.",
+                    "type": "string"
+                },
+                "trackNo": {
+                    "description": "TrackNo is the track number, 0 when untagged.",
+                    "type": "integer"
+                },
+                "year": {
+                    "description": "Year is the release year, 0 when untagged.",
+                    "type": "integer"
+                }
+            }
+        },
         "notificationutil.ListResult": {
             "type": "object",
             "properties": {
@@ -13513,6 +14022,70 @@ const docTemplate = `{
             "properties": {
                 "jobId": {
                     "type": "integer"
+                }
+            }
+        },
+        "v0_music.AlbumsResponse": {
+            "type": "object",
+            "properties": {
+                "albums": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/musicutil.Album"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v0_music.ArtistsResponse": {
+            "type": "object",
+            "properties": {
+                "artists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/musicutil.Artist"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v0_music.GenresResponse": {
+            "type": "object",
+            "properties": {
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/musicutil.Genre"
+                    }
+                }
+            }
+        },
+        "v0_music.SearchResponse": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/musicutil.SearchResult"
+                    }
+                }
+            }
+        },
+        "v0_music.TracksResponse": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
+                },
+                "tracks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/musicutil.Track"
+                    }
                 }
             }
         },
