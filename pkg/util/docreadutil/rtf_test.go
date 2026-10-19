@@ -444,6 +444,31 @@ func TestRTFNotes(t *testing.T) {
 	}
 }
 
+// TestRTFFootnoteLandsUnderNotesHeading pins the blocks, not just the text: a
+// footnote group becomes a level-1 Notes heading after the body, and a file
+// without one has no such heading.
+func TestRTFFootnoteLandsUnderNotesHeading(t *testing.T) {
+	s, _ := readRTFStream(t, rtfDoc(`Claim{\footnote\pard\plain Cited here.}\par After.\par`), Limits{})
+	want := []string{"Claim", "After.", "Notes", "Cited here."}
+	if got := texts(s.blocks); !reflect.DeepEqual(got, want) {
+		t.Fatalf("blocks = %q, want %q", got, want)
+	}
+	h := s.blocks[2]
+	if h.Type != BlockHeading || h.Level != 1 {
+		t.Errorf("Notes block = %+v, want a level-1 heading", h)
+	}
+	if s.blocks[3].Type == BlockHeading {
+		t.Errorf("the note itself is a heading: %+v", s.blocks[3])
+	}
+
+	s, _ = readRTFStream(t, rtfDoc(`No notes here.\par`), Limits{})
+	for _, b := range s.blocks {
+		if b.Type == BlockHeading && plain(b) == "Notes" {
+			t.Errorf("a file with no footnote has a Notes heading: %q", texts(s.blocks))
+		}
+	}
+}
+
 func TestRTFPageBreaks(t *testing.T) {
 	s, _ := readRTFStream(t, rtfDoc(`a\page b\par\pard\pagebb c\par\pard\pagebb\page d\par\pard{\footnote n\page m}\sect e\sect\sect`), Limits{})
 	want := []string{"a", "pageBreak:", "b", "pageBreak:", "c", "pageBreak:", "d", "e", "Notes", "nm"}
