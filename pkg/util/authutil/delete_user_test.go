@@ -52,7 +52,7 @@ func count(t *testing.T, database *db.DatabaseSqlc, query string, args ...any) i
 // TestDeleteUser_ReassignsOwnerRowsToActor checks an admin's delete hands every
 // owned path to that admin, including one in the trash and one the admin
 // already had a row on, and drops the account's other rows, group memberships,
-// sessions and row.
+// sessions, vault and row.
 func TestDeleteUser_ReassignsOwnerRowsToActor(t *testing.T) {
 	database := dbtest.NewDB(t)
 	q := database.Queries
@@ -74,6 +74,12 @@ func TestDeleteUser_ReassignsOwnerRowsToActor(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := authutil.Login(ctx, q, authutil.LoginParams{Username: "bob", AuthKey: statusKey}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := q.CreateVaultKey(ctx, db.CreateVaultKeyParams{UserID: bobID, WrappedByPassword: []byte{1}, SaltPw: []byte{2}, KdfParams: "{}"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := q.CreateVaultItem(ctx, db.CreateVaultItemParams{UserID: bobID, Ciphertext: []byte{3}, Nonce: []byte{4}, FormatVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -101,6 +107,8 @@ func TestDeleteUser_ReassignsOwnerRowsToActor(t *testing.T) {
 		"group memberships": `SELECT COUNT(*) FROM group_members WHERE user_id = ?`,
 		"sessions":          `SELECT COUNT(*) FROM sessions WHERE user_id = ?`,
 		"account row":       `SELECT COUNT(*) FROM users WHERE id = ?`,
+		"vault keys":        `SELECT COUNT(*) FROM vault_keys WHERE user_id = ?`,
+		"vault items":       `SELECT COUNT(*) FROM vault_items WHERE user_id = ?`,
 	} {
 		if n := count(t, database, query, bobID); n != 0 {
 			t.Errorf("deleted account left %d %s", n, what)

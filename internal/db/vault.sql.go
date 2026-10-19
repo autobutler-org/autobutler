@@ -102,6 +102,96 @@ func (q *Queries) CreateVaultFolder(ctx context.Context, arg CreateVaultFolderPa
 	return i, err
 }
 
+const createVaultItem = `-- name: CreateVaultItem :one
+INSERT INTO vault_items (
+    user_id,
+    ciphertext,
+    nonce,
+    format_version
+) VALUES (
+    ?1, ?2, ?3, ?4
+)
+RETURNING
+    id, user_id, ciphertext, nonce, format_version, created_at, updated_at
+`
+
+type CreateVaultItemParams struct {
+	UserID        int64
+	Ciphertext    []byte
+	Nonce         []byte
+	FormatVersion int64
+}
+
+func (q *Queries) CreateVaultItem(ctx context.Context, arg CreateVaultItemParams) (VaultItem, error) {
+	row := q.db.QueryRowContext(ctx, createVaultItem,
+		arg.UserID,
+		arg.Ciphertext,
+		arg.Nonce,
+		arg.FormatVersion,
+	)
+	var i VaultItem
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Ciphertext,
+		&i.Nonce,
+		&i.FormatVersion,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createVaultKey = `-- name: CreateVaultKey :one
+INSERT INTO vault_keys (
+    user_id,
+    wrapped_by_password,
+    salt_pw,
+    wrapped_by_phrase,
+    salt_rp,
+    kdf_params
+) VALUES (
+    ?1, ?2, ?3, ?4, ?5, ?6
+)
+RETURNING
+    user_id, wrapped_by_password, salt_pw, wrapped_by_phrase, salt_rp, kdf_params, created_at, updated_at
+`
+
+type CreateVaultKeyParams struct {
+	UserID            int64
+	WrappedByPassword []byte
+	SaltPw            []byte
+	WrappedByPhrase   []byte
+	SaltRp            []byte
+	KdfParams         string
+}
+
+// CreateVaultKey stores an account's first vault key. A second create is a
+// unique violation rather than a replace, so a client can never overwrite the
+// key its items are encrypted under by setting the vault up again.
+func (q *Queries) CreateVaultKey(ctx context.Context, arg CreateVaultKeyParams) (VaultKey, error) {
+	row := q.db.QueryRowContext(ctx, createVaultKey,
+		arg.UserID,
+		arg.WrappedByPassword,
+		arg.SaltPw,
+		arg.WrappedByPhrase,
+		arg.SaltRp,
+		arg.KdfParams,
+	)
+	var i VaultKey
+	err := row.Scan(
+		&i.UserID,
+		&i.WrappedByPassword,
+		&i.SaltPw,
+		&i.WrappedByPhrase,
+		&i.SaltRp,
+		&i.KdfParams,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const deleteVaultEntry = `-- name: DeleteVaultEntry :exec
 DELETE FROM vault_entries WHERE id = ?1
 `
@@ -117,6 +207,53 @@ DELETE FROM vault_folders WHERE id = ?1
 
 func (q *Queries) DeleteVaultFolder(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteVaultFolder, id)
+	return err
+}
+
+const deleteVaultItem = `-- name: DeleteVaultItem :execrows
+DELETE FROM vault_items
+WHERE
+    id = ?1
+    AND user_id = ?2
+`
+
+type DeleteVaultItemParams struct {
+	ID     int64
+	UserID int64
+}
+
+// DeleteVaultItem removes one of an account's items. Another account's id
+// deletes nothing.
+func (q *Queries) DeleteVaultItem(ctx context.Context, arg DeleteVaultItemParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteVaultItem, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const deleteVaultItems = `-- name: DeleteVaultItems :exec
+DELETE FROM vault_items
+WHERE
+    user_id = ?1
+`
+
+// DeleteVaultItems removes every item of an account.
+func (q *Queries) DeleteVaultItems(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteVaultItems, userID)
+	return err
+}
+
+const deleteVaultKey = `-- name: DeleteVaultKey :exec
+DELETE FROM vault_keys
+WHERE
+    user_id = ?1
+`
+
+// DeleteVaultKey removes an account's vault key, which leaves its items
+// unreadable; DeleteVaultItems goes with it.
+func (q *Queries) DeleteVaultKey(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteVaultKey, userID)
 	return err
 }
 
@@ -174,6 +311,69 @@ func (q *Queries) GetVaultFolder(ctx context.Context, id int64) (VaultFolder, er
 		&i.ParentID,
 		&i.SortOrder,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getVaultItem = `-- name: GetVaultItem :one
+SELECT
+    id, user_id, ciphertext, nonce, format_version, created_at, updated_at
+FROM
+    vault_items
+WHERE
+    id = ?1
+    AND user_id = ?2
+`
+
+type GetVaultItemParams struct {
+	ID     int64
+	UserID int64
+}
+
+// GetVaultItem returns one of an account's items. Another account's id finds
+// nothing.
+func (q *Queries) GetVaultItem(ctx context.Context, arg GetVaultItemParams) (VaultItem, error) {
+	row := q.db.QueryRowContext(ctx, getVaultItem, arg.ID, arg.UserID)
+	var i VaultItem
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Ciphertext,
+		&i.Nonce,
+		&i.FormatVersion,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getVaultKey = `-- name: GetVaultKey :one
+
+SELECT
+    user_id, wrapped_by_password, salt_pw, wrapped_by_phrase, salt_rp, kdf_params, created_at, updated_at
+FROM
+    vault_keys
+WHERE
+    user_id = ?1
+`
+
+// The per-account vault (#3458). Every query below takes the account's
+// user_id, so no call can reach another account's rows. The household vault
+// queries above go with their tables (#3460).
+// GetVaultKey returns an account's wrapped vault key. Only the account itself
+// may be served it.
+func (q *Queries) GetVaultKey(ctx context.Context, userID int64) (VaultKey, error) {
+	row := q.db.QueryRowContext(ctx, getVaultKey, userID)
+	var i VaultKey
+	err := row.Scan(
+		&i.UserID,
+		&i.WrappedByPassword,
+		&i.SaltPw,
+		&i.WrappedByPhrase,
+		&i.SaltRp,
+		&i.KdfParams,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -322,6 +522,49 @@ func (q *Queries) ListVaultFolders(ctx context.Context) ([]VaultFolder, error) {
 	return items, nil
 }
 
+const listVaultItems = `-- name: ListVaultItems :many
+SELECT
+    id, user_id, ciphertext, nonce, format_version, created_at, updated_at
+FROM
+    vault_items
+WHERE
+    user_id = ?1
+ORDER BY
+    id
+`
+
+// ListVaultItems returns every item of an account, oldest first.
+func (q *Queries) ListVaultItems(ctx context.Context, userID int64) ([]VaultItem, error) {
+	rows, err := q.db.QueryContext(ctx, listVaultItems, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []VaultItem
+	for rows.Next() {
+		var i VaultItem
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Ciphertext,
+			&i.Nonce,
+			&i.FormatVersion,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateVaultConfigPassword = `-- name: UpdateVaultConfigPassword :exec
 UPDATE vault_config
 SET salt = ?1, verification_blob = ?2, verification_nonce = ?3
@@ -419,4 +662,90 @@ func (q *Queries) UpdateVaultFolder(ctx context.Context, arg UpdateVaultFolderPa
 		arg.ID,
 	)
 	return err
+}
+
+const updateVaultItem = `-- name: UpdateVaultItem :one
+UPDATE vault_items
+SET
+    ciphertext = ?1,
+    nonce = ?2,
+    format_version = ?3,
+    updated_at = CURRENT_TIMESTAMP
+WHERE
+    id = ?4
+    AND user_id = ?5
+RETURNING
+    id, user_id, ciphertext, nonce, format_version, created_at, updated_at
+`
+
+type UpdateVaultItemParams struct {
+	Ciphertext    []byte
+	Nonce         []byte
+	FormatVersion int64
+	ID            int64
+	UserID        int64
+}
+
+// UpdateVaultItem replaces one of an account's items. Another account's id
+// updates nothing and returns no row.
+func (q *Queries) UpdateVaultItem(ctx context.Context, arg UpdateVaultItemParams) (VaultItem, error) {
+	row := q.db.QueryRowContext(ctx, updateVaultItem,
+		arg.Ciphertext,
+		arg.Nonce,
+		arg.FormatVersion,
+		arg.ID,
+		arg.UserID,
+	)
+	var i VaultItem
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Ciphertext,
+		&i.Nonce,
+		&i.FormatVersion,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateVaultKey = `-- name: UpdateVaultKey :execrows
+UPDATE vault_keys
+SET
+    wrapped_by_password = ?1,
+    salt_pw = ?2,
+    wrapped_by_phrase = ?3,
+    salt_rp = ?4,
+    kdf_params = ?5,
+    updated_at = CURRENT_TIMESTAMP
+WHERE
+    user_id = ?6
+`
+
+type UpdateVaultKeyParams struct {
+	WrappedByPassword []byte
+	SaltPw            []byte
+	WrappedByPhrase   []byte
+	SaltRp            []byte
+	KdfParams         string
+	UserID            int64
+}
+
+// UpdateVaultKey replaces the wraps of an account's existing vault key, for a
+// password change, a recovery or a new recovery phrase. The key inside them
+// is the same, so the items stay as they are. No row updated means the
+// account has no vault.
+func (q *Queries) UpdateVaultKey(ctx context.Context, arg UpdateVaultKeyParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateVaultKey,
+		arg.WrappedByPassword,
+		arg.SaltPw,
+		arg.WrappedByPhrase,
+		arg.SaltRp,
+		arg.KdfParams,
+		arg.UserID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

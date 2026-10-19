@@ -1547,6 +1547,12 @@ func DeleteUser(ctx context.Context, params DeleteUserParams) (DeleteUserResult,
 		if err := q.DeleteUserChatKeys(ctx, target.ID); err != nil {
 			return fmt.Errorf("delete chat keys: %w", err)
 		}
+		if err := q.DeleteVaultItems(ctx, target.ID); err != nil {
+			return fmt.Errorf("delete vault items: %w", err)
+		}
+		if err := q.DeleteVaultKey(ctx, target.ID); err != nil {
+			return fmt.Errorf("delete vault key: %w", err)
+		}
 		if err := q.DeleteUser(ctx, target.ID); err != nil {
 			return fmt.Errorf("delete %q: %w", params.Username, err)
 		}

@@ -86,6 +86,11 @@ type Querier interface {
 	CreateVaultConfig(ctx context.Context, arg CreateVaultConfigParams) error
 	CreateVaultEntry(ctx context.Context, arg CreateVaultEntryParams) (VaultEntry, error)
 	CreateVaultFolder(ctx context.Context, arg CreateVaultFolderParams) (VaultFolder, error)
+	CreateVaultItem(ctx context.Context, arg CreateVaultItemParams) (VaultItem, error)
+	// CreateVaultKey stores an account's first vault key. A second create is a
+	// unique violation rather than a replace, so a client can never overwrite the
+	// key its items are encrypted under by setting the vault up again.
+	CreateVaultKey(ctx context.Context, arg CreateVaultKeyParams) (VaultKey, error)
 	DeleteAlbum(ctx context.Context, arg DeleteAlbumParams) error
 	DeleteCalendarEvent(ctx context.Context, id int64) (int64, error)
 	// DeleteChatChannel drops a channel and, by ON DELETE CASCADE, its members.
@@ -158,6 +163,14 @@ type Querier interface {
 	DeleteVFSMetadataKey(ctx context.Context, arg DeleteVFSMetadataKeyParams) error
 	DeleteVaultEntry(ctx context.Context, id int64) error
 	DeleteVaultFolder(ctx context.Context, id int64) error
+	// DeleteVaultItem removes one of an account's items. Another account's id
+	// deletes nothing.
+	DeleteVaultItem(ctx context.Context, arg DeleteVaultItemParams) (int64, error)
+	// DeleteVaultItems removes every item of an account.
+	DeleteVaultItems(ctx context.Context, userID int64) error
+	// DeleteVaultKey removes an account's vault key, which leaves its items
+	// unreadable; DeleteVaultItems goes with it.
+	DeleteVaultKey(ctx context.Context, userID int64) error
 	DemoteFromAdmin(ctx context.Context, username string) (DemoteFromAdminRow, error)
 	// Makes sure a periodic task has a row for ClaimMaintenanceRun to take, dated
 	// so that a task that has never run is due.
@@ -230,6 +243,15 @@ type Querier interface {
 	GetVaultConfig(ctx context.Context) (VaultConfig, error)
 	GetVaultEntry(ctx context.Context, id int64) (VaultEntry, error)
 	GetVaultFolder(ctx context.Context, id int64) (VaultFolder, error)
+	// GetVaultItem returns one of an account's items. Another account's id finds
+	// nothing.
+	GetVaultItem(ctx context.Context, arg GetVaultItemParams) (VaultItem, error)
+	// The per-account vault (#3458). Every query below takes the account's
+	// user_id, so no call can reach another account's rows. The household vault
+	// queries above go with their tables (#3460).
+	// GetVaultKey returns an account's wrapped vault key. Only the account itself
+	// may be served it.
+	GetVaultKey(ctx context.Context, userID int64) (VaultKey, error)
 	GetVaultLocation(ctx context.Context) (string, error)
 	// An instance's heartbeat: every job it is still running, which it compares
 	// with what it has in memory to learn of one canceled or reclaimed elsewhere.
@@ -401,6 +423,8 @@ type Querier interface {
 	ListVaultEntries(ctx context.Context) ([]ListVaultEntriesRow, error)
 	ListVaultEntriesWithoutHost(ctx context.Context) ([]ListVaultEntriesWithoutHostRow, error)
 	ListVaultFolders(ctx context.Context) ([]VaultFolder, error)
+	// ListVaultItems returns every item of an account, oldest first.
+	ListVaultItems(ctx context.Context, userID int64) ([]VaultItem, error)
 	// LockActiveAdmins changes nothing: it is a no-op UPDATE run for the row locks
 	// it takes, as the first statement of a transaction that may take away an
 	// active admin (#3171). PostgreSQL makes a second such transaction wait here
@@ -545,6 +569,14 @@ type Querier interface {
 	UpdateVaultEntryCiphertext(ctx context.Context, arg UpdateVaultEntryCiphertextParams) error
 	UpdateVaultEntryHost(ctx context.Context, arg UpdateVaultEntryHostParams) error
 	UpdateVaultFolder(ctx context.Context, arg UpdateVaultFolderParams) error
+	// UpdateVaultItem replaces one of an account's items. Another account's id
+	// updates nothing and returns no row.
+	UpdateVaultItem(ctx context.Context, arg UpdateVaultItemParams) (VaultItem, error)
+	// UpdateVaultKey replaces the wraps of an account's existing vault key, for a
+	// password change, a recovery or a new recovery phrase. The key inside them
+	// is the same, so the items stay as they are. No row updated means the
+	// account has no vault.
+	UpdateVaultKey(ctx context.Context, arg UpdateVaultKeyParams) (int64, error)
 	// UpgradeToAuthKey moves an account from its password to the auth key a
 	// sign-in carried beside it (#2430), and clears the password hash in the same
 	// write, so the password crosses the wire at most once. Only an account with
