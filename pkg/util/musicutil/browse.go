@@ -60,8 +60,10 @@ func listTracks(params ListTracksParams) (ListTracksResult, error) {
 	}
 
 	// Walk the sorted matches in batches, counting every readable one for
-	// the total and keeping those that fall on the requested page.
-	result := ListTracksResult{Tracks: make([]Track, 0, limit)}
+	// the total and keeping those that fall on the requested page. The
+	// capacity is the constant MaxLimit: limit is already clamped to it,
+	// and CodeQL does not treat min as a bound on a user-provided size.
+	result := ListTracksResult{Tracks: make([]Track, 0, MaxLimit)}
 	list.Limit = streamBatch
 	for list.Offset = 0; ; list.Offset += streamBatch {
 		rows, err := q.ListMusicTracks(params.Ctx, list)

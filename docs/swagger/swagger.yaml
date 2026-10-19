@@ -707,6 +707,122 @@ definitions:
     - StatusCompleted
     - StatusFailed
     - StatusCanceled
+  musicutil.Album:
+    properties:
+      albumArtist:
+        type: string
+      albumKey:
+        type: string
+      coverPath:
+        type: string
+      coverSerial:
+        description: |-
+          CoverSerial and CoverPath name the track to ask the thumbnail endpoint
+          for: one with cover art when any has it, otherwise the first.
+        type: string
+      durationMs:
+        type: integer
+      title:
+        type: string
+      trackCount:
+        type: integer
+      year:
+        description: Year is the earliest tagged year among the tracks, 0 when none
+          is.
+        type: integer
+    type: object
+  musicutil.Artist:
+    properties:
+      albumCount:
+        type: integer
+      coverPath:
+        type: string
+      coverSerial:
+        type: string
+      name:
+        type: string
+      trackCount:
+        type: integer
+    type: object
+  musicutil.Genre:
+    properties:
+      name:
+        type: string
+      trackCount:
+        type: integer
+    type: object
+  musicutil.SearchResult:
+    properties:
+      snippet:
+        description: |-
+          Snippet is the best-matching tag with the matched terms in <b>…</b>.
+          It is tag text from a file: escape it before rendering as HTML.
+        type: string
+      track:
+        $ref: '#/definitions/musicutil.Track'
+    type: object
+  musicutil.StatusResult:
+    properties:
+      lastScanAt:
+        description: |-
+          LastScanAt is when the newest finished scan completed, null when none
+          is on record.
+        type: string
+      scanJobId:
+        description: |-
+          ScanJobID is the scan pending or running now, absent when there is
+          none.
+        type: integer
+      trackCount:
+        description: TrackCount is how many tracks the caller can read.
+        type: integer
+    type: object
+  musicutil.Track:
+    properties:
+      album:
+        description: Album is the album title.
+        type: string
+      albumArtist:
+        description: AlbumArtist is the album artist, the track artist when untagged.
+        type: string
+      albumKey:
+        description: 'AlbumKey identifies the album: album artist, album, device and
+          folder.'
+        type: string
+      artist:
+        description: Artist is the track artist.
+        type: string
+      discNo:
+        description: DiscNo is the disc number, 0 when untagged.
+        type: integer
+      durationExact:
+        description: DurationExact is false when DurationMs is a bitrate estimate.
+        type: boolean
+      durationMs:
+        description: DurationMs is the playing time, 0 when unknown.
+        type: integer
+      genre:
+        description: Genre is the genre.
+        type: string
+      hasCover:
+        description: HasCover reports embedded or folder cover art.
+        type: boolean
+      relPath:
+        description: RelPath is the file's path within the device's files namespace.
+        type: string
+      serial:
+        description: Serial is the device holding the file, '' for the internal drive.
+        type: string
+      title:
+        description: Title is the tagged title, or the file name without its extension.
+        type: string
+      trackNo:
+        description: TrackNo is the track number, 0 when untagged.
+        type: integer
+      year:
+        description: Year is the release year, 0 when untagged.
+        type: integer
+    type: object
   notificationutil.ListResult:
     properties:
       notifications:
@@ -1783,6 +1899,47 @@ definitions:
     properties:
       jobId:
         type: integer
+    type: object
+  v0_music.AlbumsResponse:
+    properties:
+      albums:
+        items:
+          $ref: '#/definitions/musicutil.Album'
+        type: array
+      total:
+        type: integer
+    type: object
+  v0_music.ArtistsResponse:
+    properties:
+      artists:
+        items:
+          $ref: '#/definitions/musicutil.Artist'
+        type: array
+      total:
+        type: integer
+    type: object
+  v0_music.GenresResponse:
+    properties:
+      genres:
+        items:
+          $ref: '#/definitions/musicutil.Genre'
+        type: array
+    type: object
+  v0_music.SearchResponse:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/musicutil.SearchResult'
+        type: array
+    type: object
+  v0_music.TracksResponse:
+    properties:
+      total:
+        type: integer
+      tracks:
+        items:
+          $ref: '#/definitions/musicutil.Track'
+        type: array
     type: object
   v0_photos.PaginatedPhotosResponse:
     properties:
@@ -7350,6 +7507,250 @@ paths:
       summary: Retry a background job
       tags:
       - jobs
+  /music/albums:
+    get:
+      description: Returns a page of albums ordered by album artist and title, and
+        how many there are. An album is listed when the caller can read one of its
+        tracks, and its counts, year and cover come from those tracks alone. coverSerial
+        and coverPath name the track to ask the thumbnail endpoint for.
+      parameters:
+      - description: Keep one album artist's albums, compared without case; empty
+          names the untagged artist
+        in: query
+        name: artist
+        type: string
+      - description: Albums to skip
+        in: query
+        name: offset
+        type: integer
+      - description: 'Page size: 50 when absent, at most 200'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_music.AlbumsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: List music albums
+      tags:
+      - music
+  /music/artists:
+    get:
+      description: Returns a page of album artists by name, and how many there are,
+        counted over the tracks the caller can read.
+      parameters:
+      - description: Artists to skip
+        in: query
+        name: offset
+        type: integer
+      - description: 'Page size: 50 when absent, at most 200'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_music.ArtistsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: List music artists
+      tags:
+      - music
+  /music/genres:
+    get:
+      description: Returns every genre by name, counted over the tracks the caller
+        can read.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_music.GenresResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: List music genres
+      tags:
+      - music
+  /music/rescan:
+    post:
+      description: Queues a full scan of every device, which reads each changed audio
+        file and drops the tracks whose files are gone. Its progress shows as a music_rescan
+        job. Admin only.
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/jobutil.Job'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Rescan the music library
+      tags:
+      - music
+  /music/search:
+    get:
+      description: Matches the query against title, artist, album artist, album and
+        genre, best ranked first, and returns only tracks the caller can read. The
+        snippet is tag text with the matched terms in <b>…</b>; escape it before rendering
+        it as HTML. Answers 501 when the database is PostgreSQL (#2958).
+      parameters:
+      - description: Search text; FTS5 column filters such as artist:nina pass through
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: 'Most results: 50 when absent, at most 200'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_music.SearchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Search the music library
+      tags:
+      - music
+  /music/status:
+    get:
+      description: Returns how many tracks the caller can read, when the last full
+        scan finished, and the scan pending or running now, so an empty Music page
+        can say "scanning" rather than "no music".
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/musicutil.StatusResult'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Get the music library's status
+      tags:
+      - music
+  /music/tracks:
+    get:
+      description: 'Returns a sorted page of the tracks the caller can read, and how
+        many there are. The default order is album order: album artist, album, disc,
+        track; every sort breaks ties that way.'
+      parameters:
+      - description: Keep one album's tracks
+        in: query
+        name: albumKey
+        type: string
+      - description: Keep one album artist's tracks, compared without case; empty
+          names the untagged artist
+        in: query
+        name: artist
+        type: string
+      - description: Keep one genre's tracks, compared without case; empty names the
+          untagged genre
+        in: query
+        name: genre
+        type: string
+      - description: Sort key; album order when absent
+        enum:
+        - title
+        - artist
+        - album
+        - added
+        - year
+        in: query
+        name: sort
+        type: string
+      - description: Sort direction
+        enum:
+        - asc
+        - desc
+        in: query
+        name: order
+        type: string
+      - description: Tracks to skip
+        in: query
+        name: offset
+        type: integer
+      - description: 'Page size: 50 when absent, at most 200'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v0_music.TracksResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: List music tracks
+      tags:
+      - music
   /notifications:
     get:
       description: 'Returns the caller''s current notifications. The list is derived

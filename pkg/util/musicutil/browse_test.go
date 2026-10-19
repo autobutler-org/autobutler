@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math"
 	"reflect"
 	"strconv"
 	"testing"
@@ -207,5 +208,23 @@ func TestBrowse_NobodySeesNothing(t *testing.T) {
 	albums, err := musicutil.ListAlbums(musicutil.ListAlbumsParams{Ctx: context.Background(), DB: database.Db, Access: member})
 	if err != nil || albums.Total != 0 || len(albums.Albums) != 0 {
 		t.Errorf("ListAlbums = %+v, %v; want nothing", albums, err)
+	}
+}
+
+// TestBrowse_OversizedLimitIsClamped checks that a huge caller limit neither
+// allocates that much nor returns more than the library holds.
+func TestBrowse_OversizedLimitIsClamped(t *testing.T) {
+	database := library(t)
+	ctx := context.Background()
+	for name, access := range map[string]accessutil.Access{"admin": adminAccess(t), "member": memberAccess(t, database, "shared")} {
+		t.Run(name, func(t *testing.T) {
+			got, err := musicutil.ListTracks(musicutil.ListTracksParams{Ctx: ctx, DB: database.Db, Access: access, Sort: musicutil.SortTitle, Limit: math.MaxInt})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(got.Tracks) != got.Total || len(got.Tracks) > musicutil.MaxLimit {
+				t.Errorf("got %d tracks of %d, want all and at most %d", len(got.Tracks), got.Total, musicutil.MaxLimit)
+			}
+		})
 	}
 }

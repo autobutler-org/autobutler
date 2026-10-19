@@ -25,12 +25,17 @@ import (
 	"time"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
+	"github.com/autobutler-org/quark/pkg/util/jobutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
 // ScannerVersion is stored on every row. Raise it when tag reading improves:
 // a backfill re-reads every row stored under an older version.
 const ScannerVersion = 1
+
+// RescanKind is the jobutil kind of a full library scan: every device,
+// through BackfillDevice. The server registers its handler; Rescan queues it.
+const RescanKind = "music_rescan"
 
 // FileTimeout bounds the work on one file during a backfill.
 const FileTimeout = 5 * time.Second
@@ -372,4 +377,53 @@ type SearchResultPage struct {
 // genre, ranked by bm25. On PostgreSQL it returns a *db.UnsupportedError.
 func Search(params SearchParams) (SearchResultPage, error) {
 	return search(params)
+}
+
+// StatusParams asks how the library looks to one caller.
+type StatusParams struct {
+	Ctx    context.Context
+	DB     *sql.DB
+	Access accessutil.Access
+	// Jobs is the queue the scans run on. When nil, the result names no scan.
+	Jobs *jobutil.Queue
+}
+
+// StatusResult lets an empty Music page say "scanning" rather than "no
+// music".
+type StatusResult struct {
+	// TrackCount is how many tracks the caller can read.
+	TrackCount int `json:"trackCount"`
+	// LastScanAt is when the newest finished scan completed, null when none
+	// is on record.
+	LastScanAt *time.Time `json:"lastScanAt"`
+	// ScanJobID is the scan pending or running now, absent when there is
+	// none.
+	ScanJobID *int64 `json:"scanJobId,omitempty"`
+}
+
+// Status counts the caller's tracks and reports the library's scans.
+func Status(params StatusParams) (StatusResult, error) {
+	return status(params)
+}
+
+// RescanParams queues a full scan.
+type RescanParams struct {
+	Ctx  context.Context
+	Jobs *jobutil.Queue
+	// UserID is the account asking, 0 for the server itself.
+	UserID int64
+}
+
+// RescanResult is the queued scan.
+type RescanResult struct {
+	Job jobutil.Job
+}
+
+// Rescan queues a RescanKind job, which reads every changed file on every
+// device and drops the rows of files that are gone.
+func Rescan(params RescanParams) (RescanResult, error) {
+	queued, err := params.Jobs.Enqueue(params.Ctx, jobutil.EnqueueParams{
+		Kind: RescanKind, Name: "Scan the music library", Params: struct{}{}, UserID: params.UserID,
+	})
+	return RescanResult(queued), err
 }
