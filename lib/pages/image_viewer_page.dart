@@ -510,12 +510,19 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         content: Text(Errors.message(error, 'load the photo')),
         action: gone
             ? null
-            : SnackBarAction(
-                label: 'Retry',
-                onPressed: () => _navigate(newIndex),
-              ),
+            : SnackBarAction(label: 'Retry', onPressed: () => _retry(newIndex)),
       ),
     );
+  }
+
+  /// Tries the photo at [index] again. A failed step put the view back on the
+  /// photo it still had, so the retry turns the page the way a step does;
+  /// loading without turning it left the photo on a page nobody was looking
+  /// at, and a spinner under a counter that said it had arrived (#3486).
+  void _retry(int index) {
+    final onPage =
+        _pageController.hasClients && _pageController.page?.round() == index;
+    onPage ? _navigate(index) : _goToPage(index - _targetIndex);
   }
 
   // --- Metadata ---
