@@ -4,9 +4,17 @@ package storageutil
 
 import (
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
+
+func TestPartitionMountCommandDoesNotPromptForSudoPassword(t *testing.T) {
+	cmd := (&partition{path: "/dev/nonexistent_test_device"}).MountCommand("/mnt/test")
+	if !slices.Equal(cmd.Args, []string{"sudo", "-n", "mount", "/dev/nonexistent_test_device", "/mnt/test"}) {
+		t.Fatalf("MountCommand args = %q, want non-interactive sudo", cmd.Args)
+	}
+}
 
 func TestFindMountPath_RootDevice(t *testing.T) {
 	// The root device should always be mounted on Linux.
