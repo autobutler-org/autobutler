@@ -346,6 +346,32 @@ func TestKeyframeDecodesAV1AndVP8(t *testing.T) {
 	}
 }
 
+// TestKeyframeCapsTheLongerSide: a thumbnail tier is at most 400px, and that
+// cap has to reach sprocket. These clips are 128x72, so a max of 64 comes
+// back 64x36, and a cap the frame already fits is left at 128x72.
+func TestKeyframeCapsTheLongerSide(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	for _, fixture := range []string{av1Fixture, vp8Fixture} {
+		capped, err := Keyframe(KeyframeParams{Source: fixture, At: time.Second, MaxDimension: 64})
+		if err != nil {
+			t.Errorf("Keyframe(%s): %v", fixture, err)
+			continue
+		}
+		if size := capped.Image.Bounds().Size(); size != image.Pt(64, 36) {
+			t.Errorf("Keyframe(%s) MaxDimension 64 is %v, want 64x36", fixture, size)
+		}
+
+		inside, err := Keyframe(KeyframeParams{Source: fixture, At: time.Second, MaxDimension: 400})
+		if err != nil {
+			t.Errorf("Keyframe(%s): %v", fixture, err)
+			continue
+		}
+		if size := inside.Image.Bounds().Size(); size != image.Pt(128, 72) {
+			t.Errorf("Keyframe(%s) MaxDimension 400 is %v, want the clip's own 128x72", fixture, size)
+		}
+	}
+}
+
 func TestKeyframeReportsACodecWithNoDecoder(t *testing.T) {
 	for _, fixture := range []string{gopFixture, tsFixture, hevcMKVFixture} {
 		if _, err := Keyframe(KeyframeParams{Source: fixture}); !errors.Is(err, ErrNoDecoder) {

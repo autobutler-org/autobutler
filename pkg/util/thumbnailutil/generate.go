@@ -19,7 +19,8 @@ import (
 // decoded from the namespace through [GenerateFromReader], which stores its
 // hashes; a camera RAW is converted by an external tool from its host path
 // and hashed from the namespace; a video's representative keyframe is decoded
-// in-process from its host path and then cropped the same way a photo is.
+// in-process from its host path, capped to the tier's longer side, and then
+// cropped the same way a photo is.
 func Generate(params GenerateParams) (GenerateResult, error) {
 	if !params.IsVideo && !photoutil.IsRawFile(params.RelPath) {
 		source, err := params.FS.Open(params.Ctx, params.RelPath)
@@ -131,7 +132,7 @@ func render(params GenerateParams, hostPath string) (*photoutil.GenerateThumbnai
 			Height:   params.Height,
 		})
 	}
-	frame, err := videoFrame(params.Ctx, hostPath)
+	frame, err := videoFrame(params.Ctx, hostPath, params.Width, params.Height)
 	if err != nil {
 		return nil, err
 	}
@@ -140,14 +141,19 @@ func render(params GenerateParams, hostPath string) (*photoutil.GenerateThumbnai
 
 // videoFrame decodes a representative frame of a video: the keyframe nearest
 // 2s in, or nearest a tenth of the way through a video too short for that to
-// land inside it. A codec the device has no decoder for comes back as
-// [videoutil.ErrNoDecoder].
-func videoFrame(ctx context.Context, videoPath string) (image.Image, error) {
+// land inside it. width and height are the thumbnail tier; the frame's longer
+// side is capped to the larger of the two before it is cropped. A codec the
+// device has no decoder for comes back as [videoutil.ErrNoDecoder].
+func videoFrame(ctx context.Context, videoPath string, width, height uint) (image.Image, error) {
 	at := 2 * time.Second
 	if info, err := videoutil.Probe(ctx, videoPath); err == nil {
 		at = min(at, info.Duration/10)
 	}
-	frame, err := videoutil.Keyframe(videoutil.KeyframeParams{Source: videoPath, At: at})
+	frame, err := videoutil.Keyframe(videoutil.KeyframeParams{
+		Source:       videoPath,
+		At:           at,
+		MaxDimension: int(max(width, height)),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("decode video frame: %w", err)
 	}
