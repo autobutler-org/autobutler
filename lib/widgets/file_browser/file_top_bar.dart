@@ -10,16 +10,17 @@ import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-/// The Files page's top bar: the breadcrumb for the current folder, the way
-/// up, and search, on the same [QuarkAppBar] every other page wears (#2311).
+/// The Files page's top bar: the way up, then the breadcrumb for the current
+/// folder with search and Select, on the same [QuarkAppBar] every other page wears (#2311).
 ///
-/// Search lives here rather than in the page because the inline field owns a
-/// controller, a focus node and a debounce. The path row below is a
+/// Search lives here rather than in the page because the field owns a
+/// controller, a focus node and a debounce. The second row is a
 /// [FileTopBarPathRow], whose actions collapse into the bar's labeled menu on
-/// a phone.
+/// a phone, or while search is open a [FileTopBarSearchArea], so the field
+/// has the bar's whole width even on a phone (#3454).
 ///
-/// Probe keys: `file_top_bar_select`, plus those of [FileTopBarNavButtons],
-/// [FileTopBarSearchArea] and [FileTopBarPathRow].
+/// Probe keys: those of [FileTopBarNavButtons], [FileTopBarSearchArea] and
+/// [FileTopBarPathRow].
 class FileTopBar extends StatefulWidget implements PreferredSizeWidget {
   const FileTopBar({
     required this.currentPath,
@@ -126,11 +127,10 @@ class FileTopBar extends StatefulWidget implements PreferredSizeWidget {
   /// Shows or hides a list column. Null leaves the picker disabled.
   final FileListColumnToggle? onColumnToggled;
 
-  /// One bar row, plus the path row outside search.
+  /// One bar row, plus the path row or, while searching, the search row.
   @override
-  Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (isSearchMode ? 0 : QuarkAppBarBottom.height),
-  );
+  Size get preferredSize =>
+      const Size.fromHeight(kToolbarHeight + QuarkAppBarBottom.height);
 
   @override
   State<FileTopBar> createState() => _FileTopBarState();
@@ -167,7 +167,7 @@ class _FileTopBarState extends State<FileTopBar> {
 
   void _openSearch() {
     setState(() => _searchExpanded = true);
-    // Focus after the frame so AnimatedSize has time to expand first.
+    // Focus after the frame, once the search row has built its field.
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _searchFocusNode.requestFocus(),
     );
@@ -200,56 +200,33 @@ class _FileTopBarState extends State<FileTopBar> {
 
   @override
   Widget build(BuildContext context) {
-    final onStartSelection = widget.onStartSelection;
+    final searchOpen = _searchExpanded || widget.isSearchMode;
     return QuarkAppBar(
       label: 'Files',
       icon: QuarkIcons.storage_rounded,
       onRefresh: widget.onRefresh,
       isRefreshing: widget.isRefreshing,
-      // The back and search buttons stay whole on a phone; Select and the
-      // theme toggle scroll instead.
-      middleMinWidth:
-          QuarkBarIconButton.tapTargetSize * 2 +
-          QuarkTokens.of(context).spacingXs,
-      middle: Row(
-        spacing: QuarkTokens.of(context).spacingXs,
-        children: [
-          FileTopBarNavButtons(
-            navEnabled: !widget.disableNavigation,
-            currentPath: widget.currentPath,
-            rootPath: widget.rootPath,
-            onGoUp: widget.onGoUp,
-          ),
-          // Holds the search field when it is open and pins the search button
-          // to the trailing edge when it is not.
-          Expanded(
-            child: FileTopBarSearchArea(
-              expanded: _searchExpanded,
+      // The way up stays whole on a phone. Search and Select sit in the
+      // second row, so the top row fits beside the app-wide controls (#3454).
+      middleMinWidth: QuarkBarIconButton.tapTargetSize,
+      middle: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: FileTopBarNavButtons(
+          navEnabled: !widget.disableNavigation,
+          currentPath: widget.currentPath,
+          rootPath: widget.rootPath,
+          onGoUp: widget.onGoUp,
+        ),
+      ),
+      actions: const [AppThemeToggle()],
+      bottom: searchOpen
+          ? FileTopBarSearchArea(
               controller: _searchController,
               focusNode: _searchFocusNode,
-              onOpen: _openSearch,
               onChanged: _onSearchChanged,
               onClose: _closeSearch,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        // Selecting used to be a long press on a row, a gesture a mouse does
-        // not make, so on the web the whole feature was invisible (#2057).
-        // This button is the only way in now that a long press opens the
-        // row's menu instead (#2245).
-        if (onStartSelection != null)
-          QuarkBarIconButton(
-            key: const ValueKey('file_top_bar_select'),
-            icon: QuarkIcons.check_circle_outline,
-            tooltip: 'Select',
-            onPressed: onStartSelection,
-          ),
-        const AppThemeToggle(),
-      ],
-      bottom: widget.isSearchMode
-          ? null
+              onStartSelection: widget.onStartSelection,
+            )
           : FileTopBarPathRow(
               currentPath: widget.currentPath,
               rootPath: widget.rootPath,
@@ -276,6 +253,8 @@ class _FileTopBarState extends State<FileTopBar> {
               onDeviceToggled: widget.onDeviceToggled,
               columns: widget.columns,
               onColumnToggled: widget.onColumnToggled,
+              onStartSelection: widget.onStartSelection,
+              onOpenSearch: _openSearch,
             ),
     );
   }

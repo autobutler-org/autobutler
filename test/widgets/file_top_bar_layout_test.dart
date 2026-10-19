@@ -75,8 +75,6 @@ void main() {
           findsOneWidget,
           reason: key,
         );
-        // Search is the row's slack: on a phone it may scale down.
-        if (key == 'file_top_bar_search') continue;
         // A 36px button in a 48dp touch target (#2605).
         expect(
           tester.getSize(find.byKey(ValueKey(key))),
@@ -140,10 +138,11 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('search hides the path row', (tester) async {
+  testWidgets('search swaps the path row for the search field', (tester) async {
     await pumpBar(tester, wide, isSearchMode: true);
 
     expect(find.byKey(const ValueKey('file_top_bar_home')), findsNothing);
-    expect(find.byKey(const ValueKey('file_top_bar_search')), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.byKey(const ValueKey('file_top_bar_select')), findsOneWidget);
   });
 }
