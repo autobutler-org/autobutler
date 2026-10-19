@@ -171,6 +171,13 @@ func (m *musicIndexer) firstStart(ctx context.Context) bool {
 // handle applies one bus event to the library.
 func (m *musicIndexer) handle(evt eventbus.Event) {
 	serial := evt.DeviceSerial
+	if evt.Kind != eventbus.EventResync {
+		// A device with no files namespace has nothing to read, and syncDevices
+		// drops the rows of one that went away.
+		if _, ok := m.registry.Get(vfs.FilesNamespace(serial)); !ok {
+			return
+		}
+	}
 	switch evt.Kind {
 	case eventbus.EventResync:
 		// The bus dropped events while this loop was busy (#2753).

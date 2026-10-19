@@ -305,6 +305,39 @@ func TestMusicIndexerFolderUploadIndexesOnlyAudioUnderIt(t *testing.T) {
 	}
 }
 
+// TestMusicIndexerSkipsADeviceItCannotRead sends upload, folder, delete and
+// move events for a serial with no files namespace: nothing is opened, no row
+// is written, and nothing is announced.
+func TestMusicIndexerSkipsADeviceItCannotRead(t *testing.T) {
+	f := newMusicFixture(t)
+	f.write(t, "", "kept.flac", flacTrack("Kept"))
+	f.indexer.handle(eventbus.Event{Kind: eventbus.EventUpload, DeviceSerial: "", Path: "kept.flac"})
+	f.nextLibraryChange(t)
+	opens := f.countOpens(t)
+
+	const gone = "unplugged"
+	for _, evt := range []eventbus.Event{
+		{Kind: eventbus.EventUpload, DeviceSerial: gone, Path: "a.flac"},
+		{Kind: eventbus.EventNewFolder, DeviceSerial: gone, Path: "Mix"},
+		{Kind: eventbus.EventDelete, DeviceSerial: gone, Path: "a.flac"},
+		{Kind: eventbus.EventMove, DeviceSerial: gone, Path: "a.flac", NewPath: "b.flac"},
+	} {
+		f.indexer.handle(evt)
+	}
+	f.indexer.backfillDirty()
+
+	if len(f.indexer.dirty) != 0 {
+		t.Fatalf("dirty = %v, want none", f.indexer.dirty)
+	}
+	for serial, fsys := range opens {
+		if len(fsys.opened) != 0 {
+			t.Fatalf("device %q opened %v, want no reads", serial, fsys.opened)
+		}
+	}
+	f.wantTitles(t, map[string]string{":kept.flac": "Kept"})
+	f.noLibraryChange(t)
+}
+
 // TestMusicIndexerRunLoop drives the subscriber through the bus: a folder
 // upload settles into a backfill, and a resync reconciles every device.
 func TestMusicIndexerRunLoop(t *testing.T) {
