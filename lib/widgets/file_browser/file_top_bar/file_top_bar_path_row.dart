@@ -4,12 +4,18 @@ import 'package:quark/services/storage_service.dart';
 import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_actions.dart';
 import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_breadcrumb.dart';
 import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_device_chips.dart';
+import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_select_button.dart';
 import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_view_chips.dart';
 import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_views_menu.dart';
+import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 /// The lower half of the top bar: where the user is, and what they can do
 /// here, as a [QuarkAppBarBottom].
+///
+/// Search and Select are pinned at every width, so a phone's top row fits
+/// beside the app-wide controls (#3454), as Photos' library row carries its
+/// Search.
 ///
 /// On a wide bar the device filter, the create chips and the view toggles sit
 /// beside the breadcrumb. Below the bar's breakpoint they give way to the
@@ -18,6 +24,9 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// The column picker is live only while a list is on screen: the grid has no
 /// columns, except per device, where the listing is a list whatever the
 /// layout switch says.
+///
+/// Probe keys: `file_top_bar_search`, plus those of [FileTopBarSelectButton],
+/// [FileTopBarActions] and [FileTopBarViewsMenu].
 class FileTopBarPathRow extends StatelessWidget implements PreferredSizeWidget {
   const FileTopBarPathRow({
     required this.currentPath,
@@ -36,6 +45,7 @@ class FileTopBarPathRow extends StatelessWidget implements PreferredSizeWidget {
     required this.onUploadPressed,
     required this.onCreateFolderPressed,
     required this.onNewFilePressed,
+    required this.onOpenSearch,
     this.onPathSelected,
     this.onUploadPhotosPressed,
     this.onUploadFolderPressed,
@@ -45,6 +55,7 @@ class FileTopBarPathRow extends StatelessWidget implements PreferredSizeWidget {
     this.onDeviceToggled,
     this.columns = const {},
     this.onColumnToggled,
+    this.onStartSelection,
     super.key,
   });
 
@@ -66,6 +77,9 @@ class FileTopBarPathRow extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onUploadPressed;
   final VoidCallback onCreateFolderPressed;
   final VoidCallback onNewFilePressed;
+
+  /// Swaps this row for the search field.
+  final VoidCallback onOpenSearch;
   final ValueChanged<String>? onPathSelected;
   final VoidCallback? onUploadPhotosPressed;
   final VoidCallback? onUploadFolderPressed;
@@ -79,6 +93,9 @@ class FileTopBarPathRow extends StatelessWidget implements PreferredSizeWidget {
 
   /// Shows or hides a list column.
   final FileListColumnToggle? onColumnToggled;
+
+  /// Enters multi-select. Null leaves Select out.
+  final VoidCallback? onStartSelection;
 
   @override
   Size get preferredSize => const Size.fromHeight(QuarkAppBarBottom.height);
@@ -94,6 +111,7 @@ class FileTopBarPathRow extends StatelessWidget implements PreferredSizeWidget {
       onPathSelected: onPathSelected,
     );
     final devices = this.devices;
+    final onStartSelection = this.onStartSelection;
     final onColumnToggled = isGridView && isUnifiedView
         ? null
         : this.onColumnToggled;
@@ -103,6 +121,16 @@ class FileTopBarPathRow extends StatelessWidget implements PreferredSizeWidget {
       lead: currentPath.isEmpty
           ? Align(alignment: Alignment.centerLeft, child: breadcrumb)
           : breadcrumb,
+      pinnedActions: [
+        QuarkBarIconButton(
+          key: const ValueKey('file_top_bar_search'),
+          icon: QuarkIcons.search_rounded,
+          tooltip: 'Search',
+          onPressed: onOpenSearch,
+        ),
+        if (onStartSelection != null)
+          FileTopBarSelectButton(onPressed: onStartSelection),
+      ],
       actions: [
         if (devices != null && devices.length > 1)
           FileTopBarDeviceChips(

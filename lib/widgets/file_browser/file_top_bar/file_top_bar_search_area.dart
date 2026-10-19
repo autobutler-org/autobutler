@@ -1,59 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_search_field.dart';
-import 'package:quark_icons/quark_icons.dart';
+import 'package:quark/widgets/file_browser/file_top_bar/file_top_bar_select_button.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
-/// Inline search. When collapsed shows just the search icon pinned to the
-/// right; when expanded the field fills all available width.
+/// The bar's second row while search is open: the field across the whole row,
+/// and Select beside it so search results can be selected.
 ///
-/// This widget lives inside an [Expanded] in the top row, so it always has
-/// bounded horizontal constraints — no double.infinity needed.
-///
-/// Probe keys: `file_top_bar_search`.
-class FileTopBarSearchArea extends StatelessWidget {
+/// The field used to open in the top row beside the back button, where on a
+/// phone it got a few pixels and could not be typed into (#3454). Here it has
+/// the row's width at every size.
+class FileTopBarSearchArea extends StatelessWidget
+    implements PreferredSizeWidget {
   const FileTopBarSearchArea({
-    required this.expanded,
     required this.controller,
     required this.focusNode,
-    required this.onOpen,
     required this.onChanged,
     required this.onClose,
+    this.onStartSelection,
     super.key,
   });
 
-  final bool expanded;
   final TextEditingController controller;
   final FocusNode focusNode;
-  final VoidCallback onOpen;
   final ValueChanged<String> onChanged;
   final VoidCallback onClose;
 
+  /// Enters multi-select. Null leaves Select out.
+  final VoidCallback? onStartSelection;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(QuarkAppBarBottom.height);
+
   @override
   Widget build(BuildContext context) {
-    if (expanded) {
-      // Fill all available space with the text field.
-      return FileTopBarSearchField(
+    final onStartSelection = this.onStartSelection;
+    return QuarkAppBarBottom(
+      lead: FileTopBarSearchField(
         controller: controller,
         focusNode: focusNode,
         onChanged: onChanged,
         onClose: onClose,
-      );
-    }
-
-    // Collapsed: push the search icon to the trailing edge. On a phone this
-    // is the bar's last bit of slack, so the button scales down rather than
-    // overflow when a jobs badge or a long name takes the room.
-    return Align(
-      alignment: AlignmentDirectional.centerEnd,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: QuarkBarIconButton(
-          key: const ValueKey('file_top_bar_search'),
-          icon: QuarkIcons.search_rounded,
-          onPressed: onOpen,
-          tooltip: 'Search',
-        ),
       ),
+      pinnedActions: [
+        if (onStartSelection != null)
+          FileTopBarSelectButton(onPressed: onStartSelection),
+      ],
     );
   }
 }

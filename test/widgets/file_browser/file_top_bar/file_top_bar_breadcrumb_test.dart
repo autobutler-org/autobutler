@@ -115,4 +115,28 @@ void main() {
       await expectTapTargetGuidelines(tester);
     });
   }
+
+  // #3454: on a phone Search, Select and the Views menu share the path row, so
+  // the breadcrumb can have less room than the current folder's name. The name
+  // gives way instead of running out of the row.
+  for (final (path, width) in [
+    ('/docs', 100.0),
+    ('/A very long folder name for a phone', 140.0),
+    ('/photos/A very long folder name for a phone', 160.0),
+    ('/users/alice', 91.0),
+  ]) {
+    testWidgets('the current folder fits $width px ($path)', (tester) async {
+      await pumpCrumb(tester, currentPath: path, rootPath: '', width: width);
+
+      expect(tester.takeException(), isNull);
+      final last = path.split('/').length - 2;
+      final crumb = tester.getRect(
+        find.byKey(ValueKey('file_top_bar_crumb_$last')),
+      );
+      final pill = tester.getRect(
+        find.byKey(const ValueKey('file_top_bar_pill')),
+      );
+      expect(crumb.right, lessThanOrEqualTo(pill.right + 0.5));
+    });
+  }
 }

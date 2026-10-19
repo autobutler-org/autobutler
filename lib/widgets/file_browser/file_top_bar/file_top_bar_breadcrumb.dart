@@ -164,6 +164,8 @@ class FileTopBarBreadcrumb extends StatelessWidget {
     const ellipsisPx = kMinInteractiveDimension;
     // Hard cap on a single segment's rendered text width.
     const maxSegmentPx = 140.0;
+    // The least of the current folder's name worth keeping over "⋯".
+    const minLastPx = 24.0;
     // Text style used for segment labels.
     const segStyle = TextStyle(fontSize: 13);
 
@@ -198,7 +200,16 @@ class FileTopBarBreadcrumb extends StatelessWidget {
     // Always show at least the current (last) directory even if it overflows.
     if (visibleFrom == segments.length) visibleFrom = segments.length - 1;
 
-    final hasHidden = visibleFrom > 0;
+    // The current folder is shown even when it does not fit, so it gets
+    // whatever the other crumbs leave, and gives way below that (#3454).
+    var lastRoom = budget - separatorPx - 4;
+    for (int i = visibleFrom; i < segments.length - 1; i++) {
+      lastRoom -= slotCosts[i];
+    }
+    // On a row too narrow for "⋯" beside a readable name, the name wins: the
+    // way up and home still reach the hidden ancestors.
+    final hasHidden = visibleFrom > 0 && lastRoom - ellipsisPx >= minLastPx;
+    if (hasHidden) lastRoom -= ellipsisPx;
     final result = <Widget>[];
 
     if (hasHidden) {
@@ -293,41 +304,46 @@ class FileTopBarBreadcrumb extends StatelessWidget {
 
       final isLast = i == segments.length - 1;
       final targetPath = '/${segments.take(i + 1).join('/')}';
-      // Middle-truncate the label if it exceeds the per-segment pixel cap.
-      final label = _middleTruncate(segments[i], maxSegmentPx, segStyle);
+      // Middle-truncate the label if it exceeds the per-segment pixel cap,
+      // or for the current folder the room the other crumbs leave.
+      final label = _middleTruncate(
+        segments[i],
+        isLast ? math.min(maxSegmentPx, lastRoom) : maxSegmentPx,
+        segStyle,
+      );
 
       final tappable = !isLast && _canOpen(targetPath);
 
-      result.add(
-        Semantics(
-          container: true,
-          button: tappable,
-          child: MouseRegion(
-            cursor: tappable
-                ? SystemMouseCursors.click
-                : SystemMouseCursors.basic,
-            child: GestureDetector(
-              key: ValueKey('file_top_bar_crumb_$i'),
-              behavior: HitTestBehavior.opaque,
-              onTap: tappable ? () => onPathSelected!(targetPath) : null,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minWidth: kMinInteractiveDimension,
-                  minHeight: kMinInteractiveDimension,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Center(
-                    widthFactor: 1,
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: tappable ? tokens.primary : tokens.foreground,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.clip,
+      final crumb = Semantics(
+        container: true,
+        button: tappable,
+        child: MouseRegion(
+          cursor: tappable
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
+          child: GestureDetector(
+            key: ValueKey('file_top_bar_crumb_$i'),
+            behavior: HitTestBehavior.opaque,
+            onTap: tappable ? () => onPathSelected!(targetPath) : null,
+            child: ConstrainedBox(
+              // The current folder is not a target, so on a narrow row it
+              // may be narrower than one.
+              constraints: BoxConstraints(
+                minWidth: isLast ? 0 : kMinInteractiveDimension,
+                minHeight: kMinInteractiveDimension,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Center(
+                  widthFactor: 1,
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: tappable ? tokens.primary : tokens.foreground,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
                   ),
                 ),
               ),
@@ -335,6 +351,9 @@ class FileTopBarBreadcrumb extends StatelessWidget {
           ),
         ),
       );
+      // Only the current folder gives way; a last resort when even its first
+      // letter does not fit.
+      result.add(isLast ? Flexible(child: crumb) : crumb);
     }
 
     return result;
