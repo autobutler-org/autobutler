@@ -247,6 +247,15 @@ lib/widgets/
       recent_decisions_list.dart  the Users page's approved and denied account
       recent_decision_row.dart    requests, one row each; reads the app's
                                   AccountRequestDecision and formatRelative
+  vault/
+    vault_entry_page.dart       one entry over the vault page (#3461): the
+                                package VaultEntryDetails or VaultEntryForm,
+                                saving and deleting through VaultController,
+                                copying through the clipboard and confirming
+                                a delete; pops itself when the vault locks
+    vault_error_view.dart       the vault page's load failure, with Retry
+    vault_export_menu.dart      the Export chip and its format menu; takes
+                                the app's VaultExportFormat
   video_viewer/
     convert_video.dart          runs TranscodeDialogHost, queues the job and
                                 shows its snack bar; the viewer and Files share it

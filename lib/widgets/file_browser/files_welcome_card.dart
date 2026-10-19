@@ -12,8 +12,8 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// stored session, a reload — renders nothing.
 ///
 /// The greeting uses [AppSettings.username] and leaves the name out when
-/// there is none. Vault is admin-only, so its action follows
-/// [AppSettings.isAdmin], which arrives after the page is built.
+/// there is none. Every account has its own vault (#3461), so Open Vault is
+/// offered to everyone.
 ///
 /// The actions themselves belong to the page: uploading, creating a folder
 /// and navigating are handed in.
@@ -36,14 +36,14 @@ class FilesWelcomeCard extends StatelessWidget {
   /// Starts creating a folder in the folder on screen.
   final VoidCallback onCreateFolder;
 
-  /// Opens Vault. Only offered to an admin.
+  /// Opens Vault.
   final VoidCallback onOpenVault;
 
   @override
   Widget build(BuildContext context) {
     final settings = AppSettings.instance;
     return ListenableBuilder(
-      listenable: Listenable.merge([settings.filesWelcome, settings.isAdmin]),
+      listenable: settings.filesWelcome,
       builder: (context, _) {
         final welcome = settings.filesWelcome.value;
         if (welcome == FilesWelcome.none) return const SizedBox.shrink();
@@ -81,14 +81,13 @@ class FilesWelcomeCard extends StatelessWidget {
                   keepLabel: true,
                   onPressed: onCreateFolder,
                 ),
-                if (settings.isAdmin.value)
-                  QuarkBarChip(
-                    key: const ValueKey('welcome_vault'),
-                    icon: QuarkIcons.lock_outline,
-                    label: 'Open Vault',
-                    keepLabel: true,
-                    onPressed: onOpenVault,
-                  ),
+                QuarkBarChip(
+                  key: const ValueKey('welcome_vault'),
+                  icon: QuarkIcons.lock_outline,
+                  label: 'Open Vault',
+                  keepLabel: true,
+                  onPressed: onOpenVault,
+                ),
               ],
             ],
             onDismiss: settings.dismissFilesWelcome,

@@ -154,7 +154,8 @@ void main() {
   ) async {
     await pumpDrawer(tester);
 
-    expect(find.byKey(const ValueKey('drawer_vault')), findsNothing);
+    // #3461: every account has its own vault.
+    expect(find.byKey(const ValueKey('drawer_vault')), findsOneWidget);
     expect(find.byKey(const ValueKey('drawer_users')), findsNothing);
     expect(find.byKey(const ValueKey('drawer_calendar')), findsOneWidget);
     expect(find.byKey(const ValueKey('drawer_slides')), findsOneWidget);
@@ -216,18 +217,15 @@ void main() {
     tester,
   ) async {
     await pumpDrawer(tester);
-    expect(find.byKey(const ValueKey('drawer_vault')), findsNothing);
     expect(find.byKey(const ValueKey('drawer_users')), findsNothing);
 
     settings.isAdmin.value = true;
     await tester.pump();
-    expect(find.byKey(const ValueKey('drawer_vault')), findsOneWidget);
     expect(find.byKey(const ValueKey('drawer_users')), findsOneWidget);
 
-    // A demoted admin loses the entries without signing out.
+    // A demoted admin loses Users without signing out.
     settings.isAdmin.value = false;
     await tester.pump();
-    expect(find.byKey(const ValueKey('drawer_vault')), findsNothing);
     expect(find.byKey(const ValueKey('drawer_users')), findsNothing);
   });
 

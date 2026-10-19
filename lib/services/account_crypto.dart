@@ -226,6 +226,78 @@ class AccountCrypto {
     }
   }
 
+  /// Encrypts one vault item's [plaintext] under [vaultKey] (#3461), with
+  /// XChaCha20-Poly1305 and a fresh random nonce.
+  ///
+  /// The additional data binds the ciphertext to what it is and to the
+  /// layout of its plaintext, so neither a chat wrap nor an item re-labelled
+  /// with another [formatVersion] opens as one:
+  ///
+  /// ```text
+  /// ad = utf8("quark-vault-item-v1") || 0x00 || formatVersion as one byte
+  /// ```
+  ///
+  /// [formatVersion] is 1 to 255. The caller disposes [vaultKey].
+  ({Uint8List nonce, Uint8List ciphertext}) encryptVaultItem(
+    Uint8List plaintext,
+    SecureKey vaultKey, {
+    required int formatVersion,
+  }) {
+    final nonce = sodium.randombytes.buf(_aead.nonceBytes);
+    return (
+      nonce: nonce,
+      ciphertext: _aead.encrypt(
+        message: plaintext,
+        nonce: nonce,
+        key: vaultKey,
+        additionalData: _vaultItemAd(formatVersion),
+      ),
+    );
+  }
+
+  /// Opens what [encryptVaultItem] produced. A wrong key, a tampered
+  /// ciphertext or a [formatVersion] other than the one it was sealed with
+  /// throws a [MessageException] carrying [wrongKey]. The caller disposes
+  /// [vaultKey].
+  Uint8List decryptVaultItem(
+    Uint8List ciphertext,
+    Uint8List nonce,
+    SecureKey vaultKey, {
+    required int formatVersion,
+    required String wrongKey,
+  }) {
+    if (nonce.length != _aead.nonceBytes) throw MessageException(wrongKey);
+    try {
+      return _aead.decrypt(
+        cipherText: ciphertext,
+        nonce: nonce,
+        key: vaultKey,
+        additionalData: _vaultItemAd(formatVersion),
+      );
+    } on SodiumException {
+      throw MessageException(wrongKey);
+    }
+  }
+
+  static Uint8List _vaultItemAd(int formatVersion) {
+    RangeError.checkValueInInterval(formatVersion, 1, 255, 'formatVersion');
+    return Uint8List.fromList([
+      ...utf8.encode('quark-vault-item-v1'),
+      0,
+      formatVersion,
+    ]);
+  }
+
+  /// [length] characters drawn uniformly from [pool] with libsodium's secure random generator
+  /// (`randombytes_uniform`), for the vault's password generator.
+  String randomString(String pool, int length) {
+    final chars = pool.runes.toList();
+    return String.fromCharCodes([
+      for (var i = 0; i < length; i++)
+        chars[sodium.randombytes.uniform(chars.length)],
+    ]);
+  }
+
   SecureKey _derive(String secret, Uint8List salt, KdfParams params) =>
       sodium.crypto.pwhash.callStr(
         outLen: _aead.keyBytes,

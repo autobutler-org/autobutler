@@ -8,6 +8,8 @@ import 'package:http/testing.dart';
 import 'package:quark/controllers/chat_keys_controller.dart';
 import 'package:quark/models/account_keys.dart';
 import 'package:quark/models/chat_keys.dart';
+import 'package:quark/models/vault_key.dart';
+import 'package:quark/services/account_crypto.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_secret.dart';
 import 'package:quark/services/auth_service.dart';
@@ -85,6 +87,9 @@ class _FakeQuark {
           legacyRecovery = false;
         }
         return http.Response('', rotationStatus);
+      // An account with no vault (#3461).
+      case '/api/v0/vault/key' || '/api/v0/auth/recover/vault-key':
+        return http.Response('{}', 404);
       case '/api/v0/chat/keys/me':
         if (request.method == 'PUT') {
           chatKeys = sent;
@@ -461,6 +466,57 @@ void main() {
       expect(settings.sessionToken, isNull);
     });
 
+    test('wraps the vault key under the new phrase in the same request '
+        '(#3461)', () async {
+      final account = await AccountCrypto.load();
+      final vaultKey = account.generateVaultKey();
+      final mine = account.deriveAuthKeys(
+        _password,
+        testAuthSalt,
+        KdfParams.standard,
+      );
+      addTearDown(vaultKey.dispose);
+      addTearDown(mine.dispose);
+      final sessions = <String?>[];
+      vaultKeyFetch = ({sessionToken}) async {
+        sessions.add(sessionToken);
+        return WrappedVaultKey(
+          byPassword: account.wrapVaultKey(
+            vaultKey,
+            mine.vaultWrapKey,
+            testAuthSalt,
+          ),
+          byPhrase: null,
+          kdfParams: KdfParams.standard.split,
+        );
+      };
+      addTearDown(() => vaultKeyFetch = VaultService.fetchKey);
+
+      final phrase = (await signIn()).recoveryPhrase!;
+
+      // The session is not stored until the phrase is acknowledged.
+      expect(sessions, ['session']);
+      final sent = WrappedVaultKey.fromJson(
+        (jsonDecode(rotations().single.body) as Map)['vaultKey']
+            as Map<String, dynamic>,
+      );
+      expect(sent.kdfParams.alg, KdfParams.phraseSplitAlgorithm);
+      final byPhrase = account.deriveRecoveryKeys(
+        phrase,
+        testAuthSalt,
+        sent.kdfParams,
+      );
+      addTearDown(byPhrase.dispose);
+      for (final (wrap, key) in [
+        (sent.byPassword, mine.vaultWrapKey),
+        (sent.byPhrase!, byPhrase.vaultWrapKey),
+      ]) {
+        final opened = account.unwrapVaultKey(wrap, key, wrongSecret: 'x');
+        addTearDown(opened.dispose);
+        expect(opened.extractBytes(), vaultKey.extractBytes());
+      }
+    });
+
     test('a refused one returns nothing, keeps the session, and is tried '
         'again at the next sign-in', () async {
       quark.rotationStatus = 403;
@@ -516,14 +572,6 @@ void main() {
         () => StorageService.setDeviceRole(
           serial: 'S1',
           role: 'default-storage',
-          username: 'grace',
-          password: _password,
-        ),
-      ),
-      "the vault's storage location": (
-        AuthSecretUse.reconfirm,
-        () => VaultService.setStorageLocation(
-          targetDeviceSerial: 'S1',
           username: 'grace',
           password: _password,
         ),
@@ -796,18 +844,6 @@ void main() {
         () => StorageService.setDeviceRole(
           serial: 'S1',
           role: 'default-storage',
-          username: 'grace',
-          password: _password,
-        ),
-      ),
-    );
-
-    test(
-      "the vault's storage location",
-      () => expectAuthKey(
-        '/api/v0/vault/storage-location',
-        () => VaultService.setStorageLocation(
-          targetDeviceSerial: 'S1',
           username: 'grace',
           password: _password,
         ),

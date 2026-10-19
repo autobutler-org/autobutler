@@ -4,8 +4,7 @@
 ///
 /// Both are for the case where a Quark *is* configured and simply cannot be
 /// reached — off the local network, Tailscale down, device asleep. The
-/// zero-config case belongs to the app's connect form, and a vault whose USB
-/// drive is unplugged has its own state on the vault page; neither is this.
+/// zero-config case belongs to the app's connect form; that is not this.
 ///
 /// The copy says only what the app actually knows. It does not guess between
 /// DNS, TLS and timeout, and it never shows the underlying exception: a

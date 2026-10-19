@@ -6,13 +6,19 @@ import 'package:http/http.dart' as http;
 import 'package:quark/controllers/chat_keys_controller.dart';
 import 'package:quark/models/account_keys.dart';
 import 'package:quark/models/chat_keys.dart';
+import 'package:quark/models/vault_key.dart';
+import 'package:quark/services/account_crypto.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/services/vault_service.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:sodium/sodium_sumo.dart' show SecureKey;
+import 'package:quark_widgets/quark_widgets.dart' show VaultEntryDraft;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/auth_salt.dart';
+import '../support/fake_vault.dart';
 
 /// A Quark that answers every request with one canned response, and remembers
 /// what it was asked.
@@ -114,6 +120,14 @@ void main() {
     authHttpClientFactory = () => sharedHttpClient;
     chatKeysForPasswordChange =
         ChatKeysController.instance.keysForPasswordChange;
+    vaultKeyFetch = VaultService.fetchKey;
+  });
+
+  /// The account's stored vault key; null for an account with no vault.
+  WrappedVaultKey? storedVault;
+  setUp(() {
+    storedVault = null;
+    vaultKeyFetch = ({sessionToken}) async => storedVault;
   });
 
   Future<void> change() => AuthService.changePassword(
@@ -261,6 +275,154 @@ void main() {
       salts.status = 404;
 
       await expectLater(change(), refusesWith(Errors.quarkTooOld));
+      expect(client.requests, isEmpty);
+    });
+  });
+
+  group('the vault key (#3461)', () {
+    const cheap = KdfParams(
+      opsLimit: 1,
+      memLimit: 8192,
+      alg: KdfParams.splitAlgorithm,
+    );
+    late AccountCrypto crypto;
+    late SecureKey vaultKey;
+    final phraseWrap = WrappedSecret(
+      wrapped: Uint8List(72),
+      salt: Uint8List(16),
+    );
+
+    setUp(() async {
+      crypto = await AccountCrypto.load();
+      vaultKey = crypto.generateVaultKey();
+      addTearDown(vaultKey.dispose);
+      final keys = crypto.deriveAuthKeys(
+        'the-old-password',
+        testAuthSalt,
+        cheap,
+      );
+      addTearDown(keys.dispose);
+      storedVault = WrappedVaultKey(
+        byPassword: crypto.wrapVaultKey(
+          vaultKey,
+          keys.vaultWrapKey,
+          testAuthSalt,
+        ),
+        byPhrase: phraseWrap,
+        kdfParams: cheap,
+      );
+    });
+
+    test('goes in the same request, re-wrapped under the new password, the '
+        'phrase wrap kept', () async {
+      final client = _RecordingClient();
+      authHttpClientFactory = () => AuthSaltClient(client);
+
+      await change();
+
+      final body = jsonDecode(client.requests.single.body) as Map;
+      final sent = WrappedVaultKey.fromJson(
+        body['vaultKey'] as Map<String, dynamic>,
+      );
+      expect(sent.kdfParams.toJson(), cheap.toJson());
+      expect(sent.byPhrase!.wrapped, phraseWrap.wrapped);
+      final next = crypto.deriveAuthKeys(
+        'brand-new-password',
+        sent.byPassword.salt,
+        sent.kdfParams,
+      );
+      addTearDown(next.dispose);
+      final opened = crypto.unwrapVaultKey(
+        sent.byPassword,
+        next.vaultWrapKey,
+        wrongSecret: 'x',
+      );
+      addTearDown(opened.dispose);
+      expect(opened.extractBytes(), vaultKey.extractBytes());
+      // Neither the key nor anything that opens it went out.
+      final raw = client.requests.single.body;
+      expect(raw, isNot(contains(base64Encode(vaultKey.extractBytes()))));
+      expect(
+        raw,
+        isNot(contains(base64Encode(next.vaultWrapKey.extractBytes()))),
+      );
+    });
+
+    // #3461: setup re-confirms the login password, so the key the vault page
+    // makes is one the next password change can open.
+    for (final phrase in ['', 'apple-bread']) {
+      final label = phrase.isEmpty ? 'without' : 'with';
+      test('one set up on the vault page $label the phrase opens with the new '
+          'password, and its item still decrypts', () async {
+        final server = FakeVault()
+          ..loginAuthKey = fakeLoginAuthKey(crypto, 'the-old-password');
+        final page = server.controller(crypto);
+        addTearDown(page.dispose);
+        await page.load();
+        await page.setUp('the-old-password', phrase: phrase);
+        expect(page.formError, isNull);
+        await page.saveDraft(
+          const VaultEntryDraft(name: 'GitHub', password: 'p'),
+        );
+        page.lock();
+        final made = server.key!;
+        storedVault = made;
+        final client = _RecordingClient();
+        authHttpClientFactory = () => AuthSaltClient(client);
+
+        await change();
+
+        server.key = WrappedVaultKey.fromJson(
+          (jsonDecode(client.requests.single.body) as Map)['vaultKey']
+              as Map<String, dynamic>,
+        );
+        if (phrase.isEmpty) {
+          expect(server.key!.byPhrase, isNull);
+        } else {
+          expect(server.key!.byPhrase!.wrapped, made.byPhrase!.wrapped);
+          expect(server.key!.kdfParams.alg, KdfParams.phraseSplitAlgorithm);
+        }
+        final after = server.controller(crypto);
+        addTearDown(after.dispose);
+        await after.load();
+        await after.unlock('brand-new-password');
+        expect(after.formError, isNull);
+        expect(after.entries.single.data.password, 'p');
+      });
+    }
+
+    test('one the current password does not open is left out, and the change '
+        'still goes', () async {
+      final keys = crypto.deriveAuthKeys(
+        'another-password',
+        testAuthSalt,
+        cheap,
+      );
+      addTearDown(keys.dispose);
+      storedVault = WrappedVaultKey(
+        byPassword: crypto.wrapVaultKey(
+          vaultKey,
+          keys.vaultWrapKey,
+          testAuthSalt,
+        ),
+        byPhrase: null,
+        kdfParams: cheap,
+      );
+      final client = _RecordingClient();
+      authHttpClientFactory = () => AuthSaltClient(client);
+
+      await change();
+
+      final body = jsonDecode(client.requests.single.body) as Map;
+      expect(body.containsKey('vaultKey'), isFalse);
+    });
+
+    test('a failed fetch stops the change before anything is sent', () async {
+      vaultKeyFetch = ({sessionToken}) => Future.error(const ApiException(500));
+      final client = _RecordingClient();
+      authHttpClientFactory = () => AuthSaltClient(client);
+
+      await expectLater(change(), throwsA(isA<ApiException>()));
       expect(client.requests, isEmpty);
     });
   });

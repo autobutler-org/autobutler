@@ -3073,6 +3073,82 @@ final List<GalleryEntry> registry = [
     ),
   ),
 
+  // ── Vault ─────────────────────────────────────────────────────────────────
+  GalleryEntry(
+    name: 'VaultPasswordForm',
+    group: 'Vault',
+    build: (context, log) => SizedBox(
+      height: 560,
+      child: VaultPasswordForm(
+        title: 'Your vault is locked',
+        message: 'Enter the password you sign in to Quark with.',
+        submitLabel: 'Unlock',
+        error: "That password doesn't unlock your vault.",
+        secondaryLabel: 'Start over',
+        onSecondary: () => log('VaultPasswordForm.onSecondary'),
+        onSubmit: (password, _) =>
+            log('VaultPasswordForm.onSubmit(${password.length} chars)'),
+      ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'VaultEntryList',
+    group: 'Vault',
+    build: (context, log) => SizedBox(
+      height: 420,
+      child: VaultEntryList(
+        entries: const [
+          VaultEntryItem(id: 1, name: 'GitHub', subtitle: 'github.com'),
+          VaultEntryItem(id: 2, name: 'Bank', subtitle: 'bank.example'),
+          VaultEntryItem(id: 3, name: 'Wi-Fi'),
+        ],
+        folders: const [
+          VaultFolderItem(id: 10, name: 'Work'),
+          VaultFolderItem(id: 11, name: 'Home'),
+        ],
+        onSearchChanged: (text) => log('VaultEntryList.onSearchChanged($text)'),
+        selectedFolderId: 10,
+        onFolderSelected: (id) => log('VaultEntryList.onFolderSelected($id)'),
+        onDeleteFolder: (id) => log('VaultEntryList.onDeleteFolder($id)'),
+        onTapEntry: (id) => log('VaultEntryList.onTapEntry($id)'),
+      ),
+    ),
+  ),
+  GalleryEntry(
+    name: 'VaultEntryDetails',
+    group: 'Vault',
+    build: (context, log) => VaultEntryDetails(
+      entry: const VaultEntryDraft(
+        name: 'GitHub',
+        url: 'https://github.com/login',
+        username: 'grace',
+        password: 'correct horse battery staple',
+        notes: 'Recovery codes are in the safe.',
+        totpSecret: 'JBSWY3DPEHPK3PXP',
+      ),
+      folderName: 'Work',
+      showPassword: false,
+      onToggleShowPassword: () => log('VaultEntryDetails.onToggleShowPassword'),
+      onCopy: (label, _) => log('VaultEntryDetails.onCopy($label)'),
+    ),
+  ),
+  GalleryEntry(
+    name: 'VaultEntryForm',
+    group: 'Vault',
+    build: (context, log) => SizedBox(
+      height: 640,
+      child: VaultEntryForm(
+        initial: const VaultEntryDraft(name: 'GitHub', username: 'grace'),
+        folders: const [VaultFolderItem(id: 10, name: 'Work')],
+        onGeneratePassword: () {
+          log('VaultEntryForm.onGeneratePassword');
+          return 'x7#Lq9!vR2mZ@p4W';
+        },
+        onSave: (draft) => log('VaultEntryForm.onSave(${draft.name})'),
+      ),
+    ),
+  ),
+
   // ── Calendar ──────────────────────────────────────────────────────────────
   GalleryEntry(
     name: 'CalendarEmptyNotice',

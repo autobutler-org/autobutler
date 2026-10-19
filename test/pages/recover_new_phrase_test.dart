@@ -77,6 +77,9 @@ void main() {
           byPhrase: null,
           kdfParams: KdfParams.standard.split,
         );
+    // An account with no vault (#3461).
+    recoveryVaultKeyFetch =
+        ({required username, recoveryPhrase, recoveryKey}) async => null;
     authHttpClientFactory = () => AuthSaltClient(
       MockClient((request) async {
         bodies.add(jsonDecode(request.body) as Map<String, dynamic>);

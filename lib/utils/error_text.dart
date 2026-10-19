@@ -422,6 +422,37 @@ abstract final class Errors {
   static const String chatKeysWrongPhrase =
       "That recovery phrase doesn't unlock your messages.";
 
+  /// Unlocking the vault, or setting it up, with a password that doesn't open
+  /// the account's vault key (#3461). Nothing is sent to the Quark to check
+  /// it; the key simply doesn't decrypt.
+  static const String vaultWrongPassword =
+      "That password doesn't unlock your vault.";
+
+  /// Saving or deleting after the vault locked itself, which forgets its key.
+  static const String vaultLocked =
+      'Your vault locked itself. Unlock it and try again.';
+
+  /// Setting up the vault with a password the account doesn't sign in with:
+  /// the Quark re-confirms it and answers 403 (#3461).
+  static const String vaultNotLoginPassword =
+      "That isn't your account password. The vault opens with the password "
+      'you sign in with.';
+
+  /// An import file over `VaultConfig.maxImportBytes`.
+  static const String vaultImportTooLarge =
+      'That file is too big to import. Import files can be up to 10 MB.';
+
+  /// An entry whose encrypted form is over the Quark's 1 MiB limit (413).
+  static const String vaultItemTooLarge =
+      'That entry is too large to save. Shorten its notes and try again.';
+
+  /// A vault request's failure: [vaultItemTooLarge] for a 413, else
+  /// [message].
+  static String vault(Object? error, String action) => switch (error) {
+    ApiException(statusCode: 413) => vaultItemTooLarge,
+    _ => message(error, action),
+  };
+
   /// Sending a chat message before any member has shared the channel's key
   /// with this account (#2418).
   static const String chatWaitingForKey =

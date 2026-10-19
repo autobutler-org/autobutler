@@ -39,6 +39,8 @@ void main() {
           required sessionToken,
           authSalt,
         }) async => null;
+    // An account with no vault (#3461).
+    vaultKeyFetch = ({sessionToken}) async => null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(secureStorage, (call) async {
           final key = call.arguments['key'] as String?;

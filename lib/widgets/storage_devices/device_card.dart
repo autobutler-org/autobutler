@@ -3,7 +3,6 @@ import 'package:quark/controllers/drive_health_controller.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/widgets/storage_devices/drive_health_section.dart';
 import 'package:quark/widgets/storage_devices/role_badge.dart';
-import 'package:quark/widgets/storage_devices/vault_badge.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
@@ -13,7 +12,6 @@ class DeviceCard extends StatelessWidget {
   const DeviceCard({
     required this.device,
     required this.isMounting,
-    this.isVaultDevice = false,
     this.onMount,
     this.onSetRole,
     this.onBackup,
@@ -25,7 +23,6 @@ class DeviceCard extends StatelessWidget {
 
   final StorageDevice device;
   final bool isMounting;
-  final bool isVaultDevice;
   final VoidCallback? onMount;
   final VoidCallback? onSetRole;
   final VoidCallback? onBackup;
@@ -86,7 +83,6 @@ class DeviceCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (isVaultDevice) const VaultBadge(),
                       if (device.role != 'unassigned')
                         RoleBadge(role: device.role),
                       if (badge != null && !badgeBesideBackup) badge,

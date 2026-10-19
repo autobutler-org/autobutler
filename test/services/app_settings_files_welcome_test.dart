@@ -26,6 +26,8 @@ void main() {
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(secureStorage, (_) async => null);
+    // An account with no vault (#3461).
+    vaultKeyFetch = ({sessionToken}) async => null;
   });
 
   tearDownAll(() {
