@@ -56,6 +56,26 @@ func writeTestFile(t *testing.T, dir, rel, content string) {
 	}
 }
 
+// waitForFile polls until rel exists under dir. It is bounded by the test
+// binary's -timeout, not a fixed window: the worker copies one file at a time,
+// and under -race on a loaded machine a burst of them takes several times as
+// long as it does alone (#3532). The margin leaves room to name the missing
+// file before the binary's own timeout panics.
+func waitForFile(t *testing.T, dir, rel string) {
+	t.Helper()
+	deadline, bounded := t.Deadline()
+	deadline = deadline.Add(-10 * time.Second)
+	for {
+		if _, err := os.Stat(filepath.Join(dir, rel)); err == nil {
+			return
+		}
+		if bounded && time.Now().After(deadline) {
+			t.Fatalf("%s never reached the target", rel)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
 func readTestFile(t *testing.T, dir, rel string) string {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join(dir, rel))
@@ -307,16 +327,7 @@ func TestSyncWorker_MirrorsEveryUploadInABurst(t *testing.T) {
 		w.bus.Publish(eventbus.Event{Kind: eventbus.EventUpload, Path: fmt.Sprintf("burst/%d.txt", i)})
 	}
 
-	deadline := time.Now().Add(10 * time.Second)
 	for i := 0; i < n; i++ {
-		for {
-			if _, err := os.Stat(filepath.Join(dstDir, fmt.Sprintf("burst/%d.txt", i))); err == nil {
-				break
-			}
-			if time.Now().After(deadline) {
-				t.Fatalf("burst/%d.txt never reached the target", i)
-			}
-			time.Sleep(5 * time.Millisecond)
-		}
+		waitForFile(t, dstDir, fmt.Sprintf("burst/%d.txt", i))
 	}
 }
