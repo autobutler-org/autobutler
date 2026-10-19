@@ -3,6 +3,7 @@ package deviceutil
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
@@ -34,10 +35,14 @@ func (s serialUSB) Partitions() ([]storageutil.Partition, error) {
 	return nil, nil
 }
 
-func healthDevice(mount, serial, devicePath string) storageutil.Device {
+// healthDevice is a connected drive whose mount is not on disk. GetDeviceStatuses
+// creates quark/data on a real mount and probes it in the background; that
+// probe's file races t.TempDir cleanup and fails the test with "directory not
+// empty" once the machine is busy enough that the probe outlives the test.
+func healthDevice(serial, devicePath string) storageutil.Device {
 	return storageutil.Device{
 		Name:       serial,
-		MountPoint: mount,
+		MountPoint: "/quark-absent-mount/" + serial,
 		DevicePath: devicePath,
 		UsbInfo:    serialUSB{serial: serial},
 	}
@@ -74,11 +79,10 @@ func adminForRole(t *testing.T) db.Querier {
 
 func TestSetRole_ReplaceSoonNeedsAcknowledgment(t *testing.T) {
 	queries := adminForRole(t)
-	mount := t.TempDir()
 	params := SetRoleParams{
 		Ctx:      context.Background(),
 		Queries:  queries,
-		Storage:  storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{healthDevice(mount, "WORN", "/dev/sdb1")}}),
+		Storage:  storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{healthDevice("WORN", "/dev/sdb1")}}),
 		Serial:   "WORN",
 		Role:     "default-storage",
 		Username: "admin",
@@ -114,13 +118,12 @@ func TestSetRole_ReplaceSoonBackupAndStrongerDefault(t *testing.T) {
 	if err := queries.UpsertDeviceRole(ctx, db.UpsertDeviceRoleParams{DeviceSerial: "GOOD", Role: "default-storage"}); err != nil {
 		t.Fatal(err)
 	}
-	mountA, mountB := t.TempDir(), t.TempDir()
 	params := SetRoleParams{
 		Ctx:     ctx,
 		Queries: queries,
 		Storage: storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{
-			healthDevice(mountA, "GOOD", "/dev/sda1"),
-			healthDevice(mountB, "WORN", "/dev/sdb1"),
+			healthDevice("GOOD", "/dev/sda1"),
+			healthDevice("WORN", "/dev/sdb1"),
 		}}),
 		Serial:   "WORN",
 		Role:     "snapshot-backup",
@@ -153,7 +156,7 @@ func TestSetRole_WatchAndUnknownDoNotBlock(t *testing.T) {
 			params := SetRoleParams{
 				Ctx:      context.Background(),
 				Queries:  queries,
-				Storage:  storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{healthDevice(t.TempDir(), "DISK", "/dev/sdc1")}}),
+				Storage:  storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{healthDevice("DISK", "/dev/sdc1")}}),
 				Serial:   "DISK",
 				Role:     "snapshot-backup",
 				Username: "admin",
@@ -172,7 +175,7 @@ func TestSetRole_WatchAndUnknownDoNotBlock(t *testing.T) {
 
 func TestRefuseReplaceSoonTarget(t *testing.T) {
 	storage := storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{
-		healthDevice(t.TempDir(), "WORN", "/dev/sdb"),
+		healthDevice("WORN", "/dev/sdb"),
 	}})
 	params := BackupHealthParams{
 		Ctx:     context.Background(),
@@ -197,7 +200,7 @@ func TestRefuseReplaceSoonTarget(t *testing.T) {
 func TestListStatuses_MissingToolStillLists(t *testing.T) {
 	result, err := ListStatuses(ListStatusesParams{
 		Ctx:     context.Background(),
-		Storage: storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{healthDevice(t.TempDir(), "DISK", "/dev/sdb")}}),
+		Storage: storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{healthDevice("DISK", "/dev/sdb")}}),
 		Health: func(context.Context, storageutil.Device) *storageutil.DiskHealth {
 			health := storageutil.DiskHealth{Verdict: storageutil.HealthUnknown, Reason: storageutil.ReasonToolMissing}
 			return &health
@@ -226,7 +229,7 @@ func TestListStatuses_WorseThanDefault(t *testing.T) {
 	}
 	result, err := ListStatuses(ListStatusesParams{
 		Ctx:      ctx,
-		Storage:  storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{healthDevice(t.TempDir(), "GOOD", "/dev/sda"), healthDevice(t.TempDir(), "WORN", "/dev/sdb")}}),
+		Storage:  storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{healthDevice("GOOD", "/dev/sda"), healthDevice("WORN", "/dev/sdb")}}),
 		Database: database,
 		Health: func(_ context.Context, device storageutil.Device) *storageutil.DiskHealth {
 			verdict := storageutil.HealthHealthy
@@ -251,5 +254,26 @@ func TestListStatuses_WorseThanDefault(t *testing.T) {
 	}
 	if bySerial["WORN"] == nil || !bySerial["WORN"].WorseThanDefault || bySerial["WORN"].Verdict != storageutil.HealthWatch {
 		t.Fatalf("watch drive = %+v", bySerial["WORN"])
+	}
+}
+
+func TestHealthDevicesStayOffDisk(t *testing.T) {
+	worn := healthDevice("WORN", "/dev/sdb1")
+	good := healthDevice("GOOD", "/dev/sda1")
+	_, err := ListStatuses(ListStatusesParams{
+		Ctx:     context.Background(),
+		Storage: storageutil.NewStorageService(healthDetector{devices: []storageutil.Device{good, worn}}),
+		Health: func(context.Context, storageutil.Device) *storageutil.DiskHealth {
+			health := storageutil.DiskHealth{Verdict: storageutil.HealthHealthy, Reason: storageutil.ReasonHealthy}
+			return &health
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, device := range []storageutil.Device{good, worn} {
+		if _, statErr := os.Stat(device.MountPoint); !os.IsNotExist(statErr) {
+			t.Fatalf("mount %s is on disk (%v); a real mount starts a disk probe that races test cleanup", device.MountPoint, statErr)
+		}
 	}
 }
