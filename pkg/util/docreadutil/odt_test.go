@@ -514,6 +514,19 @@ func TestOdtNotesFollowTheBody(t *testing.T) {
 	}
 }
 
+func TestOdtCitedNoteLandsUnderANotesHeading(t *testing.T) {
+	d := odtDoc{body: odtPara("", "Claim"+note("ftn1", "footnote", "1", odtPara("", "Note text"))) +
+		odtPara("", "Loose"+`<text:note><text:note-citation>7</text:note-citation><text:note-body>`+odtPara("", "Orphan")+`</text:note-body></text:note>`)}
+	s, _ := readOdtStream(t, d, Limits{})
+	equalTexts(t, texts(s.blocks), "Claim1", "Loose7", "Notes", "1 Note text")
+	if h := s.blocks[2]; h.Type != BlockHeading || h.Level != 1 {
+		t.Errorf("Notes heading = %+v", h)
+	}
+	if s.end.Words != 1+1+3 {
+		t.Errorf("words = %d; the Notes heading must not count", s.end.Words)
+	}
+}
+
 func TestOdtNotesAreCutByTheLimitToo(t *testing.T) {
 	var body strings.Builder
 	for i := range 20 {
