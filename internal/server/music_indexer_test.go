@@ -279,6 +279,32 @@ func TestMusicIndexerFolderUploadBackfillsItsDevice(t *testing.T) {
 	}
 }
 
+// TestMusicIndexerFolderUploadIndexesOnlyAudioUnderIt uploads a folder that
+// mixes audio, nested audio and other files on a drive, and checks every
+// audio file under it is indexed, nothing else is, and audio on another
+// device, which the event did not touch, is left unread.
+func TestMusicIndexerFolderUploadIndexesOnlyAudioUnderIt(t *testing.T) {
+	f := newMusicFixture(t)
+	f.write(t, musicUSB, "Mix/a.flac", flacTrack("Alpha"))
+	f.write(t, musicUSB, "Mix/Disc2/deep/b.flac", flacTrack("Bravo"))
+	f.write(t, musicUSB, "Mix/cover.jpg", []byte("jpeg"))
+	f.write(t, musicUSB, "Mix/Disc2/notes.txt", []byte("liner notes"))
+	f.write(t, "", "Elsewhere/c.flac", flacTrack("Charlie"))
+
+	f.indexer.handle(eventbus.Event{Kind: eventbus.EventUpload, DeviceSerial: musicUSB, Path: "Mix"})
+	if !f.indexer.dirty[musicUSB] || len(f.indexer.dirty) != 1 {
+		t.Fatalf("dirty = %v, want only the drive", f.indexer.dirty)
+	}
+	f.indexer.backfillDirty()
+	f.wantTitles(t, map[string]string{
+		musicUSB + ":Mix/a.flac":            "Alpha",
+		musicUSB + ":Mix/Disc2/deep/b.flac": "Bravo",
+	})
+	if evt := f.nextLibraryChange(t); evt.DeviceSerial != musicUSB {
+		t.Fatalf("event = %+v, want the drive's", evt)
+	}
+}
+
 // TestMusicIndexerRunLoop drives the subscriber through the bus: a folder
 // upload settles into a backfill, and a resync reconciles every device.
 func TestMusicIndexerRunLoop(t *testing.T) {
