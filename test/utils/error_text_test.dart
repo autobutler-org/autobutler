@@ -163,6 +163,20 @@ void main() {
     });
   });
 
+  group('video the browser cannot show', () {
+    test('a container refusal names the container and not the codec', () {
+      final message = Errors.unsupportedVideoContainer('.TS');
+      expect(message, contains('.TS'));
+      expect(message, contains('Download'));
+      expect(message.toLowerCase(), isNot(contains('codec')));
+    });
+
+    test('a codec refusal names the codec and offers a download', () {
+      expect(Errors.unsupportedVideoCodec.toLowerCase(), contains('codec'));
+      expect(Errors.unsupportedVideoCodec, contains('Download'));
+    });
+  });
+
   group('Errors.trim', () {
     test('a 422 says the video cannot be trimmed', () {
       expect(Errors.trim(const ApiException(422)), Errors.cantTrimVideo);

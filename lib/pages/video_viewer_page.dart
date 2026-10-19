@@ -40,6 +40,12 @@ class VideoViewerPage extends StatefulWidget {
   /// Marks this video watched or unwatched.
   final SetPlaybackWatched setPlaybackWatched;
 
+  /// Lists the formats [convertVideo] can offer for this file.
+  final LoadTranscodeFormatsFn loadTranscodeFormats;
+
+  /// Queues the conversion [convertVideo] starts.
+  final TranscodeVideoFn transcodeVideo;
+
   const VideoViewerPage({
     super.key,
     required this.url,
@@ -49,6 +55,8 @@ class VideoViewerPage extends StatefulWidget {
     this.loadPlayback = PlaybackPositionService.get,
     this.savePlayback = PlaybackPositionService.save,
     this.setPlaybackWatched = PlaybackPositionService.setWatched,
+    this.loadTranscodeFormats = FilesService.listTranscodeFormats,
+    this.transcodeVideo = FilesService.transcodeVideo,
   });
 
   @override
@@ -85,6 +93,107 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
   bool _isNonWebNativeFormat(String name) {
     final lower = name.toLowerCase();
     return _nonWebNativeExtensions.any((ext) => lower.endsWith(ext));
+  }
+
+  /// A player the browser accepted but that has nothing to show: no duration,
+  /// no frame, or an error. That is the black picture with live controls.
+  bool _hasDecodedPicture(VideoPlayerValue value) {
+    return value.isInitialized &&
+        !value.hasError &&
+        value.duration > Duration.zero &&
+        value.size.width > 0 &&
+        value.size.height > 0;
+  }
+
+  /// Copy for a file that will not play, and whether Download belongs with it.
+  ///
+  /// A container the browser will not open names that container. A player that
+  /// opened and then produced no picture names the codec. Anything else keeps
+  /// the generic sentence, which does not offer a download.
+  ({String message, bool offerDownload}) _playbackFailure({
+    required bool opened,
+  }) {
+    final ext = _extensionOf(widget.name);
+    final lower = widget.name.toLowerCase();
+    // A .ts file holds picture and sound the browser can play in another
+    // container, so the reason names the container and never the codec.
+    if (lower.endsWith('.ts')) {
+      return (
+        message: Errors.unsupportedVideoContainer(ext),
+        offerDownload: true,
+      );
+    }
+    // .mov is in the non-web list, which is the right answer when the
+    // browser refuses the file outright. Once it has opened and still has
+    // no picture, the container is fine and the codec is not.
+    if (_isNonWebNativeFormat(widget.name) &&
+        !(opened && lower.endsWith('.mov'))) {
+      return (message: Errors.unsupportedVideoFormat(ext), offerDownload: true);
+    }
+    if (opened) {
+      return (message: Errors.unsupportedVideoCodec, offerDownload: true);
+    }
+    return (message: Errors.unplayableMedia, offerDownload: false);
+  }
+
+  /// Drops [controller] and shows why this file will not play.
+  Future<void> _failPlayback({
+    required bool opened,
+    VideoPlayerController? controller,
+    LocalMediaProxy? proxy,
+  }) async {
+    if (!mounted || _errorMessage != null) {
+      await controller?.dispose();
+      await proxy?.close();
+      return;
+    }
+    final failure = _playbackFailure(opened: opened);
+    if (identical(_controller, controller)) _controller = null;
+    if (identical(_proxy, proxy)) _proxy = null;
+    setState(() {
+      _loading = false;
+      _errorMessage = failure.message;
+      _isUnsupportedFormat = failure.offerDownload;
+    });
+    await controller?.dispose();
+    await proxy?.close();
+  }
+
+  /// Replaces the player when a decode error arrives after it was shown.
+  void _watchForDecodeError(VideoPlayerController controller) {
+    controller.addListener(() {
+      if (!mounted || _errorMessage != null || _controller != controller) {
+        return;
+      }
+      if (!controller.value.hasError) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _controller != controller) return;
+        _failPlayback(opened: true, controller: controller, proxy: _proxy);
+      });
+    });
+  }
+
+  void _say(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool _canTrim(VideoPlayerController? controller) {
+    final value = controller?.value;
+    return value != null &&
+        value.isInitialized &&
+        !value.hasError &&
+        value.duration > Duration.zero;
+  }
+
+  bool _canSaveFrame(VideoPlayerController? controller) {
+    final value = controller?.value;
+    return value != null &&
+        value.isInitialized &&
+        !value.hasError &&
+        value.size.width > 0 &&
+        value.size.height > 0;
   }
 
   String _extensionOf(String name) {
@@ -133,25 +242,21 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       await controller.initialize();
     } catch (e) {
       debugPrint('[video_viewer_page.dart] initialize error: $e');
-      await controller?.dispose();
       // A 404 or a 401 is not a codec problem, and issue #1627 is precisely
       // about that mislabelling. Prefer whatever the server actually said.
       final upstreamError = proxy?.lastUpstreamError;
-      await proxy?.close();
-      if (!mounted) {
+      if (upstreamError != null) {
+        await controller?.dispose();
+        await proxy?.close();
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _isUnsupportedFormat = false;
+          _errorMessage = upstreamError.userMessage;
+        });
         return;
       }
-      final nonWebNative =
-          upstreamError == null && _isNonWebNativeFormat(widget.name);
-      setState(() {
-        _loading = false;
-        _isUnsupportedFormat = nonWebNative;
-        _errorMessage = switch ((upstreamError, nonWebNative)) {
-          (final MediaUpstreamException error, _) => error.userMessage,
-          (_, true) => Errors.unsupportedVideoFormat(_extensionOf(widget.name)),
-          _ => Errors.unplayableMedia,
-        };
-      });
+      await _failPlayback(opened: false, controller: controller, proxy: proxy);
       return;
     }
 
@@ -161,11 +266,19 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       return;
     }
 
+    // Initialized with no duration or no frame is a black player: the
+    // controls run and nothing on screen says why (#3429).
+    if (!_hasDecodedPicture(controller.value)) {
+      await _failPlayback(opened: true, controller: controller, proxy: proxy);
+      return;
+    }
+
     setState(() {
       _controller = controller;
       _proxy = proxy;
       _loading = false;
     });
+    _watchForDecodeError(controller);
 
     final playback = _playback;
     if (playback != null) {
@@ -287,7 +400,10 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
 
   void _enterTrimMode() {
     final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
+    if (controller == null || !_canTrim(controller)) {
+      _say(Errors.trimUnavailable);
+      return;
+    }
     controller.pause();
     setState(() {
       _trimMode = true;
@@ -298,16 +414,17 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
 
   Future<void> _exportTrim() async {
     final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
+    if (controller == null || !_canTrim(controller)) {
+      _say(Errors.trimUnavailable);
+      return;
+    }
     if (_exportingTrim) return;
 
     final params = widget.url.queryParameters;
     final relPath = params['filePath'] ?? '';
     final serial = params['serial'];
     if (relPath.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot trim: file path unknown')),
-      );
+      _say(Errors.trimPathUnknown);
       return;
     }
 
@@ -346,7 +463,10 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
 
   Future<void> _saveFrame() async {
     final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
+    if (controller == null || !_canSaveFrame(controller)) {
+      _say(Errors.saveFrameUnavailable);
+      return;
+    }
     if (_savingFrame) return;
 
     // Derive relPath and serial from the media URL query parameters.
@@ -354,9 +474,7 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
     final relPath = params['filePath'] ?? '';
     final serial = params['serial'];
     if (relPath.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot save frame: file path unknown')),
-      );
+      _say(Errors.saveFramePathUnknown);
       return;
     }
 
@@ -423,6 +541,8 @@ class _VideoViewerPageState extends State<VideoViewerPage> {
       context,
       relPath: params['filePath'] ?? '',
       serial: params['serial'],
+      loadFormats: widget.loadTranscodeFormats,
+      transcode: widget.transcodeVideo,
     );
   }
 

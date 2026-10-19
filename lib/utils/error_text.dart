@@ -114,6 +114,37 @@ abstract final class Errors {
       "This video format ($extension) isn't supported for in-browser "
       'playback. Download the file to watch it locally.';
 
+  /// A container the browser will not open. [extension] is the file's own,
+  /// including the dot, so the sentence names that container. The picture
+  /// inside may play fine in another container, so this must not blame the
+  /// codec (#3429).
+  static String unsupportedVideoContainer(String extension) =>
+      "This video's container ($extension) isn't supported for in-browser "
+      'playback. Download the file to watch it locally.';
+
+  /// The browser opened the file but never produced a picture, so the player
+  /// would otherwise sit black with the controls still running (#3429).
+  static const String unsupportedVideoCodec =
+      "This video's codec isn't supported for in-browser playback. "
+      'Download the file to watch it locally.';
+
+  /// Trim was offered, but the player has no duration to cut.
+  static const String trimUnavailable =
+      "This video can't be trimmed here. Download it to edit it locally.";
+
+  /// Save Frame was offered, but the player has no decoded picture.
+  static const String saveFrameUnavailable =
+      "There's no picture to save from this video. Download it to watch "
+      'it locally.';
+
+  /// The media URL names no file, so a trim has nowhere to be written.
+  static const String trimPathUnknown =
+      "This video can't be trimmed because its location is unknown.";
+
+  /// The media URL names no file, so a frame has nowhere to be saved.
+  static const String saveFramePathUnknown =
+      "This frame can't be saved because the video's location is unknown.";
+
   /// Why the 3D model viewer showed a model's details instead of the model
   /// (#2988). The file is fine to download either way, so each says so.
   static String modelPreview(QuarkModelParseIssue issue) => switch (issue) {
