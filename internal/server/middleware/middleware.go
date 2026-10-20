@@ -31,39 +31,32 @@ import (
 
 // authRateLimitedPaths are the API paths that require rate limiting.
 var authRateLimitedPaths = map[string]bool{
-	"/api/v0/auth/login":           true,
-	"/api/v0/auth/salt":            true,
-	"/api/v0/auth/setup":           true,
-	"/api/v0/auth/recover":         true,
-	"/api/v0/auth/recover/keys":    true,
-	"/api/v0/auth/request-account": true,
-	"/api/v0/auth/recovery-key":    true,
-	"/api/v0/auth/password":        true,
-	"/api/v0/storage/devices/role": true,
+	"/api/v0/auth/login":             true,
+	"/api/v0/auth/salt":              true,
+	"/api/v0/auth/setup":             true,
+	"/api/v0/auth/recover":           true,
+	"/api/v0/auth/recover/keys":      true,
+	"/api/v0/auth/recover/vault-key": true,
+	"/api/v0/auth/request-account":   true,
+	"/api/v0/auth/recovery-key":      true,
+	"/api/v0/auth/password":          true,
+	"/api/v0/storage/devices/role":   true,
 }
 
-// vaultRateLimitedPaths are the API paths that use the stricter vault limiter.
-var vaultRateLimitedPaths = map[string]bool{
-	"/api/v0/vault/unlock": true,
+// authRateLimitedPuts are API paths whose PUT re-confirms the password, so
+// it shares the sign-in limit, while a GET of the same path does not.
+var authRateLimitedPuts = map[string]bool{
+	"/api/v0/vault/key": true,
 }
 
 // rateLimit is a middleware that enforces per-IP rate limiting on auth endpoints.
-// The two limiters live on Dependencies, so they are constructed once with the
+// The limiter lives on Dependencies, so it is constructed once with the
 // dependency graph and shared by every request the server handles (#1674).
 func rateLimit(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := ratelimitutil.ExtractIP(c.ClientIP())
 		path := c.Request.URL.Path
-		if vaultRateLimitedPaths[path] {
-			if !deps.VaultRateLimiter().Allow(ip) {
-				c.JSON(http.StatusTooManyRequests, gin.H{"error": "too many requests, please slow down"})
-				c.Abort()
-				return
-			}
-			c.Next()
-			return
-		}
-		if !authRateLimitedPaths[path] {
+		if !authRateLimitedPaths[path] && (c.Request.Method != http.MethodPut || !authRateLimitedPuts[path]) {
 			c.Next()
 			return
 		}
@@ -119,13 +112,14 @@ var downloadTokenPaths = map[string]bool{
 // matched whole, so exempting /settings/public opens nothing else under
 // /settings.
 var authExemptPaths = map[string]bool{
-	"/api/v0/auth/setup":           true,
-	"/api/v0/auth/login":           true,
-	"/api/v0/auth/salt":            true,
-	"/api/v0/auth/recover":         true,
-	"/api/v0/auth/recover/keys":    true,
-	"/api/v0/auth/request-account": true,
-	"/api/v0/auth/status":          true,
+	"/api/v0/auth/setup":             true,
+	"/api/v0/auth/login":             true,
+	"/api/v0/auth/salt":              true,
+	"/api/v0/auth/recover":           true,
+	"/api/v0/auth/recover/keys":      true,
+	"/api/v0/auth/recover/vault-key": true,
+	"/api/v0/auth/request-account":   true,
+	"/api/v0/auth/status":            true,
 	// The sign-in page reads the Quark's theme color before anyone has a session
 	// (#2740). The handler serializes an allowlist, never settings.json.
 	"/api/v0/settings/public": true,

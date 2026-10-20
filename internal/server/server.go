@@ -12,13 +12,11 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
 	// Registers the generated spec that ginSwagger serves at /swagger/doc.json.
 	_ "github.com/autobutler-org/quark/docs/swagger"
-	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/internal/server/middleware"
 	"github.com/autobutler-org/quark/pkg/backup"
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
@@ -26,7 +24,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/chatutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/deviceutil"
-	"github.com/autobutler-org/quark/pkg/util/eventbus"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/fileversionutil"
 	"github.com/autobutler-org/quark/pkg/util/grouputil"
@@ -160,8 +157,6 @@ func setupServices(deps deputil.Dependencies) (*backup.SyncWorker, func(), error
 	// time under the IO semaphore.
 	go backfillPhotoHashes(deps)
 
-	initExternalVault(deps)
-	go vaultDeviceMonitor(deps)
 	go usbDeviceMonitor(deps)
 
 	// The three periodic tasks below each run once per interval across every
@@ -325,68 +320,6 @@ func clearDataTmp(when string) {
 	}
 }
 
-func initExternalVault(deps deputil.Dependencies) {
-	serial, err := deps.Database().Queries.GetVaultLocation(context.Background())
-	if err != nil || serial == "" {
-		return
-	}
-	device, err := deps.StorageService().FindManagedDeviceBySerial(serial)
-	if err != nil || device == nil {
-		log.Printf("[vault] external vault device %s not found at startup — vault unavailable until reconnected", serial)
-		return
-	}
-	dbPath := filepath.Join(device.DataDir, "vault.db")
-	vaultDB, err := db.ConnectToVaultDatabase(dbPath)
-	if err != nil {
-		log.Printf("[vault] failed to open external vault db: %v", err)
-		return
-	}
-	deps.SetVaultDB(vaultDB)
-	log.Printf("[vault] external vault loaded from device %s", serial)
-}
-
-func vaultDeviceMonitor(deps deputil.Dependencies) {
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-
-	wasConnected := true
-
-	for range ticker.C {
-		serial, err := deps.Database().Queries.GetVaultLocation(context.Background())
-		if err != nil || serial == "" {
-			continue
-		}
-
-		device, err := deps.StorageService().FindManagedDeviceBySerial(serial)
-		connected := err == nil && device != nil
-
-		if wasConnected && !connected {
-			log.Printf("[vault] external device %s disconnected — locking vault", serial)
-			deps.VaultSession().LockWithReason("storage device disconnected")
-			deps.ClearVaultDB()
-			deps.EventBus().Publish(eventbus.Event{
-				Kind: eventbus.EventVaultDeviceDisconnected,
-				Data: map[string]string{"serial": serial},
-			})
-			wasConnected = false
-		} else if !wasConnected && connected {
-			log.Printf("[vault] external device %s reconnected — vault available to unlock", serial)
-			dbPath := filepath.Join(device.DataDir, "vault.db")
-			vaultDB, err := db.ConnectToVaultDatabase(dbPath)
-			if err != nil {
-				log.Printf("[vault] failed to reopen vault db: %v", err)
-				continue
-			}
-			deps.SetVaultDB(vaultDB)
-			deps.EventBus().Publish(eventbus.Event{
-				Kind: eventbus.EventVaultDeviceReconnected,
-				Data: map[string]string{"serial": serial},
-			})
-			wasConnected = true
-		}
-	}
-}
-
 // usbDeviceMonitor polls for newly connected USB storage devices and
 // auto-mounts them via storageutil.AutoMountDevice so they are immediately
 // operational without manual user intervention. When the set of mounted USB
@@ -438,10 +371,6 @@ func usbDeviceMonitor(deps deputil.Dependencies) {
 			}
 
 			deps.StorageService().InvalidateDeviceCache()
-			deps.EventBus().Publish(eventbus.Event{
-				Kind: eventbus.EventVaultStorageChanged,
-				Data: map[string]string{"serial": serial},
-			})
 			log.Printf("[storage] auto-mounted new device %s at %s", serial, result.MountTargetPath)
 		}
 	}
@@ -579,7 +508,7 @@ func StartServer(deps deputil.Dependencies, opts StartOptions) error {
 
 	// Before anything is built on the install: a factory reset, served by this
 	// instance or by another on the same database, restarts this process, so
-	// no vault key, cache, index or cached "setup is done" outlives the
+	// no cache, index or cached "setup is done" outlives the
 	// install it was built for (#3085).
 	if _, err := resetutil.Watch(context.Background(), resetutil.WatchParams{
 		Queries: deps.Database().Queries,

@@ -15,13 +15,13 @@ import (
 
 // setRecoveryKey godoc
 // @Summary Set the caller's recovery key
-// @Description Re-confirms the caller with password, which carries the auth key, exactly as DELETE /auth/account takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then gives the signed-in account the recovery key its client derived from a recovery phrase the client generated, (#2430). recoveryKey is the standard base64 of the 32-byte key derived from the phrase and the salt GET /auth/salt returned. chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new phrase, exactly as /auth/recover stores it; nothing changes if any part fails. The client calls this after a sign-in whose response says legacyRecovery, such as the first sign-in of an account an admin created. Shares the sign-in rate limit, and the body is at most 8 KiB.
+// @Description Re-confirms the caller with password, which carries the auth key, exactly as DELETE /auth/account takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is written. Then gives the signed-in account the recovery key its client derived from a recovery phrase the client generated, (#2430). recoveryKey is the standard base64 of the 32-byte key derived from the phrase and the salt GET /auth/salt returned. chatKeys, when sent, replaces the account's chat identity in the same transaction, re-wrapped under the new phrase, exactly as /auth/recover stores it, and vaultKey likewise replaces the wraps of the account's vault key (storing it as the first when the account has none) and publishes vault_changed to the account's sessions; nothing changes if any part fails. The client calls this after a sign-in whose response says legacyRecovery, such as the first sign-in of an account an admin created. Shares the sign-in rate limit, and the body is at most 8 KiB.
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param body body setRecoveryKeyBody true "The caller's auth key, the new recovery key and optionally the re-wrapped chat keys"
+// @Param body body setRecoveryKeyBody true "The caller's auth key, the new recovery key and optionally the re-wrapped chat keys and vault key"
 // @Success 204
-// @Failure 400 {object} serverutil.Response "a malformed recoveryKey or chatKeys"
+// @Failure 400 {object} serverutil.Response "a malformed recoveryKey, chatKeys or vaultKey"
 // @Failure 401 {object} serverutil.Response "no session, or the session's account no longer exists"
 // @Failure 403 {object} serverutil.Response "the auth key is wrong or missing"
 // @Failure 409 {object} serverutil.Response "the account has no auth key yet, so no salt to derive the key with"
@@ -62,7 +62,7 @@ func setRecoveryKey(c *gin.Context) *serverutil.Response {
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
-	afterSet, err := storeChatKeys(c.Request.Context(), req.ChatKeys)
+	afterSet, announce, err := storeRewrappedKeys(c.Request.Context(), *deps, req.ChatKeys, req.VaultKey)
 	if err != nil {
 		return serverutil.BadRequest(err)
 	}
@@ -83,9 +83,7 @@ func setRecoveryKey(c *gin.Context) *serverutil.Response {
 		return serverutil.InternalServerError(err)
 	}
 
-	if afterSet != nil {
-		notifyChatKeyNeeded(c.Request.Context(), *deps)
-	}
+	announce()
 	return serverutil.NewResponse().WithStatusCode(http.StatusNoContent)
 }
 

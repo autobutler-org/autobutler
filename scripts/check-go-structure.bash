@@ -90,8 +90,6 @@ FILES_DIR_ALLOWED=(
     "pkg/util/authutil/authutil.go"
     # Reports where the mount put the files directory; nothing is opened.
     "internal/server/api/v0/storage/enable_usb_storage_device.go"
-    # SQLite opens the vault backup on the drive, and SQLite takes a host path.
-    "internal/server/api/v0/vault/import_vault_backup.go"
 )
 
 # 6. Who may turn a namespace path into a host path.

@@ -24,7 +24,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/sshutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/util/uploadutil"
-	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/quark/pkg/util/workerutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
@@ -73,9 +72,6 @@ type Dependencies interface {
 	SSHSystem() sshutil.System
 	StorageService() *storageutil.StorageService
 	UploadSessions() *uploadutil.SessionStore
-	VaultDB() *db.DatabaseSqlc
-	VaultRateLimiter() *ratelimitutil.Limiter
-	VaultSession() *vaultcrypto.VaultSession
 	Worker() workerutil.Worker
 	// ZipSlots caps how many folder zips are built at once (#2757). Nil
 	// caps nothing.
@@ -100,9 +96,6 @@ type Dependencies interface {
 	WithStorageService(s *storageutil.StorageService) Dependencies
 	WithUploadSessions(store *uploadutil.SessionStore) Dependencies
 	WithVFSRegistry(r vfs.Registry) Dependencies
-	SetVaultDB(database *db.DatabaseSqlc)
-	ClearVaultDB()
-	WithVaultSession(session *vaultcrypto.VaultSession) Dependencies
 	WithWorker(worker workerutil.Worker) Dependencies
 	WithZipSlots(slots *downloadutil.ZipSlots) Dependencies
 }
@@ -132,12 +125,6 @@ func NewDependencies() Dependencies {
 		// authRateLimiter protects auth endpoints (login, setup, recover) from
 		// brute-force attacks. Shared across all requests — 5 req/s per IP, burst 10.
 		authRateLimiter: ratelimitutil.New(),
-		// vaultRateLimiter protects /vault/unlock from master-password brute-force.
-		// Tighter than the general auth limiter: 1 req/2s per IP, burst 5.
-		// After exhausting the burst, the steady-state cap is 0.5 req/s (one every 2s).
-		// Combined with Argon2id (~300 ms/attempt), sustained guessing is limited to
-		// ≈ 30 attempts/minute per IP — well below what any offline attack would need.
-		vaultRateLimiter: ratelimitutil.NewWithRate(0.5, 5),
 		// loginGuard locks out repeated failed sign-ins; see
 		// ratelimitutil.DefaultPairThreshold for the policy.
 		loginGuard: ratelimitutil.NewLoginGuard(ratelimitutil.LoginGuardParams{}),
@@ -195,7 +182,6 @@ func DefaultDependencies() (Dependencies, error) {
 		Database: deps.Database(), // coverage: ignore
 		EventBus: deps.EventBus(), // coverage: ignore
 	})) // coverage: ignore
-	deps.WithVaultSession(vaultcrypto.NewVaultSession()) // coverage: ignore
-	deps.WithIOSemaphore(iosemutil.New())                // coverage: ignore
-	return deps, nil                                     // coverage: ignore - requires database connection
+	deps.WithIOSemaphore(iosemutil.New()) // coverage: ignore
+	return deps, nil                      // coverage: ignore - requires database connection
 }

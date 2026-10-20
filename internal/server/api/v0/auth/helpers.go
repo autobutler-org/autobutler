@@ -14,6 +14,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,32 +38,59 @@ func accountRefusalResponse(err error) *serverutil.Response {
 	})
 }
 
-// storeChatKeys validates chat keys a credential change carries and returns
-// the step that stores them inside that change's transaction, nil when the
-// body carried none. Recovery, a recovery-key rotation and a password change
-// all hand the account's chat identity back re-wrapped (#2416, #2430, #3022).
-func storeChatKeys(ctx context.Context, keys *chatutil.Keys) (func(db.Querier, int64) error, error) {
-	if keys == nil {
-		return nil, nil
+// storeRewrappedKeys validates the chat keys and vault key a credential change
+// carries, and returns the step that stores them inside that change's
+// transaction, nil when the body carried neither, and the announcement to make
+// once the change has committed. Recovery, a recovery-key rotation and a
+// password change all hand the account's chat identity and vault key back
+// re-wrapped (#2416, #2430, #3022, #3459).
+func storeRewrappedKeys(ctx context.Context, deps deputil.Dependencies, chatKeys *chatutil.Keys, vaultKey *vaultutil.Key) (func(db.Querier, int64) error, func(), error) {
+	if chatKeys != nil {
+		if err := chatutil.ValidateKeys(*chatKeys); err != nil {
+			return nil, nil, err
+		}
 	}
-	if err := chatutil.ValidateKeys(*keys); err != nil {
-		return nil, err
+	if vaultKey != nil {
+		if err := vaultutil.ValidateKey(*vaultKey); err != nil {
+			return nil, nil, err
+		}
 	}
-	return func(q db.Querier, userID int64) error {
-		_, err := chatutil.PutKeys(chatutil.PutKeysParams{Ctx: ctx, Queries: q, UserID: userID, Keys: *keys})
-		return err
-	}, nil
-}
-
-// notifyChatKeyNeeded asks channel members to refill key grants after an
-// account's chat keys were stored, as PUT /chat/keys/me does. Best-effort:
-// clients also check when they open a channel.
-func notifyChatKeyNeeded(ctx context.Context, deps deputil.Dependencies) {
-	if _, err := chatutil.NotifyKeyNeeded(chatutil.NotifyKeyNeededParams{
-		Ctx: ctx, Database: deps.Database(), EventBus: deps.EventBus(),
-	}); err != nil {
-		log.Printf("[auth] chat key needs after new keys: %v", err)
+	if chatKeys == nil && vaultKey == nil {
+		return nil, func() {}, nil
 	}
+	// The step learns whose keys these are, which a recovery only knows once
+	// it has checked the recovery key.
+	var owner int64
+	store := func(q db.Querier, userID int64) error {
+		owner = userID
+		if chatKeys != nil {
+			if _, err := chatutil.PutKeys(chatutil.PutKeysParams{Ctx: ctx, Queries: q, UserID: userID, Keys: *chatKeys}); err != nil {
+				return err
+			}
+		}
+		if vaultKey != nil {
+			if _, err := vaultutil.PutKey(vaultutil.PutKeyParams{Ctx: ctx, Queries: q, UserID: userID, Key: *vaultKey}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	announce := func() {
+		// New chat keys ask channel members to refill key grants, as
+		// PUT /chat/keys/me does. Best-effort: clients also check when they
+		// open a channel.
+		if chatKeys != nil {
+			if _, err := chatutil.NotifyKeyNeeded(chatutil.NotifyKeyNeededParams{
+				Ctx: ctx, Database: deps.Database(), EventBus: deps.EventBus(),
+			}); err != nil {
+				log.Printf("[auth] chat key needs after new keys: %v", err)
+			}
+		}
+		if vaultKey != nil {
+			vaultutil.PublishChanged(vaultutil.PublishChangedParams{EventBus: deps.EventBus(), UserID: owner})
+		}
+	}
+	return store, announce, nil
 }
 
 // lockoutResponse answers a sign-in the login guard refused with 429 and

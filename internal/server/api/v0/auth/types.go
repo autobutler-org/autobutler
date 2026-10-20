@@ -3,6 +3,7 @@ package v0_auth
 import (
 	"github.com/autobutler-org/quark/pkg/util/chatutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
+	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 )
 
 type router struct{}
@@ -17,6 +18,7 @@ func (r *router) Routes() []*serverutil.Route {
 		logoutUserRoute,
 		recoverAccountRoute,
 		recoverChatKeysRoute,
+		recoverVaultKeyRoute,
 		setRecoveryKeyRoute,
 		changePasswordRoute,
 		requestAccountRoute,
@@ -118,10 +120,14 @@ type recoverAccountBody struct {
 	// password, stored in the same transaction as the reset (#2416). Absent
 	// leaves the stored keys as they are.
 	ChatKeys *chatutil.Keys `json:"chatKeys,omitempty"`
+	// VaultKey is the account's vault key re-wrapped under the new password,
+	// stored in the same transaction (#3459). Absent leaves it as it is.
+	VaultKey *vaultutil.Key `json:"vaultKey,omitempty"`
 }
 
-// recoverChatKeysBody is what POST /auth/recover/keys reads: the recoveryKey,
-// or a legacy account's recoveryPhrase, as POST /auth/recover takes them.
+// recoverChatKeysBody is what POST /auth/recover/keys and
+// POST /auth/recover/vault-key read: the recoveryKey, or a legacy account's
+// recoveryPhrase, as POST /auth/recover takes them.
 type recoverChatKeysBody struct {
 	Username string `json:"username" binding:"required"`
 	// RecoveryPhrase is the raw phrase of an account that has no recovery key
@@ -143,6 +149,9 @@ type setRecoveryKeyBody struct {
 	// phrase, stored in the same transaction. Absent leaves the stored keys as
 	// they are.
 	ChatKeys *chatutil.Keys `json:"chatKeys,omitempty"`
+	// VaultKey is the account's vault key re-wrapped under the new phrase,
+	// stored in the same transaction. Absent leaves it as it is.
+	VaultKey *vaultutil.Key `json:"vaultKey,omitempty"`
 }
 
 // changePasswordBody is what PUT /auth/password reads.
@@ -158,4 +167,7 @@ type changePasswordBody struct {
 	// password, stored in the same transaction. Absent leaves the stored keys
 	// as they are.
 	ChatKeys *chatutil.Keys `json:"chatKeys,omitempty"`
+	// VaultKey is the account's vault key re-wrapped under the new password,
+	// stored in the same transaction. Absent leaves it as it is.
+	VaultKey *vaultutil.Key `json:"vaultKey,omitempty"`
 }

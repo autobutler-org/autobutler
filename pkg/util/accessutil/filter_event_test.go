@@ -38,7 +38,6 @@ func TestFilterEvent(t *testing.T) {
 		{name: "music library changed", access: stranger, event: eventbus.Event{Kind: eventbus.EventMusicLibraryChanged, DeviceSerial: "USB-1"}},
 		{name: "resync", access: stranger, event: eventbus.Event{Kind: eventbus.EventResync, Data: eventbus.Resync{Dropped: 3}}},
 		{name: "backup dropped", access: before, event: eventbus.Event{Kind: eventbus.EventBackupProgress}, want: &eventbus.Event{}},
-		{name: "vault dropped", access: before, event: eventbus.Event{Kind: eventbus.EventVaultStorageChanged}, want: &eventbus.Event{}},
 		{name: "readable upload", access: before, event: eventbus.Event{Kind: eventbus.EventUpload, Path: "shared/sub"}},
 		{name: "unreadable upload", access: before, event: eventbus.Event{Kind: eventbus.EventUpload, Path: "private"}, want: &eventbus.Event{}},
 		{name: "upload at the root", access: before, event: eventbus.Event{Kind: eventbus.EventUpload}, want: &eventbus.Event{}},
@@ -246,6 +245,45 @@ func TestFilterEventChatReadMarker(t *testing.T) {
 		t.Fatal(err)
 	}
 	if want := `{"kind":"chat_read_marker_changed","data":{"channelId":7,"lastReadMessageId":3,"unreadCount":2}}`; string(body) != want {
+		t.Errorf("event JSON = %s, want %s", body, want)
+	}
+}
+
+// TestFilterEventVaultChanged passes vault_changed only to the account whose
+// vault changed, never to another account or an admin (#3459).
+func TestFilterEventVaultChanged(t *testing.T) {
+	f := newFixture(t)
+	stranger := f.load(t, accessutil.Principal{UserID: createUser(t, f.database, "carol")})
+	admin := f.load(t, accessutil.Principal{UserID: createUser(t, f.database, "root"), IsAdmin: true})
+	owner := f.load(t, accessutil.Principal{UserID: f.userID})
+	changed := eventbus.Event{
+		Kind: eventbus.EventVaultChanged,
+		Data: eventbus.VaultChanged{ItemID: 7, UserID: f.userID},
+	}
+	for _, tc := range []struct {
+		name   string
+		access accessutil.Access
+		event  eventbus.Event
+		want   bool
+	}{
+		{name: "owner", access: owner, event: changed, want: true},
+		{name: "another account", access: stranger, event: changed},
+		{name: "admin", access: admin, event: changed},
+		{name: "system", access: f.load(t, accessutil.System), event: changed},
+		{name: "no data", access: owner, event: eventbus.Event{Kind: eventbus.EventVaultChanged}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := accessutil.FilterEvent(accessutil.FilterEventParams{Access: tc.access, Event: tc.event}); got.Deliver != tc.want {
+				t.Errorf("Deliver = %v, want %v", got.Deliver, tc.want)
+			}
+		})
+	}
+
+	body, err := json.Marshal(changed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"kind":"vault_changed","data":{"itemId":7}}`; string(body) != want {
 		t.Errorf("event JSON = %s, want %s", body, want)
 	}
 }

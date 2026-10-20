@@ -1703,7 +1703,7 @@ type DeleteAccountResult struct {
 // database reset or rotated here, and every instance serving the install
 // restarts when it sees one (resetutil.Watch), the one that served this call
 // included. Nothing held in memory for the old install outlives that: the
-// vault key, the caches, the file index, the cached "setup is done" (#3085).
+// caches, the file index, the cached "setup is done" (#3085).
 // Deleting one account is not a reset and restarts nothing.
 //
 // Every step is idempotent: removing a directory that is already gone,
@@ -1775,8 +1775,8 @@ func DeleteAccount(ctx context.Context, params DeleteAccountParams) (DeleteAccou
 	} else if result.FilesDeleted || result.DevicesDeleted {
 		// The database reset issues a new install id itself. A reset that
 		// leaves the database standing has to rotate it, or the other
-		// instances keep their file index, caches and vault key for trees
-		// that are gone (#3085).
+		// instances keep their file index and caches for trees that are
+		// gone (#3085).
 		if err := params.Queries.RotateInstallID(ctx, db.NewInstallID()); err != nil {
 			return result, fmt.Errorf("failed to issue a new install id: %w", err)
 		}

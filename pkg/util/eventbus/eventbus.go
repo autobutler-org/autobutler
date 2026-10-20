@@ -37,9 +37,11 @@ const (
 	EventJobFailed    EventKind = "job_failed"
 	EventJobCanceled  EventKind = "job_canceled"
 
-	EventVaultDeviceDisconnected EventKind = "vault_device_disconnected"
-	EventVaultDeviceReconnected  EventKind = "vault_device_reconnected"
-	EventVaultStorageChanged     EventKind = "vault_storage_changed"
+	// EventVaultChanged fires when an account's vault key is created or
+	// re-wrapped, an item is created, updated or deleted, or the whole vault
+	// is deleted (#3459), so that account's other sessions refetch. Data is a
+	// VaultChanged; Path is empty.
+	EventVaultChanged EventKind = "vault_changed"
 
 	// EventAccountChanged fires when an account's role changes (promoted or
 	// demoted), so signed-in apps refetch what they are allowed to show.
@@ -171,6 +173,17 @@ type ChatReadMarkerChanged struct {
 	// UnreadCount is the account's unread count in the channel after the move.
 	UnreadCount int64 `json:"unreadCount"`
 	// UserID is the account whose marker moved. It is never sent.
+	UserID int64 `json:"-"`
+}
+
+// VaultChanged is the data of a vault_changed event. Like a read marker it
+// reaches only the sessions of the account whose vault changed: nobody else
+// hears it, an admin included.
+type VaultChanged struct {
+	// ItemID is the item created, updated or deleted, and 0 when the change was
+	// to the key or the whole vault.
+	ItemID int64 `json:"itemId"`
+	// UserID is the account whose vault changed. It is never sent.
 	UserID int64 `json:"-"`
 }
 

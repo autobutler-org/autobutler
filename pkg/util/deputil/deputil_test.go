@@ -22,9 +22,6 @@ func TestNewDependencies(t *testing.T) {
 	if deps.AuthRateLimiter() == nil {
 		t.Error("Expected AuthRateLimiter() to be ready")
 	}
-	if deps.VaultRateLimiter() == nil {
-		t.Error("Expected VaultRateLimiter() to be ready")
-	}
 	if deps.ChatRateLimiter() == nil {
 		t.Error("Expected ChatRateLimiter() to be ready")
 	}

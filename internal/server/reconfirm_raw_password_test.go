@@ -14,8 +14,6 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
-	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
-	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 	"github.com/gin-gonic/gin"
 )
@@ -37,11 +35,7 @@ func TestReconfirm_RawPasswordIsUpdateTheApp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("authutil.Setup: %v", err)
 	}
-	session := vaultcrypto.NewVaultSession()
-	if _, err := vaultutil.Setup(ctx, vaultutil.SetupParams{Queries: database.Queries, Session: session, MasterPassword: "vault-master-password"}); err != nil {
-		t.Fatalf("vaultutil.Setup: %v", err)
-	}
-	deps := deputil.NewDependencies().WithDatabase(database).WithVaultSession(session)
+	deps := deputil.NewDependencies().WithDatabase(database)
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
 	middleware.Use(engine, deps)
@@ -68,7 +62,6 @@ func TestReconfirm_RawPasswordIsUpdateTheApp(t *testing.T) {
 		{http.MethodDelete, "/api/v0/auth/account?account=true", map[string]string{"password": raw}},
 		{http.MethodPut, "/api/v0/auth/recovery-key", map[string]string{"password": raw, "recoveryKey": dbtest.AuthKey("phrase")}},
 		{http.MethodPut, "/api/v0/auth/password", map[string]string{"password": raw, "newAuthKey": dbtest.AuthKey("new-password")}},
-		{http.MethodPut, "/api/v0/vault/storage-location", map[string]string{"targetDeviceSerial": "", "username": "admin", "password": raw}},
 		{http.MethodPut, "/api/v0/storage/devices/role", map[string]string{"serial": "", "role": "unassigned", "username": "admin", "password": raw}},
 	} {
 		w := send(tc.method, tc.path, tc.body)
@@ -82,7 +75,7 @@ func TestReconfirm_RawPasswordIsUpdateTheApp(t *testing.T) {
 	}
 
 	basic := func(password string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodGet, "/api/v0/vault/status", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v0/vault/items", nil)
 		req.SetBasicAuth("admin", password)
 		w := httptest.NewRecorder()
 		engine.ServeHTTP(w, req)

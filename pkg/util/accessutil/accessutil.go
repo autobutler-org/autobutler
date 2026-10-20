@@ -522,11 +522,13 @@ type FilterEventResult struct {
 //   - chat_read_marker_changed passes only to the account whose marker moved,
 //     so its other sessions clear their unread count. Admins get no pass here
 //     either.
+//   - vault_changed passes only to the account whose vault changed, so its
+//     other sessions refetch. The vault is private to its owner, admins too.
 //   - Otherwise an admin hears every event unchanged.
 //   - trash_changed, account_changed and music_library_changed carry no path
 //     and pass: each tells an open app to refetch something that answers for
-//     the caller already. The backup and vault events are appliance-wide and
-//     are dropped.
+//     the caller already. The backup events are appliance-wide and are
+//     dropped.
 //   - A move between two readable paths passes. A move into a readable path
 //     from an unreadable one reads as an upload into the new path's folder, and
 //     one out of a readable path into an unreadable one as a delete of the old
@@ -560,6 +562,10 @@ func FilterEvent(params FilterEventParams) FilterEventResult {
 		changed, ok := evt.Data.(eventbus.ChatReadMarkerChanged)
 		return FilterEventResult{Event: evt, Deliver: ok && changed.UserID != 0 && changed.UserID == access.principal.UserID}
 	}
+	if evt.Kind == eventbus.EventVaultChanged {
+		changed, ok := evt.Data.(eventbus.VaultChanged)
+		return FilterEventResult{Event: evt, Deliver: ok && changed.UserID != 0 && changed.UserID == access.principal.UserID}
+	}
 	if access.principal.IsAdmin {
 		return FilterEventResult{Event: evt, Deliver: true}
 	}
@@ -573,8 +579,7 @@ func FilterEvent(params FilterEventParams) FilterEventResult {
 		eventbus.EventMusicLibraryChanged, eventbus.EventResync:
 		return FilterEventResult{Event: evt, Deliver: true}
 	case eventbus.EventBackupStarted, eventbus.EventBackupProgress, eventbus.EventBackupCompleted,
-		eventbus.EventBackupFailed, eventbus.EventVaultDeviceDisconnected, eventbus.EventVaultDeviceReconnected,
-		eventbus.EventVaultStorageChanged:
+		eventbus.EventBackupFailed:
 		return FilterEventResult{}
 	case eventbus.EventMove:
 		oldReadable, newReadable := readable(evt.Path), readable(evt.NewPath)

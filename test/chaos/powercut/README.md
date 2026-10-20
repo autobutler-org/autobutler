@@ -1,6 +1,6 @@
 # Power-cut suite
 
-Cuts the power under Quark's upload and vault write paths and checks that nothing is corrupted (#2517). What
+Cuts the power under Quark's upload write paths and checks that nothing is corrupted (#2517). What
 the guarantees are and why they hold is in [`docs/architecture/durability.md`](../../../docs/architecture/durability.md);
 this directory is how they are tested.
 
@@ -35,11 +35,10 @@ a user would see it. Each case runs `POWERCUT_ROUNDS` times (default 3), armed a
 | Scenario | Write path under test                                                                     | The check                                                                                          |
 | -------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `upload` | `LocalVFS.Write`, `LocalVFS.MoveFileIn`, `uploadutil.WriteMultipartVFS` into a device-serial namespace, in turn     | every acknowledged file holds its full content; every file a listing shows does too                |
-| `vault`  | `vaultutil.Setup`, `CreateEntry`, and a `ChangePassword` every ten entries                 | `integrity_check` passes; it unlocks with the last acknowledged password (or the one being set); every acknowledged entry is there and decrypts |
 
 The cut points are listed in `CASES` in `run.bash`: mid-stream into an upload's temp, the instant an upload is
-renamed or linked into place, any flush, a vault transaction with its journal on disk but not its database, a
-half-written database page, and the commit point.
+renamed or linked into place, and any flush. The household vault's scenario went with the server-side vault
+crypto it exercised (#3459): the per-account vault is ordinary rows in the main database.
 
 ## Files
 

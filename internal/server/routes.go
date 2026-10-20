@@ -77,6 +77,7 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 		v0_thumbnails.NewRouter(),
 		v0_trash.NewRouter(),
 		v0_users.NewRouter(),
+		v0_vault.NewRouter(),
 		v0_version.NewRouter(),
 		v0_versions.NewRouter(),
 		v0_videos.NewRouter(),
@@ -94,7 +95,6 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_settings.NewAdminRouter())
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_ssh.NewRouter())
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_storage.NewAdminRouter())
-	serverutil.RegisterRouterWithGroup(adminGroup, v0_vault.NewRouter())
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_version.NewAdminRouter())
 }
 

@@ -26,9 +26,9 @@ type WatchParams struct {
 	Interval time.Duration
 	// OnReset is called once, from Watch's goroutine, when the install id is
 	// no longer the one this instance booted on. Everything the process holds
-	// in memory then belongs to an install that no longer exists (the vault
-	// key, the access and listing caches, the file index, the cached "setup
-	// is done"), so the server's OnReset restarts the process.
+	// in memory then belongs to an install that no longer exists (the access
+	// and listing caches, the file index, the cached "setup is done"), so the
+	// server's OnReset restarts the process.
 	OnReset func()
 }
 

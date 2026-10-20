@@ -1256,6 +1256,12 @@ definitions:
           now, so a session alone cannot change the password, as delete-account
           takes it. A raw password is refused with 426 (#2430).
         type: string
+      vaultKey:
+        allOf:
+        - $ref: '#/definitions/vaultutil.Key'
+        description: |-
+          VaultKey is the account's vault key re-wrapped under the new password,
+          stored in the same transaction. Absent leaves it as it is.
     required:
     - newAuthKey
     type: object
@@ -1356,6 +1362,12 @@ definitions:
         type: string
       username:
         type: string
+      vaultKey:
+        allOf:
+        - $ref: '#/definitions/vaultutil.Key'
+        description: |-
+          VaultKey is the account's vault key re-wrapped under the new password,
+          stored in the same transaction (#3459). Absent leaves it as it is.
     required:
     - username
     type: object
@@ -1410,6 +1422,12 @@ definitions:
           RecoveryKey is the standard base64 of the 32-byte key the client derived
           from the phrase it generated and the account's auth salt.
         type: string
+      vaultKey:
+        allOf:
+        - $ref: '#/definitions/vaultutil.Key'
+        description: |-
+          VaultKey is the account's vault key re-wrapped under the new phrase,
+          stored in the same transaction. Absent leaves it as it is.
     required:
     - recoveryKey
     type: object
@@ -2250,126 +2268,38 @@ definitions:
           the value clients append to the avatar URL as ?v=.
         type: integer
     type: object
-  v0_vault.changePasswordRequest:
+  v0_vault.createVaultKeyBody:
     properties:
-      currentPassword:
+      createdAt:
         type: string
-      newPassword:
+      kdfParams:
+        description: KdfParams is the client's JSON object recording the Argon2id
+          cost.
+        type: object
+      password:
+        description: |-
+          Password is the standard base64 auth key of the caller's login
+          password, as DELETE /auth/account and PUT /auth/recovery-key take it.
         type: string
-    required:
-    - currentPassword
-    - newPassword
-    type: object
-  v0_vault.createEntryRequest:
-    properties:
-      customFields:
+      saltPw:
         items:
-          $ref: '#/definitions/vaultutil.CustomField'
+          type: integer
         type: array
-      folderId:
-        type: integer
-      name:
+      saltRp:
+        items:
+          type: integer
+        type: array
+      updatedAt:
         type: string
-      notes:
-        type: string
-      password:
-        type: string
-      totpSecret:
-        type: string
-      url:
-        type: string
-      username:
-        type: string
-    required:
-    - name
-    type: object
-  v0_vault.createFolderRequest:
-    properties:
-      name:
-        type: string
-      parentId:
-        type: integer
-      sortOrder:
-        type: integer
-    required:
-    - name
-    type: object
-  v0_vault.generateRequest:
-    properties:
-      avoidAmbiguous:
-        type: boolean
-      digits:
-        type: boolean
-      length:
-        type: integer
-      lowercase:
-        type: boolean
-      symbols:
-        type: boolean
-      uppercase:
-        type: boolean
-    type: object
-  v0_vault.importBackupRequest:
-    properties:
-      deviceSerial:
-        type: string
-      recoveryPassword:
-        type: string
-    required:
-    - deviceSerial
-    - recoveryPassword
-    type: object
-  v0_vault.setStorageLocationRequest:
-    properties:
-      password:
-        type: string
-      targetDeviceSerial:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
-  v0_vault.setupRequest:
-    properties:
-      masterPassword:
-        type: string
-    required:
-    - masterPassword
-    type: object
-  v0_vault.storageLocationResponse:
-    properties:
-      deviceConnected:
-        type: boolean
-      deviceName:
-        type: string
-      deviceSerial:
-        type: string
-      isExternal:
-        type: boolean
-    type: object
-  v0_vault.unlockRequest:
-    properties:
-      masterPassword:
-        type: string
-    required:
-    - masterPassword
-    type: object
-  v0_vault.vaultStatusResponse:
-    properties:
-      autoLockSeconds:
-        type: integer
-      deviceConnected:
-        type: boolean
-      initialized:
-        type: boolean
-      lockReason:
-        type: string
-      locked:
-        type: boolean
-      storageDevice:
-        type: string
+      wrappedByPassword:
+        items:
+          type: integer
+        type: array
+      wrappedByPhrase:
+        description: WrappedByPhrase and SaltRp are both present or both absent.
+        items:
+          type: integer
+        type: array
     type: object
   v0_version.SbomDependencyJSON:
     properties:
@@ -2598,110 +2528,75 @@ definitions:
       relPath:
         type: string
     type: object
-  vaultutil.CustomField:
+  vaultutil.Item:
     properties:
-      hidden:
-        type: boolean
-      name:
-        type: string
-      value:
-        type: string
-    type: object
-  vaultutil.EntryDetail:
-    properties:
+      ciphertext:
+        items:
+          type: integer
+        type: array
       createdAt:
         type: string
-      customFields:
-        items:
-          $ref: '#/definitions/vaultutil.CustomField'
-        type: array
-      folderId:
+      formatVersion:
         type: integer
       id:
         type: integer
-      name:
-        type: string
-      notes:
-        type: string
-      password:
-        type: string
-      totpSecret:
-        type: string
+      nonce:
+        items:
+          type: integer
+        type: array
       updatedAt:
         type: string
-      url:
-        type: string
-      urlHost:
-        type: string
-      username:
-        type: string
     type: object
-  vaultutil.ExportEntry:
+  vaultutil.ItemFields:
     properties:
-      customFields:
+      ciphertext:
         items:
-          $ref: '#/definitions/vaultutil.CustomField'
+          type: integer
         type: array
-      folderName:
-        type: string
-      name:
-        type: string
-      notes:
-        type: string
-      password:
-        type: string
-      totpSecret:
-        type: string
-      url:
-        type: string
-      urlHost:
-        type: string
-      username:
-        type: string
-    type: object
-  vaultutil.ExportJSON:
-    properties:
-      entries:
+      formatVersion:
+        description: |-
+          FormatVersion is the client's version of the plaintext layout, at
+          least 1.
+        type: integer
+      nonce:
         items:
-          $ref: '#/definitions/vaultutil.ExportEntry'
-        type: array
-      folders:
-        items:
-          type: string
+          type: integer
         type: array
     type: object
-  vaultutil.Folder:
+  vaultutil.Key:
     properties:
       createdAt:
         type: string
-      id:
-        type: integer
-      name:
-        type: string
-      parentId:
-        type: integer
-      sortOrder:
-        type: integer
-    type: object
-  vaultutil.ImportResult:
-    properties:
-      errors:
+      kdfParams:
+        description: KdfParams is the client's JSON object recording the Argon2id
+          cost.
+        type: object
+      saltPw:
         items:
-          type: string
+          type: integer
         type: array
-      ignored:
-        type: integer
-      imported:
-        type: integer
-      skipped:
-        type: integer
+      saltRp:
+        items:
+          type: integer
+        type: array
+      updatedAt:
+        type: string
+      wrappedByPassword:
+        items:
+          type: integer
+        type: array
+      wrappedByPhrase:
+        description: WrappedByPhrase and SaltRp are both present or both absent.
+        items:
+          type: integer
+        type: array
     type: object
 info:
   contact: {}
   description: |-
     The REST API a Quark device serves to its Flutter clients. Every endpoint except
     /auth/setup, /auth/login, /auth/salt, /auth/recover, /auth/recover/keys,
-    /auth/request-account and /auth/status needs a session token. Sign in with POST /auth/login,
+    /auth/recover/vault-key, /auth/request-account and /auth/status needs a session token. Sign in with POST /auth/login,
     then click Authorize and enter the word Bearer, a space, and the token. Login takes the auth
     key a client derives from the password and the salt GET /auth/salt returns; the password
     alone is refused with 426 (#2430). A script gets that key from quark auth-key,
@@ -4225,13 +4120,15 @@ paths:
         base64 of the 32-byte key the client derived from the new password and the
         salt GET /auth/salt returned (#3022). chatKeys, when sent, replaces the account's
         chat identity in the same transaction, re-wrapped under the new password,
-        exactly as /auth/recover stores it; nothing changes if any part fails. Every
-        other session of the account is signed out in the same transaction; this one
-        stays signed in. Shares the sign-in rate limit, and the body is at most 8
-        KiB.
+        exactly as /auth/recover stores it, and vaultKey likewise replaces the wraps
+        of the account's vault key (storing it as the first when the account has none)
+        and publishes vault_changed to the account's sessions; nothing changes if
+        any part fails. Every other session of the account is signed out in the same
+        transaction; this one stays signed in. Shares the sign-in rate limit, and
+        the body is at most 8 KiB.
       parameters:
       - description: The caller's auth key, the new password's auth key and optionally
-          the re-wrapped chat keys
+          the re-wrapped chat keys and vault key
         in: body
         name: body
         required: true
@@ -4243,7 +4140,7 @@ paths:
         "204":
           description: No Content
         "400":
-          description: a malformed newAuthKey or chatKeys
+          description: a malformed newAuthKey, chatKeys or vaultKey
           schema:
             $ref: '#/definitions/serverutil.Response'
         "401":
@@ -4290,10 +4187,13 @@ paths:
         refused with 426 (#2430). chatKeys, when sent, replaces the account''s chat
         identity in the same transaction: the client fetched it from /auth/recover/keys,
         opened it with the phrase and re-wrapped it under the new password (#2416).
-        The body is at most 8 KiB.'
+        vaultKey, when sent, likewise replaces the wraps of the account''s vault key
+        in the same transaction, fetched from /auth/recover/vault-key and re-wrapped
+        the same way (storing it as the first when the account has none), and publishes
+        vault_changed to the account''s sessions (#3459). The body is at most 8 KiB.'
       parameters:
       - description: The account, its recovery key or legacy phrase, the new keys,
-          and optionally its re-wrapped chat keys
+          and optionally its re-wrapped chat keys and vault key
         in: body
         name: body
         required: true
@@ -4374,6 +4274,57 @@ paths:
       summary: Fetch chat keys for account recovery
       tags:
       - auth
+  /auth/recover/vault-key:
+    post:
+      consumes:
+      - application/json
+      description: The vault's half of the first step of recovering an account (#3459),
+        beside POST /auth/recover/keys for chat. Checks the recovery key exactly as
+        /auth/recover does, changes nothing, and returns the account's wrapped vault
+        key so the client can open it with the phrase wrap key and send it back re-wrapped
+        under the new password as vaultKey in /auth/recover. Needs no session and
+        shares the sign-in rate limit. An unknown username or a wrong key reads as
+        a wrong phrase. A legacy account, one GET /auth/salt calls legacyRecovery,
+        may send its raw recoveryPhrase in place of recoveryKey, as /auth/recover/keys
+        takes it.
+      parameters:
+      - description: The account and its recovery key, or a legacy account's phrase
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v0_auth.recoverChatKeysBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vaultutil.Key'
+        "400":
+          description: a wrong key or phrase, an unknown username, or a missing or
+            malformed key
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "403":
+          description: status is pending or disabled
+          schema:
+            $ref: '#/definitions/v0_auth.accountRefusal'
+        "404":
+          description: the account has no vault
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      summary: Fetch the vault key for account recovery
+      tags:
+      - auth
   /auth/recovery-key:
     put:
       consumes:
@@ -4385,13 +4336,15 @@ paths:
         generated, (#2430). recoveryKey is the standard base64 of the 32-byte key
         derived from the phrase and the salt GET /auth/salt returned. chatKeys, when
         sent, replaces the account's chat identity in the same transaction, re-wrapped
-        under the new phrase, exactly as /auth/recover stores it; nothing changes
-        if any part fails. The client calls this after a sign-in whose response says
-        legacyRecovery, such as the first sign-in of an account an admin created.
-        Shares the sign-in rate limit, and the body is at most 8 KiB.
+        under the new phrase, exactly as /auth/recover stores it, and vaultKey likewise
+        replaces the wraps of the account's vault key (storing it as the first when
+        the account has none) and publishes vault_changed to the account's sessions;
+        nothing changes if any part fails. The client calls this after a sign-in whose
+        response says legacyRecovery, such as the first sign-in of an account an admin
+        created. Shares the sign-in rate limit, and the body is at most 8 KiB.
       parameters:
       - description: The caller's auth key, the new recovery key and optionally the
-          re-wrapped chat keys
+          re-wrapped chat keys and vault key
         in: body
         name: body
         required: true
@@ -4403,7 +4356,7 @@ paths:
         "204":
           description: No Content
         "400":
-          description: a malformed recoveryKey or chatKeys
+          description: a malformed recoveryKey, chatKeys or vaultKey
           schema:
             $ref: '#/definitions/serverutil.Response'
         "401":
@@ -9645,686 +9598,157 @@ paths:
       summary: Set your profile picture
       tags:
       - users
-  /vault/change-password:
-    put:
-      consumes:
-      - application/json
-      description: Re-derives the vault key from a new master password and re-encrypts
-        every entry under it.
-      parameters:
-      - description: Current and new master password
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v0_vault.changePasswordRequest'
-      produces:
-      - application/json
+  /vault:
+    delete:
+      description: Deletes every item of the caller's vault and its vault key in one
+        transaction, so an account locked out of its vault, having lost both its password
+        and its recovery phrase, can start over with PUT /vault/key. An account with
+        no vault gets 204 too. Publishes vault_changed to the caller's sessions.
       responses:
-        "200":
-          description: changed and reEncrypted flags
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
+        "204":
+          description: No Content
         "401":
-          description: Incorrect current password
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Vault is locked
+          description: Unauthorized
           schema:
             $ref: '#/definitions/serverutil.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
       security:
       - BearerAuth: []
-      summary: Change the master password
+      summary: Delete the caller's vault
       tags:
       - vault
-  /vault/entries:
+  /vault/items:
     get:
-      description: Returns every entry's clear-text metadata. Passwords and notes
-        stay encrypted; read one entry to decrypt it.
+      description: 'Returns every item of the caller''s vault, entries and folders
+        alike, oldest first, as stored: ciphertext and nonce in base64 and the client''s
+        formatVersion. What an item is lives inside its ciphertext. An account with
+        no vault gets an empty list.'
       produces:
       - application/json
       responses:
         "200":
-          description: 'entries: array of vaultutil.EntryListItem'
+          description: OK
           schema:
-            type: object
+            items:
+              $ref: '#/definitions/vaultutil.Item'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/serverutil.Response'
       security:
       - BearerAuth: []
-      summary: List vault entries
+      summary: List the caller's vault items
       tags:
       - vault
     post:
       consumes:
       - application/json
-      description: Encrypts a new entry with the unlocked vault key and stores it.
+      description: 'Stores a new item, an entry or a folder, encrypted on the client
+        under the caller''s vault key: a non-empty ciphertext, a nonce of at most
+        64 bytes, both base64, and formatVersion, the client''s plaintext layout version,
+        at least 1. The body is at most 1 MiB. The caller must have set its vault
+        up with PUT /vault/key first, or gets 409. Publishes vault_changed with the
+        new item''s id to the caller''s sessions.'
       parameters:
-      - description: Entry fields
+      - description: The encrypted item
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v0_vault.createEntryRequest'
+          $ref: '#/definitions/vaultutil.ItemFields'
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
-            $ref: '#/definitions/vaultutil.EntryDetail'
+            $ref: '#/definitions/vaultutil.Item'
         "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Vault is locked
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Create a vault entry
-      tags:
-      - vault
-  /vault/entries/{id}:
-    delete:
-      description: Removes one entry from the vault.
-      parameters:
-      - description: Entry ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: deleted flag
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Vault is locked
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Delete a vault entry
-      tags:
-      - vault
-    get:
-      description: Decrypts and returns one entry in full, including its password.
-        Requires the vault unlocked.
-      parameters:
-      - description: Entry ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vaultutil.EntryDetail'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Vault is locked
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Get a decrypted vault entry
-      tags:
-      - vault
-    put:
-      consumes:
-      - application/json
-      description: 'Replaces an entry wholesale: any field omitted from the body is
-        cleared, not kept.'
-      parameters:
-      - description: Entry ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Replacement entry fields
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v0_vault.createEntryRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: id of the updated entry
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Vault is locked
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Update a vault entry
-      tags:
-      - vault
-  /vault/export:
-    get:
-      description: Decrypts every entry and returns it as a download. This is plaintext
-        secrets, so the response is never cached.
-      parameters:
-      - description: json (default) or csv
-        enum:
-        - json
-        - csv
-        in: query
-        name: format
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vaultutil.ExportJSON'
-        "423":
-          description: Vault is locked
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Export the vault in the clear
-      tags:
-      - vault
-  /vault/folders:
-    get:
-      description: Returns every folder. Folder names are not encrypted.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'folders: array of vaultutil.Folder'
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: List vault folders
-      tags:
-      - vault
-    post:
-      consumes:
-      - application/json
-      description: Adds a folder, optionally nested under a parent.
-      parameters:
-      - description: Folder fields
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v0_vault.createFolderRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vaultutil.Folder'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Create a vault folder
-      tags:
-      - vault
-  /vault/folders/{id}:
-    delete:
-      description: Removes one folder.
-      parameters:
-      - description: Folder ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: deleted flag
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Vault is locked
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Delete a vault folder
-      tags:
-      - vault
-    put:
-      consumes:
-      - application/json
-      description: Renames or re-parents one folder.
-      parameters:
-      - description: Folder ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Replacement folder fields
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v0_vault.createFolderRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: id of the updated folder
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Update a vault folder
-      tags:
-      - vault
-  /vault/generate:
-    post:
-      consumes:
-      - application/json
-      description: Returns a random password. An absent or unparsable body falls back
-        to 20 characters of every class.
-      parameters:
-      - description: Generator options
-        in: body
-        name: body
-        schema:
-          $ref: '#/definitions/v0_vault.generateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: generated password
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Generate a password
-      tags:
-      - vault
-  /vault/import:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Takes an uploaded export and writes its entries in. Existing name
-        plus host matches are skipped, not duplicated.
-      parameters:
-      - description: Export file
-        in: formData
-        name: file
-        required: true
-        type: file
-      - description: 'Source format: auto, json, bitwarden, proton, google or csv;
-          sniffed from the bytes when absent'
-        in: formData
-        name: format
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vaultutil.ImportResult'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Vault is locked
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Import entries from a file
-      tags:
-      - vault
-  /vault/import-backup:
-    post:
-      consumes:
-      - application/json
-      description: Reads the encrypted backup on a managed device, unlocks it with
-        its recovery password, and merges it in.
-      parameters:
-      - description: Device serial and recovery password
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v0_vault.importBackupRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/vaultutil.ImportResult'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Vault is locked
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "503":
-          description: Vault storage device is disconnected
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Import a vault backup from a device
-      tags:
-      - vault
-  /vault/lock:
-    post:
-      description: Drops the in-memory vault key immediately, before the auto-lock
-        window expires.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: locked flag
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Lock the vault
-      tags:
-      - vault
-  /vault/setup:
-    post:
-      consumes:
-      - application/json
-      description: Creates the vault with a master password and leaves it unlocked.
-        Fails if it already exists.
-      parameters:
-      - description: Master password
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v0_vault.setupRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: initialized and locked flags
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Initialize the vault
-      tags:
-      - vault
-  /vault/status:
-    get:
-      description: Reports whether the vault is initialized and unlocked, its auto-lock
-        window, and which device holds it.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v0_vault.vaultStatusResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Get vault status
-      tags:
-      - vault
-  /vault/storage-location:
-    get:
-      description: Returns which device the vault is stored on
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v0_vault.storageLocationResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/serverutil.Response'
-      security:
-      - BearerAuth: []
-      summary: Get vault storage location
-      tags:
-      - vault
-    put:
-      consumes:
-      - application/json
-      description: Migrates vault data to a different device. Requires vault unlocked
-        and admin auth.
-      parameters:
-      - description: Migration request
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v0_vault.setStorageLocationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
+          description: an item of the wrong size or shape
           schema:
             $ref: '#/definitions/serverutil.Response'
         "401":
           description: Unauthorized
           schema:
             $ref: '#/definitions/serverutil.Response'
-        "423":
-          description: Locked
+        "409":
+          description: the caller has no vault yet
           schema:
             $ref: '#/definitions/serverutil.Response'
-        "426":
-          description: 'password is a raw password, not the auth key: the app is too
-            old'
+        "413":
+          description: a body over 1 MiB
           schema:
             $ref: '#/definitions/serverutil.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/serverutil.Response'
-        "501":
-          description: Moving the vault is not supported on the PostgreSQL backend
-            yet
+      security:
+      - BearerAuth: []
+      summary: Add an item to the caller's vault
+      tags:
+      - vault
+  /vault/items/{id}:
+    delete:
+      description: Deletes one item of the caller's vault. Another account's item
+        id, or one that names nothing, is a 404, for an admin too, and deletes nothing.
+        Publishes vault_changed with the item's id to the caller's sessions.
+      parameters:
+      - description: Item id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: the caller has no item with that id
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/serverutil.Response'
       security:
       - BearerAuth: []
-      summary: Change vault storage location
+      summary: Delete one of the caller's vault items
       tags:
       - vault
-  /vault/unlock:
-    post:
-      consumes:
-      - application/json
-      description: Derives the vault key from the master password and holds it for
-        the auto-lock window.
+    get:
+      description: Returns one item of the caller's vault as stored. Another account's
+        item id, or one that names nothing, is a 404, for an admin too.
       parameters:
-      - description: Master password
-        in: body
-        name: body
+      - description: Item id
+        in: path
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/v0_vault.unlockRequest'
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: locked flag
+          description: OK
           schema:
-            type: object
-        "400":
-          description: Bad Request
+            $ref: '#/definitions/vaultutil.Item'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/serverutil.Response'
-        "401":
-          description: Incorrect master password
+        "404":
+          description: the caller has no item with that id
           schema:
             $ref: '#/definitions/serverutil.Response'
         "500":
@@ -10333,7 +9757,157 @@ paths:
             $ref: '#/definitions/serverutil.Response'
       security:
       - BearerAuth: []
-      summary: Unlock the vault
+      summary: Get one of the caller's vault items
+      tags:
+      - vault
+    put:
+      consumes:
+      - application/json
+      description: Replaces an item's ciphertext, nonce and formatVersion, with the
+        body POST /vault/items takes, at most 1 MiB. Another account's item id, or
+        one that names nothing, is a 404, for an admin too, and changes nothing. Publishes
+        vault_changed with the item's id to the caller's sessions.
+      parameters:
+      - description: Item id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: The re-encrypted item
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/vaultutil.ItemFields'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vaultutil.Item'
+        "400":
+          description: an item of the wrong size or shape
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: the caller has no item with that id
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "413":
+          description: a body over 1 MiB
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Replace one of the caller's vault items
+      tags:
+      - vault
+  /vault/key:
+    get:
+      description: Returns the caller's vault key, wrapped on the client under the
+        login password and, when present, the recovery phrase. Byte fields are base64
+        and kdfParams is the client's own object. The Quark never opens it. 404 means
+        the caller has no vault yet and the client should set one up with PUT /vault/key.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vaultutil.Key'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "404":
+          description: the caller has no vault yet
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Get the caller's wrapped vault key
+      tags:
+      - vault
+    put:
+      consumes:
+      - application/json
+      description: 'Re-confirms the caller with password, which carries the auth key
+        of the login password, exactly as PUT /auth/recovery-key takes it; a wrong
+        or missing key is a 403, a raw password is a 426, and nothing is written.
+        The vault key''s password wrap is opened, and re-wrapped on every password
+        change, with the login password, so a vault wrapped under any other password
+        would be lost at the next change. Then stores the caller''s first vault key,
+        a random key the client made and wrapped under the login password (wrappedByPassword,
+        at most 512 bytes, with its 16-byte Argon2id salt saltPw) and optionally the
+        recovery phrase (wrappedByPhrase and saltRp, both or neither), with the client''s
+        kdfParams object. Byte fields are base64 and the body is at most 8 KiB. The
+        key is never replaced here: an account that already has one gets 409, and
+        its wraps change only beside the credential that wraps them, through vaultKey
+        on PUT /auth/password, PUT /auth/recovery-key and POST /auth/recover. Publishes
+        vault_changed to the caller''s sessions. Shares the sign-in rate limit.'
+      parameters:
+      - description: The caller's auth key and the wrapped vault key; createdAt and
+          updatedAt are ignored
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v0_vault.createVaultKeyBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/vaultutil.Key'
+        "400":
+          description: a key of the wrong size or shape
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "403":
+          description: password is not the caller's auth key
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "409":
+          description: the caller already has a vault
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "413":
+          description: a body over 8 KiB
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "426":
+          description: 'password is a raw password: the app is too old'
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Set up the caller's vault
       tags:
       - vault
   /version:
