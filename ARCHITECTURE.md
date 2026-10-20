@@ -3,7 +3,7 @@
 Quark is a self-hosted personal cloud. One Go binary runs on a device in the user's home, serves a REST and
 WebSocket API, and embeds the Flutter web build; the same Flutter app also ships to iOS and Android. User files
 live on disk — the internal data directory plus any USB drives Quark manages — and SQLite holds only what cannot
-live on disk: accounts, sessions, albums, access grants, jobs, the search index, and the encrypted vault.
+live on disk: accounts, sessions, albums, access grants, jobs, the search index, and each account's vault as ciphertext.
 
 This page is the one-screen summary. The detail, with diagrams, lives in [`docs/architecture/`](docs/architecture/README.md).
 
@@ -41,7 +41,7 @@ flowchart LR
 - **Handlers are thin.** A handler under `internal/server/api/v0/<segment>/` parses the request, calls a
   `pkg/util/*util` function with a `Params` struct, and maps the `Result` to a `*serverutil.Response`.
 - **One dependency graph.** `deputil.Dependencies` carries the database, storage service, VFS registry, event
-  bus, job queue, rate limiters, and vault session. No package-level mutable state.
+  bus, job queue, and rate limiters. No package-level mutable state.
 - **Files stream, never buffer.** File content moves as `io.Reader` / `io.Writer`; a 4 GiB upload costs
   megabytes of heap.
 - **Every mutation publishes an event.** The event bus fans out to `/api/v0/events` over WebSocket, filtered by

@@ -12,7 +12,7 @@ Two failures look alike from outside and are not:
   written: a rename can reach the disk before the bytes of the file it names. Only data that was flushed
   (`fsync`) before the cut is guaranteed to be there.
 
-## SQLite: the main database and the vault
+## SQLite: the main database
 
 Every database is opened through `db.DSN`, and the driver's defaults stand: a rollback journal
 (`journal_mode=DELETE`) with `synchronous=FULL`. SQLite flushes the journal before it touches the database and
@@ -24,7 +24,7 @@ Queries run on a pool of connections to that one file (`db.pooledQueries`, #2766
 `db.DSN`. The pool changes who waits for whom, not what a commit means: readers run side by side, a writer still
 commits alone, and a connection that finds the database locked retries for `busy_timeout` before it gives up.
 The journal mode stayed as it was on purpose. WAL was measured and bought no throughput once requests stopped
-writing, and it would put a `-wal` file beside every database, the vault on a removable drive included.
+writing, and it would put a `-wal` file beside every database.
 
 A schema migration is one transaction too, so a power cut during one leaves the schema as it was. What it can
 leave behind is golang-migrate's dirty flag, which is written before the migration and cleared after it. Quark

@@ -484,7 +484,7 @@ The password travels in the request body, never the URL, and attempts share the 
 - The right one erases what was chosen and returns the Quark to first-boot setup.
 - Every instance of the Quark serving this install then restarts within a few seconds, the one that handled the
   request included, so requests can fail briefly after the reset goes through. Nothing the old install left in
-  memory (the vault key, caches, the file index) survives the restart.
+  memory (caches, the file index) survives the restart.
 
 **Notes:**
 
@@ -637,7 +637,8 @@ The Quark has at least one feature still in beta.
 - Step 1 mirrors the app bar at once, on Settings and on every other drawer page: the brand button sits against the
   right edge with the refresh button inside it, and the page's actions run in from the left (#1812).
 - Step 2 slides the drawer in from the right edge. A swipe in from that edge opens it too.
-- The floating **Create** button on Files and **New entry** button on the Vault sit at the bottom left.
+- The floating **Create** button on Files sits at the bottom left, and the Vault's **New entry** runs in from the
+  left with the rest of its top bar.
 - Only the controls change sides. Text, lists and the inside of each button read the way they always do.
 - Step 4 puts everything back.
 - Setting is persisted across app restarts. It is per device, like the theme (JN-ST-006).

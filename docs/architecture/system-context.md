@@ -20,7 +20,6 @@ flowchart TB
         dbs[("SQLite<br/>quark.db")]
         data[("Data dir<br/>files/")]
         usb[("Managed USB drives<br/>auto-mounted")]
-        vaultDb[("vault.db<br/>on an external drive")]
     end
 
     tailnet(["Tailscale tailnet"])
@@ -36,7 +35,6 @@ flowchart TB
     svc --> dbs
     svc --> data
     svc --> usb
-    svc --> vaultDb
     svc -. "check / download update" .-> github
     tsnet -. "first-time auth key" .-> provision
 ```
@@ -70,7 +68,7 @@ Flutter web build for every other path (an SPA fallback returns `index.html` so 
 
 Quark treats storage as a set of *managed devices*: the internal data directory plus any USB drive it has
 adopted. `storageutil.StorageService` owns the list; a monitor goroutine polls every five seconds, auto-mounts
-new drives, and publishes `vault_storage_changed`. Every file path a client sees is scoped to a device serial,
+new drives. Every file path a client sees is scoped to a device serial,
 which is also the key of the access table.
 
 ## Remote access

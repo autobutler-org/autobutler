@@ -11,7 +11,7 @@ flowchart TB
         mw["middleware/<br/>rate limit · inject deps · auth · device tracking"]
         routes["routes.go<br/>mounts every router under /api/v0"]
         handlers["api/v0/&lt;segment&gt;/<br/>one handler per file"]
-        admin["RequireAdmin group<br/>admin · vault · settings · storage · version · devices"]
+        admin["RequireAdmin group<br/>admin · settings · storage · version · devices"]
     end
 
     subgraph logic["Business logic — pkg/util/*util"]
@@ -67,7 +67,6 @@ classDiagram
     class Dependencies {
         <<interface>>
         Database() DatabaseSqlc
-        VaultDB() DatabaseSqlc
         StorageService() StorageService
         VFSRegistry() vfs.Registry
         MetadataStore() vfs.MetadataStore
@@ -76,9 +75,8 @@ classDiagram
         Worker() workerutil.Worker
         FileIndex() indexutil.FileIndex
         UploadSessions() uploadutil.SessionStore
-        VaultSession() vaultcrypto.VaultSession
         AuthRateLimiter() Limiter
-        VaultRateLimiter() Limiter
+        ChatRateLimiter() Limiter
         IOSemaphore() Semaphore
     }
     Dependencies --> DatabaseSqlc : quark.db
@@ -98,7 +96,7 @@ classDiagram
 
 ```mermaid
 flowchart LR
-    req([request]) --> rl{"rate limit<br/>auth paths 5 r/s<br/>vault unlock 0.5 r/s"}
+    req([request]) --> rl{"rate limit<br/>auth paths 5 r/s"}
     rl -- over --> r429([429])
     rl --> inject["inject deps<br/>into context"]
     inject --> authz{"requireAuth<br/>/api/* only"}
@@ -127,13 +125,13 @@ sequenceDiagram
     participant gin as gin engine
 
     main->>deps: connect quark.db, run migrations
-    deps-->>main: storage service, VFS registry, event bus, job queue, vault session
+    deps-->>main: storage service, VFS registry, event bus, job queue
     main->>s: StartServer(deps, opts)
     s->>s: remove stale update backups, register health collector
     s->>s: SetupFilesDir, repairHomes (every account gets a home + grant)
     s->>bg: worker, job queue (transcode handler), sync worker
     s->>bg: FileIndex.BuildAndWatch, content indexer + backfill
-    s->>bg: vault device monitor (10 s), USB monitor (5 s)
+    s->>bg: USB monitor (5 s)
     s->>bg: session purge (24 h), trash purge (1 h), upload-session sweeper
     s-->>bg: tsnet remote access, if enabled
     s->>gin: middleware.Use, setupRoutes, Swagger, SPA fallback
@@ -150,7 +148,6 @@ sequenceDiagram
 | File index             | `indexutil.FileIndex`           | VFS walk + events    | in-memory index of files across managed devices          |
 | Content indexer        | `internal/server/content_indexer.go` | upload / move / delete | FTS5 rows for text documents; backfill at startup  |
 | USB monitor            | `server.usbDeviceMonitor`       | every 5 s            | auto-mounts new drives                                    |
-| Vault device monitor   | `server.vaultDeviceMonitor`     | every 10 s           | locks the vault when its drive disappears                 |
 | Session purge          | `authutil`                      | startup + 24 h       | deletes expired sessions                                  |
 | Trash purge            | `trashutil` + `accessutil`      | startup + 1 h        | deletes expired trash on every device namespace, and its access rows |
 | Upload sweeper         | `uploadutil.SessionStore`       | interval             | removes abandoned chunked uploads                         |
@@ -165,7 +162,7 @@ events, so clients treat events as a hint to refresh and the REST endpoints as t
 | Files      | `upload`, `delete`, `move`, `new_folder`, `trash_changed`                                   |
 | Jobs       | `job_queued`, `job_started`, `job_progress`, `job_completed`, `job_failed`, `job_canceled` |
 | Backup     | `backup_started`, `backup_progress`, `backup_completed`, `backup_failed`                   |
-| Vault      | `vault_device_disconnected`, `vault_device_reconnected`, `vault_storage_changed`           |
+| Vault      | `vault_changed`, delivered only to the account whose vault it is                          |
 | Accounts   | `account_changed`, `access_changed`                                                       |
 | Settings   | `feature_flag_changed`, `public_settings_changed`                                         |
 | Device     | `hostname_changed`                                                                        |
