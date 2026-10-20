@@ -16,9 +16,13 @@ import (
 )
 
 // probe runs sprocket's Probe over src. A file it cannot parse is
-// ErrNotAVideo.
+// ErrNotAVideo, and one that could not be read is that read's error.
 func probe(src Source) (sprocket.Info, error) {
-	info, err := sprocket.Probe(src.File, src.Size)
+	file := &readRecorder{File: src.File}
+	info, err := sprocket.Probe(file, src.Size)
+	if err != nil && file.err != nil {
+		return sprocket.Info{}, fmt.Errorf("probe %s: %w", src.Name, file.err)
+	}
 	if err != nil {
 		return sprocket.Info{}, fmt.Errorf("%w: probe %s: %w", ErrNotAVideo, src.Name, err)
 	}

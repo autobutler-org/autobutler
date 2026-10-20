@@ -2,8 +2,10 @@ package videoutil
 
 import (
 	"context"
+	"errors"
 	"io"
 
+	"github.com/autobutler-org/quark/pkg/vfs"
 	"github.com/autobutler-org/sprocket/pkg/sprocket"
 )
 
@@ -66,4 +68,31 @@ func (p *progressWriter) Write(b []byte) (int, error) {
 		p.onProgress(min(float64(p.written)/float64(p.total), 1))
 	}
 	return n, err
+}
+
+// readRecorder is a source file that remembers the first read of it that
+// failed, other than at the end. sprocket reports a read that failed while it
+// sniffed the container as ErrUnsupportedContainer, which would tell the user
+// a file the disk could not read is not a video (#3427).
+type readRecorder struct {
+	vfs.File
+	err error
+}
+
+func (r *readRecorder) Read(p []byte) (int, error) {
+	n, err := r.File.Read(p)
+	r.record(err)
+	return n, err
+}
+
+func (r *readRecorder) ReadAt(p []byte, off int64) (int, error) {
+	n, err := r.File.ReadAt(p, off)
+	r.record(err)
+	return n, err
+}
+
+func (r *readRecorder) record(err error) {
+	if r.err == nil && err != nil && !errors.Is(err, io.EOF) {
+		r.err = err
+	}
 }
