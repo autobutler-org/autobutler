@@ -497,10 +497,10 @@ added outside Quark shows up once its thumbnail loads or after the next restart.
 
 **Notes:**
 
-- Only file names are searched. Searching by capture date, camera or other metadata is deferred: it needs the
-  Quark's photo listing to take a search term, which it does not yet (#2059).
-- The Quark's file search returns at most 500 files of every kind before photos are picked out, so a term that
-  matches more files than that can miss photos. A narrower term finds them.
+- Only file names are searched. Searching by capture date, camera or other metadata is deferred (#2059).
+- GET /photos takes `q`, a file name substring, and pages every match: each page's total is the match count
+  (#3523). The app still asks the file search, which returns at most 500 files of every kind before photos are
+  picked out, so a term that matches more files than that can miss photos until the app follows those pages.
 - A device photo is matched by its title, which iOS does not always report.
 - Demo mode searches the sample library on the device.
 
