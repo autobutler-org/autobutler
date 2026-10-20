@@ -139,103 +139,120 @@ class _SetupFormState extends State<SetupForm> {
             const SizedBox(height: 16),
           ],
 
-          TextFormField(
-            controller: widget.usernameController,
-            focusNode: widget.usernameFocus,
-            decoration: const InputDecoration(
-              labelText: 'Username',
-              helperText: newUsernameHint,
-              helperMaxLines: 2,
-              errorMaxLines: 3,
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(QuarkIcons.person_outline),
-            ),
-            textInputAction: TextInputAction.next,
-            autofillHints: const [AutofillHints.newUsername],
-            autocorrect: false,
-            onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(widget.passwordFocus);
-            },
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            // The Quark refuses a username outside its rule with a 400
-            // (#1946), so it is checked here first and never rewritten.
-            validator: validateNewUsername,
-          ),
-          const SizedBox(height: 16),
-
-          TextFormField(
-            controller: widget.passwordController,
-            focusNode: widget.passwordFocus,
-            obscureText: widget.obscurePassword,
-            decoration: InputDecoration(
-              labelText: 'Password',
-              helperText: 'At least 8 characters',
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(QuarkIcons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  widget.obscurePassword
-                      ? QuarkIcons.visibility_outlined
-                      : QuarkIcons.visibility_off_outlined,
+          // One group, so on web the browser sees the password inputs beside
+          // the username one: Flutter puts a DOM input only behind the focused
+          // field and the rest of its group (#3591).
+          AutofillGroup(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: widget.usernameController,
+                  focusNode: widget.usernameFocus,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    helperText: newUsernameHint,
+                    helperMaxLines: 2,
+                    errorMaxLines: 3,
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(QuarkIcons.person_outline),
+                  ),
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.newUsername],
+                  autocorrect: false,
+                  onFieldSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(widget.passwordFocus);
+                  },
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  // The Quark refuses a username outside its rule with a 400
+                  // (#1946), so it is checked here first and never rewritten.
+                  validator: validateNewUsername,
                 ),
-                tooltip: widget.obscurePassword
-                    ? 'Show password'
-                    : 'Hide password',
-                onPressed: widget.onTogglePassword,
-              ),
-            ),
-            textInputAction: TextInputAction.next,
-            autofillHints: const [AutofillHints.newPassword],
-            onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(widget.confirmFocus);
-            },
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (v) {
-              if (v == null || v.isEmpty) return 'Password is required';
-              if (v.length < 8) return 'Password must be at least 8 characters';
-              return null;
-            },
-          ),
-          const SizedBox(height: 8),
-          ListenableBuilder(
-            listenable: widget.passwordController,
-            builder: (context, _) =>
-                PasswordStrengthBar(password: widget.passwordController.text),
-          ),
-          const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
-          TextFormField(
-            key: _confirmFieldKey,
-            controller: widget.confirmController,
-            focusNode: widget.confirmFocus,
-            obscureText: widget.obscureConfirm,
-            decoration: InputDecoration(
-              labelText: 'Confirm password',
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(QuarkIcons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  widget.obscureConfirm
-                      ? QuarkIcons.visibility_outlined
-                      : QuarkIcons.visibility_off_outlined,
+                TextFormField(
+                  controller: widget.passwordController,
+                  focusNode: widget.passwordFocus,
+                  obscureText: widget.obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    helperText: 'At least 8 characters',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(QuarkIcons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        widget.obscurePassword
+                            ? QuarkIcons.visibility_outlined
+                            : QuarkIcons.visibility_off_outlined,
+                      ),
+                      tooltip: widget.obscurePassword
+                          ? 'Show password'
+                          : 'Hide password',
+                      onPressed: widget.onTogglePassword,
+                    ),
+                  ),
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.newPassword],
+                  onFieldSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(widget.confirmFocus);
+                  },
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Password is required';
+                    if (v.length < 8) {
+                      return 'Password must be at least 8 characters';
+                    }
+                    return null;
+                  },
                 ),
-                tooltip: widget.obscureConfirm
-                    ? 'Show password'
-                    : 'Hide password',
-                onPressed: widget.onToggleConfirm,
-              ),
+                const SizedBox(height: 8),
+                ListenableBuilder(
+                  listenable: widget.passwordController,
+                  builder: (context, _) => PasswordStrengthBar(
+                    password: widget.passwordController.text,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                TextFormField(
+                  key: _confirmFieldKey,
+                  controller: widget.confirmController,
+                  focusNode: widget.confirmFocus,
+                  obscureText: widget.obscureConfirm,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm password',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(QuarkIcons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        widget.obscureConfirm
+                            ? QuarkIcons.visibility_outlined
+                            : QuarkIcons.visibility_off_outlined,
+                      ),
+                      tooltip: widget.obscureConfirm
+                          ? 'Show password'
+                          : 'Hide password',
+                      onPressed: widget.onToggleConfirm,
+                    ),
+                  ),
+                  textInputAction: TextInputAction.done,
+                  autofillHints: const [AutofillHints.newPassword],
+                  onFieldSubmitted: (_) =>
+                      widget.loading ? null : widget.onSubmit(),
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (v != widget.passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+              ],
             ),
-            textInputAction: TextInputAction.done,
-            autofillHints: const [AutofillHints.newPassword],
-            onFieldSubmitted: (_) => widget.loading ? null : widget.onSubmit(),
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (v) {
-              if (v == null || v.isEmpty) return 'Please confirm your password';
-              if (v != widget.passwordController.text) {
-                return 'Passwords do not match';
-              }
-              return null;
-            },
           ),
           const SizedBox(height: 24),
 
