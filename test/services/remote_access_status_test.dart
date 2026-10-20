@@ -37,6 +37,18 @@ void main() {
       expect(status.error, isNull);
     });
 
+    test('reads needsSetup without treating the stored flag as on', () {
+      final status = RemoteAccessStatus.fromJson({
+        'enabled': false,
+        'needsSetup': true,
+        'connected': true,
+      });
+
+      expect(status.enabled, isFalse);
+      expect(status.needsSetup, isTrue);
+      expect(status.connected, isTrue);
+    });
+
     test('defaults to off for an empty payload', () {
       final status = RemoteAccessStatus.fromJson({});
 

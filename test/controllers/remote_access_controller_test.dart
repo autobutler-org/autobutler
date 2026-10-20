@@ -25,6 +25,16 @@ void main() {
     );
     expect(RemoteAccessController.stateOf(on), RemoteAccessState.on);
     expect(RemoteAccessController.stateOf(failing), RemoteAccessState.failing);
+    expect(
+      RemoteAccessController.stateOf(
+        const RemoteAccessStatus(
+          enabled: true,
+          connected: true,
+          needsSetup: true,
+        ),
+      ),
+      RemoteAccessState.off,
+    );
   });
 
   test('load reads the status, and a failure becomes copy', () async {

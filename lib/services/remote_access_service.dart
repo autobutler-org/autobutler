@@ -5,8 +5,16 @@ import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/utils/error_text.dart';
 
 class RemoteAccessStatus {
-  /// The Quark's setting: remote access was switched on.
+  /// Whether remote access is on. True only after an admin turned it on and
+  /// setup enrolled this Quark. A stored flag from before that is
+  /// [needsSetup], and is not on (#3611).
   final bool enabled;
+
+  /// Whether the stored flag is on but setup never enrolled the Quark.
+  ///
+  /// The Network tab offers the setup sheet and does not show remote access
+  /// as on. This does not turn remote access on.
+  final bool needsSetup;
 
   /// Whether the Tailscale node has actually joined the tailnet. An enabled
   /// Quark that has not is still connecting, or failing — see [error].
@@ -21,6 +29,7 @@ class RemoteAccessStatus {
 
   const RemoteAccessStatus({
     required this.enabled,
+    this.needsSetup = false,
     this.connected = false,
     this.remoteUrl,
     this.error,
@@ -29,6 +38,7 @@ class RemoteAccessStatus {
   factory RemoteAccessStatus.fromJson(Map<String, dynamic> json) =>
       RemoteAccessStatus(
         enabled: json['enabled'] as bool? ?? false,
+        needsSetup: json['needsSetup'] as bool? ?? false,
         connected: json['connected'] as bool? ?? false,
         remoteUrl: json['remoteUrl'] as String?,
         error: json['error'] as String?,
