@@ -610,9 +610,12 @@ func TestSecondInstanceLeavesTheFirstsRunningJobAlone(t *testing.T) {
 func TestJobWhoseOwnerStoppedBeatingIsPickedUpByAnotherInstance(t *testing.T) {
 	first := newHarness(t)
 	second := first.peer(t)
-	second.run(t)
-	// Nothing woke the second instance: it finds the job on its own poll.
+	// Built before the second instance runs: orphan creates the row pending and
+	// claims it as the dead owner in two steps, and a running worker polling in
+	// between would claim it first.
 	orphan := first.orphan(t, 1, 1)
+	// Nothing woke the second instance: it finds the job on its own poll.
+	second.run(t)
 
 	if n := second.started(t); n != 1 {
 		t.Fatalf("the other instance started job %d, want the orphaned job 1", n)
