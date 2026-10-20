@@ -31,12 +31,18 @@ func callerQueries(c *gin.Context) (db.Querier, error) {
 	return deps.Database().Queries, nil
 }
 
-// remoteAccessResponse pairs the persisted on/off setting with what the tsnet
+// remoteAccessResponse pairs the derived on/off state with what the tsnet
 // node is actually doing, so "on, but not connected" is visible (#1815).
+// On requires enrollment. A stored flag without it is needsSetup, and the
+// node status is left out so a stale node cannot read as connected (#3611).
 func remoteAccessResponse(enabled bool) RemoteAccessResponse {
+	view := remoteutil.DeriveAccessState(enabled, remoteutil.Enrolled())
+	if !view.On {
+		return RemoteAccessResponse{NeedsSetup: view.NeedsSetup}
+	}
 	status := remoteutil.Status()
 	return RemoteAccessResponse{
-		Enabled:   enabled,
+		Enabled:   true,
 		Connected: status.Connected,
 		RemoteURL: status.RemoteURL,
 		Error:     status.Error,

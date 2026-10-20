@@ -8196,7 +8196,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns whether remote access is switched on, whether the Tailscale node has actually joined the tailnet, its remote URL once it has, and the last start failure",
+                "description": "Returns whether remote access is on, which requires that setup enrolled this Quark, whether setup is still required, whether the Tailscale node has actually joined the tailnet, its remote URL once it has, and the last start failure",
                 "produces": [
                     "application/json"
                 ],
@@ -13732,12 +13732,16 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "enabled": {
-                    "description": "Enabled is the persisted setting: the user asked for remote access.",
+                    "description": "Enabled is true only when an admin turned remote access on and setup\nenrolled this Quark. A stored flag from before that enrollment is not\nenough (#3611).",
                     "type": "boolean"
                 },
                 "error": {
                     "description": "Error is the last start failure, a diagnostic for the log reader rather\nthan copy for a user.",
                     "type": "string"
+                },
+                "needsSetup": {
+                    "description": "NeedsSetup is true when that stored flag is on but enrollment never\nfinished. The client offers the setup sheet and does not show remote\naccess as on. Nothing here turns it on.",
+                    "type": "boolean"
                 },
                 "remoteUrl": {
                     "description": "RemoteURL is set only when Connected.",

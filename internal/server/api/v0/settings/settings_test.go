@@ -69,6 +69,46 @@ func TestSettingsRoot_NotServed(t *testing.T) {
 	}
 }
 
+// TestGetRemoteAccess_StaleFlagNeedsSetup verifies a stored flag from before
+// setup is not reported as on, even when a node status is standing in as
+// connected. The client offers setup; this response does not turn it on (#3611).
+func TestGetRemoteAccess_StaleFlagNeedsSetup(t *testing.T) {
+	engine := newSettingsEngine(t)
+	if err := settingsutil.SetRemoteAccess(true); err != nil {
+		t.Fatalf("SetRemoteAccess: %v", err)
+	}
+	restore := remoteutil.SetStatusForTesting(remoteutil.StatusResult{
+		Connected: true,
+		RemoteURL: "http://100.64.0.1:80",
+		Error:     "stale",
+	})
+	t.Cleanup(restore)
+
+	w := doSettingsReq(engine, http.MethodGet, "/api/v0/settings/remote-access", nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET /settings/remote-access returned %d: %s", w.Code, w.Body.String())
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
+		t.Fatalf("unmarshal: %v\nbody: %s", err, w.Body.String())
+	}
+	if raw["enabled"] != false {
+		t.Errorf("enabled = %v; want false until setup enrolls the Quark", raw["enabled"])
+	}
+	if raw["needsSetup"] != true {
+		t.Errorf("needsSetup = %v; want true so the client can offer setup", raw["needsSetup"])
+	}
+	if raw["connected"] != false {
+		t.Errorf("connected = %v; want false while setup is incomplete", raw["connected"])
+	}
+	if _, ok := raw["remoteUrl"]; ok {
+		t.Errorf("remoteUrl = %v; want it omitted until setup is complete", raw["remoteUrl"])
+	}
+	if _, ok := raw["error"]; ok {
+		t.Errorf("error = %v; want it omitted until setup is complete", raw["error"])
+	}
+}
+
 // TestGetRemoteAccess_EnabledButNotConnected verifies the status reports the
 // persisted setting as enabled while saying the node is not on the tailnet —
 // the state a failed or still-authenticating boot leaves behind (#1815).
@@ -76,6 +116,11 @@ func TestGetRemoteAccess_EnabledButNotConnected(t *testing.T) {
 	engine := newSettingsEngine(t)
 	if err := settingsutil.SetRemoteAccess(true); err != nil {
 		t.Fatalf("SetRemoteAccess: %v", err)
+	}
+	// Enrollment is what makes the flag count as on (#3611). A flag alone is
+	// setup still to do.
+	if err := settingsutil.SetHousehold("household", "token"); err != nil {
+		t.Fatalf("SetHousehold: %v", err)
 	}
 
 	w := doSettingsReq(engine, http.MethodGet, "/api/v0/settings/remote-access", nil)

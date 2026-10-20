@@ -13,8 +13,14 @@ type RemoteAccessRequest struct {
 }
 
 type RemoteAccessResponse struct {
-	// Enabled is the persisted setting: the user asked for remote access.
+	// Enabled is true only when an admin turned remote access on and setup
+	// enrolled this Quark. A stored flag from before that enrollment is not
+	// enough (#3611).
 	Enabled bool `json:"enabled"`
+	// NeedsSetup is true when that stored flag is on but enrollment never
+	// finished. The client offers the setup sheet and does not show remote
+	// access as on. Nothing here turns it on.
+	NeedsSetup bool `json:"needsSetup,omitempty"`
 	// Connected is true only once the node has joined the tailnet.
 	Connected bool `json:"connected"`
 	// RemoteURL is set only when Connected.
