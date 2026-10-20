@@ -14,6 +14,14 @@ enum ThumbnailIssue {
   /// The file could not be read as what its name says it is: truncated,
   /// damaged, or not a video at all.
   unreadable,
+
+  /// There is no thumbnail to show and nothing left to make one from: the
+  /// server answered that it has none, or the file has moved or been deleted.
+  missing,
+
+  /// The server would not send the thumbnail, after every retry: busy, or
+  /// failing. The file may be fine, and it may load later.
+  loadFailed,
 }
 
 /// The placeholder for a file whose thumbnail cannot be made, which says so
@@ -21,7 +29,9 @@ enum ThumbnailIssue {
 ///
 /// Draws the file's own glyph ([QuarkFileIcon], so a video still reads as a
 /// video) with a badge for the [issue]: a crossed-out eye for a format that
-/// cannot be previewed, a broken picture for a file that could not be read.
+/// cannot be previewed, a broken picture for a file that could not be read,
+/// a question mark for a thumbnail that is gone, and a crossed-out cloud for
+/// one the server would not send.
 /// [reason] is the sentence that explains it, written by the caller: it is
 /// the tooltip on hover and what a screen reader announces. Given [label]
 /// and room for it (a grid tile rather than a list row's leading slot), the
@@ -97,13 +107,18 @@ class QuarkThumbnailUnavailable extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                issue == ThumbnailIssue.unsupportedFormat
-                    ? QuarkIcons.visibility_off_outlined
-                    : QuarkIcons.broken_image_outlined,
+                switch (issue) {
+                  ThumbnailIssue.unsupportedFormat =>
+                    QuarkIcons.visibility_off_outlined,
+                  ThumbnailIssue.unreadable => QuarkIcons.broken_image_outlined,
+                  ThumbnailIssue.missing => QuarkIcons.help_outline,
+                  ThumbnailIssue.loadFailed => QuarkIcons.cloud_off_outlined,
+                },
                 size: badgeSize,
-                color: issue == ThumbnailIssue.unsupportedFormat
-                    ? tokens.secondaryForeground
-                    : tokens.warning,
+                // Only a damaged file is cause for concern.
+                color: issue == ThumbnailIssue.unreadable
+                    ? tokens.warning
+                    : tokens.secondaryForeground,
               ),
             ),
           ),

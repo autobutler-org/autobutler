@@ -12,8 +12,11 @@ import 'package:quark_widgets/quark_widgets.dart' show ThumbnailIssue;
 /// App-side because it calls a service. [builder] draws the thumbnail: it gets
 /// a `generation` to key its image with, so the reload after a backfill is a
 /// new element that fetches afresh, and an `onFailed` to call from its error
-/// state, with the error when it has one. The generation stays out of the
-/// image's cache key, which has to outlive the session (#1777).
+/// state, with the error when it has one. `onFailed` answers whether the
+/// thumbnail may still arrive — a retry is due or a backfill is running — so
+/// the error state can tell waiting from giving up (#3509). The generation
+/// stays out of the image's cache key, which has to outlive the session
+/// (#1777).
 /// Only a tile that is built — one on screen — ever asks, and it asks once.
 ///
 /// A load the Quark turned away for being busy (a 429, 502, 503 or 504) is
@@ -50,6 +53,7 @@ class BackfillingThumbnail extends StatefulWidget {
     required this.builder,
     this.serial,
     this.failedBuilder,
+    this.issueFor,
     this.backfill,
     super.key,
   });
@@ -64,7 +68,7 @@ class BackfillingThumbnail extends StatefulWidget {
   final Widget Function(
     BuildContext context,
     int generation,
-    void Function([Object? error]) onFailed,
+    bool Function([Object? error]) onFailed,
   )
   builder;
 
@@ -72,6 +76,12 @@ class BackfillingThumbnail extends StatefulWidget {
   /// [builder]'s error state.
   final Widget Function(BuildContext context, ThumbnailIssue issue)?
   failedBuilder;
+
+  /// Reads why a load failed for good from its error, for a backfill that
+  /// answered without a thumbnail or a reason of its own: [failedBuilder] is
+  /// built with it, rather than [builder] again, whose image would fetch
+  /// afresh (#3509). Null leaves [builder]'s error state.
+  final ThumbnailIssue Function(Object? error)? issueFor;
 
   /// The backfill to ask; [ThumbnailBackfill.instance] when null.
   final ThumbnailBackfill? backfill;
@@ -88,6 +98,12 @@ class _BackfillingThumbnailState extends State<BackfillingThumbnail> {
   int _generation = 0;
   bool _asked = false;
 
+  /// Whether the backfill this tile asked has yet to answer.
+  bool _filling = false;
+
+  /// What the load that asked the backfill failed with.
+  Object? _error;
+
   /// Why the backfill could not render this file, once it has said.
   ThumbnailIssue? _issue;
   int _retries = 0;
@@ -99,6 +115,8 @@ class _BackfillingThumbnailState extends State<BackfillingThumbnail> {
     if (oldWidget.path != widget.path || oldWidget.serial != widget.serial) {
       _generation = 0;
       _asked = false;
+      _filling = false;
+      _error = null;
       _issue = null;
       _retries = 0;
       _retry?.cancel();
@@ -114,20 +132,24 @@ class _BackfillingThumbnailState extends State<BackfillingThumbnail> {
 
   // Called from the builder's error state, during a build: it starts the
   // work and only touches state once the work is done.
-  void _onFailed([Object? error]) {
+  bool _onFailed([Object? error]) {
     if (error is HttpExceptionWithStatus && _busy.contains(error.statusCode)) {
-      if (_retry != null || _retries >= ThumbnailCacheConfig.busyRetries) {
-        return;
+      if (_retry == null && _retries < ThumbnailCacheConfig.busyRetries) {
+        _retry = Timer(
+          ThumbnailCacheConfig.busyRetryDelay * (1 << _retries),
+          () {
+            _retry = null;
+            _retries++;
+            if (mounted) setState(() => _generation++);
+          },
+        );
       }
-      _retry = Timer(ThumbnailCacheConfig.busyRetryDelay * (1 << _retries), () {
-        _retry = null;
-        _retries++;
-        if (mounted) setState(() => _generation++);
-      });
-      return;
+      return _retry != null;
     }
-    if (_asked) return;
+    if (_asked) return _filling;
     _asked = true;
+    _filling = true;
+    _error = error;
     final path = widget.path;
     final serial = widget.serial;
     final backfill = widget.backfill ?? ThumbnailBackfill.instance;
@@ -137,9 +159,11 @@ class _BackfillingThumbnailState extends State<BackfillingThumbnail> {
           .then((filled) {
             if (!mounted) return;
             if (widget.path != path || widget.serial != serial) return;
+            _filling = false;
             final issue = filled
                 ? null
-                : backfill.failureFor(path, serial: serial);
+                : backfill.failureFor(path, serial: serial) ??
+                      widget.issueFor?.call(_error);
             if (!filled && issue == null) return;
             setState(() {
               if (filled) {
@@ -150,6 +174,7 @@ class _BackfillingThumbnailState extends State<BackfillingThumbnail> {
             });
           }),
     );
+    return _filling;
   }
 
   @override
