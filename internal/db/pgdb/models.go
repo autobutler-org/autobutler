@@ -346,6 +346,27 @@ type VaultFolder struct {
 	CreatedAt time.Time
 }
 
+type VaultItem struct {
+	ID            int64
+	UserID        int64
+	Ciphertext    []byte
+	Nonce         []byte
+	FormatVersion int64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+type VaultKey struct {
+	UserID            int64
+	WrappedByPassword []byte
+	SaltPw            []byte
+	WrappedByPhrase   []byte
+	SaltRp            []byte
+	KdfParams         string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
 type VaultLocation struct {
 	ID           int64
 	DeviceSerial string

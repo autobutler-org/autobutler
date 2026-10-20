@@ -184,6 +184,16 @@ func (a *postgresQueries) CreateVaultFolder(ctx context.Context, arg CreateVault
 	return VaultFolder(row), err
 }
 
+func (a *postgresQueries) CreateVaultItem(ctx context.Context, arg CreateVaultItemParams) (VaultItem, error) {
+	row, err := a.q.CreateVaultItem(ctx, pgdb.CreateVaultItemParams(arg))
+	return VaultItem(row), err
+}
+
+func (a *postgresQueries) CreateVaultKey(ctx context.Context, arg CreateVaultKeyParams) (VaultKey, error) {
+	row, err := a.q.CreateVaultKey(ctx, pgdb.CreateVaultKeyParams(arg))
+	return VaultKey(row), err
+}
+
 func (a *postgresQueries) DeleteAlbum(ctx context.Context, arg DeleteAlbumParams) error {
 	return a.q.DeleteAlbum(ctx, pgdb.DeleteAlbumParams(arg))
 }
@@ -330,6 +340,18 @@ func (a *postgresQueries) DeleteVaultEntry(ctx context.Context, id int64) error 
 
 func (a *postgresQueries) DeleteVaultFolder(ctx context.Context, id int64) error {
 	return a.q.DeleteVaultFolder(ctx, id)
+}
+
+func (a *postgresQueries) DeleteVaultItem(ctx context.Context, arg DeleteVaultItemParams) (int64, error) {
+	return a.q.DeleteVaultItem(ctx, pgdb.DeleteVaultItemParams(arg))
+}
+
+func (a *postgresQueries) DeleteVaultItems(ctx context.Context, userID int64) error {
+	return a.q.DeleteVaultItems(ctx, userID)
+}
+
+func (a *postgresQueries) DeleteVaultKey(ctx context.Context, userID int64) error {
+	return a.q.DeleteVaultKey(ctx, userID)
 }
 
 func (a *postgresQueries) DemoteFromAdmin(ctx context.Context, username string) (DemoteFromAdminRow, error) {
@@ -548,6 +570,16 @@ func (a *postgresQueries) GetVaultEntry(ctx context.Context, id int64) (VaultEnt
 func (a *postgresQueries) GetVaultFolder(ctx context.Context, id int64) (VaultFolder, error) {
 	row, err := a.q.GetVaultFolder(ctx, id)
 	return VaultFolder(row), err
+}
+
+func (a *postgresQueries) GetVaultItem(ctx context.Context, arg GetVaultItemParams) (VaultItem, error) {
+	row, err := a.q.GetVaultItem(ctx, pgdb.GetVaultItemParams(arg))
+	return VaultItem(row), err
+}
+
+func (a *postgresQueries) GetVaultKey(ctx context.Context, userID int64) (VaultKey, error) {
+	row, err := a.q.GetVaultKey(ctx, userID)
+	return VaultKey(row), err
 }
 
 func (a *postgresQueries) GetVaultLocation(ctx context.Context) (string, error) {
@@ -1218,6 +1250,18 @@ func (a *postgresQueries) ListVaultFolders(ctx context.Context) ([]VaultFolder, 
 	return items, nil
 }
 
+func (a *postgresQueries) ListVaultItems(ctx context.Context, userID int64) ([]VaultItem, error) {
+	rows, err := a.q.ListVaultItems(ctx, userID)
+	if err != nil || rows == nil {
+		return nil, err
+	}
+	items := make([]VaultItem, len(rows))
+	for i, row := range rows {
+		items[i] = VaultItem(row)
+	}
+	return items, nil
+}
+
 func (a *postgresQueries) LockActiveAdmins(ctx context.Context) error {
 	return a.q.LockActiveAdmins(ctx)
 }
@@ -1429,6 +1473,15 @@ func (a *postgresQueries) UpdateVaultEntryHost(ctx context.Context, arg UpdateVa
 
 func (a *postgresQueries) UpdateVaultFolder(ctx context.Context, arg UpdateVaultFolderParams) error {
 	return a.q.UpdateVaultFolder(ctx, pgdb.UpdateVaultFolderParams(arg))
+}
+
+func (a *postgresQueries) UpdateVaultItem(ctx context.Context, arg UpdateVaultItemParams) (VaultItem, error) {
+	row, err := a.q.UpdateVaultItem(ctx, pgdb.UpdateVaultItemParams(arg))
+	return VaultItem(row), err
+}
+
+func (a *postgresQueries) UpdateVaultKey(ctx context.Context, arg UpdateVaultKeyParams) (int64, error) {
+	return a.q.UpdateVaultKey(ctx, pgdb.UpdateVaultKeyParams(arg))
 }
 
 func (a *postgresQueries) UpgradeToAuthKey(ctx context.Context, arg UpgradeToAuthKeyParams) (int64, error) {
