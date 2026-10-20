@@ -207,6 +207,31 @@ void main() {
     chat.controller.dispose();
   });
 
+  // #3531: a retry encrypts again, so it is the client message id, the same
+  // on every attempt, that lets the Quark answer a send it already stored.
+  // Each send gets its own.
+  test('a retry sends under the first attempt\'s client message id', () async {
+    final chat = FakeChat();
+    chat.controller.select('general');
+    await chat.controller.refresh();
+    final timeline = chat.opened[1]!;
+    timeline.onSend = (_) async => throw Exception('timed out');
+
+    await chat.controller.send('hi');
+    await chat.controller.send('there');
+    final failed = chat.controller.failedSends;
+    timeline.onSend = null;
+    await chat.controller.retry(failed.first.id);
+
+    final ids = timeline.sentClientIds;
+    expect(timeline.sent, ['hi', 'there', 'hi']);
+    expect(ids.every((id) => id != null && id.length == 32), isTrue);
+    expect(ids[2], ids[0]);
+    expect(ids[1], isNot(ids[0]));
+    expect(failed.first.clientMessageId, ids[0]);
+    chat.controller.dispose();
+  });
+
   // #3370 review: the composer clears on send because a failed send stays on
   // screen with its own retry. Leaving chat with it still failed puts it
   // back in the channel's draft, ahead of what was typed since.
