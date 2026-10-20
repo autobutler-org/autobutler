@@ -1,7 +1,11 @@
 import 'dart:ui' show SemanticsAction, SemanticsHitTestBehavior;
 
 import 'package:flutter/gestures.dart'
-    show PointerDeviceKind, kLongPressTimeout;
+    show
+        PointerDeviceKind,
+        PointerHoverEvent,
+        PointerScrollEvent,
+        kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
@@ -740,6 +744,169 @@ void main() {
       await tester.pump();
       expect(tapped, DateTime(2026, 9, 29, 13));
       expect(ghosts(), 0);
+    });
+
+    // #3558: each slot used to keep its own `_hovered`, so a hover delivered
+    // after the press re-lit the slot the pointer had left, and a missed exit
+    // left that hint painted. A week never shows more than one, and a press,
+    // a drag, a scroll, or a new week leaves none.
+    int hintsOn(DateTime day, int hour) => find
+        .descendant(
+          of: find.byKey(
+            ValueKey('calendar_slot_${CalendarDates.key(day)}_$hour'),
+          ),
+          matching: find.byIcon(QuarkIcons.add_rounded),
+        )
+        .evaluate()
+        .length;
+
+    Future<void> lateHover(WidgetTester tester, Offset at) {
+      // Its time is before the press, the way a queued hover arrives late.
+      return tester.sendEventToBinding(
+        PointerHoverEvent(
+          timeStamp: Duration.zero,
+          pointer: 1,
+          device: 1,
+          kind: PointerDeviceKind.mouse,
+          position: at,
+        ),
+      );
+    }
+
+    testBothViewports(
+      'keeps at most one hint, only on the slot under the pointer',
+      (tester, size) async {
+        final week = CalendarDates.weekOf(_today);
+        final sunday = week.first;
+        final wednesday = week[3];
+        final saturday = week.last;
+        await pumpAt(
+          tester,
+          _grid(days: week, onSlotTap: (_) {}),
+          size: size,
+        );
+
+        final mouse = await mouseAt(tester, slot(tester, sunday, 13));
+        expect(ghosts(), 1);
+        expect(hintsOn(sunday, 13), 1);
+
+        await mouse.moveTo(slot(tester, wednesday, 14));
+        await tester.pump();
+        expect(ghosts(), 1);
+        expect(hintsOn(sunday, 13), 0);
+        expect(hintsOn(wednesday, 14), 1);
+
+        await mouse.moveTo(slot(tester, saturday, 15));
+        await tester.pump();
+        expect(ghosts(), 1);
+        expect(hintsOn(wednesday, 14), 0);
+        expect(hintsOn(saturday, 15), 1);
+
+        // Off the timeline, onto the weekday headings.
+        await mouse.moveTo(const Offset(4, 4));
+        await tester.pump();
+        expect(ghosts(), 0);
+        expect(hintsOn(saturday, 15), 0);
+      },
+    );
+
+    testBothViewports(
+      'drops the hint on a press, and a late hover cannot bring it back',
+      (tester, size) async {
+        final week = CalendarDates.weekOf(_today);
+        final sunday = week.first;
+        final saturday = week.last;
+        await pumpAt(
+          tester,
+          _grid(days: week, onSlotTap: (_) {}),
+          size: size,
+        );
+        final start = slot(tester, sunday, 13);
+        final mouse = await mouseAt(tester, start);
+        expect(hintsOn(sunday, 13), 1);
+
+        await mouse.down(start, timeStamp: const Duration(seconds: 1));
+        await tester.pump();
+        await lateHover(tester, start);
+        await tester.pump();
+        expect(ghosts(), 0);
+        expect(hintsOn(sunday, 13), 0);
+
+        final end = slot(tester, saturday, 15);
+        for (var step = 1; step <= 6; step++) {
+          await mouse.moveTo(
+            Offset.lerp(start, end, step / 6)!,
+            timeStamp: Duration(milliseconds: 1000 + step * 40),
+          );
+          await tester.pump();
+          expect(ghosts(), 0);
+        }
+        await mouse.up(timeStamp: const Duration(seconds: 2));
+        await tester.pump();
+        expect(ghosts(), 0);
+
+        // The same queued hover, delivered after the button is up.
+        await lateHover(tester, end);
+        await tester.pump();
+        expect(ghosts(), 0);
+        expect(hintsOn(sunday, 13), 0);
+        expect(hintsOn(saturday, 15), 0);
+
+        final next = [for (final day in week) CalendarDates.addDays(day, 7)];
+        await pumpAt(
+          tester,
+          _grid(days: next, onSlotTap: (_) {}),
+          size: size,
+        );
+        expect(ghosts(), 0);
+      },
+    );
+
+    testBothViewports('clears the hint when the press is canceled', (
+      tester,
+      size,
+    ) async {
+      final sunday = CalendarDates.weekOf(_today).first;
+      await pumpAt(
+        tester,
+        _grid(days: CalendarDates.weekOf(_today), onSlotTap: (_) {}),
+        size: size,
+      );
+      final start = slot(tester, sunday, 13);
+      final mouse = await mouseAt(tester, start);
+      await mouse.down(start, timeStamp: const Duration(seconds: 1));
+      await lateHover(tester, start);
+      await tester.pump();
+      await mouse.cancel(timeStamp: const Duration(seconds: 2));
+      await tester.pump();
+      expect(ghosts(), 0);
+      expect(hintsOn(sunday, 13), 0);
+    });
+
+    testBothViewports('clears the hint when the timeline scrolls', (
+      tester,
+      size,
+    ) async {
+      final sunday = CalendarDates.weekOf(_today).first;
+      await pumpAt(
+        tester,
+        _grid(days: CalendarDates.weekOf(_today), onSlotTap: (_) {}),
+        size: size,
+      );
+      final at = slot(tester, sunday, 13);
+      await mouseAt(tester, at);
+      expect(ghosts(), 1);
+
+      await tester.sendEventToBinding(
+        PointerScrollEvent(
+          position: at,
+          scrollDelta: const Offset(0, 200),
+          kind: PointerDeviceKind.mouse,
+        ),
+      );
+      await tester.pump();
+      expect(ghosts(), 0);
+      expect(hintsOn(sunday, 13), 0);
     });
   });
 
