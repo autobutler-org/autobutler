@@ -83,6 +83,9 @@ func TestExtensionContract(t *testing.T) {
 		}
 		w := httptest.NewRecorder()
 		engine.ServeHTTP(w, req)
+		if w.Code >= http.StatusInternalServerError {
+			t.Logf("%s %s: status %d: %s", method, path, w.Code, w.Body.String())
+		}
 		var decoded any
 		if w.Body.Len() > 0 {
 			if err := json.Unmarshal(w.Body.Bytes(), &decoded); err != nil {
