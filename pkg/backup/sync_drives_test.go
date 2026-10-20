@@ -79,17 +79,7 @@ func runEvents(t *testing.T, w *SyncWorker, bus *eventbus.Bus, d drives, events 
 		bus.Publish(evt)
 	}
 	bus.Publish(eventbus.Event{Kind: eventbus.EventUpload, Path: barrier})
-
-	deadline := time.Now().Add(5 * time.Second)
-	for {
-		if _, err := os.Stat(filepath.Join(d.target, barrier)); err == nil {
-			return
-		}
-		if time.Now().After(deadline) {
-			t.Fatal("timed out waiting for the sync worker")
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
+	waitForFile(t, d.target, barrier)
 }
 
 // trash moves relPath into the trash of the drive serial names, through its
