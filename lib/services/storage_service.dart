@@ -343,33 +343,21 @@ class StorageService with AuthenticatedService {
     invalidateDeviceCache();
   }
 
+  /// Starts a snapshot backup onto [targetDeviceSerial] and returns its job
+  /// id. It sends no password: the chat and vault are backed up as ciphertext
+  /// (#3460).
   static Future<String> startSnapshotBackup({
     required String targetDeviceSerial,
-    String? username,
-    String? password,
-    String? recoveryPassword,
     bool acknowledgeHealth = false,
   }) async {
     final uri = apiBaseUri.resolve('/api/v0/storage/devices/snapshot-backup');
-    final body = <String, dynamic>{'targetDeviceSerial': targetDeviceSerial};
-    if (username != null) body['username'] = username;
-    // With no username there is no account to derive an auth key for, and
-    // the raw password is never sent (#2430), so it is left out; the Quark
-    // then refuses a vault export for want of credentials.
-    if (password != null && username != null) {
-      body['password'] = (await AuthSecret.resolve(
-        username: username,
-        password: password,
-        use: AuthSecretUse.reconfirm,
-      )).authKey;
-    }
-    if (recoveryPassword != null) body['recoveryPassword'] = recoveryPassword;
-    if (acknowledgeHealth) body['acknowledgeHealth'] = true;
-
     final response = await sharedHttpClient.post(
       uri,
       headers: {'Content-Type': 'application/json', ..._authHeaders},
-      body: jsonEncode(body),
+      body: jsonEncode({
+        'targetDeviceSerial': targetDeviceSerial,
+        if (acknowledgeHealth) 'acknowledgeHealth': true,
+      }),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final data = jsonDecode(response.body) as Map<String, dynamic>?;

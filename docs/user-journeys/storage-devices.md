@@ -124,11 +124,12 @@ Covers the System page's Storage tab (`/system/storage`) — listing, mounting, 
 **Steps:**
 
 1. Navigate to `/system/storage`.
-2. Initiate a backup for a device (**Back Up**), confirm your credentials, then tap **Start Backup**.
+2. Initiate a backup for a device (**Back Up**), then tap **Start Backup**.
 3. Monitor the backup status.
 
 **Expected result:**
 
+- No password is asked. The dialog says chat and every account's vault are included, still encrypted.
 - Backup job starts and a status indicator updates with progress: "Preparing backup...", "Scanning files...", then
   "Copying files" with a percentage and file and byte counts.
 - On completion, a success state is shown.

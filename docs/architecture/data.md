@@ -16,18 +16,15 @@ flowchart LR
     tailscaleState[/"tsnet state<br/>/var/lib/quark/tsnet on Linux"/]
     subgraph usb["Each managed USB drive"]
         driveFiles[/"files + trash"/]
-        vaultDb[("vault.db<br/>only if the vault was moved here")]
         snapshots[/"backup snapshots"/]
     end
-    mainDb -- "vault_location = serial" --> vaultDb
 ```
 
 | Store              | Opened by                         | Schema source                             |
 | ------------------ | --------------------------------- | ----------------------------------------- |
 | `quark.db`         | `db.ConnectToDatabase`            | `internal/db/migrations` (golang-migrate) |
-| `vault.db`         | `db.ConnectToVaultDatabase`       | `internal/db/vault_schema.go`             |
 
-All three use the pure-Go `modernc.org/sqlite` driver, so the binary cross-compiles without cgo.
+It and the backup files a snapshot writes use the pure-Go `modernc.org/sqlite` driver, so the binary cross-compiles without cgo.
 
 ## The PostgreSQL backend
 
@@ -47,8 +44,8 @@ already holds tables Quark did not make stops startup with an error saying what 
 is left as it was. The URL carries a password, so the log names the host, database and user and nothing else.
 
 Only the main schema moves. Files stay on disk, and
-anything exported or portable is a SQLite file on every backend: `vault.db` on a drive, and the
-`vault_backup.db` and `chat_backup.db` a backup writes. Code above `internal/db` holds a `db.Querier` and does
+anything exported or portable is a SQLite file on every backend: the `chat_backup.db` and
+`vault_items_backup.db` a backup writes. Code above `internal/db` holds a `db.Querier` and does
 not know which engine answers it.
 
 ### What does not work on PostgreSQL yet
@@ -61,17 +58,15 @@ leaves the rest of the server serving.
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----- |
 | Content search (`GET /files/search/content`)                     | Refused. Files are still indexed into `file_content`, so the text is there when search arrives           | #2958 |
 | Music search                                                     | No route yet. `music_tracks` is shared; FTS5 `music_tracks_fts` is SQLite only, like content search      | #2958 |
-| Snapshot backup (`POST /storage/devices/snapshot-backup`)        | Refused before anything is copied: every snapshot includes the chat backup                               | #2963 |
-| Chat backup and restore (`backup.ExportChat`, `ImportChat`)      | Refused: both attach a SQLite file to the live connection                                                | #2963 |
-| Moving the vault to or from a drive (`PUT /vault/storage-location`) | Refused. The vault stays in the main database                                                          | #2963 |
+| Snapshot backup (`POST /storage/devices/snapshot-backup`)        | Refused before anything is copied: every snapshot includes the chat and vault backups                    | #2963 |
+| Chat and vault backup and restore (`backup.ExportChat`, `ImportChat`, `ExportVault`, `ImportVault`) | Refused: each attaches a SQLite file to the live connection | #2963 |
 | `/health` and the durability guarantees                          | `/health` does not report on the PostgreSQL connection, and Quark checks no PostgreSQL durability setting | #2963 |
 | Moving an existing install's data from SQLite                    | No tool. A PostgreSQL install starts empty                                                               | #2962 |
 | Choosing the backend from the admin settings                     | Environment variables only                                                                               | #2961 |
 | More than one instance on one database                           | Not refused and not safe. See [Running Quark in a Container](../container.md)                            | #2964 |
 | The backend test suites                                          | Run on SQLite whatever `DB_BACKEND` says, except `make test/db/postgres`                                 | #2960 |
 
-What does work that might be expected not to: the vault and its backup export and import (the file is SQLite,
-the live side is not), and the factory reset an admin asks for (`db.ResetDatabase`), which on PostgreSQL drops
+What does work that might be expected not to: the per-account vault itself, and the factory reset an admin asks for (`db.ResetDatabase`), which on PostgreSQL drops
 and re-runs the migrations in one transaction and keeps the same tables SQLite's does.
 
 ### What behaves differently
@@ -154,6 +149,8 @@ join. `path_access.level` is `read`, `write` or `owner`, and each row names exac
 | `021_calendar`         | `calendars` (one default, Personal), `calendar_events`                  |
 | `022_calendar_event_owner` | owner column on `calendar_events`                                   |
 | `036_music_library`    | `music_tracks`, `music_tracks_fts` (FTS5, SQLite only)              |
+| `037_per_account_vault` | `vault_keys`, `vault_items`                                            |
+| `038_drop_household_vault` | drops `005_vault`'s tables                                          |
 
 `music_tracks` (#2982) is a cache built from audio files, not a record: every column is derived, and a rescan
 rebuilds it. `music_tracks_fts` is its FTS5 mirror and exists only on SQLite, with `file_content_fts`.
@@ -281,9 +278,8 @@ Every implementation keeps one contract, which `pkg/vfs/conformance_test.go` hol
 
 ## The vault
 
-The vault is an encrypted store for secrets. Its tables (`vault_config`, `vault_folders`, `vault_entries`) live
-in `quark.db` by default; when the admin moves the vault to a USB drive, `vault_location` records that drive's
-serial and the same tables are created in `vault.db` on the drive (`internal/db/vault_schema.go`). Unlocking
-derives a key from the master password with Argon2id, checks it by decrypting a known verification value, and
-holds the key in `vaultcrypto.VaultSession` memory only. Unplugging the drive locks the session. `pkg/backup`
-exports the vault to another device and imports it back.
+Each account has a vault of its own, encrypted on the client (#3456). `vault_keys` holds the account's vault
+key, wrapped under its password and, when the client had it, its recovery phrase; `vault_items` holds the items
+as ciphertext under that key. The Quark never sees a key or a plaintext. A snapshot copies both tables as they
+are into `vault_items_backup.db`, and `backup.ImportVault` restores them ([Backup](backup.md)). The household
+vault of `005_vault`, one master password for everyone, is dropped by `038_drop_household_vault`.

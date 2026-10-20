@@ -520,14 +520,6 @@ void main() {
           password: _password,
         ),
       ),
-      'a snapshot backup': (
-        AuthSecretUse.reconfirm,
-        () => StorageService.startSnapshotBackup(
-          targetDeviceSerial: 'S1',
-          username: 'grace',
-          password: _password,
-        ),
-      ),
       "the vault's storage location": (
         AuthSecretUse.reconfirm,
         () => VaultService.setStorageLocation(
@@ -809,27 +801,6 @@ void main() {
         ),
       ),
     );
-
-    test(
-      'a snapshot backup',
-      () => expectAuthKey(
-        '/api/v0/storage/devices/snapshot-backup',
-        () => StorageService.startSnapshotBackup(
-          targetDeviceSerial: 'S1',
-          username: 'grace',
-          password: _password,
-        ),
-      ),
-    );
-
-    test('a snapshot backup with no username sends no password', () async {
-      await StorageService.startSnapshotBackup(
-        targetDeviceSerial: 'S1',
-        password: _password,
-      );
-
-      expect(quark.lastBody, {'targetDeviceSerial': 'S1'});
-    });
 
     test(
       "the vault's storage location",

@@ -14,7 +14,7 @@ import (
 
 // startSnapshotBackup godoc
 // @Summary Start a snapshot backup to a device
-// @Description Queues a job that aggregates all files from all managed devices onto the target snapshot-backup device. Answers 409 while the target already has a pending or running backup, whichever instance started it, and 409 when the target's health.verdict is replace-soon unless acknowledgeHealth is true. Watch does not block. The backup does not delete files already on the drive; it removes only its own temp files. jobId is what the status route takes.
+// @Description Queues a job that aggregates all files from all managed devices onto the target snapshot-backup device. Answers 409 while the target already has a pending or running backup, whichever instance started it, and 409 when the target's health.verdict is replace-soon unless acknowledgeHealth is true. Watch does not block. The backup does not delete files already on the drive; it removes only its own temp files. It asks for no password: the chat and every account's vault are copied as the ciphertext they are, into chat_backup.db and vault_items_backup.db. jobId is what the status route takes.
 // @Tags storage
 // @Accept json
 // @Produce json
@@ -22,9 +22,8 @@ import (
 // @Success 202 {object} object
 // @Failure 400 {object} serverutil.Response
 // @Failure 409 {object} serverutil.Response "backup already running, or a replace-soon target was not acknowledged"
-// @Failure 426 {object} serverutil.Response "password is a raw password, not the auth key: the app is too old"
 // @Failure 500 {object} serverutil.Response
-// @Failure 501 {object} serverutil.Response "A snapshot includes the chat backup, which is not supported on the PostgreSQL backend yet"
+// @Failure 501 {object} serverutil.Response "A snapshot includes the chat and vault backups, which are not supported on the PostgreSQL backend yet"
 // @Security BearerAuth
 // @Router /storage/devices/snapshot-backup [post]
 func startSnapshotBackup(c *gin.Context) *serverutil.Response {
@@ -35,9 +34,6 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 
 	var req struct {
 		TargetDeviceSerial string `json:"targetDeviceSerial" binding:"required"`
-		Username           string `json:"username"`
-		Password           string `json:"password"`
-		RecoveryPassword   string `json:"recoveryPassword"`
 		AcknowledgeHealth  bool   `json:"acknowledgeHealth"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,27 +57,18 @@ func startSnapshotBackup(c *gin.Context) *serverutil.Response {
 	result, err := backup.StartSnapshotBackup(backup.StartSnapshotBackupParams{
 		Ctx:                c.Request.Context(),
 		Queries:            deps.Database().Queries,
-		ChatDB:             deps.Database().Db,
+		LiveDB:             deps.Database().Db,
 		Registry:           deps.VFSRegistry(),
 		Queue:              deps.JobQueue(),
 		UserID:             userID,
 		TargetDeviceSerial: req.TargetDeviceSerial,
-		Username:           req.Username,
-		Password:           req.Password,
-		RecoveryPassword:   req.RecoveryPassword,
 	})
 	var inProgress *backup.BackupInProgressError
 	switch {
 	case errors.As(err, &inProgress):
 		return serverutil.Conflict(err)
-	case errors.Is(err, backup.ErrInvalidCredentials),
-		errors.Is(err, backup.ErrMasterPasswordMismatch):
-		return serverutil.Unauthorized(err)
 	case errors.Is(err, backup.ErrTargetRoleRequired),
-		errors.Is(err, backup.ErrTargetNotManaged),
-		errors.Is(err, backup.ErrVaultCredentialsRequired),
-		errors.Is(err, backup.ErrRecoveryPasswordTooShort),
-		errors.Is(err, backup.ErrVaultNotInitialized):
+		errors.Is(err, backup.ErrTargetNotManaged):
 		return serverutil.BadRequest(err)
 	case err != nil:
 		return serverutil.InternalServerError(err)

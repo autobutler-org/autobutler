@@ -9,12 +9,10 @@ import (
 	"strconv"
 
 	"github.com/autobutler-org/quark/internal/db"
-	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/jobutil"
 	"github.com/autobutler-org/quark/pkg/util/sqlutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
-	"github.com/autobutler-org/quark/pkg/util/vaultcrypto"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
@@ -22,17 +20,8 @@ import (
 // returns is the server's fault. The messages are the ones the client already
 // reads, so they travel to the response unchanged.
 var (
-	ErrTargetRoleRequired       = errors.New("target device must have the snapshot-backup role")
-	ErrTargetNotManaged         = errors.New("target device not found or not managed")
-	ErrVaultCredentialsRequired = errors.New("username and password required for vault backup")
-	ErrRecoveryPasswordTooShort = errors.New("recovery password must be at least 8 characters")
-	ErrVaultNotInitialized      = errors.New("vault is not initialized")
-)
-
-// The failures that mean the credentials were wrong rather than the request.
-var (
-	ErrInvalidCredentials     = errors.New("invalid credentials")
-	ErrMasterPasswordMismatch = errors.New("master password does not match vault")
+	ErrTargetRoleRequired = errors.New("target device must have the snapshot-backup role")
+	ErrTargetNotManaged   = errors.New("target device not found or not managed")
 )
 
 // BackupInProgressError reports a target device that already has a backup
@@ -45,20 +34,19 @@ func (e *BackupInProgressError) Error() string {
 	return fmt.Sprintf("backup already running for this device (job %s)", e.JobID)
 }
 
-// StartSnapshotBackupParams starts a snapshot backup onto a target device. The
-// vault half is opt-in: leave RecoveryPassword empty and no credentials are
-// asked for and no vault export is written.
+// StartSnapshotBackupParams starts a snapshot backup onto a target device. It
+// asks for no password: the chat and vault tables travel as the ciphertext
+// they already are (#3460).
 type StartSnapshotBackupParams struct {
-	// Ctx bounds the checks made, and the vault export built, before the job
-	// is queued. The backup itself runs on the job queue and outlives it.
+	// Ctx bounds the checks made before the job is queued. The backup itself
+	// runs on the job queue and outlives it.
 	Ctx context.Context
-	// Queries reads the device roles, the vault, and the job holding the
-	// target's lock.
+	// Queries reads the device roles and the job holding the target's lock.
 	Queries db.Querier
-	// ChatDB is the live database, whose chat tables every snapshot exports.
-	// A backend the chat export cannot read refuses the backup here, before
-	// anything is copied. Nil skips that check.
-	ChatDB *sql.DB
+	// LiveDB is the live database, whose chat and vault tables every snapshot
+	// exports. A backend those exports cannot read refuses the backup here,
+	// before anything is copied. Nil skips that check.
+	LiveDB *sql.DB
 	// Registry holds the target device's files namespace.
 	Registry vfs.Registry
 	// Queue runs the backup. Its Handler for [Kind] comes from [NewHandler].
@@ -68,12 +56,6 @@ type StartSnapshotBackupParams struct {
 	// TargetDeviceSerial is the device to back up onto. It must already hold
 	// the snapshot-backup role.
 	TargetDeviceSerial string
-	// Username and Password authenticate the vault export, and are required
-	// only when RecoveryPassword is set.
-	Username string
-	Password string
-	// RecoveryPassword encrypts the exported vault. Empty skips the export.
-	RecoveryPassword string
 }
 
 // StartSnapshotBackupResult reports the job that was queued. The backup is
@@ -86,18 +68,16 @@ type StartSnapshotBackupResult struct {
 // StartSnapshotBackup validates the request and queues the backup as a job.
 // One pending or running backup per target is all the jobs table allows, on
 // every instance at once, so a second start returns a [BackupInProgressError].
-//
-// A vault export is built here, under a temp name on the target, and the job
-// only moves it into place: the password and the vault key never leave the
-// request, and whichever instance runs the job needs neither.
 func StartSnapshotBackup(params StartSnapshotBackupParams) (StartSnapshotBackupResult, error) {
 	ctx := params.Ctx
 
-	// Every snapshot carries the chat export. Refused now, with the reason,
-	// rather than after the files are copied or by leaving the chat out.
-	if params.ChatDB != nil {
-		if err := requireChatBackup(params.ChatDB); err != nil {
-			return StartSnapshotBackupResult{}, fmt.Errorf("a snapshot backup includes the chat: %w", err)
+	// Every snapshot carries the chat and vault exports. Refused now, with the
+	// reason, rather than after the files are copied or by leaving them out.
+	if params.LiveDB != nil {
+		for _, b := range ciphertextBackups {
+			if err := b.require(params.LiveDB); err != nil {
+				return StartSnapshotBackupResult{}, fmt.Errorf("a snapshot backup includes the chat and the vault: %w", err)
+			}
 		}
 	}
 
@@ -106,8 +86,8 @@ func StartSnapshotBackup(params StartSnapshotBackupParams) (StartSnapshotBackupR
 		return StartSnapshotBackupResult{}, ErrTargetRoleRequired
 	}
 
-	// The index is the lock. This only spares a request that is going to lose
-	// to it the work of a vault export.
+	// The index is the lock. This only answers a request that is going to
+	// lose to it with the job it lost to, before any work.
 	if inProgress := activeBackup(ctx, params.Queries, params.TargetDeviceSerial); inProgress != nil {
 		return StartSnapshotBackupResult{}, inProgress
 	}
@@ -116,26 +96,17 @@ func StartSnapshotBackup(params StartSnapshotBackupParams) (StartSnapshotBackupR
 	if params.TargetDeviceSerial == "" {
 		return StartSnapshotBackupResult{}, ErrTargetNotManaged
 	}
-	target, err := fileutil.FilesVFS(params.Registry, params.TargetDeviceSerial)
-	if err != nil {
+	if _, err := fileutil.FilesVFS(params.Registry, params.TargetDeviceSerial); err != nil {
 		return StartSnapshotBackupResult{}, ErrTargetNotManaged
-	}
-
-	staged, err := stageVaultExportTo(params, target)
-	if err != nil {
-		return StartSnapshotBackupResult{}, err
 	}
 
 	queued, err := params.Queue.Enqueue(ctx, jobutil.EnqueueParams{
 		Kind:   Kind,
 		Name:   "Snapshot backup",
-		Params: JobParams{TargetDeviceSerial: params.TargetDeviceSerial, VaultExport: staged},
+		Params: JobParams{TargetDeviceSerial: params.TargetDeviceSerial},
 		UserID: params.UserID,
 	})
 	if err != nil {
-		if staged != "" {
-			discardVaultExport(ctx, staged, target)
-		}
 		if sqlutil.IsUniqueConstraintErr(err) {
 			if inProgress := activeBackup(ctx, params.Queries, params.TargetDeviceSerial); inProgress != nil {
 				return StartSnapshotBackupResult{}, inProgress
@@ -155,77 +126,6 @@ func activeBackup(ctx context.Context, queries db.Querier, targetSerial string) 
 		return nil
 	}
 	return &BackupInProgressError{JobID: strconv.FormatInt(row.ID, 10)}
-}
-
-// stageVaultExportTo builds the vault export the request asked for on the
-// target and returns its temp name, or "" when it asked for none.
-func stageVaultExportTo(params StartSnapshotBackupParams, target vfs.VFS) (string, error) {
-	vaultParams, err := prepareVaultExport(params)
-	if err != nil || vaultParams == nil {
-		return "", err
-	}
-	defer vaultcrypto.ZeroKey(vaultParams.LiveKey)
-
-	dir, err := hostDir(params.Ctx, target)
-	if err != nil {
-		return "", err
-	}
-	removeStaleStagedVaults(dir)
-	staged, err := stageVaultExport(params.Ctx, vaultParams.Queries, vaultParams.LiveKey, vaultParams.RecoveryPassword, dir)
-	if err != nil {
-		return "", fmt.Errorf("vault export: %w", err)
-	}
-	return staged, nil
-}
-
-// prepareVaultExport derives the live vault key the export will be re-encrypted
-// from, after checking the credentials that unlock it. It returns nil when the
-// request asked for no vault export.
-func prepareVaultExport(params StartSnapshotBackupParams) (*VaultExportParams, error) {
-	if params.RecoveryPassword == "" {
-		return nil, nil
-	}
-	if params.Username == "" || params.Password == "" {
-		return nil, ErrVaultCredentialsRequired
-	}
-	if len(params.RecoveryPassword) < 8 {
-		return nil, ErrRecoveryPasswordTooShort
-	}
-
-	ctx := params.Ctx
-	if _, _, err := authutil.ValidateBasicAuth(ctx, params.Queries, params.Username, params.Password); err != nil {
-		// A raw password goes back as it is: it carries its own 426.
-		if errors.Is(err, authutil.ErrAppTooOld) {
-			return nil, err
-		}
-		return nil, ErrInvalidCredentials
-	}
-
-	config, err := params.Queries.GetVaultConfig(ctx)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrVaultNotInitialized
-	}
-	if err != nil {
-		return nil, fmt.Errorf("get vault config: %w", err)
-	}
-
-	argon2Params := vaultcrypto.Argon2Params{
-		Memory:      uint32(config.Argon2Memory),
-		Iterations:  uint32(config.Argon2Iterations),
-		Parallelism: uint8(config.Argon2Parallelism),
-	}
-	liveKey := vaultcrypto.DeriveKey(params.Password, config.Salt, argon2Params)
-
-	if !vaultcrypto.CheckVerificationBlob(liveKey, config.VerificationBlob, config.VerificationNonce) {
-		vaultcrypto.ZeroKey(liveKey)
-		return nil, ErrMasterPasswordMismatch
-	}
-
-	return &VaultExportParams{
-		Queries:          params.Queries,
-		LiveKey:          liveKey,
-		RecoveryPassword: params.RecoveryPassword,
-	}, nil
 }
 
 // gatherSourceDevices lists every managed device the backup should copy from —

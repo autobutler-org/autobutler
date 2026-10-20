@@ -1,6 +1,6 @@
-// Package backup snapshots the vault, the chat tables and managed-device files
-// onto a target device, keeps the files in sync as they change, and verifies
-// and restores what it wrote.
+// Package backup snapshots managed-device files, and the chat and vault tables
+// as the ciphertext they are, onto a target device, keeps the files in sync as
+// they change, and verifies and restores what it wrote.
 package backup
 
 import (
@@ -90,17 +90,14 @@ type VerifyResult struct {
 	Errors    []string `json:"errors,omitempty"`
 }
 
-type VaultExportParams struct {
-	Queries          db.Querier
-	LiveKey          []byte
-	RecoveryPassword string
-}
-
+// VaultImportResult reports what [ImportVault] restored.
 type VaultImportResult struct {
-	EntriesImported int `json:"entriesImported"`
-	EntriesSkipped  int `json:"entriesSkipped"`
-	FoldersImported int `json:"foldersImported"`
-	FoldersSkipped  int `json:"foldersSkipped"`
+	// Accounts is how many accounts got their vault key back.
+	Accounts int `json:"accounts"`
+	Items    int `json:"items"`
+	// UnmatchedUsers is the usernames in the backup with no account on this
+	// Quark, sorted. Their vaults were not restored.
+	UnmatchedUsers []string `json:"unmatchedUsers"`
 }
 
 // ChatImportResult reports what [ImportChat] restored.
@@ -120,12 +117,9 @@ type SnapshotBackupParams struct {
 	// saves nothing.
 	Save     func(job *BackupJob)
 	EventBus *eventbus.Bus
-	// VaultExport names the vault export staged on the target, which the
-	// snapshot puts in place. Empty means the request asked for none.
-	VaultExport string
-	// ChatDB is the live database whose chat tables are exported beside the
-	// files. Nil skips the chat export.
-	ChatDB      *sql.DB
+	// LiveDB is the live database whose chat and vault tables are exported
+	// beside the files, as ciphertext. Nil skips both exports.
+	LiveDB      *sql.DB
 	IOSemaphore *iosemutil.Semaphore // throttles file copies to yield to interactive requests
 	// Queries is the database a completed snapshot is recorded in for
 	// [LastSnapshot]. Nil records nothing.

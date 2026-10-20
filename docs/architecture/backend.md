@@ -19,7 +19,7 @@ flowchart TB
         media["photoutil · albumutil · videoutil<br/>thumbnailutil · transcodeutil"]
         auth["authutil · accessutil"]
         ops["storageutil · jobutil · workerutil<br/>settingsutil · updateutil · remoteutil"]
-        vault["vaultutil · vaultcrypto"]
+        vault["vaultutil"]
         bus["eventbus"]
     end
 

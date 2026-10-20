@@ -6,14 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quark/services/app_settings.dart';
-import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/authenticated_service.dart';
-import 'package:quark/services/chat_crypto.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/widgets/system/storage_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../support/auth_salt.dart';
 
 /// #3084: the Storage tab polls a snapshot backup's status every two seconds.
 /// A 404 means the job is gone for good, so the poll stops and the tab drops
@@ -30,8 +26,7 @@ void main() {
   late int statusCalls;
   late int statusCode;
 
-  setUpAll(() async {
-    await ChatCrypto.load();
+  setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(secureStorage, (_) async => null);
   });
@@ -53,47 +48,43 @@ void main() {
     StorageService.invalidateDeviceCache();
     statusCalls = 0;
     resetSharedHttpClient();
-    sharedHttpClientFactory = () => AuthSaltClient(
-      MockClient((request) async {
-        switch (request.url.path) {
-          case '/api/v0/storage/devices/status':
-            return http.Response(
-              jsonEncode({
-                'devices': [
-                  {
-                    'name': 'Backups',
-                    'serial': 'USB2',
-                    'mountPoint': '/mnt/backups',
-                    'role': 'snapshot-backup',
-                    'isEnabled': true,
-                  },
-                ],
-              }),
-              200,
-            );
-          case '/api/v0/storage/devices/snapshot-backup':
-            return http.Response(jsonEncode({'jobId': 'job-1'}), 200);
-          case statusPath:
-            statusCalls++;
-            return http.Response(
-              jsonEncode({'id': 'job-1', 'status': 'COPYING'}),
-              statusCode,
-            );
-        }
-        return http.Response(jsonEncode({'error': ''}), 404);
-      }),
-    );
+    sharedHttpClientFactory = () => MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v0/storage/devices/status':
+          return http.Response(
+            jsonEncode({
+              'devices': [
+                {
+                  'name': 'Backups',
+                  'serial': 'USB2',
+                  'mountPoint': '/mnt/backups',
+                  'role': 'snapshot-backup',
+                  'isEnabled': true,
+                },
+              ],
+            }),
+            200,
+          );
+        case '/api/v0/storage/devices/snapshot-backup':
+          return http.Response(jsonEncode({'jobId': 'job-1'}), 200);
+        case statusPath:
+          statusCalls++;
+          return http.Response(
+            jsonEncode({'id': 'job-1', 'status': 'COPYING'}),
+            statusCode,
+          );
+      }
+      return http.Response(jsonEncode({'error': ''}), 404);
+    });
   });
 
   tearDown(() {
     AppSettings.instance.isAdmin.value = false;
     resetSharedHttpClient();
     sharedHttpClientFactory = buildLocalTrustHttpClient;
-    authHttpClientFactory = () => sharedHttpClient;
   });
 
-  /// Starts a backup from the tab and answers the two dialogs, leaving the
-  /// job polling.
+  /// Starts a backup from the tab and confirms it, leaving the job polling.
   Future<void> startBackup(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
@@ -105,13 +96,8 @@ void main() {
 
     await tester.tap(find.text('Back Up'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Username'), 'grace');
-    await tester.enterText(find.widgetWithText(TextField, 'Password'), 'pw');
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Start Backup'));
-    // Deriving the auth key needs the real event loop as well as the fake one.
-    await pumpWhileDeriving(tester);
+    await tester.pump();
   }
 
   /// Lets [ticks] poll intervals go by.

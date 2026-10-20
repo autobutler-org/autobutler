@@ -64,9 +64,9 @@ LIMIT CAST(sqlc.arg('limit') AS BIGINT)
 
 ```sql
 -- before
-UPDATE vault_location SET updated_at = datetime('now') WHERE id = 1;
+UPDATE vault_keys SET updated_at = datetime('now') WHERE user_id = sqlc.arg(user_id);
 -- after
-UPDATE vault_location SET updated_at = CURRENT_TIMESTAMP WHERE id = 1;
+UPDATE vault_keys SET updated_at = CURRENT_TIMESTAMP WHERE user_id = sqlc.arg(user_id);
 ```
 
 On SQLite the two store the same text, `YYYY-MM-DD HH:MM:SS` in UTC, which is also what the DSN's

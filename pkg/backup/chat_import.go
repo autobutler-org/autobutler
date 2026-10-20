@@ -4,12 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
-	"net/url"
-	"os"
-	"path/filepath"
-
-	"github.com/autobutler-org/quark/internal/db"
 )
 
 // The reasons [ImportChat] turns a restore down that the caller can explain to
@@ -41,99 +35,30 @@ var (
 // Like [ExportChat] it attaches the file to the live connection, and returns a
 // *db.UnsupportedError on a PostgreSQL-backed Quark (#2963).
 func ImportChat(ctx context.Context, liveDB *sql.DB, backupDir string) (ChatImportResult, error) {
-	if err := requireChatBackup(liveDB); err != nil {
-		return ChatImportResult{}, err
-	}
-	dbPath, err := filepath.Abs(filepath.Join(backupDir, backupChatFilename))
+	rows, unmatched, err := chatBackup.restore(ctx, liveDB, backupDir)
 	if err != nil {
 		return ChatImportResult{}, err
 	}
-	// ATTACH would otherwise answer a missing file with a less helpful error.
-	if _, err := os.Stat(dbPath); err != nil {
-		return ChatImportResult{}, fmt.Errorf("chat_backup.db not found on device: %w", err)
-	}
-
-	// Read-only, so a restore can never change the file the manifest hashed.
-	backupURI := url.URL{Scheme: "file", Path: dbPath, RawQuery: "mode=ro"}
-	conn, err := attachChatBackup(ctx, liveDB, backupURI.String())
-	if err != nil {
-		return ChatImportResult{}, err
-	}
-	// Also what rolls the transaction below back on every early return.
-	defer discardChatConn(conn)
-
-	var version int
-	if err := conn.QueryRowContext(ctx, `PRAGMA chat_backup.user_version`).Scan(&version); err != nil {
-		return ChatImportResult{}, fmt.Errorf("read chat backup version: %w", err)
-	}
-	if version != db.ChatBackupVersion {
-		return ChatImportResult{}, fmt.Errorf("%w: the file is format %d, this Quark reads format %d",
-			ErrChatBackupVersion, version, db.ChatBackupVersion)
-	}
-
-	// IMMEDIATE takes the write lock before the emptiness check, so nobody
-	// posts a message between the check and the delete that follows it.
-	// database/sql can only begin a deferred transaction, hence the Exec.
-	if _, err := conn.ExecContext(ctx, `BEGIN IMMEDIATE`); err != nil {
-		return ChatImportResult{}, fmt.Errorf("begin chat restore: %w", err)
-	}
-
-	var occupied bool
-	err = conn.QueryRowContext(ctx, `
-		SELECT EXISTS (SELECT 1 FROM main.chat_messages)
-		    OR EXISTS (SELECT 1 FROM main.chat_channels WHERE is_default = 0)`).Scan(&occupied)
-	if err != nil {
-		return ChatImportResult{}, fmt.Errorf("check live chat: %w", err)
-	}
-	if occupied {
-		return ChatImportResult{}, ErrChatNotEmpty
-	}
-
-	var result ChatImportResult
-	for _, step := range chatRestoreSteps {
-		res, err := conn.ExecContext(ctx, step.statement)
-		if err != nil {
-			return ChatImportResult{}, fmt.Errorf("restore chat (%s): %w", step.name, err)
-		}
-		// modernc's RowsAffected never fails.
-		rows, _ := res.RowsAffected()
-		switch step.name {
-		case "chat_channels":
-			result.Channels = int(rows)
-		case "chat_messages":
-			result.Messages = int(rows)
-		}
-	}
-
-	result.UnmatchedUsers, err = unmatchedChatUsers(ctx, conn)
-	if err != nil {
-		return ChatImportResult{}, err
-	}
-
-	if _, err := conn.ExecContext(ctx, `COMMIT`); err != nil {
-		return ChatImportResult{}, fmt.Errorf("commit chat restore: %w", err)
-	}
-	return result, nil
+	return ChatImportResult{
+		Channels:       int(rows["chat_channels"]),
+		Messages:       int(rows["chat_messages"]),
+		UnmatchedUsers: unmatched,
+	}, nil
 }
 
 // chatRestoreSteps is the restore, in the order the live foreign keys need.
 //
-// Raw SQL rather than sqlc, under the same exception as vault_export.go: each
-// statement reads an attached database outside the migration set, which sqlc
-// has no schema for and cannot type-check, and it keeps the rows inside SQLite
-// instead of on the Go heap (see copyChatTables).
+// Raw SQL rather than sqlc, for the reason [ciphertextBackup.copyTables]
+// gives: each statement reads an attached database outside the migration set,
+// and keeps the rows inside SQLite instead of on the Go heap.
 //
 // u, and its like, is the backup account's row in the map from backup ids to
 // live ids. A LEFT JOIN leaves live_id NULL for an account that is not here,
 // which is what an ON DELETE SET NULL column wants; an inner JOIN drops the
 // row, which is what ON DELETE CASCADE would have done.
-var chatRestoreSteps = []struct{ name, statement string }{
-	{"map users", `
-		CREATE TEMP TABLE chat_restore_users AS
-		SELECT b.id AS backup_id, l.id AS live_id
-		FROM chat_backup.users AS b JOIN main.users AS l ON l.username = b.username`},
+var chatRestoreSteps = []restoreStep{
 	{"map groups", `
-		CREATE TEMP TABLE chat_restore_groups AS
+		CREATE TEMP TABLE restore_groups AS
 		SELECT b.id AS backup_id, l.id AS live_id
 		FROM chat_backup.groups AS b JOIN main.groups AS l ON l.name = b.name`},
 
@@ -146,15 +71,15 @@ var chatRestoreSteps = []struct{ name, statement string }{
 		INSERT INTO main.chat_channels (id, server_id, kind, name, topic, is_default, created_by, created_at)
 		SELECT c.id, c.server_id, c.kind, c.name, c.topic, c.is_default, u.live_id, c.created_at
 		FROM chat_backup.chat_channels AS c
-		LEFT JOIN temp.chat_restore_users AS u ON u.backup_id = c.created_by`},
+		LEFT JOIN temp.restore_users AS u ON u.backup_id = c.created_by`},
 	// A member row names an account or a group, never both, so a row whose
 	// one principal is not here has neither and is left out.
 	{"chat_channel_members", `
 		INSERT INTO main.chat_channel_members (id, channel_id, user_id, group_id, permissions)
 		SELECT m.id, m.channel_id, u.live_id, g.live_id, m.permissions
 		FROM chat_backup.chat_channel_members AS m
-		LEFT JOIN temp.chat_restore_users AS u ON u.backup_id = m.user_id
-		LEFT JOIN temp.chat_restore_groups AS g ON g.backup_id = m.group_id
+		LEFT JOIN temp.restore_users AS u ON u.backup_id = m.user_id
+		LEFT JOIN temp.restore_groups AS g ON g.backup_id = m.group_id
 		WHERE u.live_id IS NOT NULL OR g.live_id IS NOT NULL`},
 	// OR REPLACE: an account that signed in to the new install already made
 	// itself a key pair, and every grant in the backup is sealed to the old
@@ -165,12 +90,12 @@ var chatRestoreSteps = []struct{ name, statement string }{
 		SELECT u.live_id, k.box_public_key, k.sign_public_key,
 			k.wrapped_by_password, k.salt_pw, k.wrapped_by_phrase, k.salt_rp, k.kdf_params, k.created_at, k.updated_at
 		FROM chat_backup.user_chat_keys AS k
-		JOIN temp.chat_restore_users AS u ON u.backup_id = k.user_id`},
+		JOIN temp.restore_users AS u ON u.backup_id = k.user_id`},
 	{"chat_channel_keys", `
 		INSERT INTO main.chat_channel_keys (channel_id, version, created_by, created_at)
 		SELECT k.channel_id, k.version, u.live_id, k.created_at
 		FROM chat_backup.chat_channel_keys AS k
-		LEFT JOIN temp.chat_restore_users AS u ON u.backup_id = k.created_by`},
+		LEFT JOIN temp.restore_users AS u ON u.backup_id = k.created_by`},
 	// A grant's signature covers its recipient's account id
 	// (chatutil.GrantMessage), so a grant cannot follow an account to a new
 	// id: it would never verify again, and it would hold the one slot a valid
@@ -184,8 +109,8 @@ var chatRestoreSteps = []struct{ name, statement string }{
 		SELECT g.id, g.channel_id, g.version, r.live_id, g.sealed_key,
 			b.live_id, g.granter_sign_key, g.signature, g.created_at
 		FROM chat_backup.chat_key_grants AS g
-		LEFT JOIN temp.chat_restore_users AS r ON r.backup_id = g.user_id
-		LEFT JOIN temp.chat_restore_users AS b ON b.backup_id = g.granted_by
+		LEFT JOIN temp.restore_users AS r ON r.backup_id = g.user_id
+		LEFT JOIN temp.restore_users AS b ON b.backup_id = g.granted_by
 		WHERE r.live_id IS NULL OR r.live_id = g.user_id`},
 	// payload is signed byte for byte, so the ids inside it stay the
 	// backup's; it carries the name beside them.
@@ -195,40 +120,17 @@ var chatRestoreSteps = []struct{ name, statement string }{
 		SELECT e.id, e.channel_id, e.kind, u.live_id, e.payload,
 			e.signature, e.signer_sign_key, e.created_at
 		FROM chat_backup.chat_channel_events AS e
-		LEFT JOIN temp.chat_restore_users AS u ON u.backup_id = e.actor_id`},
+		LEFT JOIN temp.restore_users AS u ON u.backup_id = e.actor_id`},
 	{"chat_messages", `
 		INSERT INTO main.chat_messages (id, channel_id, author_id, key_version, ciphertext,
 			created_at, edited_at, deleted_at, nonce)
 		SELECT m.id, m.channel_id, u.live_id, m.key_version, m.ciphertext,
 			m.created_at, m.edited_at, m.deleted_at, m.nonce
 		FROM chat_backup.chat_messages AS m
-		LEFT JOIN temp.chat_restore_users AS u ON u.backup_id = m.author_id`},
+		LEFT JOIN temp.restore_users AS u ON u.backup_id = m.author_id`},
 	{"chat_reactions", `
 		INSERT INTO main.chat_reactions (id, message_id, user_id, key_version, ciphertext, created_at)
 		SELECT r.id, r.message_id, u.live_id, r.key_version, r.ciphertext, r.created_at
 		FROM chat_backup.chat_reactions AS r
-		JOIN temp.chat_restore_users AS u ON u.backup_id = r.user_id`},
-}
-
-// unmatchedChatUsers lists the backup's accounts that have no account of the
-// same username on this Quark. A handful of names, so reading them is fine.
-func unmatchedChatUsers(ctx context.Context, conn *sql.Conn) ([]string, error) {
-	rows, err := conn.QueryContext(ctx, `
-		SELECT username FROM chat_backup.users
-		WHERE id NOT IN (SELECT backup_id FROM temp.chat_restore_users)
-		ORDER BY username`)
-	if err != nil {
-		return nil, fmt.Errorf("list unmatched chat accounts: %w", err)
-	}
-	defer rows.Close()
-
-	var usernames []string
-	for rows.Next() {
-		var username string
-		if err := rows.Scan(&username); err != nil {
-			return nil, fmt.Errorf("scan unmatched chat account: %w", err)
-		}
-		usernames = append(usernames, username)
-	}
-	return usernames, rows.Err()
+		JOIN temp.restore_users AS u ON u.backup_id = r.user_id`},
 }

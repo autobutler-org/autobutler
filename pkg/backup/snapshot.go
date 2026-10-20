@@ -133,23 +133,15 @@ func SnapshotBackup(
 		}
 	}
 
-	// Phase 3: vault export (if requested). The request that started the
-	// backup built it, so no vault secret outlives that request (#3084).
-	if params.VaultExport != "" {
-		if err := commitVaultExportTo(ctx, params.VaultExport, target); err != nil {
-			return failJob(params, fmt.Errorf("vault export: %w", err))
+	// Phase 3: the chat and vault exports. They are ciphertext and need no
+	// password, so every snapshot of a Quark with a database carries both.
+	if params.LiveDB != nil {
+		if err := exportCiphertextTo(ctx, params.LiveDB, target); err != nil {
+			return failJob(params, err)
 		}
 	}
 
-	// Phase 4: chat export. It needs no password, so every snapshot of a
-	// Quark with a database carries one.
-	if params.ChatDB != nil {
-		if err := exportChatTo(ctx, params.ChatDB, target); err != nil {
-			return failJob(params, fmt.Errorf("chat export: %w", err))
-		}
-	}
-
-	// Phase 5: generate integrity manifest.
+	// Phase 4: generate integrity manifest.
 	manifest, err := GenerateManifest(ctx, target)
 	if err != nil {
 		return failJob(params, fmt.Errorf("generate manifest: %w", err))
@@ -158,7 +150,7 @@ func SnapshotBackup(
 		return failJob(params, fmt.Errorf("write manifest: %w", err))
 	}
 
-	// Phase 6: complete.
+	// Phase 5: complete.
 	completedAt := time.Now()
 	job.Status = BackupStatusCompleted
 	job.Progress = 1.0
@@ -226,33 +218,21 @@ func scanTree(ctx context.Context, fsys vfs.VFS) (files int, bytes int64, err er
 	return
 }
 
-// commitVaultExportTo puts the vault export staged on the target in place.
-func commitVaultExportTo(ctx context.Context, staged string, target vfs.VFS) error {
+// exportCiphertextTo writes the chat and vault exports onto the target.
+func exportCiphertextTo(ctx context.Context, liveDB *sql.DB, target vfs.VFS) error {
 	dir, err := hostDir(ctx, target)
 	if err != nil {
 		return err
 	}
-	return commitStagedVault(dir, staged)
-}
-
-// discardVaultExport removes a staged vault export nothing committed.
-func discardVaultExport(ctx context.Context, staged string, target vfs.VFS) {
-	if dir, err := hostDir(ctx, target); err == nil {
-		removeStagedVault(dir, staged)
+	for _, b := range ciphertextBackups {
+		if _, err := b.export(ctx, liveDB, dir); err != nil {
+			return fmt.Errorf("export %s: %w", b.filename, err)
+		}
 	}
+	return nil
 }
 
-// exportChatTo writes the chat export onto the target.
-func exportChatTo(ctx context.Context, chatDB *sql.DB, target vfs.VFS) error {
-	dir, err := hostDir(ctx, target)
-	if err != nil {
-		return err
-	}
-	_, err = ExportChat(ctx, chatDB, dir)
-	return err
-}
-
-// hostDir is the target's host directory. SQLite writes the vault and chat
+// hostDir is the target's host directory. SQLite writes the chat and vault
 // exports and can only open them by a host path, so they are the one reason
 // the target's host directory is asked for.
 func hostDir(ctx context.Context, target vfs.VFS) (string, error) {

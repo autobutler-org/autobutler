@@ -250,8 +250,8 @@ Every query lives in `sql/queries/*.sql` and reaches Go as generated code in `in
 - **Legitimate exceptions, each needing a comment saying which one applies:** SQL sqlc's SQLite parser
   cannot accept (FTS5 `MATCH`, `rank` and `snippet()` in `pkg/util/searchutil/search.go`), DDL and
   statements built from `sqlite_master` at runtime (`internal/db/reset.go`), and writes to a database
-  outside the migration set (the external backup vault in `pkg/backup/vault_export.go`, whose schema is
-  `internal/db/vault_schema.go`).
+  outside the migration set (the chat and vault backup files in `pkg/backup/ciphertext_backup.go`, whose
+  schemas are `internal/db/chat_backup_schema.go` and `internal/db/vault_items_backup_schema.go`).
 - **Raw SQL that only SQLite accepts sits behind `db.RequireSQLite`.** The main database may be PostgreSQL, and
   such a statement sent there fails with an error that tells nobody what is wrong. The guard returns a
   `*db.UnsupportedError` naming the feature and the issue that tracks it, which every handler answers as
