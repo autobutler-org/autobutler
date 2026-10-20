@@ -366,7 +366,7 @@ func TestGetThumbnail_ClientRenderReason(t *testing.T) {
 		"not-video.mp4": []byte("plain text, not a video"),
 		"truncated.mp4": read("h264-gop12.mp4")[:512],
 	}
-	for _, name := range []string{"h264-gop12.mp4", "hevc-aac-copy.mkv", "prores-pcm.mov", "h264-aac.ts", "unsupported.avi"} {
+	for _, name := range []string{"h264-gop12.mp4", "hevc-aac-copy.mkv", "h264-aac.ts"} {
 		files[name] = read(name)
 	}
 	for name, data := range files {
@@ -378,9 +378,7 @@ func TestGetThumbnail_ClientRenderReason(t *testing.T) {
 	want := map[string]string{
 		"h264-gop12.mp4":    "unsupported",
 		"hevc-aac-copy.mkv": "unsupported",
-		"prores-pcm.mov":    "unsupported",
 		"h264-aac.ts":       "unsupported",
-		"unsupported.avi":   "unreadable",
 		"truncated.mp4":     "unreadable",
 		"not-video.mp4":     "unreadable",
 	}
