@@ -3,6 +3,16 @@ import 'package:quark/models/chat_channel.dart';
 
 /// The channel list's wire shape, with the unread count #2424 added.
 void main() {
+  test('reads lastReadMessageId, and zero from a Quark that sends none', () {
+    final json = {'id': 4, 'name': 'family', 'lastReadMessageId': 5};
+
+    expect(ChatChannel.fromJson(json).lastReadMessageId, 5);
+    expect(
+      ChatChannel.fromJson({'id': 4, 'name': 'family'}).lastReadMessageId,
+      0,
+    );
+  });
+
   test('reads unreadCount, and zero from a Quark that sends none', () {
     final json = {'id': 4, 'name': 'family', 'unreadCount': 3};
 
