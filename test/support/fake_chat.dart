@@ -36,6 +36,9 @@ class FakeChatMessages extends ChatMessagesController {
   /// Every text [send] was called with.
   final List<String> sent = [];
 
+  /// The client message id of each [send], in step with [sent].
+  final List<String?> sentClientIds = [];
+
   /// Every message id [delete] was called with.
   final List<int> deleted = [];
 
@@ -73,8 +76,9 @@ class FakeChatMessages extends ChatMessagesController {
   Future<void> loadOlder() async {}
 
   @override
-  Future<void> send(String text) async {
+  Future<void> send(String text, {String? clientMessageId}) async {
     sent.add(text);
+    sentClientIds.add(clientMessageId);
     await onSend?.call(text);
   }
 
