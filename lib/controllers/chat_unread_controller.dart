@@ -105,10 +105,17 @@ class ChatUnreadController extends ChangeNotifier {
     }
   }
 
-  /// Takes the counts from [channels], a list just loaded.
+  /// Takes the counts and read markers from [channels], a list just loaded.
+  /// A marker only moves forward, so one a refresh restores after the socket
+  /// missed it never undoes a newer [markRead] still in flight (#3543).
   void setChannels(List<ChatChannel> channels) {
     _follow();
     _counts = {for (final c in channels) c.id: c.unreadCount};
+    for (final c in channels) {
+      if (c.lastReadMessageId > 0) {
+        _markers[c.id] = max(_markers[c.id] ?? 0, c.lastReadMessageId);
+      }
+    }
     notifyListeners();
   }
 
