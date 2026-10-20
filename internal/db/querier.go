@@ -67,7 +67,8 @@ type Querier interface {
 	CreateChatChannelKey(ctx context.Context, arg CreateChatChannelKeyParams) (ChatChannelKey, error)
 	// Chat messages (#2418). The Quark stores ciphertext and never opens it.
 	// CreateChatMessage stores a message. nonce is the ciphertext's first 24
-	// bytes, unique per channel and key version (#2487).
+	// bytes, unique per channel and key version (#2487). client_message_id, when
+	// the client sent one, is unique per channel and author (#3531).
 	CreateChatMessage(ctx context.Context, arg CreateChatMessageParams) (ChatMessage, error)
 	// Chat reactions (#2426). The Quark stores ciphertext and never opens it.
 	// CreateChatReaction stores a reaction on a message that isn't deleted, and
@@ -195,6 +196,9 @@ type Querier interface {
 	GetChatChannelEvent(ctx context.Context, arg GetChatChannelEventParams) (ChatChannelEvent, error)
 	GetChatKeyGrant(ctx context.Context, arg GetChatKeyGrantParams) (ChatKeyGrant, error)
 	GetChatMessage(ctx context.Context, id int64) (ChatMessage, error)
+	// GetChatMessageByClientID finds the message an author already sent to a
+	// channel under a client message id.
+	GetChatMessageByClientID(ctx context.Context, arg GetChatMessageByClientIDParams) (ChatMessage, error)
 	// GetChatMessageByNonce finds the message a post's nonce already names.
 	GetChatMessageByNonce(ctx context.Context, arg GetChatMessageByNonceParams) (ChatMessage, error)
 	GetChatReaction(ctx context.Context, id int64) (ChatReaction, error)

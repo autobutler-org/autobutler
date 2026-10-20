@@ -121,6 +121,8 @@ var chatRestoreSteps = []restoreStep{
 			e.signature, e.signer_sign_key, e.created_at
 		FROM chat_backup.chat_channel_events AS e
 		LEFT JOIN temp.restore_users AS u ON u.backup_id = e.actor_id`},
+	// client_message_id only answers a retry of a send still in flight
+	// (#3531), so it stays behind, and a file from before it restores too.
 	{"chat_messages", `
 		INSERT INTO main.chat_messages (id, channel_id, author_id, key_version, ciphertext,
 			created_at, edited_at, deleted_at, nonce)

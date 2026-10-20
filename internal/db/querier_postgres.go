@@ -417,6 +417,11 @@ func (a *postgresQueries) GetChatMessage(ctx context.Context, id int64) (ChatMes
 	return ChatMessage(row), err
 }
 
+func (a *postgresQueries) GetChatMessageByClientID(ctx context.Context, arg GetChatMessageByClientIDParams) (ChatMessage, error) {
+	row, err := a.q.GetChatMessageByClientID(ctx, pgdb.GetChatMessageByClientIDParams(arg))
+	return ChatMessage(row), err
+}
+
 func (a *postgresQueries) GetChatMessageByNonce(ctx context.Context, arg GetChatMessageByNonceParams) (ChatMessage, error) {
 	row, err := a.q.GetChatMessageByNonce(ctx, pgdb.GetChatMessageByNonceParams(arg))
 	return ChatMessage(row), err

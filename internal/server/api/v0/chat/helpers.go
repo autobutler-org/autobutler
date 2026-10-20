@@ -85,7 +85,8 @@ func chatError(err error) *serverutil.Response {
 		errors.Is(err, chatutil.ErrDefaultChannel), errors.Is(err, chatutil.ErrDefaultEveryone), errors.Is(err, chatutil.ErrLastOwner),
 		errors.Is(err, accessutil.ErrGrantTarget),
 		errors.Is(err, chatutil.ErrInvalidKeys), errors.Is(err, chatutil.ErrInvalidGrant), errors.Is(err, chatutil.ErrGrantSignature),
-		errors.Is(err, chatutil.ErrInvalidMessage), errors.Is(err, chatutil.ErrInvalidReaction):
+		errors.Is(err, chatutil.ErrInvalidMessage), errors.Is(err, chatutil.ErrInvalidReaction),
+		errors.Is(err, chatutil.ErrInvalidClientMessageID):
 		return serverutil.BadRequest(err)
 	default:
 		return serverutil.InternalServerError(err)
