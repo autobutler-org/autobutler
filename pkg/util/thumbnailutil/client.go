@@ -15,6 +15,8 @@ import (
 
 	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
+	"github.com/autobutler-org/quark/pkg/util/videoutil"
+	"github.com/autobutler-org/sprocket/pkg/sprocket"
 )
 
 // sizeClient keys the thumbnail a client uploaded. It is the source the
@@ -36,6 +38,24 @@ func NeedsClientRender(name string) bool {
 		return true
 	}
 	return storageutil.DetermineFileTypeFromPath(name) == storageutil.FileTypeVideo
+}
+
+// ClientRenderReason says why the device could not render a video's
+// thumbnail, given the error [Generate] returned, so a client that cannot
+// render it either can tell the user (#3559): [ClientRenderUnsupported] for a
+// codec the device has no decoder for, a file that may well play elsewhere,
+// and [ClientRenderUnreadable] for one that does not parse as a video. Any
+// other failure, and every one for a photo, is "" because it says neither.
+func ClientRenderReason(err error) string {
+	switch {
+	case errors.Is(err, videoutil.ErrNoDecoder):
+		return ClientRenderUnsupported
+	case errors.Is(err, sprocket.ErrCorrupt),
+		errors.Is(err, sprocket.ErrUnsupportedContainer),
+		errors.Is(err, sprocket.ErrNoVideo):
+		return ClientRenderUnreadable
+	}
+	return ""
 }
 
 // clientThumbnailPath is where the thumbnail a client uploaded for a file is

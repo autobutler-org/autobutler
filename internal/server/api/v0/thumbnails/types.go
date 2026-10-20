@@ -18,6 +18,10 @@ type clientRenderResponse struct {
 	// ModTime is the file's modification time, so a client can remember a
 	// render that failed for this version of the file and not retry it.
 	ModTime time.Time `json:"modTime"`
+	// Reason says why the device could not render a video: "unsupported"
+	// for a codec it has no decoder for, "unreadable" for a file that does
+	// not parse as a video. Absent when it is neither, and for a photo.
+	Reason string `json:"reason,omitempty" enums:"unsupported,unreadable"`
 }
 
 func (r *router) Routes() []*serverutil.Route {

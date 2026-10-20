@@ -95,6 +95,56 @@ final List<GalleryEntry> registry = [
     ),
   ),
   GalleryEntry(
+    name: 'QuarkThumbnailUnavailable',
+    group: 'Core',
+    build: (context, log) => Wrap(
+      spacing: 24,
+      runSpacing: 16,
+      children: [
+        for (final entry in const [
+          (
+            'hevc-aac.mov',
+            ThumbnailIssue.unsupportedFormat,
+            "This video's format can't be previewed on this device. The file "
+                'is fine and may play elsewhere.',
+            'No preview on this device',
+          ),
+          (
+            'truncated.mp4',
+            ThumbnailIssue.unreadable,
+            "Couldn't read this file as a video. It may be damaged or "
+                'incomplete, or not a video at all.',
+            "Couldn't read this file",
+          ),
+        ]) ...[
+          // A list row's leading slot: no room for the label.
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: QuarkThumbnailUnavailable(
+              name: entry.$1,
+              issue: entry.$2,
+              reason: entry.$3,
+              label: entry.$4,
+            ),
+          ),
+          // A grid tile: the label shows.
+          SizedBox(
+            width: 160,
+            height: 160,
+            child: QuarkThumbnailUnavailable(
+              name: entry.$1,
+              issue: entry.$2,
+              reason: entry.$3,
+              label: entry.$4,
+              iconSize: 48,
+            ),
+          ),
+        ],
+      ],
+    ),
+  ),
+  GalleryEntry(
     name: 'QuarkMenuButton',
     group: 'Core',
     build: (context, log) => Align(

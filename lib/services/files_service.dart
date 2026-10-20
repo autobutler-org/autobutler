@@ -871,7 +871,8 @@ class FilesService with AuthenticatedService {
 
   /// Asks the Quark for the small thumbnail of [filePath] and reads what the
   /// answer says about it (#2381): served, missing, or missing with
-  /// `clientRender`, meaning a client may render one and PUT it.
+  /// `clientRender`, meaning a client may render one and PUT it, and with the
+  /// `reason` the Quark could not (#3559).
   static Future<ThumbnailProbe> probeThumbnail(
     String filePath, {
     String? serial,
@@ -897,6 +898,7 @@ class FilesService with AuthenticatedService {
       served: false,
       clientRender: true,
       modTime: body['modTime'] as String? ?? '',
+      reason: body['reason'] as String? ?? '',
     );
   }
 

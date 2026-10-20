@@ -8,6 +8,7 @@ import 'package:quark/models/thumbnail_probe.dart';
 import 'package:quark/services/thumbnail_backfill.dart';
 import 'package:quark/utils/thumbnail_cache_config.dart';
 import 'package:quark/widgets/thumbnails/backfilling_thumbnail.dart';
+import 'package:quark_widgets/quark_widgets.dart' show ThumbnailIssue;
 
 void main() {
   /// A backfill whose Quark says to render, and whose render succeeds.
@@ -157,6 +158,82 @@ void main() {
       await tester.pump(ThumbnailCacheConfig.busyRetryDelay);
 
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  /// #3559: a video no one could render a thumbnail for said nothing; it
+  /// looked like a file with no thumbnail at all.
+  group('a thumbnail no one could render', () {
+    ThumbnailBackfill failing(String reason, Completer<void>? gate) =>
+        ThumbnailBackfill(
+          probe: (path, {serial}) async => ThumbnailProbe(
+            served: false,
+            clientRender: true,
+            modTime: 't',
+            reason: reason,
+          ),
+          renderVideoFromUrl: (name, url) async {
+            await gate?.future;
+            return null;
+          },
+          mediaUrl: (path, {serial}) => Uri.parse('https://quark/$path'),
+          putThumbnail: ({required path, serial, required thumbnail}) async {},
+        );
+
+    Future<void> pump(WidgetTester tester, ThumbnailBackfill backfill) =>
+        tester.pumpWidget(
+          MaterialApp(
+            home: BackfillingThumbnail(
+              path: 'clips/a.mov',
+              backfill: backfill,
+              builder: (context, generation, onFailed) {
+                onFailed();
+                return const Text('icon');
+              },
+              failedBuilder: (context, issue) => Text('failed ${issue.name}'),
+            ),
+          ),
+        );
+
+    for (final (reason, issue) in [
+      ('unsupported', ThumbnailIssue.unsupportedFormat),
+      ('unreadable', ThumbnailIssue.unreadable),
+    ]) {
+      testWidgets('builds the failure when the Quark says $reason', (
+        tester,
+      ) async {
+        await pump(tester, failing(reason, null));
+        await tester.pumpAndSettle();
+
+        expect(find.text('failed ${issue.name}'), findsOneWidget);
+        expect(find.text('icon'), findsNothing);
+      });
+    }
+
+    testWidgets('a render still running shows neither failure', (tester) async {
+      final gate = Completer<void>();
+      await pump(tester, failing('unsupported', gate));
+      await tester.pump();
+
+      expect(find.text('icon'), findsOneWidget);
+      expect(find.textContaining('failed'), findsNothing);
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('failed unsupportedFormat'), findsOneWidget);
+    });
+
+    testWidgets('a tile built again after it failed shows it again', (
+      tester,
+    ) async {
+      final backfill = failing('unreadable', null);
+      await pump(tester, backfill);
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+
+      // Its own load fails first: a thumbnail that has since appeared shows.
+      await pump(tester, backfill);
+      await tester.pumpAndSettle();
+      expect(find.text('failed unreadable'), findsOneWidget);
     });
   });
 }

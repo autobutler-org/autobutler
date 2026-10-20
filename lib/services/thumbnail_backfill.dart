@@ -8,6 +8,7 @@ import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/client_thumbnail_config.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_kind.dart';
+import 'package:quark_widgets/quark_widgets.dart' show ThumbnailIssue;
 
 /// Renders the thumbnail of a video or HEIC the Quark cannot make one for,
 /// when a tile showing it comes up empty, and uploads it (#2381).
@@ -23,6 +24,11 @@ import 'package:quark/utils/file_kind.dart';
 /// folder that refused an upload (read-only) is skipped from then on. Nothing
 /// here throws or blocks the caller; it answers whether the tile should load
 /// again.
+///
+/// A render that fails is recorded for its file, with why ([failureFor]), so
+/// the tile can say so rather than look like a file with no thumbnail at all
+/// (#3559): `unreadable` when the Quark could not parse the file either, and
+/// otherwise a format this device cannot picture.
 class ThumbnailBackfill {
   ThumbnailBackfill({
     Future<ThumbnailProbe> Function(String path, {String? serial})? probe,
@@ -72,6 +78,9 @@ class ThumbnailBackfill {
   /// File versions tried this session, as `serial|path|modTime`.
   final Set<String> _attempted = {};
 
+  /// Why each file's render failed, by `serial|path`.
+  final Map<String, ThumbnailIssue> _failures = {};
+
   /// Folders whose upload was refused, as `serial|folder`.
   final Set<String> _readOnlyFolders = {};
 
@@ -80,6 +89,11 @@ class ThumbnailBackfill {
 
   final Queue<Completer<void>> _waiting = Queue();
   int _running = 0;
+
+  /// Why the last render of the file at [path] on [serial] failed, or null
+  /// when none has, or the one after it succeeded.
+  ThumbnailIssue? failureFor(String path, {String? serial}) =>
+      _failures['${serial ?? ''}|$path'];
 
   /// Fills in the thumbnail of the file at [path] if the Quark has none and
   /// says a client may render it. True when the tile should load its
@@ -107,17 +121,27 @@ class ThumbnailBackfill {
     String? serial,
     bool Function()? stillWanted,
   ) async {
+    final key = '${serial ?? ''}|$path';
     await _acquire();
     try {
       if (stillWanted != null && !stillWanted()) return false;
       final probe = await _probe(path, serial: serial);
       if (probe.served) return true;
       if (!probe.clientRender) return false;
-      if (!_attempted.add('${serial ?? ''}|$path|${probe.modTime}')) {
+      if (!_attempted.add('$key|${probe.modTime}')) return false;
+      Uint8List? thumbnail;
+      try {
+        thumbnail = await _render(path, serial).timeout(budget);
+      } catch (e) {
+        debugPrint('[thumbnail_backfill.dart] Cannot render $path: $e');
+      }
+      if (thumbnail == null) {
+        _failures[key] = probe.reason == 'unreadable'
+            ? ThumbnailIssue.unreadable
+            : ThumbnailIssue.unsupportedFormat;
         return false;
       }
-      final thumbnail = await _render(path, serial).timeout(budget);
-      if (thumbnail == null) return false;
+      _failures.remove(key);
       await _putThumbnail(path: path, serial: serial, thumbnail: thumbnail);
       return true;
     } on ApiException catch (e) {

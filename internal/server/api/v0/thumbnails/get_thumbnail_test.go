@@ -1,3 +1,5 @@
+// cspell:words prores
+
 package v0_thumbnails_test
 
 import (
@@ -340,6 +342,55 @@ func TestGetThumbnail_VideoKeyframe(t *testing.T) {
 	for _, name := range []string{"h264-gop12.mp4", "hevc-aac-copy.mkv"} {
 		if !clientRender(t, get(engine, "/api/v0/thumbnails/"+name+"?size=sm")) {
 			t.Errorf("%s: want clientRender on the 404", name)
+		}
+	}
+}
+
+// TestGetThumbnail_ClientRenderReason: a video the device cannot picture says
+// why, so a client that cannot render it either can tell the user: a codec
+// the device has no decoder for is "unsupported" (the file is fine and may
+// play elsewhere), and a file that does not parse as a video is "unreadable"
+// (#3559).
+func TestGetThumbnail_ClientRenderReason(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	engine, dir, _ := newThumbnailEngine(t, false)
+	testdata := filepath.Join("..", "..", "..", "..", "..", "pkg", "util", "videoutil", "testdata")
+	read := func(name string) []byte {
+		clip, err := os.ReadFile(filepath.Join(testdata, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return clip
+	}
+	files := map[string][]byte{
+		"not-video.mp4": []byte("plain text, not a video"),
+		"truncated.mp4": read("h264-gop12.mp4")[:512],
+	}
+	for _, name := range []string{"h264-gop12.mp4", "hevc-aac-copy.mkv", "prores-pcm.mov", "h264-aac.ts", "unsupported.avi"} {
+		files[name] = read(name)
+	}
+	for name, data := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	want := map[string]string{
+		"h264-gop12.mp4":    "unsupported",
+		"hevc-aac-copy.mkv": "unsupported",
+		"prores-pcm.mov":    "unsupported",
+		"h264-aac.ts":       "unsupported",
+		"unsupported.avi":   "unreadable",
+		"truncated.mp4":     "unreadable",
+		"not-video.mp4":     "unreadable",
+	}
+	for name, reason := range want {
+		body := clientRenderBody(t, get(engine, "/api/v0/thumbnails/"+name+"?size=sm"))
+		if !body.ClientRender {
+			t.Errorf("%s: want clientRender on the 404", name)
+		}
+		if body.Reason != reason {
+			t.Errorf("%s: reason = %q, want %q (%s)", name, body.Reason, reason, body.Error)
 		}
 	}
 }

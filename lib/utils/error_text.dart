@@ -145,6 +145,34 @@ abstract final class Errors {
   static const String saveFramePathUnknown =
       "This frame can't be saved because the video's location is unknown.";
 
+  /// Why a file in a list or grid has no thumbnail when nothing could make
+  /// one (#3559). A format this device cannot picture is not a fault in the
+  /// file, so it says the file may still play or open elsewhere; a file that
+  /// could not be read is the one to worry about. [isVideo] picks the noun.
+  static String thumbnailUnavailable(
+    ThumbnailIssue issue, {
+    required bool isVideo,
+  }) => switch (issue) {
+    ThumbnailIssue.unsupportedFormat when isVideo =>
+      "This video's format can't be previewed on this device. The file is "
+          'fine and may play elsewhere.',
+    ThumbnailIssue.unsupportedFormat =>
+      "This photo's format can't be previewed on this device. The file is "
+          'fine and may open elsewhere.',
+    ThumbnailIssue.unreadable when isVideo =>
+      "Couldn't read this file as a video. It may be damaged or incomplete, "
+          'or not a video at all.',
+    ThumbnailIssue.unreadable =>
+      "Couldn't read this file. It may be damaged or incomplete.",
+  };
+
+  /// A few words for [thumbnailUnavailable], where a grid tile has room.
+  static String thumbnailUnavailableShort(ThumbnailIssue issue) =>
+      switch (issue) {
+        ThumbnailIssue.unsupportedFormat => 'No preview on this device',
+        ThumbnailIssue.unreadable => "Couldn't read this file",
+      };
+
   /// Why the 3D model viewer showed a model's details instead of the model
   /// (#2988). The file is fine to download either way, so each says so.
   static String modelPreview(QuarkModelParseIssue issue) => switch (issue) {

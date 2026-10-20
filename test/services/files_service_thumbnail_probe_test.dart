@@ -43,6 +43,21 @@ void main() {
     expect(probe.served, isFalse);
     expect(probe.clientRender, isTrue);
     expect(probe.modTime, '2026-09-24T10:00:00Z');
+    expect(probe.reason, isEmpty);
+  });
+
+  test('a clientRender 404 carries why the Quark could not render', () async {
+    answer(
+      404,
+      jsonEncode({
+        'error': 'no thumbnail',
+        'clientRender': true,
+        'modTime': '2026-09-24T10:00:00Z',
+        'reason': 'unreadable',
+      }),
+    );
+    final probe = await FilesService.probeThumbnail('a.mp4');
+    expect(probe.reason, 'unreadable');
   });
 
   test('a plain 404 is only missing', () async {

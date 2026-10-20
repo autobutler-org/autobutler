@@ -4,6 +4,7 @@ class ThumbnailProbe {
     required this.served,
     this.clientRender = false,
     this.modTime = '',
+    this.reason = '',
   });
 
   /// The Quark answered with a thumbnail.
@@ -16,4 +17,9 @@ class ThumbnailProbe {
   /// The file's modification time as the Quark reported it, naming the
   /// version of the file a render is for. Empty unless [clientRender].
   final String modTime;
+
+  /// Why the Quark could not render the video itself (#3559): `unsupported`
+  /// for a codec it cannot decode, `unreadable` for a file that does not
+  /// parse as a video. Empty when it said neither, and for a photo.
+  final String reason;
 }

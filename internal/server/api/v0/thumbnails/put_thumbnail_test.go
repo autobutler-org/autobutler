@@ -103,14 +103,24 @@ func expectJPEG(t *testing.T, w *httptest.ResponseRecorder, width, height int) {
 // clientRender decodes a 404 body and reports its clientRender marker.
 func clientRender(t *testing.T, w *httptest.ResponseRecorder) bool {
 	t.Helper()
+	return clientRenderBody(t, w).ClientRender
+}
+
+// notFoundBody is the 404 body a thumbnail request answers with.
+type notFoundBody struct {
+	Error        string    `json:"error"`
+	ClientRender bool      `json:"clientRender"`
+	ModTime      time.Time `json:"modTime"`
+	Reason       string    `json:"reason"`
+}
+
+// clientRenderBody decodes a 404 body, checking the fields every one carries.
+func clientRenderBody(t *testing.T, w *httptest.ResponseRecorder) notFoundBody {
+	t.Helper()
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("got %d, want 404: %s", w.Code, w.Body.String())
 	}
-	var body struct {
-		Error        string    `json:"error"`
-		ClientRender bool      `json:"clientRender"`
-		ModTime      time.Time `json:"modTime"`
-	}
+	var body notFoundBody
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("404 body is not JSON: %v: %s", err, w.Body.String())
 	}
@@ -120,7 +130,7 @@ func clientRender(t *testing.T, w *httptest.ResponseRecorder) bool {
 	if body.ClientRender && body.ModTime.IsZero() {
 		t.Error("a clientRender 404 should carry the file's modTime")
 	}
-	return body.ClientRender
+	return body
 }
 
 // TestThumbnail_ClientRenderMarkerThenPut is the loop a client runs: a video

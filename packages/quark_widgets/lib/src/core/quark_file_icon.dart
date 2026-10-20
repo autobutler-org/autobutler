@@ -70,7 +70,14 @@ class QuarkFileIcon extends StatelessWidget {
         lower.endsWith('.webm') ||
         lower.endsWith('.m4v') ||
         lower.endsWith('.wmv') ||
-        lower.endsWith('.flv')) {
+        lower.endsWith('.flv') ||
+        lower.endsWith('.ogv') ||
+        lower.endsWith('.3gp') ||
+        lower.endsWith('.3g2') ||
+        lower.endsWith('.mpeg') ||
+        lower.endsWith('.mpg') ||
+        // MPEG transport stream, as the app and the Quark read it.
+        lower.endsWith('.ts')) {
       return QuarkIcons.video_file_outlined;
     }
 

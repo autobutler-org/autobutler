@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:quark/services/thumbnail_backfill.dart';
 import 'package:quark/utils/thumbnail_cache_config.dart';
+import 'package:quark_widgets/quark_widgets.dart' show ThumbnailIssue;
 
 /// Builds a Quark thumbnail and, when it fails to load, asks
 /// [ThumbnailBackfill] to render and upload it (#2381), then builds it again.
@@ -19,6 +20,12 @@ import 'package:quark/utils/thumbnail_cache_config.dart';
 /// not a missing thumbnail: it is built again after
 /// [ThumbnailCacheConfig.busyRetryDelay], a few times, rather than left on
 /// its placeholder until it is scrolled away and back (#3349).
+///
+/// A backfill that could not render the thumbnail either builds
+/// [failedBuilder] instead, with why, so the tile says it will have no
+/// thumbnail rather than look like a file that never has one (#3559). It is
+/// only built after this tile's own load failed, so a thumbnail that has
+/// appeared since shows.
 ///
 /// ```dart
 /// BackfillingThumbnail(
@@ -42,6 +49,7 @@ class BackfillingThumbnail extends StatefulWidget {
     required this.path,
     required this.builder,
     this.serial,
+    this.failedBuilder,
     this.backfill,
     super.key,
   });
@@ -60,6 +68,11 @@ class BackfillingThumbnail extends StatefulWidget {
   )
   builder;
 
+  /// Draws the tile when no thumbnail could be rendered, with why. Null keeps
+  /// [builder]'s error state.
+  final Widget Function(BuildContext context, ThumbnailIssue issue)?
+  failedBuilder;
+
   /// The backfill to ask; [ThumbnailBackfill.instance] when null.
   final ThumbnailBackfill? backfill;
 
@@ -74,6 +87,9 @@ class _BackfillingThumbnailState extends State<BackfillingThumbnail> {
 
   int _generation = 0;
   bool _asked = false;
+
+  /// Why the backfill could not render this file, once it has said.
+  ThumbnailIssue? _issue;
   int _retries = 0;
   Timer? _retry;
 
@@ -83,6 +99,7 @@ class _BackfillingThumbnailState extends State<BackfillingThumbnail> {
     if (oldWidget.path != widget.path || oldWidget.serial != widget.serial) {
       _generation = 0;
       _asked = false;
+      _issue = null;
       _retries = 0;
       _retry?.cancel();
       _retry = null;
@@ -113,18 +130,34 @@ class _BackfillingThumbnailState extends State<BackfillingThumbnail> {
     _asked = true;
     final path = widget.path;
     final serial = widget.serial;
+    final backfill = widget.backfill ?? ThumbnailBackfill.instance;
     unawaited(
-      (widget.backfill ?? ThumbnailBackfill.instance)
+      backfill
           .fill(path: path, serial: serial, stillWanted: () => mounted)
           .then((filled) {
-            if (!filled || !mounted) return;
+            if (!mounted) return;
             if (widget.path != path || widget.serial != serial) return;
-            setState(() => _generation++);
+            final issue = filled
+                ? null
+                : backfill.failureFor(path, serial: serial);
+            if (!filled && issue == null) return;
+            setState(() {
+              if (filled) {
+                _generation++;
+              } else {
+                _issue = issue;
+              }
+            });
           }),
     );
   }
 
   @override
-  Widget build(BuildContext context) =>
-      widget.builder(context, _generation, _onFailed);
+  Widget build(BuildContext context) {
+    final failed = widget.failedBuilder;
+    final issue = _issue;
+    return failed != null && issue != null
+        ? failed(context, issue)
+        : widget.builder(context, _generation, _onFailed);
+  }
 }
