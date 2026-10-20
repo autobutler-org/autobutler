@@ -60,4 +60,42 @@ void main() {
     expect(launched, [HelpSupportCard.supportUrl]);
     expect(find.byType(RemoteAccessCard), findsOneWidget);
   });
+
+  // #3611: a stored flag from before setup is not the switch. The card
+  // offers setup, including when the payload still says enabled and
+  // connected.
+  testWidgets('a stale on flag with setup still to do shows set up', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: QuarkTheme.dark(themeColor: QuarkThemeColor.classic),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: RemoteAccessCard(
+              status: const RemoteAccessStatus(
+                enabled: true,
+                connected: true,
+                remoteUrl: 'http://100.64.0.7:80',
+                needsSetup: true,
+              ),
+              isLoading: false,
+              isWorking: false,
+              error: null,
+              disconnected: false,
+              isAdmin: true,
+              onRetry: () {},
+              onSetUp: () {},
+              onTurnOff: () {},
+              onTryAgain: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('remote_access_set_up')), findsOneWidget);
+    expect(find.byKey(const ValueKey('remote_access_switch')), findsNothing);
+    expect(find.byKey(const ValueKey('remote_access_status_on')), findsNothing);
+  });
 }

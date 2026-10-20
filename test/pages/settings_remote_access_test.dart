@@ -85,6 +85,7 @@ void main() {
         case 'POST':
           changes.add('POST');
           status['enabled'] = true;
+          status['needsSetup'] = false;
         case 'DELETE':
           changes.add('DELETE');
           status
@@ -132,6 +133,57 @@ void main() {
 
   // #2358: the Quark enrolls itself as its own household, so an admin is
   // offered setup.
+  // #3611: after an upgrade the stored flag can be on without enrollment.
+  // Settings offers the setup sheet and does not turn remote access on.
+  testWidgets('a stale on flag opens setup and does not turn it on', (
+    tester,
+  ) async {
+    await pumpWithStatus(tester, {
+      'enabled': true,
+      'connected': true,
+      'needsSetup': true,
+      'remoteUrl': 'http://100.64.0.7:80',
+    });
+    await settle(tester);
+
+    expect(find.byKey(const ValueKey('remote_access_switch')), findsNothing);
+    expect(find.byKey(const ValueKey('remote_access_status_on')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('remote_access_setup_turn_on')),
+      findsOneWidget,
+    );
+    expect(changes, isEmpty);
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('remote_access_setup_turn_on')),
+    );
+    await tester.tap(find.byKey(const ValueKey('remote_access_setup_turn_on')));
+    await settle(tester);
+    expect(changes, ['POST']);
+  });
+
+  testWidgets('a stale on flag tells a non-admin to ask an admin', (
+    tester,
+  ) async {
+    await pumpWithStatus(tester, {
+      'enabled': true,
+      'connected': true,
+      'needsSetup': true,
+    }, isAdmin: false);
+    await settle(tester);
+
+    expect(find.byKey(const ValueKey('remote_access_switch')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('remote_access_setup_turn_on')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('remote_access_member_note')),
+      findsOneWidget,
+    );
+    expect(changes, isEmpty);
+  });
+
   testWidgets('offers an admin setup', (tester) async {
     await pumpWithStatus(tester, {'enabled': false, 'connected': false});
 
