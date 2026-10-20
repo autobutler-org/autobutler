@@ -165,6 +165,33 @@ the same thing.
 - A PR or commit never carries a Claude Code session link (`https://claude.ai/code/session_...`), and all prose
   and new identifiers use American spelling (`color`, `behavior`, `canceled`).
 
+### The schmeide factory
+
+[schmeide](https://github.com/autobutler-org/schmeide) is the org's software factory. Given an assigned issue
+carrying the `schmeide:ready` label, it runs a fresh Claude Code or Grok CLI session in a worktree, runs the
+gate, opens a PR as the schmeide GitHub App, and reviews it. `.schmeide/config.toml` sets the gate to
+`make check test` (through `gmake` where it exists), the check this file already asks for before every push,
+and turns on factory merge: a PR that passes review goes into the merge queue once its checks are green, with
+no person in the loop. It replaces saddle: the `saddle:` labels, `saddle/...` branches and `Saddle-Task:`
+trailers in older history are the predecessor's, and new work goes through schmeide.
+
+- **Handing an issue over.** Assign it and add `schmeide:ready`. The factory takes whatever carries the label,
+  so only a maintainer's issue gets it (see "Only a maintainer's issue is yours to pick up"). The session works
+  from the title and body stored when the label or assignment landed and never fetches the issue, so a ready
+  issue is self-contained: acceptance criteria, `file:line` pointers, decisions already made. Edits after
+  that are not seen, and re-labeling does not refresh the job.
+- **One issue, one reviewable PR.** The factory's reviewer rounds are the review and the merge needs nobody,
+  so work too big for one review is split into several issues before any of them is labeled.
+- **Stacks are "blocked by".** Express a dependency as GitHub's blocked-by relationship, not a `Parent:` line.
+  The PR is based on the blocker's open factory PR; a blocker with no open PR yet does not count, and several
+  open blockers must form one linear stack or the job fails.
+- **Branch names differ.** schmeide names its branch `<N>_<short-description>`. An agent working by hand keeps
+  `fix/N-...` / `feat/N-...` (see Pull request and commit conventions). A PR on a `<N>_` branch, open or
+  closed, stops the factory from opening another for issue N.
+- **Running under schmeide.** A session the factory started works exactly its one issue: it opens no second
+  PR, changes no labels, and picks up no other issue. `.schmeide/review.md` is the reviewer's verdict file; the
+  runner deletes it, and it is never committed.
+
 ### Generated code (never hand-edit)
 
 `internal/db/*.sql.go`, `internal/db/querier_postgres.go` and all of `internal/db/pgdb/` but `pgdb.go` and its
