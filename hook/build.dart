@@ -1,4 +1,4 @@
-// cspell:words aarch64 androideabi buildmode cgo CFLAGS dylib dynamiclib ffi GOARM headerpad iphoneos iphonesimulator isysroot ldflags lresolv mios miphoneos ndk rpath sysroot trimpath tsnetbridge
+// cspell:words aarch64 androideabi buildmode cgo CFLAGS dylib dynamiclib ffi GOARM headerpad iphoneos iphonesimulator isysroot ldflags lresolv mios miphoneos ndk rpath SDKROOT sysroot trimpath tsnetbridge
 
 /// Compiles the embedded tailnet library the iOS and Android app loads (#1881).
 ///
@@ -166,8 +166,14 @@ Future<void> _buildStub(HookInput input, CodeConfig code, Uri out) async {
       'No C compiler for the desktop tailnet stub. Install gcc or clang.',
     );
   }
+  // Xcode's toolchain clang has no default SDK, and the hook runner drops
+  // SDKROOT, so a macOS build names the SDK itself.
   final shared = code.targetOS == OS.macOS
-      ? const ['-dynamiclib']
+      ? [
+          '-dynamiclib',
+          '-isysroot',
+          await _xcrun(const ['--show-sdk-path']),
+        ]
       : const ['-shared', '-fPIC'];
   await _run(compiler, [
     ...shared,
