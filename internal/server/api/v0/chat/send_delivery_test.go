@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 
@@ -68,26 +69,71 @@ func TestChatDelivery_LostResponseRetry(t *testing.T) {
 	}
 }
 
+// withClientID adds clientMessageId to a messageBody.
+func withClientID(body, id string) string {
+	return strings.TrimSuffix(body, "}") + `,"clientMessageId":"` + id + `"}`
+}
+
 // TestChatDelivery_RetryEncryptedAgainStoresOnce is the retry the app actually
 // makes: ChatController.retry encrypts the text again, so the second post has
 // a fresh nonce and the nonce replay check of #2487 cannot see it is the same
-// message. The API takes no client message id, so the server stores it
-// twice. Without the skip, this fails with two stored messages.
+// message. The client message id both posts carry does (#3531): the retry is
+// answered with the first post and announced to nobody.
 func TestChatDelivery_RetryEncryptedAgainStoresOnce(t *testing.T) {
-	t.Skip("gap #3531: POST /chat/channels/{id}/messages has no client message id, so a re-encrypted retry is a new message")
 	h := newHarness(t)
 	_, room := roomWithKey(t, h)
 	messages := room + "/messages"
+	h.drainMessages()
 
 	// The same "hi" under two nonces: the first response lost, then the
 	// retry.
-	h.do(t, http.MethodPost, messages, "bob", messageBody('h', 64, 1))
-	h.do(t, http.MethodPost, messages, "bob", messageBody('i', 64, 1))
+	var first, retried chatutil.Message
+	h.expect(t, http.StatusCreated, http.MethodPost, messages, "bob", withClientID(messageBody('h', 64, 1), "send-1"), &first)
+	h.expect(t, http.StatusOK, http.MethodPost, messages, "bob", withClientID(messageBody('i', 64, 1), "send-1"), &retried)
+	if retried.ID != first.ID || string(retried.Ciphertext) != string(first.Ciphertext) {
+		t.Errorf("retry answered %d %q, want the first post %d %q", retried.ID, retried.Ciphertext, first.ID, first.Ciphertext)
+	}
 
 	var page chatutil.ListMessagesResult
 	h.expect(t, http.StatusOK, http.MethodGet, messages+"?after=0", "bob", "", &page)
 	if len(page.Messages) != 1 {
 		t.Errorf("channel holds %d messages after one retried send, want 1", len(page.Messages))
+	}
+	if heard := heardIDs(h.drainMessages()); !slices.Equal(heard, []int64{first.ID}) {
+		t.Errorf("heard %v, want one event for %d", heard, first.ID)
+	}
+}
+
+// TestChatDelivery_ClientIDScope: a client message id names one author's send
+// in one channel. Another id is another message, another author may use the
+// same id, a retry of a deleted send stays deleted, and an id longer than any
+// client makes is refused.
+func TestChatDelivery_ClientIDScope(t *testing.T) {
+	h := newHarness(t)
+	_, room := roomWithKey(t, h)
+	messages := room + "/messages"
+	h.expect(t, http.StatusOK, http.MethodPut, room+"/members", "bob", userBody(h.users["carol"], member...), nil)
+
+	var a, b, carols chatutil.Message
+	h.expect(t, http.StatusCreated, http.MethodPost, messages, "bob", withClientID(messageBody('a', 64, 1), "one"), &a)
+	h.expect(t, http.StatusCreated, http.MethodPost, messages, "bob", withClientID(messageBody('b', 64, 1), "two"), &b)
+	h.expect(t, http.StatusCreated, http.MethodPost, messages, "carol", withClientID(messageBody('c', 64, 1), "one"), &carols)
+	if a.ID == b.ID || a.ID == carols.ID {
+		t.Fatalf("ids %d, %d, %d; want three messages", a.ID, b.ID, carols.ID)
+	}
+
+	h.expect(t, http.StatusOK, http.MethodDelete, "/chat/messages/"+strconv.FormatInt(b.ID, 10), "bob", "", nil)
+	var again chatutil.Message
+	h.expect(t, http.StatusOK, http.MethodPost, messages, "bob", withClientID(messageBody('d', 64, 1), "two"), &again)
+	if again.ID != b.ID || again.DeletedAt == nil {
+		t.Errorf("retry of a deleted send = %+v, want tombstone %d", again, b.ID)
+	}
+
+	h.expect(t, http.StatusBadRequest, http.MethodPost, messages, "bob", withClientID(messageBody('e', 64, 1), strings.Repeat("x", 65)), nil)
+	var page chatutil.ListMessagesResult
+	h.expect(t, http.StatusOK, http.MethodGet, messages+"?after=0", "bob", "", &page)
+	if got := ids(page); !slices.Equal(got, []int64{a.ID, b.ID, carols.ID}) {
+		t.Errorf("channel holds %v, want %v", got, []int64{a.ID, b.ID, carols.ID})
 	}
 }
 

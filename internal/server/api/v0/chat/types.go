@@ -89,10 +89,12 @@ type signEventBody struct {
 }
 
 // postMessageBody is a message the caller's client encrypted. Ciphertext is
-// base64 nonce || XChaCha20-Poly1305 output.
+// base64 nonce || XChaCha20-Poly1305 output. ClientMessageID is optional, the
+// client's own id for this send, kept the same across its retries (#3531).
 type postMessageBody struct {
-	Ciphertext []byte `json:"ciphertext"`
-	KeyVersion int64  `json:"keyVersion"`
+	Ciphertext      []byte `json:"ciphertext"`
+	KeyVersion      int64  `json:"keyVersion"`
+	ClientMessageID string `json:"clientMessageId,omitempty"`
 }
 
 // markReadBody names the newest message the caller has read in a channel.

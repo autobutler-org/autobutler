@@ -728,10 +728,25 @@ func publishReaction(ctx context.Context, queries db.Querier, bus *eventbus.Bus,
 	return nil
 }
 
-// repeatedPost answers a post whose nonce the channel already holds under its
-// key version. The caller's own live message with the same ciphertext is a
-// retry and comes back as it is; anything else is a replay.
+// repeatedPost answers a post that collided with a stored message. The
+// caller's own message under the same client message id is a retry and comes
+// back as it is. Otherwise the nonce is what collided: the caller's own live
+// message with the same ciphertext is a retry too, and anything else is a
+// replay.
 func repeatedPost(params PostMessageParams) (PostMessageResult, error) {
+	if params.ClientMessageID != "" {
+		row, err := params.Database.Queries.GetChatMessageByClientID(params.Ctx, db.GetChatMessageByClientIDParams{
+			ChannelID:       params.ChannelID,
+			AuthorID:        sql.NullInt64{Int64: params.Principal.UserID, Valid: true},
+			ClientMessageID: sql.NullString{String: params.ClientMessageID, Valid: true},
+		})
+		if err == nil {
+			return PostMessageResult{Message: messageFromRow(row), Repeated: true}, nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return PostMessageResult{}, err
+		}
+	}
 	row, err := params.Database.Queries.GetChatMessageByNonce(params.Ctx, db.GetChatMessageByNonceParams{
 		ChannelID: params.ChannelID, KeyVersion: params.KeyVersion, Nonce: params.Ciphertext[:NonceBytes],
 	})

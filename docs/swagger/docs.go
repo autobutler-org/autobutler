@@ -4103,7 +4103,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Stores ciphertext, base64, that the caller's client encrypted under the channel key of keyVersion, and sends the stored row to the channel's readers as chat_message_created. The Quark never sees the text. A ciphertext's 24-byte nonce is taken once per channel and key version: repeating your own live post byte for byte returns it with 200 and stores nothing, and any other reuse is 409. Ciphertext is at most 16 KiB. Needs send_messages; a reader without it gets 403, and anyone without read_messages 404, delegated managers and admins included.",
+                "description": "Stores ciphertext, base64, that the caller's client encrypted under the channel key of keyVersion, and sends the stored row to the channel's readers as chat_message_created. The Quark never sees the text. A ciphertext's 24-byte nonce is taken once per channel and key version: repeating your own live post byte for byte returns it with 200 and stores nothing, and any other reuse is 409. clientMessageId, up to 64 bytes, names the send: a retry encrypts again under a fresh nonce, so it carries the same clientMessageId, and one the caller already sent to this channel returns that message with 200 and stores nothing, whatever the ciphertext. Ciphertext is at most 16 KiB. Needs send_messages; a reader without it gets 403, and anyone without read_messages 404, delegated managers and admins included.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4134,7 +4134,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "the caller already posted exactly this ciphertext; nothing new was stored",
+                        "description": "the caller already posted this clientMessageId or exactly this ciphertext; nothing new was stored",
                         "schema": {
                             "$ref": "#/definitions/chatutil.Message"
                         }
@@ -4146,7 +4146,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "ciphertext too short, or a key version the channel doesn't have",
+                        "description": "ciphertext too short, a key version the channel doesn't have, or a clientMessageId over 64 bytes",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -12984,6 +12984,9 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                },
+                "clientMessageId": {
+                    "type": "string"
                 },
                 "keyVersion": {
                     "type": "integer"

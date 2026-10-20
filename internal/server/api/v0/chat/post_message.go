@@ -12,15 +12,15 @@ import (
 
 // postMessage godoc
 // @Summary Post an encrypted message to a chat channel
-// @Description Stores ciphertext, base64, that the caller's client encrypted under the channel key of keyVersion, and sends the stored row to the channel's readers as chat_message_created. The Quark never sees the text. A ciphertext's 24-byte nonce is taken once per channel and key version: repeating your own live post byte for byte returns it with 200 and stores nothing, and any other reuse is 409. Ciphertext is at most 16 KiB. Needs send_messages; a reader without it gets 403, and anyone without read_messages 404, delegated managers and admins included.
+// @Description Stores ciphertext, base64, that the caller's client encrypted under the channel key of keyVersion, and sends the stored row to the channel's readers as chat_message_created. The Quark never sees the text. A ciphertext's 24-byte nonce is taken once per channel and key version: repeating your own live post byte for byte returns it with 200 and stores nothing, and any other reuse is 409. clientMessageId, up to 64 bytes, names the send: a retry encrypts again under a fresh nonce, so it carries the same clientMessageId, and one the caller already sent to this channel returns that message with 200 and stores nothing, whatever the ciphertext. Ciphertext is at most 16 KiB. Needs send_messages; a reader without it gets 403, and anyone without read_messages 404, delegated managers and admins included.
 // @Tags chat
 // @Accept json
 // @Produce json
 // @Param id path int true "Channel id"
 // @Param body body postMessageBody true "The encrypted message"
 // @Success 201 {object} chatutil.Message
-// @Success 200 {object} chatutil.Message "the caller already posted exactly this ciphertext; nothing new was stored"
-// @Failure 400 {object} serverutil.Response "ciphertext too short, or a key version the channel doesn't have"
+// @Success 200 {object} chatutil.Message "the caller already posted this clientMessageId or exactly this ciphertext; nothing new was stored"
+// @Failure 400 {object} serverutil.Response "ciphertext too short, a key version the channel doesn't have, or a clientMessageId over 64 bytes"
 // @Failure 401 {object} serverutil.Response
 // @Failure 403 {object} serverutil.Response "the caller reads the channel but lacks send_messages"
 // @Failure 404 {object} serverutil.Response "no such channel, or the caller lacks read_messages"
@@ -52,7 +52,7 @@ func postMessage(c *gin.Context) *serverutil.Response {
 	}
 	result, err := chatutil.PostMessage(chatutil.PostMessageParams{
 		Ctx: c.Request.Context(), Database: deps.Database(), EventBus: deps.EventBus(), Principal: principal,
-		ChannelID: id, KeyVersion: body.KeyVersion, Ciphertext: body.Ciphertext,
+		ChannelID: id, KeyVersion: body.KeyVersion, Ciphertext: body.Ciphertext, ClientMessageID: body.ClientMessageID,
 	})
 	if err != nil {
 		return chatError(err)

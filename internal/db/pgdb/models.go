@@ -93,15 +93,16 @@ type ChatKeyGrant struct {
 }
 
 type ChatMessage struct {
-	ID         int64
-	ChannelID  int64
-	AuthorID   sql.NullInt64
-	KeyVersion int64
-	Ciphertext []byte
-	CreatedAt  time.Time
-	EditedAt   sql.NullTime
-	DeletedAt  sql.NullTime
-	Nonce      []byte
+	ID              int64
+	ChannelID       int64
+	AuthorID        sql.NullInt64
+	KeyVersion      int64
+	Ciphertext      []byte
+	CreatedAt       time.Time
+	EditedAt        sql.NullTime
+	DeletedAt       sql.NullTime
+	Nonce           []byte
+	ClientMessageID sql.NullString
 }
 
 type ChatReaction struct {
