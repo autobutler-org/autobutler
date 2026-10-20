@@ -262,6 +262,66 @@ func TestRestartIfUnchanged(t *testing.T) {
 	mu.Unlock()
 }
 
+// TestDeriveAccessState verifies the switch is not the stored flag. On
+// requires that flag and a finished enrollment. A flag with no enrollment
+// is setup still to do: not on, and nothing starts it (#3611).
+func TestDeriveAccessState(t *testing.T) {
+	off := DeriveAccessState(false, false)
+	if off.On || off.NeedsSetup {
+		t.Errorf("flag off, not enrolled = %+v; want neither", off)
+	}
+	turnedOff := DeriveAccessState(false, true)
+	if turnedOff.On || turnedOff.NeedsSetup {
+		t.Errorf("flag off, enrolled = %+v; want off, household kept", turnedOff)
+	}
+	stale := DeriveAccessState(true, false)
+	if stale.On || !stale.NeedsSetup {
+		t.Errorf("flag on, not enrolled = %+v; want needs setup, not on", stale)
+	}
+	ready := DeriveAccessState(true, true)
+	if !ready.On || ready.NeedsSetup {
+		t.Errorf("flag on, enrolled = %+v; want on", ready)
+	}
+}
+
+// TestEnsureStarted_DoesNotProvisionWhenNotEnrolled verifies a stored flag
+// from before setup does not start the node or ask the provisioning service
+// (#3611). Enrollment is what makes the boot path run.
+func TestEnsureStarted_DoesNotProvisionWhenNotEnrolled(t *testing.T) {
+	if runtime.GOOS == "linux" {
+		if _, err := os.Stat("/var/lib/quark"); err == nil {
+			t.Skip("stateDir() is the real service dir on this machine")
+		}
+	}
+	t.Setenv("HOME", t.TempDir())
+	settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
+	t.Cleanup(func() { settingsutil.ResetForTesting("") })
+	if err := settingsutil.SetRemoteAccess(true); err != nil {
+		t.Fatalf("SetRemoteAccess: %v", err)
+	}
+	// Saved node state is what a Quark enabled before households still has.
+	// It must not be started, and it must not stand in for enrollment.
+	dir := stateDir()
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "state.json"), []byte("{}"), 0600); err != nil {
+		t.Fatalf("write state file: %v", err)
+	}
+	if !HasPersistedState() {
+		t.Fatal("HasPersistedState() = false with a state file present")
+	}
+
+	asked := 0
+	err := EnsureStarted(0, false, func() (string, error) {
+		asked++
+		return "", errors.New("should not be asked")
+	})
+	if err != nil || asked != 0 || IsRunning() {
+		t.Fatalf("EnsureStarted() = %v after %d key requests, running %v; want no start and no provisioning", err, asked, IsRunning())
+	}
+}
+
 // TestEnsureStarted_RecordsProvisionFailure verifies a failed key request is
 // reported by Status, so a boot that could not provision shows as failing.
 func TestEnsureStarted_RecordsProvisionFailure(t *testing.T) {
@@ -271,6 +331,12 @@ func TestEnsureStarted_RecordsProvisionFailure(t *testing.T) {
 		}
 	}
 	t.Setenv("HOME", t.TempDir())
+	settingsutil.ResetForTesting(filepath.Join(t.TempDir(), "settings.json"))
+	t.Cleanup(func() { settingsutil.ResetForTesting("") })
+	// The boot path provisions only after setup has enrolled the Quark.
+	if err := settingsutil.SetHousehold("household", "token"); err != nil {
+		t.Fatalf("SetHousehold: %v", err)
+	}
 
 	err := EnsureStarted(0, false, func() (string, error) { return "", errors.New("no secret") })
 	if err == nil || !strings.Contains(err.Error(), "no secret") {
