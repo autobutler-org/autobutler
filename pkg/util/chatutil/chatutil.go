@@ -286,6 +286,11 @@ type Channel struct {
 	// else wrote and nobody deleted (#2424). It is 0 without read_messages,
 	// so 0 on every channel an admin lists without being in it.
 	UnreadCount int64 `json:"unreadCount"`
+	// LastReadMessageID is the caller's read marker there, as PUT
+	// /chat/channels/{id}/read leaves it, so a session that missed
+	// chat_read_marker_changed can restore it (#3543). It is 0 before the
+	// first read and without read_messages.
+	LastReadMessageID int64 `json:"lastReadMessageId"`
 }
 
 // Member is one row on a channel: an account or a group.
@@ -403,7 +408,7 @@ func ListChannels(params ListChannelsParams) (ListChannelsResult, error) {
 			CreatedAt:   row.CreatedAt,
 		})
 	}
-	if err := attachUnread(params.Ctx, params.Database.Queries, params.Principal.UserID, channels); err != nil {
+	if err := attachReadState(params.Ctx, params.Database.Queries, params.Principal.UserID, channels); err != nil {
 		return ListChannelsResult{}, err
 	}
 	if !params.All {
