@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:quark/models/chat_keys.dart';
+import 'package:quark/models/account_keys.dart';
 import 'package:quark/services/chat_crypto.dart';
 
 /// The salt [AuthSaltClient] hands every username.

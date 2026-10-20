@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:quark/models/account_keys.dart';
 import 'package:quark/models/chat_keys.dart';
 import 'package:quark/pages/recover_page.dart';
 import 'package:quark/controllers/chat_keys_controller.dart';
