@@ -49,18 +49,21 @@ class ChatMessagesService with AuthenticatedService {
   }
 
   /// Posts [ciphertext], encrypted under [keyVersion], and returns the stored
-  /// message.
+  /// message. A [clientMessageId] the Quark already has from this account in
+  /// this channel returns that message instead of storing a second one.
   static Future<ChatMessage> postMessage(
     int channelId,
     int keyVersion,
-    Uint8List ciphertext,
-  ) async {
+    Uint8List ciphertext, {
+    String? clientMessageId,
+  }) async {
     final response = await instance.authenticatedPost(
       _channelUri(channelId),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
         'keyVersion': keyVersion,
         'ciphertext': base64Encode(ciphertext),
+        'clientMessageId': ?clientMessageId,
       }),
     );
     _check(response, 'post to channel $channelId');

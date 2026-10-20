@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:quark/controllers/chat_channel_keys_controller.dart';
@@ -48,11 +49,17 @@ class ChatPendingSend {
     required this.channelId,
     required this.text,
     required this.sentAt,
+    required this.clientMessageId,
     this.error,
   });
 
   /// `pending_<n>`, unique within the controller.
   final String id;
+
+  /// The Quark's name for this send, random and the same on every attempt,
+  /// so a retry after a lost response is answered with the message already
+  /// stored rather than stored twice (#3531).
+  final String clientMessageId;
 
   /// The channel it is going to.
   final int channelId;
@@ -75,6 +82,7 @@ class ChatPendingSend {
     channelId: channelId,
     text: text,
     sentAt: sentAt,
+    clientMessageId: clientMessageId,
     error: error,
   );
 }
@@ -91,7 +99,9 @@ class ChatPendingSend {
 /// - [send] keeps the message until the Quark stores it. While it is going
 ///   out, and after it fails, it stays out of [messageItems] so the page can
 ///   show sending or failed instead of a sent row. [retry] delivers that one
-///   message again; [discard] drops it.
+///   message again under the same [ChatPendingSend.clientMessageId], so a
+///   send the Quark stored before its response was lost is not stored twice;
+///   [discard] drops it.
 /// - `chat_channel_changed` reloads the channel list, and the members when it
 ///   names the open channel. `account_changed` — an account deleted, or a
 ///   profile picture changed — reloads both, so a stale name or picture
@@ -727,6 +737,7 @@ class ChatController extends ChangeNotifier {
       channelId: channel.id,
       text: text,
       sentAt: _now(),
+      clientMessageId: _newClientMessageId(),
     );
     _pending = [..._pending, pending];
     _notify();
@@ -1294,7 +1305,10 @@ class ChatController extends ChangeNotifier {
       return;
     }
     try {
-      await messages.send(pending.text);
+      await messages.send(
+        pending.text,
+        clientMessageId: pending.clientMessageId,
+      );
       discard(pending.id);
     } catch (e) {
       if (_disposed) {
@@ -1314,6 +1328,16 @@ class ChatController extends ChangeNotifier {
       pending.channelId,
       draft.isEmpty ? pending.text : '${pending.text}\n$draft',
     );
+  }
+
+  /// 128 random bits as hex: unique across devices and restarts, where
+  /// [ChatPendingSend.id] is only unique within this controller.
+  static String _newClientMessageId() {
+    final random = Random.secure();
+    return [
+      for (var i = 0; i < 16; i++)
+        random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ].join();
   }
 
   void _replacePending(String id, ChatPendingSend replacement) {
