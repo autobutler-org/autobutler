@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/calendar_event_item.dart';
@@ -157,6 +158,113 @@ class _CalendarTimeGridState extends State<CalendarTimeGrid> {
   // the move lands it in another column, so the next press still has it.
   String? _focusKey;
 
+  // The one hour showing a hover hint. One for the whole grid: a slot used to
+  // keep its own, and a late hover or a missed exit left it lit (#3558).
+  DateTime? _hoveredSlot;
+
+  // True from pointer down until up or cancel. A hover in that span was
+  // queued before the press.
+  bool _pressed = false;
+
+  // After a press, a cancel, a scroll, or a new week, ignore enters until the
+  // pointer actually moves. A rebuild would otherwise light whatever hour is
+  // under a pointer that is sitting still.
+  bool _hold = false;
+
+  // The newest pointer event this hover has accepted. An older one arrived
+  // late.
+  Duration _stamp = Duration.zero;
+
+  void _note(PointerEvent event) {
+    if (event.timeStamp > _stamp) _stamp = event.timeStamp;
+  }
+
+  bool _stale(PointerEvent event) => event.timeStamp < _stamp;
+
+  void _setHover(DateTime? start) {
+    if (_hoveredSlot == start) return;
+    setState(() => _hoveredSlot = start);
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    _pressed = true;
+    _hold = true;
+    _note(event);
+    _setHover(null);
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    _pressed = false;
+    _note(event);
+  }
+
+  void _onPointerCancel(PointerCancelEvent event) {
+    _pressed = false;
+    _hold = true;
+    _note(event);
+    _setHover(null);
+  }
+
+  void _onPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent || _hoveredSlot == null) return;
+    _hold = true;
+    _note(event);
+    _setHover(null);
+  }
+
+  void _onGridExit(PointerExitEvent event) {
+    _note(event);
+    _setHover(null);
+  }
+
+  void _onSlotEnter(DateTime start, PointerEnterEvent event) {
+    if (_hold || _pressed || event.buttons != 0 || _stale(event)) return;
+    _note(event);
+    _setHover(start);
+  }
+
+  void _onSlotHover(DateTime start, PointerHoverEvent event) {
+    if (_pressed || event.buttons != 0 || _stale(event)) return;
+    _hold = false;
+    _note(event);
+    _setHover(start);
+  }
+
+  void _onSlotExit(DateTime start, PointerExitEvent event) {
+    if (_stale(event)) return;
+    _note(event);
+    if (_hoveredSlot == start) _setHover(null);
+  }
+
+  bool _onTimelineScroll(ScrollNotification notification) {
+    if (notification is! ScrollUpdateNotification || _hoveredSlot == null) {
+      return false;
+    }
+    final delta = notification.scrollDelta;
+    if (delta == null || delta == 0) return false;
+    _hold = true;
+    _setHover(null);
+    return false;
+  }
+
+  bool _sameDays(List<DateTime> a, List<DateTime> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!CalendarDates.isSameDay(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  @override
+  void didUpdateWidget(CalendarTimeGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onSlotTap == null || !_sameDays(oldWidget.days, widget.days)) {
+      _hold = true;
+      _hoveredSlot = null;
+      if (widget.onSlotTap == null) _pressed = false;
+    }
+  }
+
   void _reschedule(
     CalendarEventItem item,
     CalendarEventItem moved, {
@@ -212,104 +320,124 @@ class _CalendarTimeGridState extends State<CalendarTimeGrid> {
           (e) => e.dates.any((d) => CalendarDates.isSameDay(d, days.single)),
         );
 
-    return ColoredBox(
-      color: tokens.card,
-      child: Column(
-        children: [
-          if (days.length > 1)
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: tokens.border)),
-              ),
-              child: Row(
-                children: [
-                  SizedBox(width: gutter),
-                  for (final day in days)
-                    Expanded(
-                      child: TimeGridDayHeader(
-                        key: ValueKey(
-                          'calendar_day_header_${CalendarDates.key(day)}',
-                        ),
-                        day: day,
-                        isToday: CalendarDates.isSameDay(day, widget.today),
-                        onTap: onDayTap == null ? null : () => onDayTap(day),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          TimeGridAllDayRow(
-            days: days,
-            events: widget.events,
-            gutterWidth: gutter,
-            narrow: narrow,
-            snug: snug,
-            onEventTap: widget.onEventTap,
-            onMoreTap: onDayTap,
-          ),
-          Expanded(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: SingleChildScrollView(
-                    controller: _scroll,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TimeGridHourGutter(
-                          width: gutter,
-                          hourHeight: hourHeight,
-                          days: days,
-                          narrow: snug,
-                          now: widget.now,
-                        ),
-                        for (final (index, day) in days.indexed)
-                          Expanded(
-                            child: TimeGridColumn(
-                              day: day,
-                              events: widget.events,
-                              hourHeight: hourHeight,
-                              narrow: narrow,
-                              snug: snug,
-                              now: widget.now,
-                              leftEdge: index > 0,
-                              days: days,
-                              preview: _preview,
-                              focusKey: _focusKey,
-                              onSlotTap: widget.onSlotTap,
-                              onEventTap: widget.onEventTap,
-                              onPreview: (preview) =>
-                                  setState(() => _preview = preview),
-                              onEventReschedule:
-                                  widget.onEventReschedule == null
-                                  ? null
-                                  : _reschedule,
-                              onCrowdTap: days.length > 1 && onDayTap != null
-                                  ? () => onDayTap(day)
-                                  : null,
+    final track = widget.onSlotTap != null;
+    return Listener(
+      onPointerDown: track ? _onPointerDown : null,
+      onPointerUp: track ? _onPointerUp : null,
+      onPointerCancel: track ? _onPointerCancel : null,
+      onPointerSignal: track ? _onPointerSignal : null,
+      child: MouseRegion(
+        onExit: track ? _onGridExit : null,
+        child: ColoredBox(
+          color: tokens.card,
+          child: Column(
+            children: [
+              if (days.length > 1)
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: tokens.border)),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(width: gutter),
+                      for (final day in days)
+                        Expanded(
+                          child: TimeGridDayHeader(
+                            key: ValueKey(
+                              'calendar_day_header_${CalendarDates.key(day)}',
                             ),
+                            day: day,
+                            isToday: CalendarDates.isSameDay(day, widget.today),
+                            onTap: onDayTap == null
+                                ? null
+                                : () => onDayTap(day),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 ),
-                if (empty)
-                  // Only the card takes taps; around it the hours do.
-                  Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(tokens.spacingMd),
-                      child: CalendarEmptyNotice(
-                        headline: 'Free day',
-                        subtext: 'Nothing scheduled',
-                        buttonKey: const ValueKey('calendar_day_add'),
-                        onAdd: widget.onAddEvent,
+              TimeGridAllDayRow(
+                days: days,
+                events: widget.events,
+                gutterWidth: gutter,
+                narrow: narrow,
+                snug: snug,
+                onEventTap: widget.onEventTap,
+                onMoreTap: onDayTap,
+              ),
+              Expanded(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _onTimelineScroll,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: SingleChildScrollView(
+                          controller: _scroll,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TimeGridHourGutter(
+                                width: gutter,
+                                hourHeight: hourHeight,
+                                days: days,
+                                narrow: snug,
+                                now: widget.now,
+                              ),
+                              for (final (index, day) in days.indexed)
+                                Expanded(
+                                  child: TimeGridColumn(
+                                    day: day,
+                                    events: widget.events,
+                                    hourHeight: hourHeight,
+                                    narrow: narrow,
+                                    snug: snug,
+                                    now: widget.now,
+                                    leftEdge: index > 0,
+                                    days: days,
+                                    preview: _preview,
+                                    focusKey: _focusKey,
+                                    onSlotTap: widget.onSlotTap,
+                                    hoveredSlot: track ? _hoveredSlot : null,
+                                    onSlotEnter: track ? _onSlotEnter : null,
+                                    onSlotHover: track ? _onSlotHover : null,
+                                    onSlotExit: track ? _onSlotExit : null,
+                                    onEventTap: widget.onEventTap,
+                                    onPreview: (preview) =>
+                                        setState(() => _preview = preview),
+                                    onEventReschedule:
+                                        widget.onEventReschedule == null
+                                        ? null
+                                        : _reschedule,
+                                    onCrowdTap:
+                                        days.length > 1 && onDayTap != null
+                                        ? () => onDayTap(day)
+                                        : null,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      if (empty)
+                        // Only the card takes taps; around it the hours do.
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(tokens.spacingMd),
+                            child: CalendarEmptyNotice(
+                              headline: 'Free day',
+                              subtext: 'Nothing scheduled',
+                              buttonKey: const ValueKey('calendar_day_add'),
+                              onAdd: widget.onAddEvent,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

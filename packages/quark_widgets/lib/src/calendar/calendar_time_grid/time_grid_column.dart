@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/calendar_event_item.dart';
@@ -46,6 +47,10 @@ class TimeGridColumn extends StatelessWidget {
     this.preview,
     this.focusKey,
     this.onSlotTap,
+    this.hoveredSlot,
+    this.onSlotEnter,
+    this.onSlotHover,
+    this.onSlotExit,
     this.onEventTap,
     this.onCrowdTap,
     this.onPreview,
@@ -88,6 +93,18 @@ class TimeGridColumn extends StatelessWidget {
 
   /// Called with the hour whose empty slot was tapped.
   final ValueChanged<DateTime>? onSlotTap;
+
+  /// The hour the grid is showing a hover hint on, or null when none is.
+  final DateTime? hoveredSlot;
+
+  /// Called when a pointer enters an hour of this column.
+  final void Function(DateTime start, PointerEnterEvent event)? onSlotEnter;
+
+  /// Called when a pointer moves within an hour of this column.
+  final void Function(DateTime start, PointerHoverEvent event)? onSlotHover;
+
+  /// Called when a pointer leaves an hour of this column.
+  final void Function(DateTime start, PointerExitEvent event)? onSlotExit;
 
   /// Called with the event whose block was tapped.
   final ValueChanged<CalendarEventItem>? onEventTap;
@@ -169,20 +186,31 @@ class TimeGridColumn extends StatelessWidget {
                     : () => onEventTap!(placement.item),
               ),
           ];
+          final showHint = !narrow && constraints.maxWidth > 140;
+          final hours = [
+            for (var hour = 0; hour < 24; hour++)
+              DateTime(day.year, day.month, day.day, hour),
+          ];
           return Stack(
             children: [
               Column(
                 children: [
-                  for (var hour = 0; hour < 24; hour++)
+                  for (final start in hours)
                     TimeGridSlot(
-                      start: DateTime(day.year, day.month, day.day, hour),
+                      start: start,
                       height: hourHeight,
-                      showHint: !narrow && constraints.maxWidth > 140,
-                      onTap: onSlotTap == null
+                      showHint: showHint,
+                      hovered: hoveredSlot == start,
+                      onTap: onSlotTap == null ? null : () => onSlotTap!(start),
+                      onEnter: onSlotEnter == null
                           ? null
-                          : () => onSlotTap!(
-                              DateTime(day.year, day.month, day.day, hour),
-                            ),
+                          : (event) => onSlotEnter!(start, event),
+                      onHover: onSlotHover == null
+                          ? null
+                          : (event) => onSlotHover!(start, event),
+                      onExit: onSlotExit == null
+                          ? null
+                          : (event) => onSlotExit!(start, event),
                     ),
                 ],
               ),
