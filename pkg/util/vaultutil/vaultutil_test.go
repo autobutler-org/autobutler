@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
@@ -259,5 +260,46 @@ func TestPublishChanged(t *testing.T) {
 	evt := <-events
 	if data, ok := evt.Data.(eventbus.VaultChanged); evt.Kind != eventbus.EventVaultChanged || !ok || data != (eventbus.VaultChanged{ItemID: 9, UserID: 4}) {
 		t.Errorf("published %+v, want vault_changed for item 9 of user 4", evt)
+	}
+}
+
+func TestCreateItemConcurrent(t *testing.T) {
+	onEachBackend(t, testCreateItemConcurrent)
+}
+
+// testCreateItemConcurrent creates items from many goroutines at once. On
+// SQLite a transaction that reads before it writes fails with SQLITE_BUSY the
+// moment another writer commits in between, which was a 500 on a vault item
+// create that happened to land beside any other write.
+func testCreateItemConcurrent(t *testing.T, database *db.DatabaseSqlc, bob, carol int64) {
+	ctx := context.Background()
+	for _, user := range []int64{bob, carol} {
+		if _, err := vaultutil.CreateKey(vaultutil.CreateKeyParams{Ctx: ctx, Queries: database.Queries, UserID: user, Key: keyOf(1)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	const writers = 16
+	errs := make(chan error, writers*5)
+	var wg sync.WaitGroup
+	for w := 0; w < writers; w++ {
+		user := bob
+		if w%2 == 1 {
+			user = carol
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 5 {
+				_, err := vaultutil.CreateItem(vaultutil.CreateItemParams{Ctx: ctx, Database: database, UserID: user, Fields: itemOf(1)})
+				errs <- err
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Errorf("CreateItem beside other writers: %v", err)
+		}
 	}
 }

@@ -295,11 +295,11 @@ func CreateItem(params CreateItemParams) (CreateItemResult, error) {
 	}
 	var row db.VaultItem
 	// One transaction, so a vault deleted alongside cannot leave this item
-	// behind with no key.
+	// behind with no key. The insert comes first: on SQLite it takes the write
+	// lock before anything is read, so a concurrent write waits under
+	// busy_timeout, where a transaction that read first fails with
+	// SQLITE_BUSY as soon as it tries to write. No key rolls the insert back.
 	err := db.InTx(params.Ctx, params.Database.Db, func(q db.Querier) error {
-		if _, err := q.GetVaultKey(params.Ctx, params.UserID); err != nil {
-			return notFound(err, ErrKeyNotFound)
-		}
 		var err error
 		row, err = q.CreateVaultItem(params.Ctx, db.CreateVaultItemParams{
 			UserID:        params.UserID,
@@ -307,7 +307,13 @@ func CreateItem(params CreateItemParams) (CreateItemResult, error) {
 			Nonce:         params.Fields.Nonce,
 			FormatVersion: params.Fields.FormatVersion,
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		if _, err := q.GetVaultKey(params.Ctx, params.UserID); err != nil {
+			return notFound(err, ErrKeyNotFound)
+		}
+		return nil
 	})
 	if err != nil {
 		return CreateItemResult{}, err
