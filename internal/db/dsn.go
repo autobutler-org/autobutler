@@ -37,14 +37,6 @@ import "strings"
 // happened to land during a write got a 401 and the client was logged out
 // (it also made TestRequireAuth_SetsUserIDOnContext flaky in CI).
 //
-// _txlock=immediate makes every transaction take SQLite's write lock at BEGIN
-// instead of at its first write. A deferred transaction that reads and then
-// writes — InTx's callers all do — has to upgrade its read lock, and SQLite
-// refuses that at once, without consulting busy_timeout, when another writer is
-// already queued behind the read: the transaction fails with SQLITE_BUSY and the
-// request answers 500. Taking the lock first makes the other writer wait out
-// the busy timeout instead.
-//
 // _foreign_keys=on enforces the references the schema already declares. SQLite
 // parses REFERENCES clauses whether or not enforcement is on and simply ignores
 // them when it is off, so every ON DELETE CASCADE in the migration set — a
@@ -52,7 +44,7 @@ import "strings"
 // items — was documentation rather than behavior. With it on, those
 // cascades run and an insert naming a parent that does not exist fails instead
 // of creating an orphan.
-const connectionParams = "_time_format=datetime&_timezone=UTC&_foreign_keys=on&_txlock=immediate&_pragma=busy_timeout(5000)"
+const connectionParams = "_time_format=datetime&_timezone=UTC&_foreign_keys=on&_pragma=busy_timeout(5000)"
 
 // DSN returns the connection string for a SQLite database at path, carrying the
 // settings every Quark database is expected to be opened with. Any database

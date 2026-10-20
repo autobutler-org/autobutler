@@ -116,7 +116,7 @@ func TestInTx_WrapsBeginFailure(t *testing.T) {
 // deferred transaction's read lock at once — without waiting out busy_timeout —
 // when another writer is queued behind it, so POST /vault/items (read the key,
 // insert the item) answered 500 whenever a background write landed between the
-// two. The DSN's _txlock=immediate takes the write lock at BEGIN, where the
+// two. InTx's BEGIN IMMEDIATE takes the write lock first, where the
 // busy timeout applies.
 func TestInTx_ReadThenWriteSurvivesAnotherWriter(t *testing.T) {
 	database := dbtest.NewDB(t)

@@ -42,19 +42,54 @@ func NewQueries(sqlDB *sql.DB) Querier {
 // back as it is, so callers can still match it with errors.Is; a panic in fn
 // rolls back too and keeps unwinding.
 func InTx(ctx context.Context, sqlDB *sql.DB, fn func(Querier) error) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	backend := BackendOf(sqlDB)
+	if backend == Postgres {
+		tx, err := sqlDB.BeginTx(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("begin transaction: %w", err)
+		}
+		// A no-op once Commit has run.
+		defer tx.Rollback()
+		if err := fn(queriesFor(backend, tx)); err != nil {
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("commit transaction: %w", err)
+		}
+		return nil
+	}
+	return inImmediateTx(ctx, sqlDB, fn)
+}
+
+// inImmediateTx is InTx on SQLite. It issues BEGIN IMMEDIATE by hand, which
+// database/sql's BeginTx cannot: a deferred transaction that reads and then
+// writes has to upgrade its read lock, and SQLite refuses that at once, without
+// waiting out busy_timeout, when another writer is queued behind the read. That
+// was POST /vault/items answering 500 SQLITE_BUSY. Taking the write lock first
+// makes the other writer wait instead.
+func inImmediateTx(ctx context.Context, sqlDB *sql.DB, fn func(Querier) error) error {
+	conn, err := sqlDB.Conn(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	// A no-op once Commit has run.
-	defer tx.Rollback()
-
-	if err := fn(queriesFor(BackendOf(sqlDB), tx)); err != nil {
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, `BEGIN IMMEDIATE`); err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			// Not ctx: a canceled request must still roll back, and so must a panic.
+			_, _ = conn.ExecContext(context.WithoutCancel(ctx), `ROLLBACK`)
+		}
+	}()
+	if err := fn(queriesFor(SQLite, conn)); err != nil {
 		return err
 	}
-	if err := tx.Commit(); err != nil {
+	if _, err := conn.ExecContext(ctx, `COMMIT`); err != nil {
 		return fmt.Errorf("commit transaction: %w", err)
 	}
+	committed = true
 	return nil
 }
 
