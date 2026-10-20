@@ -176,15 +176,6 @@ func sqlLower(s string) string {
 	}, s)
 }
 
-// minString is the smaller of two strings, taking b when a is unset. It is
-// SQL's MIN() over a group, which picks the displayed casing.
-func minString(a string, set bool, b string) string {
-	if !set || b < a {
-		return b
-	}
-	return a
-}
-
 // consider offers a track to a group's cover.
 func (c *coverPick) consider(row db.MusicTrack) {
 	hasCover := row.CoverSource != ""

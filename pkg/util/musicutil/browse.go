@@ -112,12 +112,12 @@ func listAlbums(params ListAlbumsParams) (ListAlbumsResult, error) {
 			}
 			g, seen := groups[row.AlbumKey]
 			if !seen {
-				g = &albumGroup{album: Album{AlbumKey: row.AlbumKey}}
+				// Rows stream in id order, so the first is the lowest id,
+				// the spelling the SQL shows.
+				g = &albumGroup{album: Album{AlbumKey: row.AlbumKey, Title: row.Album, AlbumArtist: row.AlbumArtist}}
 				groups[row.AlbumKey] = g
 			}
 			a := &g.album
-			a.Title = minString(a.Title, seen, row.Album)
-			a.AlbumArtist = minString(a.AlbumArtist, seen, row.AlbumArtist)
 			if row.Year.Valid && (a.Year == 0 || int(row.Year.Int64) < a.Year) {
 				a.Year = int(row.Year.Int64)
 			}
@@ -164,10 +164,9 @@ func listArtists(params ListArtistsParams) (ListArtistsResult, error) {
 			key := sqlLower(row.AlbumArtist)
 			g, seen := groups[key]
 			if !seen {
-				g = &artistGroup{albums: map[string]struct{}{}}
+				g = &artistGroup{artist: Artist{Name: row.AlbumArtist}, albums: map[string]struct{}{}}
 				groups[key] = g
 			}
-			g.artist.Name = minString(g.artist.Name, seen, row.AlbumArtist)
 			g.artist.TrackCount++
 			g.albums[row.AlbumKey] = struct{}{}
 			g.cover.consider(row)
@@ -205,10 +204,9 @@ func listGenres(params ListGenresParams) (ListGenresResult, error) {
 		key := sqlLower(row.Genre)
 		g, seen := groups[key]
 		if !seen {
-			g = &Genre{}
+			g = &Genre{Name: row.Genre}
 			groups[key] = g
 		}
-		g.Name = minString(g.Name, seen, row.Genre)
 		g.TrackCount++
 	})
 	if err != nil {
