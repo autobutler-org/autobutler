@@ -1,33 +1,42 @@
+import 'dart:convert';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quark/controllers/vault_controller.dart';
 import 'package:quark/router.dart';
-import 'package:quark/services/vault_service.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/file_save.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
-import 'package:quark/utils/quark_widget.dart';
+import 'package:quark/utils/vault_export.dart';
+import 'package:quark/utils/vault_import.dart';
 import 'package:quark/utils/vault_import_summary.dart';
 import 'package:quark/utils/web_download_stub.dart'
     if (dart.library.html) 'package:quark/utils/web_download_web.dart'
     as web_download;
 import 'package:quark/widgets/layout/app_drawer.dart';
 import 'package:quark/widgets/layout/theme_toggle_button.dart';
-import 'package:quark/widgets/vault/entry_detail_page.dart';
-import 'package:quark/widgets/vault/entry_editor_page.dart';
-import 'package:quark/widgets/vault/vault_device_disconnected_view.dart';
-import 'package:quark/widgets/vault/vault_entry_list.dart';
+import 'package:quark/widgets/vault/vault_entry_page.dart';
 import 'package:quark/widgets/vault/vault_error_view.dart';
-import 'package:quark/widgets/vault/vault_setup_view.dart';
-import 'package:quark/widgets/vault/vault_unlock_view.dart';
+import 'package:quark/widgets/vault/vault_export_menu.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
-import 'package:quark/services/app_settings.dart';
 
-/// The Vault page: set up, unlock, and browse the Quark's encrypted password vault.
+/// The Vault page (#3461): every signed-in account's own password vault,
+/// encrypted on the client.
+///
+/// A composition over [VaultController], which holds the vault's state and
+/// does all of its crypto: set up or unlock with the login password, then
+/// list, search, add, edit, delete, import and export.
 class VaultPage extends StatefulWidget {
-  const VaultPage({super.key});
+  /// Creates the page over [controller], the app's vault by default.
+  const VaultPage({this.controller, super.key});
+
+  /// The vault shown. Tests pass one with fake services.
+  final VaultController? controller;
 
   @override
   State<VaultPage> createState() => _VaultPageState();
@@ -35,418 +44,254 @@ class VaultPage extends StatefulWidget {
 
 class _VaultPageState extends State<VaultPage>
     with WidgetsBindingObserver, AutoRefreshMixin {
-  VaultStatus? _status;
-
-  /// The thrown object, not its message — the render decides whether it means
-  /// "your Quark is unreachable" or "the request failed" (#1637). Distinct
-  /// from [VaultDeviceDisconnectedView], which is the vault's own USB drive
-  /// being unplugged from a Quark the app can reach perfectly well.
-  Object? _error;
-
-  List<VaultEntryItem> _entries = [];
-  List<VaultFolder> _folders = [];
-  int? _selectedFolderId;
-  String _searchQuery = '';
-
-  final _setupPasswordCtrl = TextEditingController();
-  final _setupConfirmCtrl = TextEditingController();
-  String? _setupError;
-
-  final _unlockPasswordCtrl = TextEditingController();
-  String? _unlockError;
-  bool _unlocking = false;
+  late final VaultController _vault =
+      widget.controller ?? VaultController.instance;
+  bool _importing = false;
 
   @override
-  void dispose() {
-    _setupPasswordCtrl.dispose();
-    _setupConfirmCtrl.dispose();
-    _unlockPasswordCtrl.dispose();
-    super.dispose();
+  Future<void> refresh() => _vault.load();
+
+  void _snack(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
-  /// The whole vault state, in the order the page needs it: the status picks
-  /// the view, and an unlocked vault's entries follow. The app bar's refresh
-  /// comes through here rather than straight to [_loadEntries], so a vault
-  /// that locked itself since the last look is noticed instead of listed.
-  @override
-  Future<void> refresh() => _loadStatus();
-
-  Future<void> _loadStatus() async {
-    try {
-      final status = await VaultService.getStatus();
-      if (!mounted) return;
-      final loadsEntries = status.initialized && !status.locked;
-      setState(() {
-        _status = status;
-        // Cleared on success rather than up front, so a poll against an
-        // unreachable Quark does not blink the error view away and back.
-        if (!loadsEntries) _error = null;
-      });
-      if (loadsEntries) await _loadEntries();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = e);
-    }
-  }
-
-  Future<void> _loadEntries() async {
-    try {
-      final results = await Future.wait([
-        VaultService.listEntries(),
-        VaultService.listFolders(),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _entries = results[0] as List<VaultEntryItem>;
-        _folders = results[1] as List<VaultFolder>;
-        _error = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = e);
-    }
-  }
-
-  List<VaultEntryItem> get _filteredEntries {
-    var items = _entries;
-    if (_selectedFolderId != null) {
-      items = items.where((e) => e.folderId == _selectedFolderId).toList();
-    }
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      items = items
-          .where(
-            (e) =>
-                e.name.toLowerCase().contains(q) ||
-                e.urlHost.toLowerCase().contains(q),
-          )
-          .toList();
-    }
-    return items;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final unlocked = _status?.initialized == true && !(_status?.locked ?? true);
-    final showFab = unlocked && MediaQuery.of(context).size.width < 860;
-    return QuarkPageScaffold(
-      title: 'Vault',
-      icon: QuarkIcons.lock_outline,
-      // A locked or uninitialized vault has nothing on screen to reload.
-      onRefresh: unlocked ? manualRefresh : null,
-      isRefreshing: isRefreshing,
-      actions: [
-        if (unlocked) ...[
-          // Below the floating button's breakpoint the button is the way
-          // in, and a second one in a full bar would crowd out the rest.
-          if (!showFab)
-            QuarkBarChip(
-              key: const ValueKey('vault_new_entry'),
-              icon: QuarkIcons.add_rounded,
-              label: 'New entry',
-              onPressed: () => _showEntryEditor(context),
-            ),
-          QuarkBarIconButton(
-            key: const ValueKey('vault_lock'),
-            icon: QuarkIcons.lock_open,
-            tooltip: 'Lock vault',
-            onPressed: _lockVault,
-          ),
-          MenuAnchor(
-            menuChildren: [
-              MenuItemButton(
-                key: const ValueKey('vault_import'),
-                leadingIcon: const Icon(QuarkIcons.upload_rounded),
-                onPressed: () => _showImportDialog(context),
-                child: const Text('Import'),
-              ),
-              MenuItemButton(
-                key: const ValueKey('vault_export_json'),
-                leadingIcon: const Icon(QuarkIcons.download_outlined),
-                onPressed: () => _doExport('json'),
-                child: const Text('Export as JSON'),
-              ),
-              MenuItemButton(
-                key: const ValueKey('vault_export_csv'),
-                leadingIcon: const Icon(QuarkIcons.download_outlined),
-                onPressed: () => _doExport('csv'),
-                child: const Text('Export as CSV'),
-              ),
-            ],
-            builder: (context, controller, _) => QuarkBarIconButton(
-              key: const ValueKey('vault_more'),
-              icon: QuarkIcons.more_vert,
-              tooltip: 'Import and export',
-              onPressed: () =>
-                  controller.isOpen ? controller.close() : controller.open(),
-            ),
-          ),
-        ],
-        const AppThemeToggle(),
-      ],
-      drawer: const AppDrawer(activeSection: QuarkDrawerSection.vault),
-      body: _buildBody(),
-      floatingActionButton: showFab
-          ? FloatingActionButton(
-              key: const ValueKey('vault_new_entry_fab'),
-              tooltip: 'New entry',
-              onPressed: () => _showEntryEditor(context),
-              child: const Icon(QuarkIcons.add),
-            )
-          : null,
+  void _openEntry([int? id]) {
+    _vault.touch();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => VaultEntryPage(controller: _vault, entryId: id),
+      ),
     );
   }
 
-  /// Picks the view for the current status. Every branch is one widget, so
-  /// there is no subtree hiding in here.
-  Widget _buildBody() {
-    if (isInitialLoad) {
-      return const Center(child: QuarkLoader());
+  Future<void> _startOver() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => ConfirmDeleteDialog(
+        title: 'Delete your vault?',
+        body:
+            'Every saved login is deleted, on every device, and nobody can '
+            'get them back. Do this only if your password no longer opens '
+            'the vault, then set up a new one.',
+        keyPrefix: 'vault_start_over',
+        confirmLabel: 'Delete vault',
+        onConfirm: () => Navigator.of(dialogContext).pop(true),
+        onCancel: () => Navigator.of(dialogContext).pop(false),
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _vault.startOver();
+    } catch (e) {
+      _snack(Errors.message(e, 'delete your vault'));
     }
-    final error = _error;
-    if (error != null) {
-      if (isQuarkUnreachableError(error)) {
-        return QuarkDisconnectedView(
-          hostAddress: AppSettings.instance.activeHost,
-          onRetry: _loadStatus,
-          onManageHosts: () =>
-              context.go(AppRoutes.settingsTab(SettingsTab.general)),
-        );
-      }
-      return VaultErrorView(
-        message: Errors.message(error, 'load your vault'),
-        onRetry: _loadStatus,
-      );
-    }
-    final status = _status;
-    if (status == null) return const SizedBox.shrink();
+  }
 
-    if (!status.initialized) {
-      return VaultSetupView(
-        passwordController: _setupPasswordCtrl,
-        confirmController: _setupConfirmCtrl,
-        error: _setupError,
-        onCreate: _doSetup,
-      );
-    }
-    if (!status.deviceConnected) {
-      return VaultDeviceDisconnectedView(onRetry: _loadStatus);
-    }
-    if (status.locked) {
-      return VaultUnlockView(
-        passwordController: _unlockPasswordCtrl,
-        lockReason: status.lockReason,
-        error: _unlockError,
-        unlocking: _unlocking,
-        onUnlock: _doUnlock,
-      );
-    }
-    return VaultEntryList(
-      entries: _filteredEntries,
-      vaultIsEmpty: _entries.isEmpty,
-      folders: _folders,
-      onSearchChanged: (v) => setState(() => _searchQuery = v),
-      onFolderSelected: (v) => setState(() => _selectedFolderId = v),
-      onTapEntry: (id) => _showEntryDetail(context, id),
+  /// Asks for a folder's name and makes it. The dialog stays open with what
+  /// was typed until the folder is saved, and shows why it was not.
+  Future<void> _newFolder() async {
+    _vault.touch();
+    var saving = false;
+    Object? error;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => QuarkNameDialog(
+          title: 'New folder',
+          label: 'Folder name',
+          submitLabel: 'Create',
+          maxLength: 100,
+          isSubmitting: saving,
+          error: error == null
+              ? null
+              : Errors.vault(error, 'create the folder'),
+          onCancel: () => Navigator.of(dialogContext).pop(),
+          onSubmit: (name) async {
+            setDialogState(() {
+              saving = true;
+              error = null;
+            });
+            try {
+              await _vault.createFolder(name);
+              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+            } catch (e) {
+              if (dialogContext.mounted) {
+                setDialogState(() {
+                  saving = false;
+                  error = e;
+                });
+              }
+            }
+          },
+        ),
+      ),
     );
   }
 
-  Future<void> _doSetup() async {
-    if (_setupPasswordCtrl.text.length < 8) {
-      setState(() => _setupError = 'Password must be at least 8 characters');
-      return;
-    }
-    if (_setupPasswordCtrl.text != _setupConfirmCtrl.text) {
-      setState(() => _setupError = 'Passwords do not match');
-      return;
-    }
+  /// Deletes folder [id] once the user confirms. Its entries stay, in no folder.
+  Future<void> _deleteFolder(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => ConfirmDeleteDialog(
+        title: 'Delete ${_vault.folderNameOf(id)}?',
+        body:
+            'The folder is removed on every device. The logins in it are '
+            'kept, in no folder.',
+        keyPrefix: 'delete_vault_folder',
+        onConfirm: () => Navigator.of(dialogContext).pop(true),
+        onCancel: () => Navigator.of(dialogContext).pop(false),
+      ),
+    );
+    if (confirmed != true) return;
     try {
-      await VaultService.setup(_setupPasswordCtrl.text);
-      _setupPasswordCtrl.clear();
-      _setupConfirmCtrl.clear();
-      _loadStatus();
+      await _vault.delete(id);
     } catch (e) {
-      setState(() => _setupError = Errors.message(e, 'create your vault'));
+      _snack(Errors.vault(e, 'delete the folder'));
     }
   }
 
-  Future<void> _doUnlock() async {
-    setState(() {
-      _unlockError = null;
-      _unlocking = true;
-    });
-    try {
-      final ok = await VaultService.unlock(_unlockPasswordCtrl.text);
-      if (!ok) {
-        setState(() {
-          _unlockError = 'Incorrect password';
-          _unlocking = false;
-        });
-        return;
-      }
-      _unlockPasswordCtrl.clear();
-      _loadStatus();
-    } catch (e) {
-      setState(() {
-        _unlockError = Errors.message(e, 'unlock your vault');
-        _unlocking = false;
-      });
-    }
-  }
-
-  Future<void> _lockVault() async {
-    try {
-      await VaultService.lock();
-      _loadStatus();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(Errors.message(e, 'lock your vault'))),
-        );
-      }
-    }
-  }
-
-  Future<void> _showImportDialog(BuildContext context) async {
+  Future<void> _import() async {
     final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['csv', 'json'],
     );
-    if (file == null) return;
+    if (file == null || !mounted) return;
+    setState(() => _importing = true);
+    try {
+      final text = await readVaultImport(file.readAsByteStream());
+      _snack(vaultImportSummary(await _vault.import(text)));
+    } catch (e) {
+      _snack(Errors.message(e, 'import your entries'));
+    } finally {
+      if (mounted) setState(() => _importing = false);
+    }
+  }
 
-    if (!mounted) return;
-    final format = await QuarkWidget.showDialog<String>(
-      context, // ignore: use_build_context_synchronously
-      builder: (ctx) => QuarkWidget.alertDialog(
-        title: const Text('Import format'),
-        content: Text(
-          'Importing "${file.name}". Choose the format:\n\n'
-          'Proton Pass: Settings › Export › CSV.\n'
-          'Google Password Manager: chrome://password-manager/settings › '
-          'Export passwords.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'auto'),
-            child: const Text('Auto-detect'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'bitwarden'),
-            child: const Text('Bitwarden CSV'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'proton'),
-            child: const Text('Proton Pass CSV'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'google'),
-            child: const Text('Google Passwords CSV'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
+  /// Saves the export through the browser's download on the web and the
+  /// platform's save dialog elsewhere. The decrypted vault is already in
+  /// memory, so the file is written from it whole.
+  Future<void> _export(VaultExportFormat format) async {
+    try {
+      final bytes = utf8.encode(_vault.export(format));
+      final saved = kIsWeb
+          ? await web_download.saveBytesForDownload(bytes, format.fileName)
+          : await saveBytesThroughDialog(bytes, format.fileName);
+      if (saved != null) _snack('Exported as ${format.fileName}');
+    } catch (e) {
+      _snack(Errors.message(e, 'export your vault'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _vault,
+      builder: (context, _) {
+        final status = _vault.status;
+        final unlocked = status == VaultStatus.unlocked;
+        final formError = _vault.formError;
+        final error = _vault.error;
+        return QuarkPageScaffold(
+          title: 'Vault',
+          icon: QuarkIcons.lock_outline,
+          // A locked vault has nothing on screen to reload.
+          onRefresh: unlocked ? manualRefresh : null,
+          isRefreshing: isRefreshing,
+          actions: [
+            if (unlocked) ...[
+              QuarkBarChip(
+                key: const ValueKey('vault_new_entry'),
+                icon: QuarkIcons.add_rounded,
+                label: 'New entry',
+                onPressed: _openEntry,
+              ),
+              QuarkBarChip(
+                key: const ValueKey('vault_new_folder'),
+                icon: QuarkIcons.create_new_folder_outlined,
+                label: 'New folder',
+                tooltip: 'New folder',
+                onPressed: _newFolder,
+              ),
+              QuarkBarChip(
+                key: const ValueKey('vault_import'),
+                icon: QuarkIcons.upload_rounded,
+                label: 'Import',
+                onPressed: _importing ? null : _import,
+              ),
+              VaultExportMenu(onExport: _export),
+              QuarkBarIconButton(
+                key: const ValueKey('vault_lock'),
+                icon: QuarkIcons.lock_open,
+                tooltip: 'Lock vault',
+                onPressed: _vault.lock,
+              ),
+            ],
+            const AppThemeToggle(),
+          ],
+          drawer: const AppDrawer(activeSection: QuarkDrawerSection.vault),
+          body: switch (status) {
+            VaultStatus.loading => const Center(child: QuarkLoader()),
+            VaultStatus.error when isQuarkUnreachableError(error!) =>
+              QuarkDisconnectedView(
+                hostAddress: AppSettings.instance.activeHost,
+                onRetry: manualRefresh,
+                onManageHosts: () =>
+                    context.go(AppRoutes.settingsTab(SettingsTab.general)),
+              ),
+            VaultStatus.error => VaultErrorView(
+              message: Errors.message(error, 'load your vault'),
+              onRetry: manualRefresh,
+            ),
+            VaultStatus.noVault => VaultPasswordForm(
+              key: const ValueKey('vault_setup'),
+              icon: QuarkIcons.shield_outlined,
+              title: 'Set up your vault',
+              message:
+                  'Your vault is encrypted on your devices with the password '
+                  'you sign in to Quark with, so there is no second password '
+                  'to remember. Nobody else, not even an admin, can open it.',
+              submitLabel: 'Set up vault',
+              phraseHelp:
+                  'Your account recovery phrase lets a recovery keep this '
+                  'vault if you forget your password. A mistyped phrase is '
+                  "not checked: it simply won't open the vault.",
+              isBusy: _vault.isBusy,
+              error: formError == null
+                  ? null
+                  : Errors.message(formError, 'set up your vault'),
+              onSubmit: (password, phrase) =>
+                  _vault.setUp(password, phrase: phrase),
+            ),
+            VaultStatus.locked => VaultPasswordForm(
+              key: const ValueKey('vault_unlock'),
+              title: 'Your vault is locked',
+              message:
+                  'Enter the password you sign in to Quark with. Your vault '
+                  'opens on this device; the Quark never sees what is in it.',
+              submitLabel: 'Unlock',
+              isBusy: _vault.isBusy,
+              error: formError == null
+                  ? null
+                  : Errors.message(formError, 'unlock your vault'),
+              secondaryLabel: 'Start over',
+              onSecondary: _startOver,
+              onSubmit: (password, _) => _vault.unlock(password),
+            ),
+            VaultStatus.unlocked => VaultEntryList(
+              entries: _vault.visibleRows,
+              folders: _vault.folderOptions,
+              selectedFolderId: _vault.folderId,
+              initialQuery: _vault.query,
+              vaultIsEmpty: _vault.entries.isEmpty,
+              onSearchChanged: _vault.search,
+              onFolderSelected: _vault.filterFolder,
+              onDeleteFolder: _deleteFolder,
+              onTapEntry: _openEntry,
+            ),
+          },
+        );
+      },
     );
-    if (format == null || !mounted) return;
-
-    try {
-      final resp = await VaultService.importEntries(
-        fileBytes: await file.readAsBytes(),
-        fileName: file.name,
-        format: format,
-      );
-      _loadEntries();
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context, // ignore: use_build_context_synchronously
-      ).showSnackBar(SnackBar(content: Text(vaultImportSummary(resp))));
-    } on VaultLockedException {
-      _loadStatus();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context, // ignore: use_build_context_synchronously
-        ).showSnackBar(
-          SnackBar(content: Text(Errors.message(e, 'import your entries'))),
-        );
-      }
-    }
-  }
-
-  Future<void> _doExport(String format) async {
-    try {
-      final bytes = await VaultService.exportEntries(format: format);
-      final fileName = format == 'csv' ? 'quark_vault.csv' : 'quark_vault.json';
-      await web_download.saveBytesForDownload(
-        Uint8List.fromList(bytes),
-        fileName,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Exported as $fileName')));
-    } on VaultLockedException {
-      _loadStatus();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(Errors.message(e, 'export your vault'))),
-        );
-      }
-    }
-  }
-
-  Future<void> _showEntryDetail(BuildContext context, int entryId) async {
-    try {
-      final detail = await VaultService.getEntry(entryId);
-      if (!mounted) return;
-      final deleted = await Navigator.push<bool>(
-        context, // ignore: use_build_context_synchronously
-        MaterialPageRoute(
-          builder: (_) => EntryDetailPage(
-            entry: detail,
-            folders: _folders,
-            onSave: (updated) async {
-              await VaultService.updateEntry(
-                id: detail.id,
-                name: updated['name'] as String,
-                url: updated['url'] as String? ?? '',
-                username: updated['username'] as String? ?? '',
-                password: updated['password'] as String? ?? '',
-                notes: updated['notes'] as String? ?? '',
-                totpSecret: updated['totpSecret'] as String? ?? '',
-                folderId: updated['folderId'] as int?,
-              );
-              _loadEntries();
-            },
-            onDelete: () async {
-              await VaultService.deleteEntry(detail.id);
-              _loadEntries();
-            },
-          ),
-        ),
-      );
-      if (deleted == true) _loadEntries();
-    } on VaultLockedException {
-      _loadStatus();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context, // ignore: use_build_context_synchronously
-        ).showSnackBar(
-          SnackBar(content: Text(Errors.message(e, 'delete the entry'))),
-        );
-      }
-    }
-  }
-
-  Future<void> _showEntryEditor(BuildContext context) async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => EntryEditorPage(folders: _folders)),
-    );
-    if (result == true) _loadEntries();
   }
 }

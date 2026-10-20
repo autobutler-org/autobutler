@@ -323,21 +323,14 @@ void main() {
       }, createHttpClient: overrides.createHttpClient);
     });
 
-    testWidgets('Vault is offered only once the admin flag says so', (
-      tester,
-    ) async {
+    testWidgets('Vault is offered to a member too (#3461)', (tester) async {
+      AppSettings.instance.isAdmin.value = false;
       await AppSettings.instance.welcomeNewOwner();
 
       await HttpOverrides.runZoned(() async {
         await pumpBrowser(tester);
 
         expect(find.byKey(upload), findsOne);
-        expect(find.byKey(vault), findsNothing);
-
-        AppSettings.instance.isAdmin.value = true;
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-
         expect(find.byKey(vault), findsOne);
       }, createHttpClient: overrides.createHttpClient);
     });

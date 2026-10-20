@@ -80,8 +80,8 @@ const _manageSections = {
 /// routes, so the package stays free of the router.
 ///
 /// A row is drawn only when its callback is set. That is how a caller hides a
-/// destination the signed-in user cannot use, such as Users or Vault for
-/// someone who is not an admin, rather than showing a row that goes nowhere.
+/// destination the signed-in user cannot use, such as Users for someone who
+/// is not an admin, rather than showing a row that goes nowhere.
 ///
 /// The header names the Quark on screen, [hosts] at [activeHostIndex]
 /// (#2033). With more than one saved, the signed-in app otherwise said

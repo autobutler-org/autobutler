@@ -17,7 +17,6 @@ class StorageDevicesBody extends StatelessWidget {
     required this.devices,
     required this.error,
     required this.mounting,
-    required this.vaultDeviceSerial,
     required this.backupStatus,
     required this.activeBackupJobId,
     required this.onRefresh,
@@ -41,7 +40,6 @@ class StorageDevicesBody extends StatelessWidget {
 
   /// Serials whose mount is in progress.
   final Set<String> mounting;
-  final String vaultDeviceSerial;
   final BackupJobStatus? backupStatus;
   final String? activeBackupJobId;
   final RefreshCallback onRefresh;
@@ -106,9 +104,6 @@ class StorageDevicesBody extends StatelessWidget {
     final protectionBadge = this.protectionBadge;
     var badgePlaced = false;
     for (final device in devices) {
-      final isVaultDevice =
-          (vaultDeviceSerial.isEmpty && device.isInternal) ||
-          (vaultDeviceSerial.isNotEmpty && device.serial == vaultDeviceSerial);
       final isUsb = device.serial.isNotEmpty;
       final isBackupDrive = device.role == 'snapshot-backup';
       final placeBadge =
@@ -118,7 +113,6 @@ class StorageDevicesBody extends StatelessWidget {
         DeviceCard(
           device: device,
           isMounting: mounting.contains(device.serial),
-          isVaultDevice: isVaultDevice,
           onMount: onMount != null && isUsb ? () => onMount(device) : null,
           // Built-in storage too: it can take default storage back (#3194).
           onSetRole: onSetRole != null && (isUsb || device.isInternal)

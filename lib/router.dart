@@ -969,11 +969,7 @@ Future<AuthStatus> Function() authStatusProbe = AuthService.checkStatus;
 /// Pages only an admin can use, with everything under them, such as a tab's
 /// URL. [authRedirect] sends anyone else to [AppRoutes.files]; the Quark
 /// refuses their requests either way.
-const adminRoutes = {
-  AppRoutes.vault,
-  AppRoutes.users,
-  '${AppRoutes.settings}/features',
-};
+const adminRoutes = {AppRoutes.users, '${AppRoutes.settings}/features'};
 
 /// Whether [location] is one of [routes] or a path under one: `/users/groups`
 /// is under `/users`, `/users-old` is not. An exact match let a page's tab URLs

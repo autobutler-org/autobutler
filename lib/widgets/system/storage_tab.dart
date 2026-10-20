@@ -8,7 +8,6 @@ import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/data_protection_service.dart';
 import 'package:quark/services/storage_service.dart';
-import 'package:quark/services/vault_service.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/quark_widget.dart';
@@ -43,7 +42,6 @@ class _StorageTabState extends State<StorageTab>
   String? _activeBackupJobId;
   BackupJobStatus? _backupStatus;
   Timer? _pollTimer;
-  String _vaultDeviceSerial = '';
   late final DataProtectionController _protection;
 
   @override
@@ -71,16 +69,10 @@ class _StorageTabState extends State<StorageTab>
     }
     final protection = _protection.load();
     try {
-      final results = await Future.wait([
-        StorageService.listDevices(),
-        VaultService.getStorageLocation()
-            .then((loc) => loc.deviceSerial)
-            .catchError((_) => ''),
-      ]);
+      final devices = await StorageService.listDevices();
       if (!mounted) return;
       setState(() {
-        _devices = results[0] as List<StorageDevice>;
-        _vaultDeviceSerial = results[1] as String;
+        _devices = devices;
         _error = null;
       });
     } catch (e) {
@@ -408,7 +400,6 @@ class _StorageTabState extends State<StorageTab>
           devices: _devices,
           error: _error,
           mounting: _mounting,
-          vaultDeviceSerial: _vaultDeviceSerial,
           backupStatus: _backupStatus,
           activeBackupJobId: _activeBackupJobId,
           onRefresh: refresh,

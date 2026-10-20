@@ -96,7 +96,6 @@ void main() {
             devices: devices,
             error: null,
             mounting: const {},
-            vaultDeviceSerial: '',
             backupStatus: null,
             activeBackupJobId: null,
             onRefresh: () async {},

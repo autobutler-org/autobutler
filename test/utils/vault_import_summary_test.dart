@@ -7,27 +7,20 @@ import 'package:quark/utils/vault_import_summary.dart';
 void main() {
   test('reports only what was imported when nothing else happened', () {
     expect(
-      vaultImportSummary({'imported': 12, 'skipped': 0}),
+      vaultImportSummary((imported: 12, skipped: 0, ignored: 0, errors: [])),
       'Imported 12 entries',
     );
   });
 
   test('names each count that happened', () {
     expect(
-      vaultImportSummary({
-        'imported': 2,
-        'skipped': 1,
-        'ignored': 3,
-        'errors': ['Row 7: login has no username or password'],
-      }),
+      vaultImportSummary((
+        imported: 2,
+        skipped: 1,
+        ignored: 3,
+        errors: ['Row 7: login has no username or password'],
+      )),
       'Imported 2 entries, 1 skipped (duplicates), 3 non-login items left out, 1 errors',
-    );
-  });
-
-  test('reads a response from a Quark that predates the ignored count', () {
-    expect(
-      vaultImportSummary({'imported': 4, 'skipped': 2}),
-      'Imported 4 entries, 2 skipped (duplicates)',
     );
   });
 }

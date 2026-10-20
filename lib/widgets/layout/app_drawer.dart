@@ -24,7 +24,8 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// more: the router checks with the Quark before it opens one of those pages,
 /// and the Quark refuses their requests from anyone else.
 ///
-/// Calendar, Chat, and Slides are always offered. Chat's row carries a dot
+/// Calendar, Chat, Slides and Vault are always offered; Vault since every
+/// account got its own (#3461). Chat's row carries a dot
 /// when any channel holds an unread message (#2424): the drawer reads the
 /// counts as it opens and [ChatUnreadController] keeps them current.
 ///
@@ -103,9 +104,7 @@ class _AppDrawerState extends State<AppDrawer> {
         onTapChat: goTo(QuarkDrawerSection.chat, AppRoutes.chat),
         hasUnreadChat: _unread.hasUnread,
         onTapSystem: goTo(QuarkDrawerSection.system, AppRoutes.system),
-        onTapVault: settings.isAdmin.value
-            ? goTo(QuarkDrawerSection.vault, AppRoutes.vault)
-            : null,
+        onTapVault: goTo(QuarkDrawerSection.vault, AppRoutes.vault),
         onTapUsers: settings.isAdmin.value
             ? goTo(QuarkDrawerSection.users, AppRoutes.users)
             : null,

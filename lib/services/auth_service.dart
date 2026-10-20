@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:quark/controllers/chat_keys_controller.dart';
 import 'package:quark/models/account_keys.dart';
 import 'package:quark/models/chat_keys.dart';
+import 'package:quark/models/vault_key.dart';
 import 'package:quark/services/account_crypto.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_secret.dart';
@@ -14,6 +15,7 @@ import 'package:quark/services/chat_crypto.dart';
 import 'package:quark/services/events_service.dart';
 import 'package:quark/services/feature_flags_service.dart';
 import 'package:quark/services/settings_service.dart';
+import 'package:quark/services/vault_service.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:sodium/sodium_sumo.dart' show SecureKey;
 
@@ -176,6 +178,190 @@ Future<WrappedChatKeys?> Function({
   required Uint8List authSalt,
 })
 chatKeysForPasswordChange = ChatKeysController.instance.keysForPasswordChange;
+
+/// The signed-in account's wrapped vault key, or null when it has no vault,
+/// for [AuthService.changePassword] and a recovery phrase rotation to
+/// re-wrap (#3461). [sessionToken] is for a session the app has not stored
+/// yet. Overridable in tests.
+Future<WrappedVaultKey?> Function({String? sessionToken}) vaultKeyFetch =
+    VaultService.fetchKey;
+
+/// [username]'s wrapped vault key for a recovery, which has no session, or
+/// null when the account has no vault (#3461). See
+/// [AuthService.fetchRecoveryVaultKey]. Overridable in tests.
+Future<WrappedVaultKey?> Function({
+  required String username,
+  String? recoveryPhrase,
+  String? recoveryKey,
+})
+recoveryVaultKeyFetch = AuthService.fetchRecoveryVaultKey;
+
+/// Opens the vault key [wrapped] with [keys]' `vaultWrapKey`, or null when it
+/// does not open. Disposes [keys] unless [keep].
+SecureKey? _openVaultKey(
+  AccountCrypto crypto,
+  WrappedSecret wrapped,
+  AuthKeys keys, {
+  bool keep = false,
+}) {
+  try {
+    return crypto.unwrapVaultKey(
+      wrapped,
+      keys.vaultWrapKey,
+      wrongSecret: 'the vault key does not open',
+    );
+  } on MessageException {
+    return null;
+  } finally {
+    if (!keep) keys.dispose();
+  }
+}
+
+/// [vaultKey] wrapped afresh at [KdfParams.standard]: under [password]'s
+/// `vaultWrapKey` over [authSalt], and under [phrase]'s when there is one.
+WrappedVaultKey _wrapVaultKey(
+  AccountCrypto crypto,
+  SecureKey vaultKey, {
+  required String password,
+  required AuthKeys? phrase,
+  required Uint8List authSalt,
+}) {
+  const params = KdfParams.standard;
+  final keys = crypto.deriveAuthKeys(password, authSalt, params);
+  try {
+    return WrappedVaultKey(
+      byPassword: crypto.wrapVaultKey(vaultKey, keys.vaultWrapKey, authSalt),
+      byPhrase: phrase == null
+          ? null
+          : crypto.wrapVaultKey(vaultKey, phrase.vaultWrapKey, authSalt),
+      kdfParams: phrase == null ? params.split : params.phraseSplit,
+    );
+  } finally {
+    keys.dispose();
+  }
+}
+
+/// The vault key re-wrapped for `PUT /auth/password` (#3461): opened with
+/// [currentPassword] and wrapped under [newPassword] over [authSalt], the
+/// phrase wrap kept as stored, since the phrase has not changed, and with it
+/// the Argon2id cost it records. Null for an account with no vault, and for
+/// one whose key [currentPassword] does not open, which then stays wrapped
+/// under the password it was made with.
+Future<WrappedVaultKey?> _vaultKeyForPasswordChange({
+  required String currentPassword,
+  required String newPassword,
+  required Uint8List authSalt,
+}) async {
+  final stored = await vaultKeyFetch();
+  if (stored == null) return null;
+  final crypto = await AccountCrypto.load();
+  final params = stored.kdfParams;
+  final vaultKey = _openVaultKey(
+    crypto,
+    stored.byPassword,
+    crypto.deriveAuthKeys(currentPassword, stored.byPassword.salt, params),
+  );
+  if (vaultKey == null) return null;
+  try {
+    final keys = crypto.deriveAuthKeys(newPassword, authSalt, params);
+    try {
+      return WrappedVaultKey(
+        byPassword: crypto.wrapVaultKey(vaultKey, keys.vaultWrapKey, authSalt),
+        byPhrase: stored.byPhrase,
+        kdfParams: params,
+      );
+    } finally {
+      keys.dispose();
+    }
+  } finally {
+    vaultKey.dispose();
+  }
+}
+
+/// The vault key re-wrapped for `POST /auth/recover` (#3461): fetched with
+/// the same credential as the chat keys, opened with the phrase wrap, and
+/// wrapped under [newPassword] and the phrase the account keeps
+/// ([newPhraseKeys], else [recoveryKeys]).
+///
+/// [recoveryKeys] open the phrase wrap when given; without them, for an
+/// account with no recovery key yet, the phrase derives its own. Null for an
+/// account with no vault, and for one whose key has no phrase wrap or the
+/// phrase does not open: nothing the user still holds opens that vault, and
+/// there is no admin recovery, so it stays under the lost password until it
+/// is deleted from the vault page.
+Future<WrappedVaultKey?> _vaultKeyForRecovery({
+  required String username,
+  required String recoveryPhrase,
+  required AuthKeys? recoveryKeys,
+  required AuthKeys? newPhraseKeys,
+  required String newPassword,
+  required Uint8List authSalt,
+}) async {
+  final stored = await recoveryVaultKeyFetch(
+    username: username,
+    recoveryPhrase: recoveryKeys == null ? recoveryPhrase : null,
+    recoveryKey: recoveryKeys?.authKey,
+  );
+  final byPhrase = stored?.byPhrase;
+  if (stored == null || byPhrase == null) return null;
+  final crypto = await AccountCrypto.load();
+  final vaultKey = _openVaultKey(
+    crypto,
+    byPhrase,
+    recoveryKeys ??
+        crypto.deriveRecoveryKeys(
+          recoveryPhrase,
+          byPhrase.salt,
+          stored.kdfParams,
+        ),
+    keep: recoveryKeys != null,
+  );
+  if (vaultKey == null) return null;
+  try {
+    return _wrapVaultKey(
+      crypto,
+      vaultKey,
+      password: newPassword,
+      phrase: newPhraseKeys ?? recoveryKeys,
+      authSalt: authSalt,
+    );
+  } finally {
+    vaultKey.dispose();
+  }
+}
+
+/// The vault key re-wrapped for `PUT /auth/recovery-key` (#3461): opened
+/// with [password], the sign-in's, and wrapped under it and [phraseKeys], the
+/// new phrase's. This is how a vault made with no phrase wrap gets one. Null
+/// for an account with no vault, and for one whose key [password] does not
+/// open, which keeps the wraps it has.
+Future<WrappedVaultKey?> _vaultKeyForNewPhrase({
+  required String password,
+  required AuthKeys phraseKeys,
+  required String sessionToken,
+  required Uint8List authSalt,
+}) async {
+  final stored = await vaultKeyFetch(sessionToken: sessionToken);
+  if (stored == null) return null;
+  final crypto = await AccountCrypto.load();
+  final vaultKey = _openVaultKey(
+    crypto,
+    stored.byPassword,
+    crypto.deriveAuthKeys(password, stored.byPassword.salt, stored.kdfParams),
+  );
+  if (vaultKey == null) return null;
+  try {
+    return _wrapVaultKey(
+      crypto,
+      vaultKey,
+      password: password,
+      phrase: phraseKeys,
+      authSalt: authSalt,
+    );
+  } finally {
+    vaultKey.dispose();
+  }
+}
 
 /// Runs [chatKeysOnSignIn] without holding up the sign-in. Chat is not what
 /// the user signed in for, and chat unlocks later from its own prompt when
@@ -560,7 +746,9 @@ class AuthService {
   /// Unlocks the chat keys first, since their phrase wrap has to move to the
   /// new phrase, then registers the phrase's recovery key with
   /// `PUT /auth/recovery-key`, which stores the re-wrapped keys in the same
-  /// transaction. The phrase is returned only once the Quark answers 204;
+  /// transaction, as it does the vault key, opened with the password and
+  /// wrapped under both (#3461). The phrase is returned only once the Quark
+  /// answers 204;
   /// until then the account has none. A failure is logged and nothing else:
   /// the sign-in stands, and the next one tries again. So does one whose chat
   /// keys would not open, since only they can be re-wrapped.
@@ -583,6 +771,12 @@ class AuthService {
         sessionToken: sessionToken,
         authSalt: secret.salt,
       );
+      final vaultKey = await _vaultKeyForNewPhrase(
+        password: password,
+        phraseKeys: mine.keys,
+        sessionToken: sessionToken,
+        authSalt: secret.salt,
+      );
       final response = await authHttpClientFactory()
           .put(
             _baseUri.resolve('/api/v0/auth/recovery-key'),
@@ -595,6 +789,7 @@ class AuthService {
               'password': secret.authKey,
               'recoveryKey': mine.keys.authKey,
               'chatKeys': ?chatKeys?.toJson(),
+              'vaultKey': ?vaultKey?.toJson(),
             }),
           )
           .timeout(kAuthRequestTimeout);
@@ -635,7 +830,9 @@ class AuthService {
   /// The account's chat keys are opened with the phrase first and sent back
   /// re-wrapped under [newPassword] in the same request, so recovering keeps
   /// chat history (#2416). A phrase that opens nothing fails here, before the
-  /// password changes.
+  /// password changes. The vault key is carried over the same way when its
+  /// phrase wrap opens (#3461); a vault with no phrase wrap stays under the
+  /// lost password, since nothing else opens it.
   ///
   /// The Quark is sent the new password's auth key, never the password
   /// (#2430). What stands in for the phrase follows `GET /auth/salt`. An
@@ -678,6 +875,14 @@ class AuthService {
         newPassword: newPassword,
         authSalt: secret.salt,
       );
+      final vaultKey = await _vaultKeyForRecovery(
+        username: username,
+        recoveryPhrase: recoveryPhrase,
+        recoveryKeys: typed,
+        newPhraseKeys: next?.keys,
+        newPassword: newPassword,
+        authSalt: secret.salt,
+      );
       response = await authHttpClientFactory()
           .post(
             _baseUri.resolve('/api/v0/auth/recover'),
@@ -691,6 +896,7 @@ class AuthService {
               'newAuthKey': secret.authKey,
               'newRecoveryKey': ?next?.keys.authKey,
               'chatKeys': chatKeys.toJson(),
+              'vaultKey': ?vaultKey?.toJson(),
             }),
           )
           .timeout(kAuthRequestTimeout);
@@ -737,7 +943,42 @@ class AuthService {
     String? recoveryPhrase,
     String? recoveryKey,
   }) async {
-    final uri = _baseUri.resolve('/api/v0/auth/recover/keys');
+    final json = await _postRecoveryCheck(
+      '/api/v0/auth/recover/keys',
+      username: username,
+      recoveryPhrase: recoveryPhrase,
+      recoveryKey: recoveryKey,
+    );
+    return json == null ? null : WrappedChatKeys.fromJson(json);
+  }
+
+  /// [username]'s wrapped vault key, for recovery (#3461): the vault's half
+  /// of [fetchRecoveryChatKeys], checked and answered the same way. Null when
+  /// the account has no vault.
+  static Future<WrappedVaultKey?> fetchRecoveryVaultKey({
+    required String username,
+    String? recoveryPhrase,
+    String? recoveryKey,
+  }) async {
+    final json = await _postRecoveryCheck(
+      '/api/v0/auth/recover/vault-key',
+      username: username,
+      recoveryPhrase: recoveryPhrase,
+      recoveryKey: recoveryKey,
+    );
+    return json == null ? null : WrappedVaultKey.fromJson(json);
+  }
+
+  /// Posts a recovery credential to [path], which checks it as
+  /// `/auth/recover` does and changes nothing, and returns the 2xx body, or
+  /// null for a 404.
+  static Future<Map<String, dynamic>?> _postRecoveryCheck(
+    String path, {
+    required String username,
+    String? recoveryPhrase,
+    String? recoveryKey,
+  }) async {
+    final uri = _baseUri.resolve(path);
     final response = await authHttpClientFactory()
         .post(
           uri,
@@ -757,9 +998,7 @@ class AuthService {
       final body = _tryDecodeError(response.body);
       throwApiError(response.statusCode, body, 'Recovery failed');
     }
-    return WrappedChatKeys.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-    );
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   /// Asks this Quark for an account (#1908) and returns the new account's
@@ -877,8 +1116,10 @@ class AuthService {
   /// (#2430): the current one's re-confirms the caller, as it does for
   /// [deleteAccount]. The account's chat keys are opened with
   /// [currentPassword] first and sent re-wrapped under [newPassword] in the
-  /// same request, so chat history survives the change. A current password
-  /// that opens nothing fails here, before anything is sent.
+  /// same request, so chat history survives the change, and so is the vault
+  /// key (#3461). A current password that opens no chat keys fails here,
+  /// before anything is sent; a vault key it does not open is left out and
+  /// stays under the password it was made with.
   ///
   /// A wrong current password throws [Errors.wrongCurrentPassword], and
   /// nothing changed.
@@ -904,6 +1145,11 @@ class AuthService {
       newPassword: newPassword,
       authSalt: next.salt,
     );
+    final vaultKey = await _vaultKeyForPasswordChange(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+      authSalt: next.salt,
+    );
     final response = await authHttpClientFactory()
         .put(
           _baseUri.resolve('/api/v0/auth/password'),
@@ -916,6 +1162,7 @@ class AuthService {
             'password': current.authKey,
             'newAuthKey': next.authKey,
             'chatKeys': ?chatKeys?.toJson(),
+            'vaultKey': ?vaultKey?.toJson(),
           }),
         )
         .timeout(kAuthRequestTimeout);

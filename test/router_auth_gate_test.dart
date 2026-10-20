@@ -371,8 +371,8 @@ void main() {
     });
   });
 
-  // #1928: the vault is admin-only on the Quark, and a non-admin who typed
-  // the URL got a page that could only show refusals.
+  // #1928: a non-admin who typed an admin-only page's URL got a page that
+  // could only show refusals. The vault was one until #3461.
   group('an admin-only page', () {
     setUp(() async {
       await addUnacceptedHost();
@@ -389,9 +389,9 @@ void main() {
       authStatusProbe = () async =>
           const AuthStatus(setupComplete: true, username: 'ada', isAdmin: true);
 
-      await pumpGatedRouter(tester, initialLocation: AppRoutes.vault);
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.users);
 
-      expect(find.text('vault'), findsOneWidget);
+      expect(find.text('users'), findsOneWidget);
     });
 
     // Asked of the Quark, not the unpersisted flag: it is false on every
@@ -403,19 +403,20 @@ void main() {
       authStatusProbe = () async =>
           const AuthStatus(setupComplete: true, username: 'ada', isAdmin: true);
 
-      await pumpGatedRouter(tester, initialLocation: AppRoutes.vault);
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.users);
 
-      expect(find.text('vault'), findsOneWidget);
+      expect(find.text('users'), findsOneWidget);
     });
 
-    testWidgets('sends a non-admin who types the URL to files', (tester) async {
+    // #3461: every account has its own vault now.
+    testWidgets('the vault is not one: it opens for a member', (tester) async {
       authStatusProbe = () async =>
           const AuthStatus(setupComplete: true, username: 'bob');
 
       await pumpGatedRouter(tester, initialLocation: AppRoutes.vault);
 
-      expect(find.text('files'), findsOneWidget);
-      expect(find.text('vault'), findsNothing);
+      expect(find.text('vault'), findsOneWidget);
+      expect(find.text(Errors.adminOnly), findsNothing);
     });
 
     // #2477: the redirect was silent, so someone following an admin's link
@@ -445,7 +446,7 @@ void main() {
     ) async {
       authStatusProbe = () async => throw Exception('connection refused');
 
-      await pumpGatedRouter(tester, initialLocation: AppRoutes.vault);
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.users);
 
       expect(find.text('files'), findsOneWidget);
     });
@@ -456,15 +457,15 @@ void main() {
           AuthStatus(setupComplete: true, username: 'ada', isAdmin: isAdmin);
       settings.isAdmin.value = true;
 
-      await pumpGatedRouter(tester, initialLocation: AppRoutes.vault);
-      expect(find.text('vault'), findsOneWidget);
+      await pumpGatedRouter(tester, initialLocation: AppRoutes.users);
+      expect(find.text('users'), findsOneWidget);
 
       isAdmin = false;
       settings.isAdmin.value = false;
       await tester.pumpAndSettle();
 
       expect(find.text('files'), findsOneWidget);
-      expect(find.text('vault'), findsNothing);
+      expect(find.text('users'), findsNothing);
     });
 
     // #1662: the Users page is admin-only too.
@@ -537,7 +538,7 @@ void main() {
     await settings.acceptTerms();
     authStatusProbe = () async => const AuthStatus(setupComplete: true);
 
-    await pumpGatedRouter(tester, initialLocation: AppRoutes.vault);
+    await pumpGatedRouter(tester, initialLocation: AppRoutes.users);
 
     expect(find.text('login'), findsOneWidget);
   });

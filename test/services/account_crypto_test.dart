@@ -125,4 +125,118 @@ void main() {
       );
     });
   });
+
+  group('a vault item', () {
+    final plaintext = Uint8List.fromList(utf8.encode('{"name":"GitHub"}'));
+
+    test('opens with its key and the version it was sealed with', () {
+      final key = crypto.generateVaultKey();
+      addTearDown(key.dispose);
+
+      final sealed = crypto.encryptVaultItem(plaintext, key, formatVersion: 1);
+      expect(sealed.nonce, hasLength(24));
+      expect(
+        utf8.decode(sealed.ciphertext, allowMalformed: true),
+        isNot(contains('GitHub')),
+      );
+      expect(
+        crypto.decryptVaultItem(
+          sealed.ciphertext,
+          sealed.nonce,
+          key,
+          formatVersion: 1,
+          wrongKey: _wrong,
+        ),
+        plaintext,
+      );
+    });
+
+    test('another key, another version or a tampered byte does not open '
+        'it', () {
+      final key = crypto.generateVaultKey();
+      final other = crypto.generateVaultKey();
+      addTearDown(key.dispose);
+      addTearDown(other.dispose);
+      final sealed = crypto.encryptVaultItem(plaintext, key, formatVersion: 1);
+      final tampered = Uint8List.fromList(sealed.ciphertext)..[0] ^= 1;
+
+      final attempts = <Uint8List Function()>[
+        () => crypto.decryptVaultItem(
+          sealed.ciphertext,
+          sealed.nonce,
+          other,
+          formatVersion: 1,
+          wrongKey: _wrong,
+        ),
+        () => crypto.decryptVaultItem(
+          sealed.ciphertext,
+          sealed.nonce,
+          key,
+          formatVersion: 2,
+          wrongKey: _wrong,
+        ),
+        () => crypto.decryptVaultItem(
+          tampered,
+          sealed.nonce,
+          key,
+          formatVersion: 1,
+          wrongKey: _wrong,
+        ),
+        () => crypto.decryptVaultItem(
+          sealed.ciphertext,
+          Uint8List(3),
+          key,
+          formatVersion: 1,
+          wrongKey: _wrong,
+        ),
+      ];
+      for (final attempt in attempts) {
+        expect(
+          attempt,
+          throwsA(
+            isA<MessageException>().having((e) => e.message, 'message', _wrong),
+          ),
+        );
+      }
+    });
+
+    test('does not open as a plain wrap, without the additional data', () {
+      final key = crypto.generateVaultKey();
+      addTearDown(key.dispose);
+      final sealed = crypto.encryptVaultItem(plaintext, key, formatVersion: 1);
+
+      expect(
+        () => crypto.unwrapWithKey(
+          WrappedSecret(
+            wrapped: Uint8List.fromList([
+              ...sealed.nonce,
+              ...sealed.ciphertext,
+            ]),
+            salt: salt,
+          ),
+          key,
+          wrongSecret: _wrong,
+        ),
+        throwsA(isA<MessageException>()),
+      );
+    });
+
+    test('draws a fresh nonce each time', () {
+      final key = crypto.generateVaultKey();
+      addTearDown(key.dispose);
+
+      expect(
+        crypto.encryptVaultItem(plaintext, key, formatVersion: 1).nonce,
+        isNot(crypto.encryptVaultItem(plaintext, key, formatVersion: 1).nonce),
+      );
+    });
+  });
+
+  test('randomString draws only from the pool, at the length asked', () {
+    final drawn = crypto.randomString('ab', 64);
+    expect(drawn, hasLength(64));
+    expect(drawn, matches(RegExp(r'^[ab]+$')));
+    expect(drawn, contains('a'));
+    expect(drawn, contains('b'));
+  });
 }
