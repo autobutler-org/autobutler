@@ -285,9 +285,16 @@ type GetResult struct {
 	Job Job
 }
 
-// Get returns one job, or ErrJobNotFound.
+// Get returns one job, or ErrJobNotFound. A locked database is waited out
+// past one busy timeout, so a poll during a job's write does not fail when
+// that one wait is not long enough (#3542).
 func (q *Queue) Get(ctx context.Context, params GetParams) (GetResult, error) {
-	row, err := q.database.Queries.GetJob(ctx, params.ID)
+	var row db.Job
+	err := retryBusy(ctx, func() error {
+		var err error
+		row, err = q.database.Queries.GetJob(ctx, params.ID)
+		return err
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return GetResult{}, ErrJobNotFound
 	}
@@ -315,20 +322,24 @@ type ListResult struct {
 // unless it is 0. It returns
 // ErrKindRequired when Kinds is empty or holds an empty string, and
 // ErrUnknownKind, naming the known kinds, for a kind nothing registered.
+// A locked database is waited out the same way as Get.
 func (q *Queue) List(ctx context.Context, params ListParams) (ListResult, error) {
 	if err := q.checkKinds(params.Kinds); err != nil {
 		return ListResult{}, err
 	}
 	var rows []db.Job
-	var err error
-	if params.UserID == 0 {
-		rows, err = q.database.Queries.ListJobs(ctx, params.Kinds)
-	} else {
-		rows, err = q.database.Queries.ListUserJobs(ctx, db.ListUserJobsParams{
-			UserID: sql.NullInt64{Int64: params.UserID, Valid: true},
-			Kinds:  params.Kinds,
-		})
-	}
+	err := retryBusy(ctx, func() error {
+		var err error
+		if params.UserID == 0 {
+			rows, err = q.database.Queries.ListJobs(ctx, params.Kinds)
+		} else {
+			rows, err = q.database.Queries.ListUserJobs(ctx, db.ListUserJobsParams{
+				UserID: sql.NullInt64{Int64: params.UserID, Valid: true},
+				Kinds:  params.Kinds,
+			})
+		}
+		return err
+	})
 	if err != nil {
 		return ListResult{}, fmt.Errorf("list jobs: %w", err)
 	}

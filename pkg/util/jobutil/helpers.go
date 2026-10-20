@@ -17,6 +17,34 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
 )
 
+// sqliteBusy is SQLITE_BUSY's primary result code. An extended code such as
+// SQLITE_BUSY_TIMEOUT keeps that primary code in its low byte.
+const sqliteBusy = 5
+
+// busyAttempts is how many times a job read runs when the database is locked.
+// Each attempt waits out the connection's busy_timeout on its own, so a
+// writer that holds the lock a little longer than one wait — a progress
+// update whose commit is slow — does not fail the read (#3542).
+const busyAttempts = 3
+
+func isSQLiteBusy(err error) bool {
+	var coder interface{ Code() int }
+	return errors.As(err, &coder) && coder.Code()&0xff == sqliteBusy
+}
+
+// retryBusy runs op again when it fails because the database is locked. Any
+// other error, including one from a canceled context, is returned as it is.
+func retryBusy(ctx context.Context, op func() error) error {
+	var err error
+	for attempt := range busyAttempts {
+		err = op()
+		if err == nil || !isSQLiteBusy(err) || ctx.Err() != nil || attempt+1 == busyAttempts {
+			break
+		}
+	}
+	return err
+}
+
 func jobFromRow(row db.Job) Job {
 	params := json.RawMessage(row.Params)
 	if s := strings.TrimSpace(row.Params); s == "" || s == "null" {
