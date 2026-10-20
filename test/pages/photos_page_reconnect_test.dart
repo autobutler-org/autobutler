@@ -25,6 +25,7 @@ void main() {
             String? serial,
             sort = PhotoSortField.added,
             order = PhotoSortOrder.desc,
+            String? q,
           }) async => PaginatedPhotosResponse(
             photos: const [],
             total: 0,

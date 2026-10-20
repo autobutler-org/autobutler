@@ -258,6 +258,7 @@ void main() {
             String? serial,
             PhotoSortField sort = PhotoSortField.added,
             PhotoSortOrder order = PhotoSortOrder.desc,
+            String? q,
           }) async => wire.PaginatedPhotosResponse(
             photos: [
               wire.PhotoItem(

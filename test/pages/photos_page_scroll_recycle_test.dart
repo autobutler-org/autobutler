@@ -127,6 +127,7 @@ void main() {
           String? serial,
           sort = PhotoSortField.added,
           order = PhotoSortOrder.desc,
+          String? q,
         }) async {
           final end = limit == 0 ? _count : (offset + limit).clamp(0, _count);
           return wire.PaginatedPhotosResponse(

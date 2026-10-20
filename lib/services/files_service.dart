@@ -125,13 +125,17 @@ class FilesService with AuthenticatedService {
   }
 
   /// Fetches a paginated list of photos from the dedicated photos endpoint.
-  /// Returns a [PaginatedPhotosResponse] with photos, total count, offset, and limit.
+  ///
+  /// Returns a [PaginatedPhotosResponse] with photos, total count, offset, and
+  /// limit. [q] is a file-name substring; a blank one lists the library. The
+  /// total is the match count either way (#3523).
   static Future<PaginatedPhotosResponse> getPhotos({
     int offset = 0,
     int limit = 50,
     String? serial,
     PhotoSortField sort = PhotoSortField.added,
     PhotoSortOrder order = PhotoSortOrder.desc,
+    String? q,
   }) async {
     final querySegments = <String>[
       'offset=$offset',
@@ -142,6 +146,10 @@ class FilesService with AuthenticatedService {
     final serialValue = serial?.trim() ?? '';
     if (serialValue.isNotEmpty) {
       querySegments.add('serial=${Uri.encodeQueryComponent(serialValue)}');
+    }
+    final query = q?.trim() ?? '';
+    if (query.isNotEmpty) {
+      querySegments.add('q=${Uri.encodeQueryComponent(query)}');
     }
 
     final endpointUri = apiBaseUri.resolve('/api/v0/photos');

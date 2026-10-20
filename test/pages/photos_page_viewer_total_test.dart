@@ -56,6 +56,7 @@ void main() {
             String? serial,
             PhotoSortField sort = PhotoSortField.added,
             PhotoSortOrder order = PhotoSortOrder.desc,
+            String? q,
           }) async {
             pages.add(offset);
             final end = (offset + limit).clamp(0, 364);

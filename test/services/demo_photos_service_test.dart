@@ -77,6 +77,42 @@ void main() {
     },
   );
 
+  test('getPhotos matches a file name before paging (#3523)', () async {
+    final lake = await DemoPhotosService.getPhotos(q: ' Lake ');
+    expect(lake.photos.map((p) => p.fileName), ['mountain-lake.jpg']);
+    expect(lake.total, 1);
+
+    final blank = await DemoPhotosService.getPhotos(q: '   ');
+    expect(blank.total, photos.length);
+
+    final allNames = [
+      for (final photo in photos)
+        if (photo.fileName.toLowerCase().contains('a')) photo.fileName,
+    ]..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    expect(allNames.length, greaterThan(2));
+
+    final first = await DemoPhotosService.getPhotos(
+      q: 'a',
+      sort: PhotoSortField.name,
+      order: PhotoSortOrder.asc,
+      offset: 0,
+      limit: 2,
+    );
+    expect(first.total, allNames.length);
+    expect(first.offset, 0);
+    expect(first.photos.map((p) => p.fileName), allNames.take(2));
+
+    final next = await DemoPhotosService.getPhotos(
+      q: 'A',
+      sort: PhotoSortField.name,
+      order: PhotoSortOrder.asc,
+      offset: 2,
+      limit: 2,
+    );
+    expect(next.total, allNames.length);
+    expect(next.photos.map((p) => p.fileName), allNames.skip(2).take(2));
+  });
+
   test('getPhotos honors an explicit sort and order (#2509)', () async {
     final oldestFirst = await DemoPhotosService.getPhotos(
       sort: PhotoSortField.added,
