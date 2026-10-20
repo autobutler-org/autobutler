@@ -1,0 +1,13 @@
+// cspell:words SQLITE InTx
+
+# Read-then-write SQLite transactions
+
+`db.InTx` starts a deferred transaction: `BeginTx` with nil options (`internal/db/database.go:45`). `db.DSN` sets `busy_timeout` to five seconds (`internal/db/dsn.go:47`), so a connection that finds the database locked retries. A deferred transaction takes a shared lock on its first read. SQLite returns `SQLITE_BUSY` at once when the following write upgrades that lock, and the timeout does not cover the upgrade (`internal/db/reset.go:112`). PostgreSQL does not use this locking. `vaultutil.CreateItem` already inserts before it reads the vault key (`pkg/util/vaultutil/vaultutil.go:304`) and rolls the insert back when the account has no key.
+
+One call site still has that shape. The read decides the write.
+
+| Severity | Location | Read | Write | Concurrent writers | Minimal fix |
+| --- | --- | --- | --- | --- | --- |
+| High | `pkg/util/authutil/authutil.go:1282` (`Recover`) | `GetUserByID`, for the account's auth salt | `SetUserCredentials` stores that salt, then `SetRecoveryKey`, `DeleteUserSessions`, `AfterReset`, and `newSession` | Medium. The shared lock covers one primary-key read. Overlapping writers are ordinary: `trackDevice` upserts `connected_devices` in the background, job heartbeats land every 10 seconds while a job runs, and the music indexer and photo-hash writes commit on their own connections. Recovery is uncommon, and a collision fails the request with no retry. | Read the account before `db.InTx`, as `SetRecoveryKey` (`authutil.go:1171`) and `ChangePassword` (`authutil.go:1219`) do. The salt is never cleared, so reading it early is safe. |
+
+Every other deferred transaction in `internal/db`, `pkg/util`, `pkg/backup`, `pkg/vfs`, and `internal/server` takes a write lock on its first statement, so the five-second timeout covers a busy database. `LockActiveAdmins` and `LockChatChannel` run before a read that decides a later write. `Setup`, `CreateUser`, `ApproveRequest`, `CreateChannel`, `CreateGroup`, `DeleteVault`, `MoveRows`, `DeleteRows`, metadata `Set` and `DeleteKeys`, and the music move delete or insert before any later read. `reset.go`'s `exclusively` and backup restore issue `BEGIN IMMEDIATE` before they read. Backup export's deferred transaction writes the attached file and only reads the live database. `DBVFS.Delete` counts children and deletes in two separate statements. Nothing calls `Queries.WithTx`. The event stream only reads, and upload sessions live on disk. Keep issuing `BEGIN IMMEDIATE` by hand where a read has to stay inside the transaction, as reset and backup restore already do. `Recover` can move its read out, so it does not need a new helper. Follow-up: #3590.
