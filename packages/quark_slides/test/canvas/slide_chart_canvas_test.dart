@@ -36,25 +36,26 @@ void main() {
       doc.presentation.slideById('s')!.findElement(id)! as ChartElement;
 
   Finder chartPaint() => find.descendant(
-    of: elementKey('chart'),
-    matching: find.byWidgetPredicate(
-      (w) => w is CustomPaint && w.painter is SlideChartPainter,
-    ),
-  );
+        of: elementKey('chart'),
+        matching: find.byWidgetPredicate(
+          (w) => w is CustomPaint && w.painter is SlideChartPainter,
+        ),
+      );
 
   Future<void> pump(
     WidgetTester tester,
     Size size, {
     double textScale = 1,
     SlideCanvasInteraction interaction = SlideCanvasInteraction.editable,
-  }) => pumpCanvas(
-    tester,
-    doc,
-    size: size,
-    textScale: textScale,
-    chartEditing: charts,
-    interaction: interaction,
-  );
+  }) =>
+      pumpCanvas(
+        tester,
+        doc,
+        size: size,
+        textScale: textScale,
+        chartEditing: charts,
+        interaction: interaction,
+      );
 
   group('drawing', () {
     testBothViewports('paints the chart in its frame', (tester, size) async {
@@ -207,15 +208,13 @@ void main() {
     testWidgets('reads a summary, and the data as its value', (tester) async {
       final handle = tester.ensureSemantics();
       await pump(tester, wideViewport);
-      const summary =
-          'Bar chart titled Sales, 2 series, 3 categories; '
+      const summary = 'Bar chart titled Sales, 2 series, 3 categories; '
           'highest value 42 in Q3';
       expect(find.bySemanticsLabel(summary), findsOne);
       expect(
         tester.getSemantics(find.bySemanticsLabel(summary)),
         isSemantics(
-          value:
-              'Q1: Revenue 12, Costs 8. Q2: Revenue 30, Costs 12.5. '
+          value: 'Q1: Revenue 12, Costs 8. Q2: Revenue 30, Costs 12.5. '
               'Q3: Revenue 42, Costs 20.',
           hasTapAction: true,
         ),

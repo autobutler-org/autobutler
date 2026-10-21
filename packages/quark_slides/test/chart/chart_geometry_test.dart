@@ -28,8 +28,7 @@ void main() {
         expect(scale.ticks.length, lessThanOrEqualTo(6), reason: '$low..$high');
         expect(scale.min, lessThanOrEqualTo(low));
         expect(scale.max, greaterThanOrEqualTo(high));
-        final mantissa =
-            scale.step /
+        final mantissa = scale.step /
             math.pow(10, (math.log(scale.step) / math.ln10).floor());
         expect(
           [1, 2, 2.5, 5, 10].any((m) => (mantissa - m).abs() < 1e-9),

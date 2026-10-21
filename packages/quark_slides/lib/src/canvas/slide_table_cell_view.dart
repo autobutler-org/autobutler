@@ -60,8 +60,7 @@ class SlideTableCellView extends StatelessWidget {
         horizontal: TableElement.cellPaddingX,
         vertical: TableElement.cellPaddingY,
       ),
-      child:
-          editor ??
+      child: editor ??
           SlideTextBoxView(
             box: table.cellTextBox(row, column),
             style: style,

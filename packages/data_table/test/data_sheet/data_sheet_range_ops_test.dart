@@ -18,9 +18,9 @@ DataSheetController _make(List<List<String>> values) {
 }
 
 List<List<String>> _values(DataSheetController c) => [
-  for (var r = 0; r < c.rowCount; r++)
-    [for (var col = 0; col < c.colCount; col++) c.cellAt(r, col).value],
-];
+      for (var r = 0; r < c.rowCount; r++)
+        [for (var col = 0; col < c.colCount; col++) c.cellAt(r, col).value],
+    ];
 
 CellRange _range(int top, int left, int bottom, int right) =>
     CellRange(top: top, left: left, bottom: bottom, right: right);

@@ -21,7 +21,8 @@ List<TextBox> layoutBoxes(
   SlideLayout layout,
   SlideSize size,
   String Function() newId,
-) => [for (final p in layout.placeholders) p.emptyBox(newId(), size)];
+) =>
+    [for (final p in layout.placeholders) p.emptyBox(newId(), size)];
 
 /// [slide] moved onto [layout]: the slide's placeholder boxes fill
 /// [layout]'s slots — by slot id first, then by text role — keeping their
@@ -114,21 +115,22 @@ TextBox _reflow(
   LayoutPlaceholder? from,
   LayoutPlaceholder to,
   SlideSize size,
-) => box.copyWith(
-  frame: from != null && box.frame == from.frameOn(size)
-      ? to.frameOn(size)
-      : box.frame,
-  anchor: from != null && box.anchor == from.anchor ? to.anchor : null,
-  paragraphs: [
-    for (final p in box.paragraphs)
-      from != null && p.alignment == from.alignment
-          ? p.copyWith(alignment: to.alignment)
-          : p,
-  ],
-  placeholder: to.prompt,
-  slot: to.id,
-  textRole: to.role,
-);
+) =>
+    box.copyWith(
+      frame: from != null && box.frame == from.frameOn(size)
+          ? to.frameOn(size)
+          : box.frame,
+      anchor: from != null && box.anchor == from.anchor ? to.anchor : null,
+      paragraphs: [
+        for (final p in box.paragraphs)
+          from != null && p.alignment == from.alignment
+              ? p.copyWith(alignment: to.alignment)
+              : p,
+      ],
+      placeholder: to.prompt,
+      slot: to.id,
+      textRole: to.role,
+    );
 
 /// [box] put back as slot [p] defines it.
 TextBox _reset(TextBox box, LayoutPlaceholder p, SlideSize size) =>

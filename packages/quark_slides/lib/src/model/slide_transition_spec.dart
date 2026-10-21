@@ -34,14 +34,14 @@ class SlideTransitionSpec {
     int durationMs = defaultDurationMs,
     this.extra = const {},
   }) : durationMs = durationMs < minDurationMs
-           ? minDurationMs
-           : durationMs > maxDurationMs
-           ? maxDurationMs
-           : durationMs;
+            ? minDurationMs
+            : durationMs > maxDurationMs
+                ? maxDurationMs
+                : durationMs;
 
   /// A fade lasting [durationMs].
   const SlideTransitionSpec.fade({int durationMs = defaultDurationMs})
-    : this(kind: SlideTransitionKind.fade, durationMs: durationMs);
+      : this(kind: SlideTransitionKind.fade, durationMs: durationMs);
 
   /// No transition: an instant cut. The deck's default when it sets none.
   static const none = SlideTransitionSpec();
@@ -118,11 +118,12 @@ class SlideTransitionSpec {
 
   /// The transition as its `.qslide` object.
   JsonMap toJson() => {
-    'kind': kind.name,
-    if (direction != SlideTransitionDirection.left) 'direction': direction.name,
-    if (durationMs != defaultDurationMs) 'duration': durationMs,
-    ...extra,
-  };
+        'kind': kind.name,
+        if (direction != SlideTransitionDirection.left)
+          'direction': direction.name,
+        if (durationMs != defaultDurationMs) 'duration': durationMs,
+        ...extra,
+      };
 
   /// Returns a copy with the given fields replaced. Setting [kind] drops a
   /// kind this version did not know.
@@ -130,12 +131,14 @@ class SlideTransitionSpec {
     SlideTransitionKind? kind,
     SlideTransitionDirection? direction,
     int? durationMs,
-  }) => SlideTransitionSpec(
-    kind: kind ?? this.kind,
-    direction: direction ?? this.direction,
-    durationMs: durationMs ?? this.durationMs,
-    extra: kind == null ? extra : Map.unmodifiable({...extra}..remove('kind')),
-  );
+  }) =>
+      SlideTransitionSpec(
+        kind: kind ?? this.kind,
+        direction: direction ?? this.direction,
+        durationMs: durationMs ?? this.durationMs,
+        extra:
+            kind == null ? extra : Map.unmodifiable({...extra}..remove('kind')),
+      );
 
   @override
   bool operator ==(Object other) =>

@@ -95,49 +95,50 @@ class SlideStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MediaQuery.withNoTextScaling(
-    child: SizedBox(
-      width: size.width,
-      height: size.height,
-      child: ClipRect(
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(
-              child: SlideBackgroundView(
-                background: slide.background,
-                theme: theme,
-                imageBuilder: imageBuilder,
-              ),
+        child: SizedBox(
+          width: size.width,
+          height: size.height,
+          child: ClipRect(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: SlideBackgroundView(
+                    background: slide.background,
+                    theme: theme,
+                    imageBuilder: imageBuilder,
+                  ),
+                ),
+                for (final element in slide.elements)
+                  SlideElementView(
+                    element: element,
+                    style: style,
+                    theme: theme,
+                    label: elementLabel(element),
+                    imageBuilder: imageBuilder,
+                    selected: selection.contains(element.id),
+                    onSelect:
+                        onSelect == null ? null : () => onSelect!(element.id),
+                    elementLabel: elementLabel,
+                    editingId: editingId,
+                    editor: editor,
+                    showPlaceholder: onSelect != null,
+                    highlights: highlights,
+                    cellLabel: cellLabel,
+                    selectedCells: selectedCells,
+                    chartDataLabel: chartDataLabel,
+                  ),
+                if (preview case final preview?)
+                  SlideElementView(
+                    element: preview,
+                    style: style,
+                    theme: theme,
+                    label: '',
+                    excluded: true,
+                  ),
+              ],
             ),
-            for (final element in slide.elements)
-              SlideElementView(
-                element: element,
-                style: style,
-                theme: theme,
-                label: elementLabel(element),
-                imageBuilder: imageBuilder,
-                selected: selection.contains(element.id),
-                onSelect: onSelect == null ? null : () => onSelect!(element.id),
-                elementLabel: elementLabel,
-                editingId: editingId,
-                editor: editor,
-                showPlaceholder: onSelect != null,
-                highlights: highlights,
-                cellLabel: cellLabel,
-                selectedCells: selectedCells,
-                chartDataLabel: chartDataLabel,
-              ),
-            if (preview case final preview?)
-              SlideElementView(
-                element: preview,
-                style: style,
-                theme: theme,
-                label: '',
-                excluded: true,
-              ),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }

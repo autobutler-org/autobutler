@@ -156,70 +156,70 @@ class SlideTableEditingController extends ChangeNotifier {
 
   /// Inserts a row above the selection.
   void insertRowAbove() => _onSelection((doc, slide, id, range) {
-    doc.insertTableRow(slide, id, range.top);
-    _shift(rows: 1);
-  });
+        doc.insertTableRow(slide, id, range.top);
+        _shift(rows: 1);
+      });
 
   /// Inserts a row below the selection.
   void insertRowBelow() => _onSelection(
-    (doc, slide, id, range) =>
-        doc.insertTableRow(slide, id, range.bottom, after: true),
-  );
+        (doc, slide, id, range) =>
+            doc.insertTableRow(slide, id, range.bottom, after: true),
+      );
 
   /// Inserts a column left of the selection.
   void insertColumnLeft() => _onSelection((doc, slide, id, range) {
-    doc.insertTableColumn(slide, id, range.left);
-    _shift(columns: 1);
-  });
+        doc.insertTableColumn(slide, id, range.left);
+        _shift(columns: 1);
+      });
 
   /// Inserts a column right of the selection.
   void insertColumnRight() => _onSelection(
-    (doc, slide, id, range) =>
-        doc.insertTableColumn(slide, id, range.right, after: true),
-  );
+        (doc, slide, id, range) =>
+            doc.insertTableColumn(slide, id, range.right, after: true),
+      );
 
   /// Deletes the selected rows; deleting them all deletes the table.
   void deleteRows() => _onSelection((doc, slide, id, range) {
-    doc.deleteTableRow(slide, id, range.top, count: range.rowCount);
-    _collapse();
-  });
+        doc.deleteTableRow(slide, id, range.top, count: range.rowCount);
+        _collapse();
+      });
 
   /// Deletes the selected columns; deleting them all deletes the table.
   void deleteColumns() => _onSelection((doc, slide, id, range) {
-    doc.deleteTableColumn(slide, id, range.left, count: range.columnCount);
-    _collapse();
-  });
+        doc.deleteTableColumn(slide, id, range.left, count: range.columnCount);
+        _collapse();
+      });
 
   /// Applies [format] to the selected cells. See [CellFormat].
   void format(CellFormat format) => _onSelection(
-    (doc, slide, id, range) => doc.formatCells(slide, id, range, format),
-  );
+        (doc, slide, id, range) => doc.formatCells(slide, id, range, format),
+      );
 
   /// Merges the selected cells into one.
   void merge() => _onSelection((doc, slide, id, range) {
-    doc.mergeCells(slide, id, range);
-    select(id, range);
-  });
+        doc.mergeCells(slide, id, range);
+        select(id, range);
+      });
 
   /// Splits every merged cell in the selection back into its cells.
   void unmerge() => _onSelection(
-    (doc, slide, id, range) => doc.unmergeCells(slide, id, range),
-  );
+        (doc, slide, id, range) => doc.unmergeCells(slide, id, range),
+      );
 
   /// Empties the text of the selected cells, as the Delete key does.
   void clearText() => _onSelection((doc, slide, id, range) {
-    doc.batch(() {
-      final table = this.table!;
-      for (var r = range.top; r <= range.bottom; r++) {
-        for (var c = range.left; c <= range.right; c++) {
-          if (table.isCovered(r, c) || table.cell(r, c).plainText.isEmpty) {
-            continue;
+        doc.batch(() {
+          final table = this.table!;
+          for (var r = range.top; r <= range.bottom; r++) {
+            for (var c = range.left; c <= range.right; c++) {
+              if (table.isCovered(r, c) || table.cell(r, c).plainText.isEmpty) {
+                continue;
+              }
+              doc.setCellText(slide, id, r, c, const [TextParagraph([])]);
+            }
           }
-          doc.setCellText(slide, id, r, c, const [TextParagraph([])]);
-        }
-      }
-    });
-  });
+        });
+      });
 
   /// Turns the table's header row and banded rows on or off and sets its
   /// header [accent]; what is left out is kept.
@@ -241,8 +241,7 @@ class SlideTableEditingController extends ChangeNotifier {
       String slideId,
       String tableId,
       CellRange range,
-    )
-    command,
+    ) command,
   ) {
     final doc = _doc;
     final range = this.range;

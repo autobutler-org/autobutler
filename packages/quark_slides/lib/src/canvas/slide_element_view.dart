@@ -135,20 +135,20 @@ class SlideElementView extends StatelessWidget {
     final Widget content = switch (element) {
       TextBox() when editor != null => editor,
       final TextBox box => SlideTextBoxView(
-        box: box,
-        style: style,
-        theme: theme,
-        showPlaceholder: showPlaceholder,
-        highlights: highlights[box.id] ?? const [],
-      ),
+          box: box,
+          style: style,
+          theme: theme,
+          showPlaceholder: showPlaceholder,
+          highlights: highlights[box.id] ?? const [],
+        ),
       final ShapeElement shape => CustomPaint(
-        painter: SlideShapePainter(shape, theme),
-        size: Size.infinite,
-      ),
+          painter: SlideShapePainter(shape, theme),
+          size: Size.infinite,
+        ),
       final LineElement line => CustomPaint(
-        painter: SlideLinePainter(line, theme),
-        size: Size.infinite,
-      ),
+          painter: SlideLinePainter(line, theme),
+          size: Size.infinite,
+        ),
       ImageElement(:final source, :final fit) when imageBuilder != null =>
         ClipRect(
           child: imageBuilder!(
@@ -158,53 +158,51 @@ class SlideElementView extends StatelessWidget {
         ),
       ImageElement() || UnknownElement() => SlidePlaceholderView(style: style),
       final TableElement table => SlideTableView(
-        table: table,
-        style: style,
-        theme: theme,
-        cellLabel: cellLabel,
-        selectedCells: selectedCells?.tableId == table.id
-            ? selectedCells!.range
-            : null,
-        editingCell: switch (editor) {
-          SlideTextEditor(:final session) => session.cell,
-          _ => null,
-        },
-        editor: editor,
-      ),
+          table: table,
+          style: style,
+          theme: theme,
+          cellLabel: cellLabel,
+          selectedCells:
+              selectedCells?.tableId == table.id ? selectedCells!.range : null,
+          editingCell: switch (editor) {
+            SlideTextEditor(:final session) => session.cell,
+            _ => null,
+          },
+          editor: editor,
+        ),
       final ChartElement chart => CustomPaint(
-        painter: SlideChartPainter(chart, theme),
-        size: Size.infinite,
-      ),
+          painter: SlideChartPainter(chart, theme),
+          size: Size.infinite,
+        ),
       final GroupElement group => SlideGroupView(
-        group: group,
-        style: style,
-        theme: theme,
-        elementLabel: elementLabel,
-        imageBuilder: imageBuilder,
-        editingId: editingId,
-        editor: this.editor,
-        showPlaceholder: showPlaceholder,
-        excluded: excluded,
-        highlights: highlights,
-        cellLabel: cellLabel,
-        selectedCells: selectedCells,
-        chartDataLabel: chartDataLabel,
-      ),
+          group: group,
+          style: style,
+          theme: theme,
+          elementLabel: elementLabel,
+          imageBuilder: imageBuilder,
+          editingId: editingId,
+          editor: this.editor,
+          showPlaceholder: showPlaceholder,
+          excluded: excluded,
+          highlights: highlights,
+          cellLabel: cellLabel,
+          selectedCells: selectedCells,
+          chartDataLabel: chartDataLabel,
+        ),
     };
     final shadowed = switch (element) {
       ImageElement(:final shadow?) => CustomPaint(
-        painter: SlideShadowPainter(shadow, frame.rotation, theme),
-        child: content,
-      ),
+          painter: SlideShadowPainter(shadow, frame.rotation, theme),
+          child: content,
+        ),
       _ => content,
     };
     final opacity = switch (element) {
       ShapeElement(:final opacity) || LineElement(:final opacity) => opacity,
       _ => 1.0,
     };
-    final drawn = opacity < 1
-        ? Opacity(opacity: opacity, child: shadowed)
-        : shadowed;
+    final drawn =
+        opacity < 1 ? Opacity(opacity: opacity, child: shadowed) : shadowed;
     return Positioned(
       left: frame.x,
       top: frame.y,
@@ -216,22 +214,22 @@ class SlideElementView extends StatelessWidget {
         child: excluded
             ? ExcludeSemantics(child: drawn)
             : editor != null
-            ? drawn
-            : Semantics(
-                container: true,
-                label: label,
-                value: switch (element) {
-                  final ChartElement chart => chartDataLabel(chart),
-                  _ => null,
-                },
-                selected: onSelect == null ? null : selected,
-                onTap: onSelect,
-                // A group's children and a table's cells read on their
-                // own, inside it.
-                excludeSemantics:
-                    element is! GroupElement && element is! TableElement,
-                child: drawn,
-              ),
+                ? drawn
+                : Semantics(
+                    container: true,
+                    label: label,
+                    value: switch (element) {
+                      final ChartElement chart => chartDataLabel(chart),
+                      _ => null,
+                    },
+                    selected: onSelect == null ? null : selected,
+                    onTap: onSelect,
+                    // A group's children and a table's cells read on their
+                    // own, inside it.
+                    excludeSemantics:
+                        element is! GroupElement && element is! TableElement,
+                    child: drawn,
+                  ),
       ),
     );
   }

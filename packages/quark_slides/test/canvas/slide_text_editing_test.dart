@@ -8,8 +8,8 @@ import '../support/canvas_harness.dart';
 
 /// The editor's paragraph field that has focus.
 EditableText focusedField(WidgetTester tester) => tester.widget<EditableText>(
-  find.byWidgetPredicate((w) => w is EditableText && w.focusNode.hasFocus),
-);
+      find.byWidgetPredicate((w) => w is EditableText && w.focusNode.hasFocus),
+    );
 
 /// Types [text] at the focused field's caret, through the input method.
 Future<void> typeText(WidgetTester tester, String text) async {

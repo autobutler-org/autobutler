@@ -148,16 +148,14 @@ void main() {
         final primary = Theme.of(
           tester.element(_cell(1, 1)),
         ).colorScheme.primary.withValues(alpha: kRangeTintAlpha);
-        BoxDecoration decorationAt(int r, int c) =>
-            tester
-                    .widget<Container>(
-                      find.descendant(
-                        of: _cell(r, c),
-                        matching: find.byType(Container),
-                      ),
-                    )
-                    .decoration!
-                as BoxDecoration;
+        BoxDecoration decorationAt(int r, int c) => tester
+            .widget<Container>(
+              find.descendant(
+                of: _cell(r, c),
+                matching: find.byType(Container),
+              ),
+            )
+            .decoration! as BoxDecoration;
         expect(decorationAt(2, 2).color, primary);
         expect(decorationAt(1, 1).color, isNull);
         expect(decorationAt(3, 3).color, isNull);

@@ -86,9 +86,8 @@ List<FormulaReference> formulaReferences(String formula) {
         cells: cells,
         color: colors.putIfAbsent(
           label,
-          () =>
-              kFormulaReferencePalette[colors.length %
-                  kFormulaReferencePalette.length],
+          () => kFormulaReferencePalette[
+              colors.length % kFormulaReferencePalette.length],
         ),
       ),
     );
@@ -120,8 +119,7 @@ int _wordEnd(String source, int from) {
   var i = from;
   while (i < source.length) {
     final c = source.codeUnitAt(i);
-    final isWord =
-        c == 0x24 ||
+    final isWord = c == 0x24 ||
         (c >= 65 && c <= 90) ||
         (c >= 97 && c <= 122) ||
         (c >= 48 && c <= 57);

@@ -68,17 +68,19 @@ void _checkSize(int rows, int columns) {
 /// them. Transposing twice gives [table] back; the column commands are the
 /// row commands run on the transposed table.
 TableElement transposeTable(TableElement table) => table.copyWith(
-  frame: table.frame.copyWith(
-    width: table.frame.height,
-    height: table.frame.width,
-  ),
-  columnWidths: table.rowHeights,
-  rowHeights: table.columnWidths,
-  cells: [
-    for (var c = 0; c < table.columnCount; c++)
-      [for (var r = 0; r < table.rowCount; r++) table.cell(r, c).transposed],
-  ],
-);
+      frame: table.frame.copyWith(
+        width: table.frame.height,
+        height: table.frame.width,
+      ),
+      columnWidths: table.rowHeights,
+      rowHeights: table.columnWidths,
+      cells: [
+        for (var c = 0; c < table.columnCount; c++)
+          [
+            for (var r = 0; r < table.rowCount; r++) table.cell(r, c).transposed
+          ],
+      ],
+    );
 
 /// [table] with [count] blank rows inserted before row [index]
 /// ([TableElement.rowCount] appends), each as tall as the row it was
@@ -158,9 +160,8 @@ TableElement? deleteTableRows(TableElement table, int first, {int count = 1}) {
       }
     }
   }
-  final removed = table.rowHeights
-      .sublist(first, end)
-      .fold(0.0, (a, b) => a + b);
+  final removed =
+      table.rowHeights.sublist(first, end).fold(0.0, (a, b) => a + b);
   return table.copyWith(
     frame: table.frame.copyWith(
       height: math.max(0, table.frame.height - removed),
@@ -282,25 +283,27 @@ void _drawBorders(
   Stroke? stroke,
 ) {
   bool horizontal(int boundary) => switch (preset) {
-    CellBorderPreset.all || CellBorderPreset.none => true,
-    CellBorderPreset.outside =>
-      boundary == area.top || boundary == area.bottom + 1,
-    CellBorderPreset.inside || CellBorderPreset.insideHorizontal =>
-      boundary != area.top && boundary != area.bottom + 1,
-    CellBorderPreset.top => boundary == area.top,
-    CellBorderPreset.bottom => boundary == area.bottom + 1,
-    _ => false,
-  };
+        CellBorderPreset.all || CellBorderPreset.none => true,
+        CellBorderPreset.outside =>
+          boundary == area.top || boundary == area.bottom + 1,
+        CellBorderPreset.inside ||
+        CellBorderPreset.insideHorizontal =>
+          boundary != area.top && boundary != area.bottom + 1,
+        CellBorderPreset.top => boundary == area.top,
+        CellBorderPreset.bottom => boundary == area.bottom + 1,
+        _ => false,
+      };
   bool vertical(int boundary) => switch (preset) {
-    CellBorderPreset.all || CellBorderPreset.none => true,
-    CellBorderPreset.outside =>
-      boundary == area.left || boundary == area.right + 1,
-    CellBorderPreset.inside || CellBorderPreset.insideVertical =>
-      boundary != area.left && boundary != area.right + 1,
-    CellBorderPreset.left => boundary == area.left,
-    CellBorderPreset.right => boundary == area.right + 1,
-    _ => false,
-  };
+        CellBorderPreset.all || CellBorderPreset.none => true,
+        CellBorderPreset.outside =>
+          boundary == area.left || boundary == area.right + 1,
+        CellBorderPreset.inside ||
+        CellBorderPreset.insideVertical =>
+          boundary != area.left && boundary != area.right + 1,
+        CellBorderPreset.left => boundary == area.left,
+        CellBorderPreset.right => boundary == area.right + 1,
+        _ => false,
+      };
   void side(int r, int c, CellSide side) {
     if (r < 0 || c < 0 || r >= cells.length || c >= cells[r].length) return;
     final cell = cells[r][c];
@@ -376,11 +379,12 @@ TableElement styleTable(
   bool? headerRow,
   bool? bandedRows,
   SlideColor? accent,
-}) => table.copyWith(
-  headerRow: headerRow,
-  bandedRows: bandedRows,
-  accent: accent,
-);
+}) =>
+    table.copyWith(
+      headerRow: headerRow,
+      bandedRows: bandedRows,
+      accent: accent,
+    );
 
 /// [table] with every row grown, never shrunk, to fit its cells' text as
 /// [measure] lays it out (see `TableElement.cellTextBox`), plus the cells'
@@ -425,12 +429,13 @@ TableElement _replaceCell(
   int row,
   int column,
   SlideTableCell cell,
-) => table.copyWith(
-  cells: [
-    for (var r = 0; r < table.rowCount; r++)
-      r == row ? ([...table.cells[r]]..[column] = cell) : table.cells[r],
-  ],
-);
+) =>
+    table.copyWith(
+      cells: [
+        for (var r = 0; r < table.rowCount; r++)
+          r == row ? ([...table.cells[r]]..[column] = cell) : table.cells[r],
+      ],
+    );
 
 void _checkCell(TableElement table, int row, int column) {
   RangeError.checkValidIndex(row, table.cells, 'row');
