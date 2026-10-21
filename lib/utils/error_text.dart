@@ -1,3 +1,4 @@
+import 'package:quark/models/account_keys.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/services/photo_index_service.dart';
@@ -27,6 +28,7 @@ abstract final class Errors {
   static String message(Object? error, String action) {
     if (error == null) return couldNot(action);
     if (error is UnauthorizedException) return sessionExpired;
+    if (error is KdfParamsOutOfRange) return keyCostOutOfRange;
     if (error is MessageException) return _sentence(error.message);
     if (error is ApiException) return _forStatus(error.statusCode, action);
     // Everything above is an answer from the Quark, which a refused
@@ -506,6 +508,15 @@ abstract final class Errors {
   /// Recovering an account whose chat keys the recovery phrase doesn't open.
   static const String chatKeysWrongPhrase =
       "That recovery phrase doesn't unlock your messages.";
+
+  /// The Quark sent the account's encrypted keys, chat's or the vault's,
+  /// with an Argon2id cost below the app's standard or above its ceiling
+  /// (#3648). The app refuses to open them: a weaker cost is one only a
+  /// changed Quark would send.
+  static const String keyCostOutOfRange =
+      "Your Quark sent your encryption keys with security settings the app "
+      "doesn't accept, so it won't open them. Someone may have changed your "
+      "Quark's data.";
 
   /// Unlocking the vault, or setting it up, with a password that doesn't open
   /// the account's vault key (#3461). Nothing is sent to the Quark to check

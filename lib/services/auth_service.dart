@@ -244,7 +244,8 @@ WrappedVaultKey _wrapVaultKey(
 /// The vault key re-wrapped for `PUT /auth/password` (#3461): opened with
 /// [currentPassword] and wrapped under [newPassword] over [authSalt], the
 /// phrase wrap kept as stored, since the phrase has not changed, and with it
-/// the Argon2id cost it records. Null for an account with no vault, and for
+/// the Argon2id cost it records, raised to [KdfParams.standard] where it is
+/// below it (#3648). Null for an account with no vault, and for
 /// one whose key [currentPassword] does not open, which then stays wrapped
 /// under the password it was made with.
 Future<WrappedVaultKey?> _vaultKeyForPasswordChange({
@@ -263,12 +264,13 @@ Future<WrappedVaultKey?> _vaultKeyForPasswordChange({
   );
   if (vaultKey == null) return null;
   try {
-    final keys = crypto.deriveAuthKeys(newPassword, authSalt, params);
+    final next = params.atLeast(KdfParams.standard);
+    final keys = crypto.deriveAuthKeys(newPassword, authSalt, next);
     try {
       return WrappedVaultKey(
         byPassword: crypto.wrapVaultKey(vaultKey, keys.vaultWrapKey, authSalt),
         byPhrase: stored.byPhrase,
-        kdfParams: params,
+        kdfParams: next,
       );
     } finally {
       keys.dispose();

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 /// The Argon2id cost a wrapped account secret was derived with, stored beside
@@ -26,6 +27,10 @@ class KdfParams {
   /// which keeps an unlock under the one-second budget in #2416. 128 MiB took
   /// 220 ms and 256 MiB 456 ms on the same machine.
   static const standard = KdfParams(opsLimit: 3, memLimit: 64 << 20);
+
+  /// The most a stored cost may ask for (#3648): 10 passes over 1 GiB, so a
+  /// Quark cannot make an unlock hang or run a phone out of memory.
+  static const ceiling = KdfParams(opsLimit: 10, memLimit: 1 << 30);
 
   /// How the wraps' keys come out of Argon2id: [algorithm],
   /// [splitAlgorithm] or [phraseSplitAlgorithm].
@@ -61,8 +66,23 @@ class KdfParams {
   KdfParams _as(String alg) =>
       KdfParams(opsLimit: opsLimit, memLimit: memLimit, alg: alg);
 
+  /// Whether this cost is at least [floor]'s, in passes and in memory.
+  bool isAtLeast(KdfParams floor) =>
+      opsLimit >= floor.opsLimit && memLimit >= floor.memLimit;
+
+  /// This cost under the same [alg], raised to [floor]'s wherever it is
+  /// below it: what a re-wrap uses, so it never copies a weaker stored cost
+  /// than the app's own (#3648).
+  KdfParams atLeast(KdfParams floor) => KdfParams(
+    opsLimit: max(opsLimit, floor.opsLimit),
+    memLimit: max(memLimit, floor.memLimit),
+    alg: alg,
+  );
+
   /// Reads `kdfParams`. Anything but the three algorithms above is refused
-  /// rather than guessed at.
+  /// rather than guessed at, and so, with a [KdfParamsOutOfRange], is a cost
+  /// below [standard] or above [ceiling]: every wrap the app has made is at
+  /// [standard], so a weaker one is a Quark asking for a cheaper wrap.
   factory KdfParams.fromJson(Map<String, dynamic> json) {
     final alg = json['alg'];
     if (alg != algorithm &&
@@ -70,11 +90,15 @@ class KdfParams {
         alg != phraseSplitAlgorithm) {
       throw FormatException('unsupported chat key KDF: $alg');
     }
-    return KdfParams(
+    final params = KdfParams(
       opsLimit: (json['opsLimit'] as num).toInt(),
       memLimit: (json['memLimit'] as num).toInt(),
       alg: alg as String,
     );
+    if (!params.isAtLeast(standard) || !ceiling.isAtLeast(params)) {
+      throw KdfParamsOutOfRange(params);
+    }
+    return params;
   }
 
   /// The `kdfParams` object.
@@ -83,6 +107,21 @@ class KdfParams {
     'opsLimit': opsLimit,
     'memLimit': memLimit,
   };
+}
+
+/// A stored `kdfParams` whose cost is outside [KdfParams.standard] to
+/// [KdfParams.ceiling], refused before anything is derived at it (#3648).
+/// `Errors.message` reads it as `Errors.keyCostOutOfRange`.
+class KdfParamsOutOfRange extends FormatException {
+  /// Refuses [params].
+  KdfParamsOutOfRange(this.params)
+    : super(
+        'key derivation cost out of range: ${params.opsLimit} passes over '
+        '${params.memLimit} bytes',
+      );
+
+  /// The refused cost.
+  final KdfParams params;
 }
 
 /// One wrap of an account secret (a chat identity's seeds): `nonce ||
