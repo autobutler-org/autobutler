@@ -161,8 +161,9 @@ class ChatKeysController extends ChangeNotifier {
       identity = _openByPassword(crypto, stored, password);
       if (!stored.kdfParams.isSplit && authSalt != null) {
         // The phrase wrap is kept as it is, so the cost it records has to
-        // stay the one it was made with.
-        final params = stored.kdfParams.split;
+        // stay the one it was made with, unless that is below [kdfParams]:
+        // never copy a weaker cost than the app's own (#3648).
+        final params = stored.kdfParams.split.atLeast(kdfParams);
         current = WrappedChatKeys(
           publicKeys: stored.publicKeys,
           byPassword: _wrapByPassword(
@@ -221,10 +222,11 @@ class ChatKeysController extends ChangeNotifier {
     );
     try {
       // The phrase wrap is kept as it is, so the cost it records has to stay
-      // the one it was made with.
-      final params = stored.kdfParams.isSplit
-          ? stored.kdfParams
-          : stored.kdfParams.split;
+      // the one it was made with, unless that is below [kdfParams]: never
+      // copy a weaker cost than the app's own (#3648).
+      final params =
+          (stored.kdfParams.isSplit ? stored.kdfParams : stored.kdfParams.split)
+              .atLeast(kdfParams);
       return WrappedChatKeys(
         publicKeys: stored.publicKeys,
         byPassword: _wrapByPassword(

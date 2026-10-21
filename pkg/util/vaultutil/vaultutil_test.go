@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -22,6 +23,11 @@ func keyOf(fill byte) vaultutil.Key {
 		WrappedByPhrase: b(72), SaltRp: b(16),
 		KdfParams: json.RawMessage(`{"alg":"argon2id13","opsLimit":3,"memLimit":67108864}`),
 	}
+}
+
+// kdf is a kdfParams object: alg as raw JSON, and the Argon2id cost.
+func kdf(alg string, opsLimit, memLimit int64) json.RawMessage {
+	return json.RawMessage(fmt.Sprintf(`{"alg":%s,"opsLimit":%d,"memLimit":%d}`, alg, opsLimit, memLimit))
 }
 
 func itemOf(fill byte) vaultutil.ItemFields {
@@ -71,6 +77,16 @@ func TestValidateKey(t *testing.T) {
 		"empty phrase wrap":     func(k *vaultutil.Key) { k.WrappedByPhrase = []byte{} },
 		"kdf params not object": func(k *vaultutil.Key) { k.KdfParams = json.RawMessage(`[1]`) },
 		"no kdf params":         func(k *vaultutil.Key) { k.KdfParams = nil },
+		"unknown kdf":           func(k *vaultutil.Key) { k.KdfParams = kdf(`"scrypt"`, 3, 64<<20) },
+		"no kdf alg":            func(k *vaultutil.Key) { k.KdfParams = json.RawMessage(`{"opsLimit":3,"memLimit":67108864}`) },
+		"no kdf cost":           func(k *vaultutil.Key) { k.KdfParams = json.RawMessage(`{"alg":"argon2id13"}`) },
+		"fractional kdf passes": func(k *vaultutil.Key) {
+			k.KdfParams = json.RawMessage(`{"alg":"argon2id13","opsLimit":3.5,"memLimit":67108864}`)
+		},
+		"too few kdf passes":    func(k *vaultutil.Key) { k.KdfParams = kdf(`"argon2id13"`, 2, 64<<20) },
+		"too little kdf memory": func(k *vaultutil.Key) { k.KdfParams = kdf(`"argon2id13"`, 3, 64<<20-1) },
+		"too many kdf passes":   func(k *vaultutil.Key) { k.KdfParams = kdf(`"argon2id13"`, 11, 64<<20) },
+		"too much kdf memory":   func(k *vaultutil.Key) { k.KdfParams = kdf(`"argon2id13"`, 3, 1<<30+1) },
 	} {
 		key := keyOf(1)
 		edit(&key)
@@ -80,7 +96,11 @@ func TestValidateKey(t *testing.T) {
 	}
 	withoutPhrase := keyOf(1)
 	withoutPhrase.WrappedByPhrase, withoutPhrase.SaltRp = nil, nil
-	for _, key := range []vaultutil.Key{keyOf(1), withoutPhrase} {
+	ceiling := keyOf(1)
+	ceiling.KdfParams = kdf(`"argon2id13+hkdf-sha256+recovery"`, 10, 1<<30)
+	split := keyOf(1)
+	split.KdfParams = kdf(`"argon2id13+hkdf-sha256"`, 3, 64<<20)
+	for _, key := range []vaultutil.Key{keyOf(1), withoutPhrase, ceiling, split} {
 		if err := vaultutil.ValidateKey(key); err != nil {
 			t.Errorf("ValidateKey(%v) = %v, want nil", key, err)
 		}
