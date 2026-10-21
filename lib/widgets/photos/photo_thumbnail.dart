@@ -1,10 +1,16 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:http/http.dart' show ClientException;
 import 'package:photo_manager/photo_manager.dart';
 import 'package:quark/services/demo_photos_service.dart';
+import 'package:quark/services/thumbnail_backfill.dart';
 import 'package:quark/services/thumbnail_cache_manager.dart';
+import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/file_kind.dart';
 import 'package:quark/widgets/thumbnails/backfilling_thumbnail.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 /// The picture inside a photo tile: a Quark photo's thumbnail over the
 /// network, or a device photo's straight off disk through photo_manager.
@@ -17,8 +23,14 @@ import 'package:quark/widgets/thumbnails/backfilling_thumbnail.dart';
 /// drawn from the asset bundle with no request at all.
 ///
 /// App-side because both sources need something the widget package does not
-/// depend on. Pass exactly one of [url] and [asset]; either way a grey box
-/// stands in until the picture arrives, or when it never does.
+/// depend on. Pass exactly one of [url] and [asset]; either way a gray box
+/// stands in until the picture arrives. A Quark photo whose thumbnail will
+/// not arrive says why instead (#3509): [QuarkThumbnailUnavailable] for the
+/// [ThumbnailIssue] [issueFor] reads from the error — gone, unreadable, or
+/// not sent — keyed `photo_thumbnail_<issue>` (`photo_thumbnail_missing`,
+/// `photo_thumbnail_unreadable`, `photo_thumbnail_loadFailed`). A busy Quark
+/// keeps the gray box while its retries last, and so does a photo whose
+/// backfill is still rendering.
 ///
 /// The picture is excluded from semantics: the photo tile around it is the
 /// button a screen reader names, and an unlabeled image inside it would only
@@ -30,6 +42,7 @@ class PhotoThumbnail extends StatelessWidget {
     this.asset,
     this.path,
     this.serial,
+    this.backfill,
     super.key,
   }) : assert((url == null) != (asset == null), 'pass a url or an asset');
 
@@ -44,6 +57,20 @@ class PhotoThumbnail extends StatelessWidget {
   /// A photo on this device.
   final AssetEntity? asset;
 
+  /// The backfill a Quark photo with a [path] asks;
+  /// [ThumbnailBackfill.instance] when null.
+  final ThumbnailBackfill? backfill;
+
+  /// Why a thumbnail that failed to load with [error] will not show: a 404
+  /// or 410 means the Quark has none, any other status or a failed request
+  /// that it could not be fetched, and anything else that the bytes it sent
+  /// are not a picture.
+  static ThumbnailIssue issueFor(Object? error) => switch (error) {
+    HttpExceptionWithStatus(statusCode: 404 || 410) => ThumbnailIssue.missing,
+    HttpExceptionWithStatus() || ClientException() => ThumbnailIssue.loadFailed,
+    _ => ThumbnailIssue.unreadable,
+  };
+
   @override
   Widget build(BuildContext context) {
     final placeholder = ColoredBox(color: Colors.grey.shade300);
@@ -56,12 +83,30 @@ class PhotoThumbnail extends StatelessWidget {
       );
     }
     if (url != null) {
+      final name = (this.path ?? url.path).split('/').last;
+      Widget unavailable(BuildContext context, ThumbnailIssue issue) =>
+          KeyedSubtree(
+            key: ValueKey('photo_thumbnail_${issue.name}'),
+            child: ColoredBox(
+              color: QuarkTokens.of(context).card,
+              child: QuarkThumbnailUnavailable(
+                name: name,
+                issue: issue,
+                reason: Errors.thumbnailUnavailable(
+                  issue,
+                  isVideo: fileKindForName(name) == FileKind.video,
+                ),
+                label: Errors.thumbnailUnavailableShort(issue),
+                iconSize: 32,
+              ),
+            ),
+          );
       // Each generation is a new element: a failed load is not cached, so the
       // element after a backfill loads afresh under the same cache key.
       Widget thumbnail(
         BuildContext context,
         int generation,
-        void Function([Object? error]) onFailed,
+        bool Function([Object? error]) onFailed,
       ) => Image(
         key: ValueKey(generation),
         image: ThumbnailCacheManager.image(url),
@@ -69,17 +114,19 @@ class PhotoThumbnail extends StatelessWidget {
         excludeFromSemantics: true,
         frameBuilder: (context, child, frame, synchronous) =>
             frame == null ? placeholder : child,
-        errorBuilder: (context, error, stack) {
-          onFailed(error);
-          return placeholder;
-        },
+        errorBuilder: (context, error, stack) => onFailed(error)
+            ? placeholder
+            : unavailable(context, issueFor(error)),
       );
       final path = this.path;
       return path == null
-          ? thumbnail(context, 0, ([_]) {})
+          ? thumbnail(context, 0, ([_]) => false)
           : BackfillingThumbnail(
               path: path,
               serial: serial,
+              backfill: backfill,
+              failedBuilder: unavailable,
+              issueFor: issueFor,
               builder: thumbnail,
             );
     }

@@ -10,6 +10,7 @@ import 'package:quark/services/thumbnail_cache_manager.dart';
 import 'package:quark/utils/thumbnail_cache_config.dart';
 import 'package:quark/widgets/photos/photo_thumbnail.dart';
 import 'package:quark/widgets/thumbnails/backfilling_thumbnail.dart';
+import 'package:quark_widgets/quark_widgets.dart';
 
 const _tileKey = ValueKey('thumbnail-contract-tile');
 
@@ -116,6 +117,20 @@ void _expectNonBlackPlaceholder() {
   expect(_insideTile(find.byType(RawImage)), findsNothing);
 }
 
+/// A tile that has given up says why (#3509): the state [issue] keys, on a
+/// backdrop that is not black, with no image.
+void _expectSettled(ThumbnailIssue issue) {
+  expect(
+    _insideTile(find.byKey(ValueKey('photo_thumbnail_${issue.name}'))),
+    findsOneWidget,
+    reason: 'the tile is not in its ${issue.name} state',
+  );
+  expect(_insideTile(find.byType(QuarkThumbnailUnavailable)), findsOneWidget);
+  final backdrop = _insideTile(find.byType(ColoredBox)).evaluate().single;
+  expect((backdrop.widget as ColoredBox).color, isNot(Colors.black));
+  expect(_insideTile(find.byType(RawImage)), findsNothing);
+}
+
 Future<Color> _centerColor(ui.Image image) async {
   final bytes = (await image.toByteData())!;
   final offset = ((image.height ~/ 2) * image.width + image.width ~/ 2) * 4;
@@ -209,7 +224,7 @@ void main() {
       delay *= 2;
     }
     expect(endpoint.requests, hasLength(ThumbnailCacheConfig.busyRetries + 1));
-    _expectNonBlackPlaceholder();
+    _expectSettled(ThumbnailIssue.loadFailed);
 
     await tester.pump(delay * 2);
     await _flushImageLoad(tester);
@@ -218,6 +233,7 @@ void main() {
       hasLength(ThumbnailCacheConfig.busyRetries + 1),
       reason: 'the retry budget was not bounded',
     );
+    _expectSettled(ThumbnailIssue.loadFailed);
 
     // As when a grid tile scrolls beyond the cache extent, dispose it before
     // building the same photo again. A transient failure must not be cached.
@@ -238,12 +254,16 @@ void main() {
   testWidgets('404 and corrupt 200 bodies settle without retry storms', (
     tester,
   ) async {
-    final cases = <(String, _Reply)>[
-      ('gone', const _Reply(404)),
-      ('corrupt', _Reply(200, body: Uint8List.fromList([0, 1, 2, 3]))),
+    final cases = <(String, _Reply, ThumbnailIssue)>[
+      ('gone', const _Reply(404), ThumbnailIssue.missing),
+      (
+        'corrupt',
+        _Reply(200, body: Uint8List.fromList([0, 1, 2, 3])),
+        ThumbnailIssue.unreadable,
+      ),
     ];
 
-    for (final (name, reply) in cases) {
+    for (final (name, reply, issue) in cases) {
       final endpoint = _ScriptedThumbnailEndpoint([
         reply,
       ], tester.binding.clock.now);
@@ -254,11 +274,11 @@ void main() {
       await _flushImageLoad(tester);
 
       expect(endpoint.requests, hasLength(1), reason: '$name initial request');
-      _expectNonBlackPlaceholder();
+      _expectSettled(issue);
       await tester.pump(const Duration(minutes: 1));
       await _flushImageLoad(tester);
       expect(endpoint.requests, hasLength(1), reason: '$name retried forever');
-      _expectNonBlackPlaceholder();
+      _expectSettled(issue);
       await tester.pumpWidget(const MaterialApp(home: SizedBox()));
       imageCache
         ..clear()

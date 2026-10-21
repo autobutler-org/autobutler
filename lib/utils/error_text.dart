@@ -148,7 +148,9 @@ abstract final class Errors {
   /// Why a file in a list or grid has no thumbnail when nothing could make
   /// one (#3559). A format this device cannot picture is not a fault in the
   /// file, so it says the file may still play or open elsewhere; a file that
-  /// could not be read is the one to worry about. [isVideo] picks the noun.
+  /// could not be read is the one to worry about. A thumbnail that is gone, or
+  /// that the Quark would not send, says which (#3509). [isVideo] picks the
+  /// noun.
   static String thumbnailUnavailable(
     ThumbnailIssue issue, {
     required bool isVideo,
@@ -164,6 +166,14 @@ abstract final class Errors {
           'or not a video at all.',
     ThumbnailIssue.unreadable =>
       "Couldn't read this file. It may be damaged or incomplete.",
+    ThumbnailIssue.missing when isVideo =>
+      "There's no preview for this video. It may have been moved or deleted.",
+    ThumbnailIssue.missing =>
+      "There's no preview for this photo. It may have been moved or deleted.",
+    ThumbnailIssue.loadFailed when isVideo =>
+      "Couldn't load this video's preview right now. Try again later.",
+    ThumbnailIssue.loadFailed =>
+      "Couldn't load this photo's preview right now. Try again later.",
   };
 
   /// A few words for [thumbnailUnavailable], where a grid tile has room.
@@ -171,6 +181,8 @@ abstract final class Errors {
       switch (issue) {
         ThumbnailIssue.unsupportedFormat => 'No preview on this device',
         ThumbnailIssue.unreadable => "Couldn't read this file",
+        ThumbnailIssue.missing => 'No preview',
+        ThumbnailIssue.loadFailed => "Couldn't load preview",
       };
 
   /// Why the 3D model viewer showed a model's details instead of the model

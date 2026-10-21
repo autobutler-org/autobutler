@@ -116,6 +116,19 @@ final List<GalleryEntry> registry = [
                 'incomplete, or not a video at all.',
             "Couldn't read this file",
           ),
+          (
+            'beach.jpg',
+            ThumbnailIssue.missing,
+            "There's no preview for this photo. It may have been moved or "
+                'deleted.',
+            'No preview',
+          ),
+          (
+            'sunset.jpg',
+            ThumbnailIssue.loadFailed,
+            "Couldn't load this photo's preview right now. Try again later.",
+            "Couldn't load preview",
+          ),
         ]) ...[
           // A list row's leading slot: no room for the label.
           SizedBox(

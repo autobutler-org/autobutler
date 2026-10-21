@@ -62,6 +62,42 @@ void main() {
     expect(find.byIcon(QuarkIcons.visibility_off_outlined), findsNothing);
   });
 
+  for (final (issue, badge) in [
+    (ThumbnailIssue.missing, QuarkIcons.help_outline),
+    (ThumbnailIssue.loadFailed, QuarkIcons.cloud_off_outlined),
+  ]) {
+    testBothViewports('a ${issue.name} thumbnail has its own badge', (
+      tester,
+      size,
+    ) async {
+      await pumpAt(
+        tester,
+        slot(
+          QuarkThumbnailUnavailable(
+            name: 'beach.jpg',
+            issue: issue,
+            reason: 'Why ${issue.name}',
+          ),
+          40,
+        ),
+        size: size,
+      );
+
+      expect(find.byIcon(QuarkIcons.image_outlined), findsOneWidget);
+      expect(find.byIcon(badge), findsOneWidget);
+      for (final other in [
+        QuarkIcons.visibility_off_outlined,
+        QuarkIcons.broken_image_outlined,
+        QuarkIcons.help_outline,
+        QuarkIcons.cloud_off_outlined,
+      ].where((icon) => icon != badge)) {
+        expect(find.byIcon(other), findsNothing);
+      }
+      expect(find.bySemanticsLabel('Why ${issue.name}'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testBothViewports('the label shows only where there is room for it', (
     tester,
     size,
