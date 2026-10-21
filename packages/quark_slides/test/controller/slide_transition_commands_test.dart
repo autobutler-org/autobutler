@@ -15,7 +15,7 @@ void main() {
         slides: [
           const Slide(id: 'a'),
           const Slide(id: 'b'),
-          const Slide(id: 'c')
+          const Slide(id: 'c'),
         ],
       ),
     );

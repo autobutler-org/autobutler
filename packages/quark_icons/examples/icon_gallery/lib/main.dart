@@ -70,10 +70,7 @@ const _sections = <({String title, List<_IconEntry> icons})>[
       _IconEntry(QuarkIcons.fill_right, 'fill_right'),
     ],
   ),
-  (
-    title: 'Material aliases (append)',
-    icons: [],
-  ),
+  (title: 'Material aliases (append)', icons: []),
   (
     title: 'Material aliases (data ops)',
     icons: [

@@ -200,19 +200,19 @@ class DataSheetControlScheme {
     required this.insertColumn,
     required this.deleteColumn,
     this.extendUp = const [
-      KeyboardShortcut(LogicalKeyboardKey.arrowUp, shift: true)
+      KeyboardShortcut(LogicalKeyboardKey.arrowUp, shift: true),
     ],
     this.extendDown = const [
-      KeyboardShortcut(LogicalKeyboardKey.arrowDown, shift: true)
+      KeyboardShortcut(LogicalKeyboardKey.arrowDown, shift: true),
     ],
     this.extendLeft = const [
-      KeyboardShortcut(LogicalKeyboardKey.arrowLeft, shift: true)
+      KeyboardShortcut(LogicalKeyboardKey.arrowLeft, shift: true),
     ],
     this.extendRight = const [
-      KeyboardShortcut(LogicalKeyboardKey.arrowRight, shift: true)
+      KeyboardShortcut(LogicalKeyboardKey.arrowRight, shift: true),
     ],
     this.selectAll = const [
-      KeyboardShortcut(LogicalKeyboardKey.keyA, ctrl: true)
+      KeyboardShortcut(LogicalKeyboardKey.keyA, ctrl: true),
     ],
   });
 

@@ -105,9 +105,7 @@ void main() {
         '',
       );
       expect(result.single.plainText, '');
-      expect(result.single.runs, const [
-        TextRun('', fontSize: 72, bold: true),
-      ]);
+      expect(result.single.runs, const [TextRun('', fontSize: 72, bold: true)]);
       final typed = replaceText(result, 0, 0, 'New');
       expect(typed.single.runs, const [
         TextRun('New', fontSize: 72, bold: true),
@@ -149,10 +147,9 @@ void main() {
         end: 3,
       );
       expect(
-          styled.single.runs.map((r) => r.extra),
-          everyElement({
-            'highlight': '#FF0',
-          }));
+        styled.single.runs.map((r) => r.extra),
+        everyElement({'highlight': '#FF0'}),
+      );
       expect(styled.single.runs.length, 3);
     });
 
@@ -258,20 +255,21 @@ void main() {
       expect(result, sample());
     });
 
-    test('a collapsed selection in an empty paragraph sets its typing style',
-        () {
-      final result = formatParagraphs(
-        [TextParagraph.plain('')],
-        const TextFormat(fontSize: 60.0),
-        start: 0,
-        end: 0,
-      );
-      expect(result.single.runs, const [TextRun('', fontSize: 60)]);
-      expect(
-        replaceText(result, 0, 0, 'x').single.runs,
-        const [TextRun('x', fontSize: 60)],
-      );
-    });
+    test(
+      'a collapsed selection in an empty paragraph sets its typing style',
+      () {
+        final result = formatParagraphs(
+          [TextParagraph.plain('')],
+          const TextFormat(fontSize: 60.0),
+          start: 0,
+          end: 0,
+        );
+        expect(result.single.runs, const [TextRun('', fontSize: 60)]);
+        expect(replaceText(result, 0, 0, 'x').single.runs, const [
+          TextRun('x', fontSize: 60),
+        ]);
+      },
+    );
 
     test('paragraph fields reach every paragraph the selection touches', () {
       final result = formatParagraphs(
@@ -298,12 +296,9 @@ void main() {
     });
 
     test('lineSpacing null restores the default', () {
-      final result = formatParagraphs(
-        const [
-          TextParagraph([TextRun('a')], lineSpacing: 2)
-        ],
-        const TextFormat(lineSpacing: null),
-      );
+      final result = formatParagraphs(const [
+        TextParagraph([TextRun('a')], lineSpacing: 2),
+      ], const TextFormat(lineSpacing: null));
       expect(result.single.lineSpacing, isNull);
     });
   });
@@ -326,13 +321,17 @@ void main() {
       );
       expect(result.anchor, TextAnchor.bottom);
       expect(result.autoFit, TextAutoFit.shrink);
-      expect(result.paragraphs.expand((p) => p.runs).every((r) => r.italic),
-          isTrue);
+      expect(
+        result.paragraphs.expand((p) => p.runs).every((r) => r.italic),
+        isTrue,
+      );
     });
 
     test('a box-only format leaves the paragraphs identical', () {
-      final result =
-          formatTextBox(box, const TextFormat(anchor: TextAnchor.middle));
+      final result = formatTextBox(
+        box,
+        const TextFormat(anchor: TextAnchor.middle),
+      );
       expect(identical(result.paragraphs, box.paragraphs), isTrue);
     });
   });
@@ -363,7 +362,7 @@ void main() {
       expect(
         textFormatOf(
           const [
-            TextParagraph([TextRun('', fontSize: 9)])
+            TextParagraph([TextRun('', fontSize: 9)]),
           ],
           start: 0,
           end: 0,
@@ -398,10 +397,7 @@ void main() {
 
     test('list toggles switch between kinds and off', () {
       final bullet = textFormatOf(sample(), start: 14, end: 14);
-      expect(
-        TextToggle.bulletList.changeFrom(bullet).list,
-        TextListStyle.none,
-      );
+      expect(TextToggle.bulletList.changeFrom(bullet).list, TextListStyle.none);
       expect(
         TextToggle.numberedList.changeFrom(bullet).list,
         TextListStyle.numbered,

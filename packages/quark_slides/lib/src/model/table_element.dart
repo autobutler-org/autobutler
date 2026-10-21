@@ -415,12 +415,13 @@ class TableElement extends SlideElement {
   /// overlap an earlier one (in reading order) undone, so the areas are
   /// rectangles that never overlap.
   static List<List<SlideTableCell>> normalizedSpans(
-      List<List<SlideTableCell>> cells) {
+    List<List<SlideTableCell>> cells,
+  ) {
     final rows = cells.length;
     final columns = rows == 0 ? 0 : cells.first.length;
     final taken = List.generate(rows, (_) => List.filled(columns, false));
     final result = [
-      for (final row in cells) [...row]
+      for (final row in cells) [...row],
     ];
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < columns; c++) {
@@ -441,8 +442,10 @@ class TableElement extends SlideElement {
         }
         if (!free) rowSpan = colSpan = 1;
         if (rowSpan != cell.rowSpan || colSpan != cell.colSpan) {
-          cell =
-              result[r][c] = cell.copyWith(rowSpan: rowSpan, colSpan: colSpan);
+          cell = result[r][c] = cell.copyWith(
+            rowSpan: rowSpan,
+            colSpan: colSpan,
+          );
         }
         for (var i = r; i < r + rowSpan; i++) {
           for (var j = c; j < c + colSpan; j++) {

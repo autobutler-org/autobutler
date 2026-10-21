@@ -1398,6 +1398,20 @@ void main() {
       );
     });
 
+    test('sends a word-processing document to the document viewer', () {
+      expect(
+        viewFileRedirect('work/q3.docx', 's1'),
+        '/document/work/q3.docx?serial=s1',
+      );
+      for (final name in ['macros.docm', 'letter.odt', 'notes.rtf']) {
+        expect(viewFileRedirect(name, null), '/document/$name', reason: name);
+      }
+      final route = router.configuration.routes.whereType<GoRoute>().where(
+        (route) => route.path == '${AppRoutes.documentViewer}/:path(.*)',
+      );
+      expect(route, hasLength(1));
+    });
+
     test('sends a folder and an archive to the file browser', () {
       expect(viewFileRedirect('photos/2024', null), '/files/photos/2024');
       expect(

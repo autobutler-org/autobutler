@@ -90,8 +90,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testBothViewports('a push moves both slides across and ends on the new one',
-      (tester, size) async {
+  testBothViewports('a push moves both slides across and ends on the new one', (
+    tester,
+    size,
+  ) async {
     await _show(tester, size, 'a');
     await _show(tester, size, 'b');
     expect(find.byType(SlideCanvas), findsNWidgets(2));
@@ -109,8 +111,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testBothViewports('stepping back plays the push the other way',
-      (tester, size) async {
+  testBothViewports('stepping back plays the push the other way', (
+    tester,
+    size,
+  ) async {
     await _show(tester, size, 'b');
     await _show(tester, size, 'a', reverse: true);
     await tester.pump(const Duration(milliseconds: 500));
@@ -119,8 +123,10 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testBothViewports('a fade brings the new slide up over the old',
-      (tester, size) async {
+  testBothViewports('a fade brings the new slide up over the old', (
+    tester,
+    size,
+  ) async {
     await _show(tester, size, 'a');
     await _show(
       tester,
@@ -136,8 +142,10 @@ void main() {
     expect(_layer('a'), findsNothing);
   });
 
-  testBothViewports('a wipe uncovers and a zoom grows the new slide',
-      (tester, size) async {
+  testBothViewports('a wipe uncovers and a zoom grows the new slide', (
+    tester,
+    size,
+  ) async {
     await _show(tester, size, 'a');
     await _show(
       tester,
@@ -178,23 +186,26 @@ void main() {
   });
 
   testBothViewports(
-      'a change mid-transition carries on from the arriving slide',
-      (tester, size) async {
-    await _show(tester, size, 'a');
-    await _show(tester, size, 'b');
-    await tester.pump(const Duration(milliseconds: 300));
-    await _show(tester, size, 'c');
-    expect(_layer('a'), findsNothing);
-    expect(_layer('b'), findsOneWidget);
-    expect(_offset(tester, 'c'), const Offset(1, 0));
-    await tester.pumpAndSettle();
-    expect(_layer('b'), findsNothing);
-    expect(_layer('c'), findsOneWidget);
-  });
+    'a change mid-transition carries on from the arriving slide',
+    (tester, size) async {
+      await _show(tester, size, 'a');
+      await _show(tester, size, 'b');
+      await tester.pump(const Duration(milliseconds: 300));
+      await _show(tester, size, 'c');
+      expect(_layer('a'), findsNothing);
+      expect(_layer('b'), findsOneWidget);
+      expect(_offset(tester, 'c'), const Offset(1, 0));
+      await tester.pumpAndSettle();
+      expect(_layer('b'), findsNothing);
+      expect(_layer('c'), findsOneWidget);
+    },
+  );
 
   group('reduced motion', () {
-    testBothViewports('"Remove animations" makes a push a short fade',
-        (tester, size) async {
+    testBothViewports('"Remove animations" makes a push a short fade', (
+      tester,
+      size,
+    ) async {
       await _show(tester, size, 'a', disableAnimations: true);
       await _show(tester, size, 'b', disableAnimations: true);
       expect(_offset(tester, 'b'), Offset.zero);
@@ -207,12 +218,15 @@ void main() {
       expect(_layer('a'), findsNothing);
     });
 
-    testBothViewports('iOS Reduce Motion makes a push a short fade',
-        (tester, size) async {
+    testBothViewports('iOS Reduce Motion makes a push a short fade', (
+      tester,
+      size,
+    ) async {
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           const FakeAccessibilityFeatures(reduceMotion: true);
       addTearDown(
-          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
       await _show(tester, size, 'a');
       await _show(tester, size, 'b');
       await tester.pump(const Duration(milliseconds: 100));
@@ -223,22 +237,26 @@ void main() {
     });
 
     testBothViewports(
-        'the platform\'s "Remove animations" fades for 200 ms too',
-        (tester, size) async {
-      tester.platformDispatcher.accessibilityFeaturesTestValue =
-          const FakeAccessibilityFeatures(disableAnimations: true);
-      addTearDown(
-          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
-      await _show(tester, size, 'a', disableAnimations: true);
-      await _show(tester, size, 'b', disableAnimations: true);
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(_opacity(tester, 'b'), closeTo(0.5, 1e-9));
-      await tester.pump(const Duration(milliseconds: 101));
-      expect(_layer('a'), findsNothing);
-    });
+      'the platform\'s "Remove animations" fades for 200 ms too',
+      (tester, size) async {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        await _show(tester, size, 'a', disableAnimations: true);
+        await _show(tester, size, 'b', disableAnimations: true);
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(_opacity(tester, 'b'), closeTo(0.5, 1e-9));
+        await tester.pump(const Duration(milliseconds: 101));
+        expect(_layer('a'), findsNothing);
+      },
+    );
 
-    testBothViewports('turning it on mid-transition finishes it at once',
-        (tester, size) async {
+    testBothViewports('turning it on mid-transition finishes it at once', (
+      tester,
+      size,
+    ) async {
       await _show(tester, size, 'a');
       await _show(tester, size, 'b');
       await tester.pump(const Duration(milliseconds: 300));
@@ -246,14 +264,17 @@ void main() {
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           const FakeAccessibilityFeatures(reduceMotion: true);
       addTearDown(
-          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
       await tester.pump();
       expect(_layer('a'), findsNothing);
       expect(_offset(tester, 'b'), Offset.zero);
     });
 
-    testBothViewports('off, the push moves as it was set',
-        (tester, size) async {
+    testBothViewports('off, the push moves as it was set', (
+      tester,
+      size,
+    ) async {
       await _show(tester, size, 'a');
       await _show(tester, size, 'b');
       await tester.pump(const Duration(milliseconds: 100));

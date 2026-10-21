@@ -1,6 +1,6 @@
 package pptxutil
 
-// cspell:ignore autofit chartex clr descr dgm grp ph prst xfrm
+// cspell:ignore autofit chartex clr descr dgm diagStripe flowChartDelay grp ph prst round2SameRect rtTriangle xfrm
 
 import (
 	"bytes"
@@ -39,6 +39,19 @@ var presetKinds = func() map[string]string {
 	}
 	return kinds
 }()
+
+// pathPresets are the preset geometries imported as a path shape: the preset
+// name and its adjust values, drawn by the editor's guide evaluator. Keep
+// this set in step with the definitions in
+// packages/quark_slides/lib/src/geometry/preset_geometry.dart. Any other
+// preset the editor cannot draw stays a rectangle.
+var pathPresets = map[string]bool{
+	"diagStripe":     true,
+	"flowChartDelay": true,
+	"round2SameRect": true,
+	"rtTriangle":     true,
+	"trapezoid":      true,
+}
 
 // linePresets are the geometries that import as a line, and whether the
 // line is drawn straight in place of the path PowerPoint draws.
@@ -205,6 +218,7 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 		prst = sp.Props.Geometry.Preset
 	}
 	if bent, ok := linePresets[prst]; ok || (connector && prst == "") {
+		s.noteShadow(sp.Props, nv, template, false)
 		return s.convertLine(sp, frame, xfrm, bent)
 	}
 
@@ -215,9 +229,11 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 	textBox := bool(nv.ShapeProps.TextBox) || ph != nil
 	var out []outElement
 	// A shape with neither fill nor outline is still a shape the editor can
-	// select, unless it is only there to hold text.
-	if drawn || (!textBox && !hasText) {
-		shape, err := s.presetShape(sp, prst, frame, fill, stroke)
+	// select, unless it is only there to hold text. Only that shape casts the
+	// drop shadow: a text box alone casts none.
+	shaped := drawn || (!textBox && !hasText)
+	if shaped {
+		shape, err := s.presetShape(sp, prst, xfrm, frame, fill, stroke)
 		if err != nil {
 			return nil, err
 		}
@@ -231,27 +247,48 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 		}
 		out = append(out, s.textBox(sp, chain, ph, frame, t))
 	}
+	if len(out) > 0 {
+		s.noteShadow(sp.Props, nv, template, shaped)
+	}
 	return out, nil
 }
 
-// presetShape is the shape a geometry draws, a rectangle when the editor
-// has no such kind.
-func (s *slideReader) presetShape(sp *xShape, prst string, frame outFrame, fill string, stroke *outStroke) (outShape, error) {
+// presetShape is the shape a geometry draws: a freeform as a path of its
+// contours, and a rectangle when the editor has no such kind.
+func (s *slideReader) presetShape(sp *xShape, prst string, xfrm *xXfrm, frame outFrame, fill string, stroke *outStroke) (outShape, error) {
 	if err := s.countElement(); err != nil {
 		return outShape{}, err
 	}
 	kind, ok := presetKinds[prst]
+	var preset string
+	var adjust map[string]float64
+	var contours []shapeContour
 	switch {
 	case sp.Props.Custom != nil:
-		s.warn("Freeform shapes were drawn as rectangles.")
-		kind = "rectangle"
-	case prst == "":
-		kind = "rectangle"
-	case !ok:
+		var drawn bool
+		if contours, drawn = freeformContours(sp.Props.Custom, xfrm, frame); drawn {
+			kind = "path"
+		} else {
+			s.warn("Freeform shapes that could not be read were drawn as rectangles.")
+			kind = "rectangle"
+		}
+	case prst == "" || ok:
+		if prst == "" {
+			kind = "rectangle"
+		}
+	case pathPresets[prst]:
+		kind = "path"
+		preset = prst
+		adjust = presetAdjust(sp)
+	default:
 		s.warn(fmt.Sprintf("Shapes of a kind the editor does not have (%s) were drawn as rectangles.", prst))
 		kind = "rectangle"
 	}
-	shape := outShape{ID: s.id(), Type: typeShape, Frame: frame, Kind: kind, Fill: fill, Stroke: stroke}
+	shape := outShape{
+		ID: s.id(), Type: typeShape, Frame: frame, Kind: kind,
+		Preset: preset, Adjust: adjust, Contours: contours, Fill: fill, Stroke: stroke,
+		Shadow: s.shadow(sp.Props, frame.Rotation),
+	}
 	if kind == "roundedRectangle" {
 		adj := float64(defaultRoundRectAdj)
 		for _, gd := range sp.Props.Geometry.Guides {
@@ -265,6 +302,31 @@ func (s *slideReader) presetShape(sp *xShape, prst string, frame outFrame, fill 
 		shape.CornerRadius = &radius
 	}
 	return shape, nil
+}
+
+// presetAdjust reads a path preset's adjust values: each guide whose formula
+// is "val N". A guide that is not a literal is left out; the editor's
+// definition supplies its own default.
+func presetAdjust(sp *xShape) map[string]float64 {
+	if sp.Props.Geometry == nil {
+		return nil
+	}
+	var adjust map[string]float64
+	for _, gd := range sp.Props.Geometry.Guides {
+		v, ok := strings.CutPrefix(strings.TrimSpace(gd.Formula), "val ")
+		if !ok || gd.Name == "" {
+			continue
+		}
+		n, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+		if err != nil {
+			continue
+		}
+		if adjust == nil {
+			adjust = map[string]float64{}
+		}
+		adjust[gd.Name] = n
+	}
+	return adjust
 }
 
 // convertLine converts a line or connector, drawn across its frame's
@@ -328,12 +390,15 @@ func (s *slideReader) convertPicture(p *xPicture, t transform, template bool) ([
 	if err := s.countElement(); err != nil {
 		return nil, err
 	}
+	s.noteShadow(p.Props, nv, template, true)
+	frame := s.frame(xfrm, t)
 	fit := "fill"
 	if c := p.Fill.Crop; c != nil && (c.L > 0 || c.T > 0 || c.R > 0 || c.B > 0) {
 		fit = "cover"
 	}
 	return []outElement{outImage{
-		ID: s.id(), Type: typeImage, Frame: s.frame(xfrm, t), Source: ref, AltText: nv.Common.Descr, Fit: fit,
+		ID: s.id(), Type: typeImage, Frame: frame, Source: ref, AltText: nv.Common.Descr, Fit: fit,
+		Shadow: s.shadow(p.Props, frame.Rotation),
 	}}, nil
 }
 

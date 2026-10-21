@@ -56,7 +56,9 @@ void main() {
       expect(t.headerRow, isTrue);
       expect(t.bandedRows, isTrue);
       expect(
-          t.frame.width, 4 * SlideDocumentController.defaultTableColumnWidth);
+        t.frame.width,
+        4 * SlideDocumentController.defaultTableColumnWidth,
+      );
       expect(t.frame.height, 3 * SlideDocumentController.defaultTableRowHeight);
       expect(t.frame.x, (1920 - t.frame.width) / 2);
       expect(t.cell(1, 1).borders, CellBorders.all(TableElement.defaultBorder));
@@ -105,7 +107,10 @@ void main() {
 
     test('a row inserted inside a merge widens the merge', () {
       doc.mergeCells(
-          's', 'tbl', const CellRange(top: 0, left: 2, bottom: 1, right: 2));
+        's',
+        'tbl',
+        const CellRange(top: 0, left: 2, bottom: 1, right: 2),
+      );
       doc.insertTableRow('s', 'tbl', 0, after: true);
       expect(table().cell(0, 2).rowSpan, 3);
       expect(table().isCovered(1, 2), isTrue);
@@ -133,7 +138,10 @@ void main() {
 
     test('deleting the first row of a merge moves its text down', () {
       doc.mergeCells(
-          's', 'tbl', const CellRange(top: 0, left: 2, bottom: 2, right: 2));
+        's',
+        'tbl',
+        const CellRange(top: 0, left: 2, bottom: 2, right: 2),
+      );
       expect(text(0, 2), 'Q4\n30');
       doc.deleteTableRow('s', 'tbl', 0);
       expect(table().cell(0, 2).rowSpan, 2);
@@ -173,8 +181,11 @@ void main() {
 
     test('a neighbor never goes under the minimum', () {
       doc.setTableColumnWidth('s', 'tbl', 0, 1000);
-      expect(
-          table().columnWidths, [220 - minTableCellSize, minTableCellSize, 80]);
+      expect(table().columnWidths, [
+        220 - minTableCellSize,
+        minTableCellSize,
+        80,
+      ]);
       doc.setTableColumnWidth('s', 'tbl', 0, 0);
       expect(table().columnWidths.first, minTableCellSize);
     });
@@ -202,15 +213,11 @@ void main() {
 
   group('text', () {
     test('setCellText replaces a cell as one step', () {
-      oneStep(() => doc.setCellText(
-            's',
-            'tbl',
-            1,
-            2,
-            const [
-              TextParagraph([TextRun('7', italic: true)]),
-            ],
-          ));
+      oneStep(
+        () => doc.setCellText('s', 'tbl', 1, 2, const [
+          TextParagraph([TextRun('7', italic: true)]),
+        ]),
+      );
       expect(text(1, 2), '7');
     });
 
@@ -243,16 +250,15 @@ void main() {
     });
 
     test('a cell is not a text box to editText', () {
-      expect(
-        () => doc.editText('s', 'tbl', const []),
-        throwsArgumentError,
-      );
+      expect(() => doc.editText('s', 'tbl', const []), throwsArgumentError);
       expect(
         () => doc.setCellText('s', 'box', 0, 0, const []),
         throwsArgumentError,
       );
       expect(
-          () => doc.setCellText('s', 'tbl', 9, 0, const []), throwsRangeError);
+        () => doc.setCellText('s', 'tbl', 9, 0, const []),
+        throwsRangeError,
+      );
     });
   });
 
@@ -260,20 +266,22 @@ void main() {
     const all = CellRange(top: 0, left: 0, bottom: 2, right: 2);
 
     test('bolds, colors and aligns every cell of a range as one step', () {
-      oneStep(() => doc.formatCells(
-            's',
-            'tbl',
-            const CellRange(top: 1, left: 0, bottom: 1, right: 1),
-            const CellFormat(
-              text: TextFormat(
-                bold: true,
-                italic: true,
-                color: SlideColor.theme(ThemeColor.accent3),
-                alignment: TextAlignment.center,
-                anchor: TextAnchor.bottom,
-              ),
+      oneStep(
+        () => doc.formatCells(
+          's',
+          'tbl',
+          const CellRange(top: 1, left: 0, bottom: 1, right: 1),
+          const CellFormat(
+            text: TextFormat(
+              bold: true,
+              italic: true,
+              color: SlideColor.theme(ThemeColor.accent3),
+              alignment: TextAlignment.center,
+              anchor: TextAnchor.bottom,
             ),
-          ));
+          ),
+        ),
+      );
       final cell = table().cell(1, 1);
       final run = cell.paragraphs.single.runs.single;
       expect(run.bold, isTrue);
@@ -285,24 +293,40 @@ void main() {
     });
 
     test('fills and clears a fill', () {
-      doc.formatCells('s', 'tbl', const CellRange.single(0, 0),
-          const CellFormat(fill: SlideColor(0xFFFF0000)));
+      doc.formatCells(
+        's',
+        'tbl',
+        const CellRange.single(0, 0),
+        const CellFormat(fill: SlideColor(0xFFFF0000)),
+      );
       expect(table().fillAt(0, 0), const SlideColor(0xFFFF0000));
-      doc.formatCells('s', 'tbl', const CellRange.single(0, 0),
-          const CellFormat(fill: null));
+      doc.formatCells(
+        's',
+        'tbl',
+        const CellRange.single(0, 0),
+        const CellFormat(fill: null),
+      );
       expect(table().fillAt(0, 0), table().accent);
     });
 
     test('a range cutting through a merge formats the whole merge', () {
-      doc.formatCells('s', 'tbl', const CellRange.single(2, 1),
-          const CellFormat(fill: SlideColor.white));
+      doc.formatCells(
+        's',
+        'tbl',
+        const CellRange.single(2, 1),
+        const CellFormat(fill: SlideColor.white),
+      );
       expect(table().cell(2, 0).fill, SlideColor.white);
     });
 
     test('the border presets set both sides of each edge', () {
       final line = Stroke(width: 5);
       doc.formatCells(
-          's', 'tbl', all, const CellFormat(borders: CellBorderPreset.none));
+        's',
+        'tbl',
+        all,
+        const CellFormat(borders: CellBorderPreset.none),
+      );
       for (var r = 0; r <= 3; r++) {
         for (var c = 0; c < 3; c++) {
           expect(table().edgeAbove(r, c), isNull, reason: 'above $r, $c');
@@ -345,7 +369,11 @@ void main() {
       for (final MapEntry(key: preset, value: (r, c, above))
           in expected.entries) {
         doc.formatCells(
-            's', 'tbl', all, const CellFormat(borders: CellBorderPreset.none));
+          's',
+          'tbl',
+          all,
+          const CellFormat(borders: CellBorderPreset.none),
+        );
         doc.formatCells('s', 'tbl', range, CellFormat(borders: preset));
         final t = table();
         final drawn = [
@@ -379,7 +407,10 @@ void main() {
 
     test('merging a range that cuts a merge takes the merge in', () {
       doc.mergeCells(
-          's', 'tbl', const CellRange(top: 1, left: 1, bottom: 2, right: 1));
+        's',
+        'tbl',
+        const CellRange(top: 1, left: 1, bottom: 2, right: 1),
+      );
       final t = table();
       expect(t.cell(1, 0).rowSpan, 2);
       expect(t.cell(1, 0).colSpan, 2);
@@ -403,7 +434,10 @@ void main() {
     test('merge, then unmerge, then undo both', () {
       final before = doc.presentation;
       doc.mergeCells(
-          's', 'tbl', const CellRange(top: 0, left: 0, bottom: 1, right: 1));
+        's',
+        'tbl',
+        const CellRange(top: 0, left: 0, bottom: 1, right: 1),
+      );
       doc.unmergeCells('s', 'tbl', const CellRange.single(0, 0));
       expect(table().cell(0, 0).plainText, 'Region\nQ3\nNorth\n12');
       expect(doc.undo(), isTrue);
@@ -414,10 +448,15 @@ void main() {
 
   group('setTableStyle', () {
     test('turns the header and bands off and changes the accent', () {
-      oneStep(() => doc.setTableStyle('s', 'tbl',
+      oneStep(
+        () => doc.setTableStyle(
+          's',
+          'tbl',
           headerRow: false,
           bandedRows: false,
-          accent: const SlideColor.theme(ThemeColor.accent4)));
+          accent: const SlideColor.theme(ThemeColor.accent4),
+        ),
+      );
       expect(table().headerRow, isFalse);
       expect(table().bandedRows, isFalse);
       expect(table().accent, const SlideColor.theme(ThemeColor.accent4));
@@ -442,8 +481,10 @@ void main() {
 
   test('table commands on another element throw', () {
     expect(() => doc.insertTableRow('s', 'box', 0), throwsArgumentError);
-    expect(() => doc.mergeCells('s', 'nope', const CellRange.single(0, 0)),
-        throwsArgumentError);
+    expect(
+      () => doc.mergeCells('s', 'nope', const CellRange.single(0, 0)),
+      throwsArgumentError,
+    );
   });
 
   test('copying and pasting a table keeps its cells', () {

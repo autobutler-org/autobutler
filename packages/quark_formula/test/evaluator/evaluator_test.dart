@@ -3,20 +3,19 @@ import 'package:test/test.dart';
 
 void main() {
   group('FormulaEvaluator', () {
-    FormulaValue evaluateFormula(
-      String source, {
-      CellAccessor? accessor,
-    }) {
+    FormulaValue evaluateFormula(String source, {CellAccessor? accessor}) {
       final parsed = parseTokens(lex(source));
       return evaluate(parsed, accessor ?? (_, __) => blankValue);
     }
 
-    test('evaluates arithmetic with precedence and right-associative power',
-        () {
-      final value = evaluateFormula('=2 ^ 3 ^ 2 + 4 * 5 - 6 / 3');
+    test(
+      'evaluates arithmetic with precedence and right-associative power',
+      () {
+        final value = evaluateFormula('=2 ^ 3 ^ 2 + 4 * 5 - 6 / 3');
 
-      expect(value, const NumberValue(530));
-    });
+        expect(value, const NumberValue(530));
+      },
+    );
 
     test('resolves cell references through the accessor', () {
       final calls = <(int, int)>[];
@@ -89,15 +88,17 @@ void main() {
       expect(findValue, const NumberValue(4));
     });
 
-    test('returns a value error when a range is evaluated outside a function',
-        () {
-      final parsed = RangeNode(startRef: 'A1', endRef: 'A2', offset: 0);
-      final evaluator = FormulaEvaluator(cellAccessor: (_, __) => blankValue);
+    test(
+      'returns a value error when a range is evaluated outside a function',
+      () {
+        final parsed = RangeNode(startRef: 'A1', endRef: 'A2', offset: 0);
+        final evaluator = FormulaEvaluator(cellAccessor: (_, __) => blankValue);
 
-      expect(
-        evaluator.evaluate(parsed),
-        valueError('Range values can only be consumed by functions'),
-      );
-    });
+        expect(
+          evaluator.evaluate(parsed),
+          valueError('Range values can only be consumed by functions'),
+        );
+      },
+    );
   });
 }

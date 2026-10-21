@@ -22,8 +22,10 @@ void main() {
         'twoContent',
         'blank',
       ]);
-      expect(SlideMaster.standard.layoutById('twoContent'),
-          same(SlideLayout.twoContent));
+      expect(
+        SlideMaster.standard.layoutById('twoContent'),
+        same(SlideLayout.twoContent),
+      );
       expect(SlideMaster.standard.layoutById('comparison'), isNull);
       expect(SlideLayout.blank.placeholders, isEmpty);
     });
@@ -44,8 +46,9 @@ void main() {
     });
 
     test('each layout has one title, and the right content slots', () {
-      List<String> slots(SlideLayout l) =>
-          [for (final p in l.placeholders) p.id];
+      List<String> slots(SlideLayout l) => [
+            for (final p in l.placeholders) p.id,
+          ];
       expect(slots(SlideLayout.title), ['title', 'subtitle']);
       expect(slots(SlideLayout.titleAndContent), ['title', 'body']);
       expect(slots(SlideLayout.sectionHeader), ['title', 'subtitle']);
@@ -92,8 +95,10 @@ void main() {
       expect(next.layoutId, 'titleAndContent');
       final title = slotBox(next, 'title');
       expect(title.plainText, 'Q3');
-      expect(title.frame,
-          SlideLayout.titleAndContent.placeholder('title')!.frameOn(size));
+      expect(
+        title.frame,
+        SlideLayout.titleAndContent.placeholder('title')!.frameOn(size),
+      );
       expect(title.anchor, TextAnchor.middle);
       expect(title.paragraphs.single.alignment, TextAlignment.start);
       expect(title.id, slotBox(slide, 'title').id);
@@ -102,10 +107,12 @@ void main() {
     test('a placeholder the user moved keeps its place, not its anchor', () {
       var slide = typed(built(SlideLayout.title), 'title', 'Q3');
       final moved = slotBox(slide, 'title').frame.translate(40, 40);
-      slide = slide.copyWith(elements: [
-        for (final e in slide.elements)
-          e.id == slotBox(slide, 'title').id ? e.withFrame(moved) : e,
-      ]);
+      slide = slide.copyWith(
+        elements: [
+          for (final e in slide.elements)
+            e.id == slotBox(slide, 'title').id ? e.withFrame(moved) : e,
+        ],
+      );
       final next = applyLayout(
         slide,
         SlideLayout.titleAndContent,
@@ -143,9 +150,9 @@ void main() {
         counter(),
       );
       expect(slotBox(next, 'body').plainText, 'Pros');
-      final kept = next.elements
-          .whereType<TextBox>()
-          .singleWhere((b) => b.plainText == 'Cons');
+      final kept = next.elements.whereType<TextBox>().singleWhere(
+            (b) => b.plainText == 'Cons',
+          );
       expect(kept.slot, isNull);
       expect(kept.placeholder, isEmpty);
       expect(kept.frame, slotBox(slide, 'right').frame);
@@ -182,21 +189,24 @@ void main() {
     test('puts placeholders back and drops their own styles', () {
       final layout = SlideLayout.titleAndContent;
       final title = layout.placeholder('title')!.emptyBox('t', size).copyWith(
-        frame: ElementFrame(x: 1, y: 2, width: 300, height: 40, rotation: 5),
+        frame: ElementFrame(
+          x: 1,
+          y: 2,
+          width: 300,
+          height: 40,
+          rotation: 5,
+        ),
         anchor: TextAnchor.bottom,
         paragraphs: const [
-          TextParagraph(
-            [
-              TextRun(
-                'Big',
-                bold: true,
-                fontSize: 99,
-                fontFamily: 'Comic',
-                color: SlideColor(0xFFFF0000),
-              ),
-            ],
-            alignment: TextAlignment.end,
-          ),
+          TextParagraph([
+            TextRun(
+              'Big',
+              bold: true,
+              fontSize: 99,
+              fontFamily: 'Comic',
+              color: SlideColor(0xFFFF0000),
+            ),
+          ], alignment: TextAlignment.end),
         ],
       );
       final slide = Slide(id: 's', layoutId: layout.id, elements: [title]);

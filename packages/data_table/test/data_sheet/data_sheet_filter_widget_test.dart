@@ -80,8 +80,9 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('search narrows the list and Select all follows it',
-          (tester) async {
+      testWidgets('search narrows the list and Select all follows it', (
+        tester,
+      ) async {
         final c = await _pump(tester, size);
         await _tap(tester, 'col_filter_1');
         await tester.enterText(_key('column_filter_search'), 'ap');
@@ -106,8 +107,9 @@ void main() {
         expect(c.visibleRows, [0, 5, 6]);
       });
 
-      testWidgets('Cancel and tapping outside leave the filter alone',
-          (tester) async {
+      testWidgets('Cancel and tapping outside leave the filter alone', (
+        tester,
+      ) async {
         final c = await _pump(tester, size);
         await _tap(tester, 'col_filter_1');
         await _tap(tester, 'column_filter_value_pear');
@@ -132,8 +134,9 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('Clear filters in the control bar shows every row again',
-          (tester) async {
+      testWidgets('Clear filters in the control bar shows every row again', (
+        tester,
+      ) async {
         final c = await _pump(tester, size);
         expect(
           tester.widget<IconButton>(_key('data_sheet_clear_filters')).onPressed,
@@ -143,10 +146,7 @@ void main() {
         c.setColumnFilter(0, const ColumnFilter(hiddenValues: {'1'}));
         await tester.pumpAndSettle();
         expect(
-          find.descendant(
-            of: find.byType(Badge),
-            matching: find.text('2'),
-          ),
+          find.descendant(of: find.byType(Badge), matching: find.text('2')),
           findsOneWidget,
         );
 
@@ -155,8 +155,9 @@ void main() {
         expect(_key('r2c1'), findsOneWidget);
       });
 
-      testWidgets('the control bar opens the selected column\'s filter',
-          (tester) async {
+      testWidgets('the control bar opens the selected column\'s filter', (
+        tester,
+      ) async {
         final c = await _pump(tester, size);
         c.selection.setHighlighted(2, 1);
         await tester.pumpAndSettle();

@@ -28,17 +28,14 @@ class ThemePalette {
   factory ThemePalette.fromJson(Object? value, String path) {
     final json = asObject(value, path);
     final known = ThemeColor.values.asNameMap();
-    return ThemePalette(
-      {
-        for (final MapEntry(:key, :value) in json.entries)
-          if (known[key] case final role?)
-            role: SlideColor.parse(
-              value is String ? value : '',
-              path: '$path.$key',
-            ).argb,
-      },
-      extra: unknownFields(json, known.keys.toSet()),
-    );
+    return ThemePalette({
+      for (final MapEntry(:key, :value) in json.entries)
+        if (known[key] case final role?)
+          role: SlideColor.parse(
+            value is String ? value : '',
+            path: '$path.$key',
+          ).argb,
+    }, extra: unknownFields(json, known.keys.toSet()));
   }
 
   /// The palette as its `.qslide` object, every role written out.
@@ -49,13 +46,10 @@ class ThemePalette {
       };
 
   /// Returns a copy with the colors in [colors] replaced.
-  ThemePalette copyWith(Map<ThemeColor, int> colors) => ThemePalette(
-        {
-          for (final role in ThemeColor.values) role: this[role],
-          ...colors,
-        },
-        extra: extra,
-      );
+  ThemePalette copyWith(Map<ThemeColor, int> colors) => ThemePalette({
+        for (final role in ThemeColor.values) role: this[role],
+        ...colors,
+      }, extra: extra);
 
   @override
   bool operator ==(Object other) =>

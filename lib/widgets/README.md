@@ -48,6 +48,16 @@ lib/widgets/
                                 CodeViewerController; reads AppSettings for
                                 the disconnected state and writes its
                                 sentences with Errors
+  document_viewer/
+    document_viewer_body.dart   QuarkDocumentView fed from a
+                                DocumentViewerController; reads AppSettings
+                                for the disconnected state and writes its
+                                sentences with Errors
+    document_viewer_image.dart  an image inside a document: calls
+                                PreviewsService for its part URL and auth
+    document_viewer_conflict_dialog.dart
+                                asks before "Open as Quark doc" replaces a
+                                .qdoc; pops a choice through Navigator
   file_browser/
     file_browser_view.dart      lists files, calls FilesService; keeps the
                                 caller's snapshot listing (#1781) on screen
@@ -152,6 +162,30 @@ lib/widgets/
     repair_installation_section.dart
                                 hosts RepairController: the repair button and
                                 its confirmation, or the one-time install step
+    remote_access/              remote access diagnostics (#3613): app-side
+                                hosting for phone and Quark diagnostic
+                                sections that read
+                                RemoteAccessDiagnosticsController and show
+                                snack bars
+      remote_access_diagnostics_card.dart
+                                a collapsed card of remote access
+                                diagnostics: rows, Test connection and
+                                Copy report buttons; data in, callbacks out
+      phone_remote_diagnostics_section.dart
+                                this phone's remote access diagnostics:
+                                paired status, paused state, re-pair on hold,
+                                pairing and route; hosts
+                                RemoteAccessDiagnosticsCard around
+                                RemoteAccessDiagnosticsController
+      quark_remote_diagnostics_section.dart
+                                the Quark's remote access diagnostics: whether
+                                remote access is turned on, whether it is
+                                connected, setup, last error; hosts
+                                RemoteAccessDiagnosticsCard around
+                                RemoteAccessDiagnosticsController
+      diagnostic_row_tile.dart  one diagnostic row: the label and value;
+                                data in, callbacks out, app-side because it
+                                takes the app's DiagnosticRow model
     sessions_section.dart       hosts SessionsController: the account's sessions,
                                 signing one out or all the others, each
                                 behind a confirmation
@@ -247,6 +281,13 @@ lib/widgets/
       recent_decisions_list.dart  the Users page's approved and denied account
       recent_decision_row.dart    requests, one row each; reads the app's
                                   AccountRequestDecision and formatRelative
+  recovery_phrase/
+    add_recovery_phrase_offer.dart
+                                the offer to add a recovery phrase to vault
+                                and chat keys (#3530): shows a button that
+                                opens AddRecoveryPhraseDialog; reads
+                                RecoveryPhraseController and Errors for
+                                error text, shows a snack bar once added
   vault/
     vault_entry_page.dart       one entry over the vault page (#3461): the
                                 package VaultEntryDetails or VaultEntryForm,

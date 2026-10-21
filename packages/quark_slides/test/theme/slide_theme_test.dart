@@ -29,7 +29,9 @@ void main() {
       expect(accent.toHex(), 'theme:accent1');
       expect(SlideColor.parse('theme:accent1'), accent);
       expect(
-          SlideColor.parse('theme:background2').role, ThemeColor.background2);
+        SlideColor.parse('theme:background2').role,
+        ThemeColor.background2,
+      );
     });
 
     test('a role this version does not know reads as text', () {
@@ -52,16 +54,18 @@ void main() {
       expect(accent.isThemeColor, isTrue);
     });
 
-    test('argb of a role is its light fallback, but it is not that literal',
-        () {
-      expect(accent.argb, 0xFF3366FF);
-      expect(accent, isNot(const SlideColor(0xFF3366FF)));
-      expect(accent, const SlideColor.theme(ThemeColor.accent1));
-      expect(
-        accent.hashCode,
-        const SlideColor.theme(ThemeColor.accent1).hashCode,
-      );
-    });
+    test(
+      'argb of a role is its light fallback, but it is not that literal',
+      () {
+        expect(accent.argb, 0xFF3366FF);
+        expect(accent, isNot(const SlideColor(0xFF3366FF)));
+        expect(accent, const SlideColor.theme(ThemeColor.accent1));
+        expect(
+          accent.hashCode,
+          const SlideColor.theme(ThemeColor.accent1).hashCode,
+        );
+      },
+    );
   });
 
   group('built-in themes', () {
@@ -155,10 +159,7 @@ void main() {
       final json = {
         ...SlideThemes.light.toJson(),
         'gradients': [1, 2],
-        'colors': {
-          ...SlideThemes.light.colors.toJson(),
-          'accent7': '#ABCDEF',
-        },
+        'colors': {...SlideThemes.light.colors.toJson(), 'accent7': '#ABCDEF'},
         'title': {...SlideThemes.light.title.toJson(), 'letterSpacing': 2},
         'shapes': {...SlideThemes.light.shapes.toJson(), 'shadow': true},
       };
@@ -169,8 +170,11 @@ void main() {
       expect(
         () => ThemePalette.fromJson({'text': 'blue'}, r'$.theme.colors'),
         throwsA(
-          isA<QslideFormatException>()
-              .having((e) => e.path, 'path', r'$.theme.colors.text'),
+          isA<QslideFormatException>().having(
+            (e) => e.path,
+            'path',
+            r'$.theme.colors.text',
+          ),
         ),
       );
     });

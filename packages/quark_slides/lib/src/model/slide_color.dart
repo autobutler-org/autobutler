@@ -64,8 +64,9 @@ class SlideColor {
         ThemeColor.values.asNameMap()[name] ?? ThemeColor.text,
       );
     }
-    final match =
-        RegExp(r'^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$').firstMatch(hex);
+    final match = RegExp(
+      r'^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$',
+    ).firstMatch(hex);
     if (match == null) {
       throw QslideFormatException(
         'expected #RRGGBB, #RRGGBBAA or theme:<role>',

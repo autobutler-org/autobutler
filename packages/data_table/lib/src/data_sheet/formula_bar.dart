@@ -67,8 +67,9 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   void initState() {
     super.initState();
     _controller.addListener(_onControllerChanged);
-    _controller.activeCellEditingController
-        .addListener(_onActiveCellTextChanged);
+    _controller.activeCellEditingController.addListener(
+      _onActiveCellTextChanged,
+    );
     _barCtrl.addListener(_onBarValueChanged);
     _focusNode.addListener(_onFocusChanged);
   }
@@ -78,11 +79,13 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
-      oldWidget.controller.activeCellEditingController
-          .removeListener(_onActiveCellTextChanged);
+      oldWidget.controller.activeCellEditingController.removeListener(
+        _onActiveCellTextChanged,
+      );
       _controller.addListener(_onControllerChanged);
-      _controller.activeCellEditingController
-          .addListener(_onActiveCellTextChanged);
+      _controller.activeCellEditingController.addListener(
+        _onActiveCellTextChanged,
+      );
       _syncBarFromController();
     }
   }
@@ -90,8 +93,9 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
   @override
   void dispose() {
     _controller.removeListener(_onControllerChanged);
-    _controller.activeCellEditingController
-        .removeListener(_onActiveCellTextChanged);
+    _controller.activeCellEditingController.removeListener(
+      _onActiveCellTextChanged,
+    );
     _focusNode.removeListener(_onFocusChanged);
     _barCtrl.dispose();
     _focusNode.dispose();
@@ -208,8 +212,9 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
         _syncing = false;
         _controller.selection.setActive(r, c);
         // Move cursor to end of text in the bar.
-        _barCtrl.selection =
-            TextSelection.collapsed(offset: _barCtrl.text.length);
+        _barCtrl.selection = TextSelection.collapsed(
+          offset: _barCtrl.text.length,
+        );
       } else if (sel.hasActiveCell) {
         // Cell was already active — snapshot the current raw value for Escape.
         final r = sel.activeRow;
@@ -246,10 +251,15 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
       text: TextSpan(text: text, style: textStyle),
       textDirection: ui.TextDirection.ltr,
     )..layout(
-        maxWidth:
-            (fieldWidth - horizontalOverhead).clamp(1.0, double.infinity));
-    final needed =
-        (tp.height + verticalOverhead).clamp(_minHeight, double.infinity);
+        maxWidth: (fieldWidth - horizontalOverhead).clamp(
+          1.0,
+          double.infinity,
+        ),
+      );
+    final needed = (tp.height + verticalOverhead).clamp(
+      _minHeight,
+      double.infinity,
+    );
     setState(() => _height = needed);
   }
 
@@ -378,7 +388,10 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                     ),
                     // ── Divider ───────────────────────────────────────────
                     VerticalDivider(
-                        width: 1, thickness: 1, color: dividerColor),
+                      width: 1,
+                      thickness: 1,
+                      color: dividerColor,
+                    ),
                     // ── Value field ───────────────────────────────────────
                     Expanded(
                       key: _fieldKey,
@@ -432,8 +445,10 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                   behavior: HitTestBehavior.opaque,
                   onVerticalDragUpdate: (d) {
                     setState(() {
-                      _height = (_height + d.delta.dy)
-                          .clamp(_minHeight, double.infinity);
+                      _height = (_height + d.delta.dy).clamp(
+                        _minHeight,
+                        double.infinity,
+                      );
                     });
                   },
                   onDoubleTap: _autoSize,

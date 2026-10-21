@@ -173,8 +173,5 @@ List<bool> chartPlaceLabels(List<Rect> labels, Rect bounds) {
     }
     y += height + rowGap;
   }
-  return (
-    offsets: offsets,
-    size: Size(total, rows.isEmpty ? 0 : y - rowGap),
-  );
+  return (offsets: offsets, size: Size(total, rows.isEmpty ? 0 : y - rowGap));
 }

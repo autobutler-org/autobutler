@@ -230,10 +230,7 @@ void main() {
     final box = tester.widget<Container>(
       find.descendant(of: _key('r1c1'), matching: find.byType(Container)),
     );
-    expect(
-      (box.decoration as BoxDecoration).color,
-      const Color(0xFF10B981),
-    );
+    expect((box.decoration as BoxDecoration).color, const Color(0xFF10B981));
   });
 
   testWidgets('a toggle shows the highlighted cell\'s state', (tester) async {
@@ -244,10 +241,7 @@ void main() {
     );
     c.selection.setHighlighted(0, 0);
     await tester.pump();
-    expect(
-      tester.widget<IconButton>(_key('format_italic')).isSelected,
-      isTrue,
-    );
+    expect(tester.widget<IconButton>(_key('format_italic')).isSelected, isTrue);
     c.selection.setHighlighted(0, 1);
     await tester.pump();
     expect(

@@ -96,9 +96,7 @@ class SlideTableView extends StatelessWidget {
               ),
         Positioned.fill(
           child: IgnorePointer(
-            child: CustomPaint(
-              painter: SlideTableBorderPainter(table, theme),
-            ),
+            child: CustomPaint(painter: SlideTableBorderPainter(table, theme)),
           ),
         ),
       ],

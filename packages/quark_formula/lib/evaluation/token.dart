@@ -21,7 +21,7 @@ enum TokenKind {
   lparen,
   rparen,
   comma,
-  eof
+  eof,
 }
 
 /// One token from the lexer: its kind, its text, and where it starts in the formula.
