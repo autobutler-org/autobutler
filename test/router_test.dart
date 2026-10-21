@@ -11,6 +11,7 @@ import 'package:quark/pages/recover_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
+import 'package:quark_slides/quark_slides.dart' show Presentation;
 
 import 'support/fake_chat.dart';
 
@@ -1412,6 +1413,23 @@ void main() {
       expect(route, hasLength(1));
     });
 
+    test('sends a PowerPoint file to the presentation viewer (#3268)', () {
+      expect(
+        viewFileRedirect('talks/q1.pptx', 's1'),
+        '/presentation/talks/q1.pptx?serial=s1',
+      );
+      expect(
+        viewFileRedirect('macros.pptm', null),
+        '/presentation/macros.pptm',
+      );
+      // The legacy binary format has no reader.
+      expect(viewFileRedirect('old.ppt', null), isNull);
+      final route = router.configuration.routes.whereType<GoRoute>().where(
+        (route) => route.path == '${AppRoutes.presentationViewer}/:path(.*)',
+      );
+      expect(route, hasLength(1));
+    });
+
     test('sends a folder and an archive to the file browser', () {
       expect(viewFileRedirect('photos/2024', null), '/files/photos/2024');
       expect(
@@ -1559,6 +1577,54 @@ void main() {
       r.go(AppRoutes.slideFile('talks/present.qslide'));
       await tester.pumpAndSettle();
       expect(find.text('editor talks/present.qslide'), findsOneWidget);
+    });
+
+    testWidgets('a PowerPoint file is presented only from a handed-over deck', (
+      tester,
+    ) async {
+      final r = GoRouter(
+        initialLocation: AppRoutes.slidePresent(
+          'talks/q1.pptx',
+          serial: 's1',
+          slide: 2,
+        ),
+        routes: [
+          slidePresentRoute(
+            builder: (filePath, serial, startIndex, initial) =>
+                Text('present $filePath $startIndex ${initial?.title}'),
+          ),
+          slideEditorRoute(
+            builder: (filePath, serial, startIndex) => Text('editor $filePath'),
+          ),
+          GoRoute(
+            path: '${AppRoutes.presentationViewer}/:path(.*)',
+            builder: (_, state) => Text('viewer ${state.uri}'),
+          ),
+        ],
+      );
+      addTearDown(r.dispose);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: r));
+      await tester.pumpAndSettle();
+      // A reload has no deck to show, so it goes back to the viewer.
+      expect(
+        find.text('viewer /presentation/talks/q1.pptx?serial=s1&slide=2'),
+        findsOneWidget,
+      );
+
+      r.go(
+        AppRoutes.slidePresent('talks/q1.pptx', slide: 3),
+        extra: Presentation(title: 'Q1'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('present talks/q1.pptx 2 Q1'), findsOneWidget);
+
+      // Ending the show asks for the editor, which a PowerPoint file has not.
+      r.go(AppRoutes.slideFile('talks/q1.pptx', slide: 3));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('viewer /presentation/talks/q1.pptx?slide=3'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an editor link opens the presentation at its slide (#2900)', (

@@ -58,6 +58,15 @@ lib/widgets/
     document_viewer_conflict_dialog.dart
                                 asks before "Open as Quark doc" replaces a
                                 .qdoc; pops a choice through Navigator
+  presentation_viewer/
+    presentation_viewer_body.dart
+                                the viewer's states and layout fed from a
+                                PresentationViewerController; reads
+                                AppSettings through SlidesErrorView for the
+                                disconnected state
+    presentation_viewer_stage.dart
+                                the slide showing, its nav row and notes,
+                                read from the controller
   file_browser/
     file_browser_view.dart      lists files, calls FilesService; keeps the
                                 caller's snapshot listing (#1781) on screen

@@ -42,7 +42,9 @@ bool hasSupportedFilesEditorForType(FileKind kind) =>
 /// types are included deliberately: without them a `.docx` ends up worse off
 /// than an unclassified file, which reaches that page as `generic` (#1184).
 /// A PDF is not one of them: it has `PdfViewerPage`. Nor is a word-processing
-/// document any more: it has `DocumentViewerPage` (#2987).
+/// document any more: it has `DocumentViewerPage` (#2987). `slideshow`
+/// stays for the legacy `.ppt`, which has no reader; `.pptx` and `.pptm` go
+/// to `PresentationViewerPage` before this is asked (#3268).
 ///
 /// `xlsx` is here for the same reason, and only as a fallback: the file
 /// browser offers to convert a workbook to a `.qsheet` before reaching this,

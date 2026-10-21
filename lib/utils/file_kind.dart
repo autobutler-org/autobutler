@@ -107,7 +107,11 @@ const _kindByExtension = {
   '.docm': FileKind.docx,
   '.odt': FileKind.docx,
   '.rtf': FileKind.docx,
+  // Read on the Quark into the presentation viewer (#3268). A .pptm is a
+  // .pptx with macros attached, which are never opened. The legacy binary
+  // .ppt has no reader and opens in the generic viewer.
   '.pptx': FileKind.slideshow,
+  '.pptm': FileKind.slideshow,
   '.ppt': FileKind.slideshow,
   '.epub': FileKind.epub,
   // .xlsm is .xlsx with macros attached. The legacy binary .xls is not OOXML

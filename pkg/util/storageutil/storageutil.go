@@ -179,7 +179,9 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 	switch ext {
 	case ".pdf":
 		return FileTypePDF
-	case ".pptx", ".ppt":
+	// .pptm is .pptx with macros attached, read into the same presentation
+	// viewer (#3268).
+	case ".pptx", ".pptm", ".ppt":
 		return FileTypeSlideshow
 	// SVG is XML, not a raster codec: it cannot be decoded, resized into a
 	// thumbnail, or converted to JPEG the way the formats below can, so it
