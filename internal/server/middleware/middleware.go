@@ -43,10 +43,12 @@ var authRateLimitedPaths = map[string]bool{
 	"/api/v0/storage/devices/role":   true,
 }
 
-// authRateLimitedPuts are API paths whose PUT re-confirms the password, so
-// it shares the sign-in limit, while a GET of the same path does not.
-var authRateLimitedPuts = map[string]bool{
-	"/api/v0/vault/key": true,
+// authRateLimitedMethods are API paths whose one method re-confirms the
+// password, so it shares the sign-in limit, while a GET of the same path
+// does not.
+var authRateLimitedMethods = map[string]string{
+	"/api/v0/vault/key": http.MethodPut,
+	"/api/v0/vault":     http.MethodDelete,
 }
 
 // rateLimit is a middleware that enforces per-IP rate limiting on auth endpoints.
@@ -56,7 +58,7 @@ func rateLimit(deps deputil.Dependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := ratelimitutil.ExtractIP(c.ClientIP())
 		path := c.Request.URL.Path
-		if !authRateLimitedPaths[path] && (c.Request.Method != http.MethodPut || !authRateLimitedPuts[path]) {
+		if !authRateLimitedPaths[path] && c.Request.Method != authRateLimitedMethods[path] {
 			c.Next()
 			return
 		}

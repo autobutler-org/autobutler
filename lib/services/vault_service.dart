@@ -52,9 +52,15 @@ class VaultService with AuthenticatedService {
   }
 
   /// Deletes the account's vault key and every item: starting over.
-  static Future<void> deleteVault() async {
+  ///
+  /// [authKey], the login password's auth key, re-confirms the caller as
+  /// [putKey]'s does: a wrong one is a 403 and nothing is deleted, so a
+  /// session alone cannot wipe a vault (#3615).
+  static Future<void> deleteVault(String authKey) async {
     final response = await instance.authenticatedDelete(
       apiBaseUri.resolve('/api/v0/vault'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'password': authKey}),
     );
     _check(response, 'delete the vault');
   }

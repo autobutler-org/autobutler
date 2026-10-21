@@ -260,6 +260,10 @@ lib/widgets/
     vault_error_view.dart       the vault page's load failure, with Retry
     vault_export_menu.dart      the Export chip and its format menu; takes
                                 the app's VaultExportFormat
+    vault_start_over_dialog.dart
+                                asks for the login password before the vault
+                                is deleted (#3615); app-side for the app's
+                                ConfirmPasswordField
   video_viewer/
     convert_video.dart          runs TranscodeDialogHost, queues the job and
                                 shows its snack bar; the viewer and Files share it

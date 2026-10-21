@@ -535,7 +535,7 @@ void main() {
       final c = await unlocked();
       await c.save(github);
 
-      await server.deleteVault();
+      await server.deleteVault('');
       events.add(
         const FileEvent(kind: 'vault_changed', path: '', data: {'itemId': 0}),
       );
@@ -547,14 +547,38 @@ void main() {
   });
 
   test('starting over deletes the vault', () async {
+    server.loginAuthKey = fakeLoginAuthKey(crypto, _password);
     final c = await unlocked();
     await c.save(github);
 
-    await c.startOver();
+    await c.startOver(_password);
 
     expect(c.status, VaultStatus.noVault);
     expect(server.key, isNull);
     expect(server.items, isEmpty);
+  });
+
+  test('starting over with a password the account does not sign in with '
+      'deletes nothing (#3615)', () async {
+    server.loginAuthKey = fakeLoginAuthKey(crypto, _password);
+    final c = await unlocked();
+    await c.save(github);
+    c.lock();
+
+    await expectLater(
+      c.startOver('not the login password'),
+      throwsA(
+        isA<MessageException>().having(
+          (e) => e.message,
+          'message',
+          Errors.incorrectPassword,
+        ),
+      ),
+    );
+
+    expect(c.status, VaultStatus.locked);
+    expect(server.key, isNotNull);
+    expect(server.items, hasLength(1));
   });
 
   group('import and export', () {
@@ -595,7 +619,7 @@ void main() {
         ),
       );
       final exported = c.export(VaultExportFormat.json);
-      await c.startOver();
+      await c.startOver(_password);
       await c.setUp(_password);
 
       final result = await c.import(exported);

@@ -9916,17 +9916,61 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Deletes every item of the caller's vault and its vault key in one transaction, so an account locked out of its vault, having lost both its password and its recovery phrase, can start over with PUT /vault/key. An account with no vault gets 204 too. Publishes vault_changed to the caller's sessions.",
+                "description": "Re-confirms the caller with password, which carries the auth key of the login password, exactly as PUT /vault/key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is deleted, so a session alone cannot wipe a vault (#3615). The body is at most 1 KiB. Then deletes every item of the caller's vault and its vault key in one transaction, so an account locked out of its vault, having lost both its password and its recovery phrase, can start over with PUT /vault/key. An account with no vault gets 204 too. Publishes vault_changed to the caller's sessions. Shares the sign-in rate limit.",
+                "consumes": [
+                    "application/json"
+                ],
                 "tags": [
                     "vault"
                 ],
                 "summary": "Delete the caller's vault",
+                "parameters": [
+                    {
+                        "description": "The caller's auth key",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_vault.deleteVaultBody"
+                        }
+                    }
+                ],
                 "responses": {
                     "204": {
                         "description": "No Content"
                     },
+                    "400": {
+                        "description": "a body that is not JSON",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "password is not the caller's auth key",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "413": {
+                        "description": "a body over 1 KiB",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "426": {
+                        "description": "password is a raw password: the app is too old",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -14214,6 +14258,15 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "v0_vault.deleteVaultBody": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "description": "Password is the standard base64 auth key of the caller's login\npassword, as PUT /vault/key takes it.",
+                    "type": "string"
                 }
             }
         },

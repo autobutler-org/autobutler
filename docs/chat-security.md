@@ -412,7 +412,9 @@ ciphertext, the nonce and `formatVersion`, and nothing else about an item.
   never opens the vault. A vault set up without the phrase has no phrase wrap until the account is given a new
   phrase (`PUT /api/v0/auth/recovery-key`); until then a recovery cannot open it.
 - **No admin recovery.** Nobody holds a copy of the vault key. An account that loses both its password and its
-  phrase wrap loses the vault, and `DELETE /api/v0/vault` lets it start a new one.
+  phrase wrap loses the vault, and `DELETE /api/v0/vault` lets it start a new one. That delete re-confirms the
+  login password's auth key, which the user always knows (after a recovery it is the new one), so a signed-in
+  device alone cannot erase the vault (#3615).
 - **Isolation.** Every vault route acts on the caller's own rows, and `vault_changed` reaches only the owner's
   sessions. An admin reads another account's vault as not found.
 

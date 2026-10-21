@@ -271,6 +271,11 @@ void main() {
           find.byKey(const ValueKey('vault_password_secondary')),
         );
         await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('vault_start_over_password_field')),
+          _password,
+        );
+        await tester.pump();
         await tester.tap(
           find.byKey(const ValueKey('vault_start_over_confirm')),
         );
@@ -278,6 +283,32 @@ void main() {
 
         expect(server.key, isNull);
         expect(find.text('Set up your vault'), findsOneWidget);
+      });
+
+      testWidgets('starting over with the wrong password deletes nothing '
+          '(#3615)', (tester) async {
+        useSize(tester);
+        await seed();
+        await pump(tester);
+
+        await tester.tap(
+          find.byKey(const ValueKey('vault_password_secondary')),
+        );
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('vault_start_over_password_field')),
+          'not the login password',
+        );
+        await tester.pump();
+        await tester.tap(
+          find.byKey(const ValueKey('vault_start_over_confirm')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(server.key, isNotNull);
+        expect(server.items, isNotEmpty);
+        expect(find.text(Errors.incorrectPassword), findsOneWidget);
+        expect(find.byKey(const ValueKey('vault_unlock')), findsOneWidget);
       });
 
       testWidgets('a failed load offers a retry', (tester) async {

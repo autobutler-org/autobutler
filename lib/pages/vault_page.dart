@@ -11,6 +11,7 @@ import 'package:quark/services/file_save.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/utils/vault_export.dart';
 import 'package:quark/utils/vault_import.dart';
 import 'package:quark/utils/vault_import_summary.dart';
@@ -22,6 +23,7 @@ import 'package:quark/widgets/layout/theme_toggle_button.dart';
 import 'package:quark/widgets/vault/vault_entry_page.dart';
 import 'package:quark/widgets/vault/vault_error_view.dart';
 import 'package:quark/widgets/vault/vault_export_menu.dart';
+import 'package:quark/widgets/vault/vault_start_over_dialog.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
@@ -65,24 +67,18 @@ class _VaultPageState extends State<VaultPage>
     );
   }
 
+  /// Deletes the vault once the login password re-confirms it (#3615).
   Future<void> _startOver() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => ConfirmDeleteDialog(
-        title: 'Delete your vault?',
-        body:
-            'Every saved login is deleted, on every device, and nobody can '
-            'get them back. Do this only if your password no longer opens '
-            'the vault, then set up a new one.',
-        keyPrefix: 'vault_start_over',
-        confirmLabel: 'Delete vault',
-        onConfirm: () => Navigator.of(dialogContext).pop(true),
-        onCancel: () => Navigator.of(dialogContext).pop(false),
+    final password = await QuarkWidget.showDialog<String>(
+      context,
+      builder: (dialogContext) => VaultStartOverDialog(
+        onConfirm: (typed) => Navigator.of(dialogContext).pop(typed),
+        onCancel: () => Navigator.of(dialogContext).pop(),
       ),
     );
-    if (confirmed != true) return;
+    if (password == null || !mounted) return;
     try {
-      await _vault.startOver();
+      await _vault.startOver(password);
     } catch (e) {
       _snack(Errors.message(e, 'delete your vault'));
     }
