@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/controllers/duplicates_controller.dart';
+import 'package:quark/controllers/photo_index_controller.dart';
 import 'package:quark/models/duplicate_group.dart';
 import 'package:quark/pages/photo_duplicates_page.dart';
+import 'package:quark/services/app_settings.dart';
+import 'package:quark/services/photo_index_service.dart';
 import 'package:quark/services/thumbnail_cache_manager.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/thumbnail_cache_config.dart';
@@ -63,6 +66,7 @@ void main() {
     bool deleteFails = false,
     Size size = const Size(390, 844),
     double textScale = 1,
+    PhotoIndexController? indexController,
   }) async {
     final deleted = <String>[];
     final controller = DuplicatesController(
@@ -88,7 +92,10 @@ void main() {
             size: size,
             textScaler: TextScaler.linear(textScale),
           ),
-          child: PhotoDuplicatesPage(controller: controller),
+          child: PhotoDuplicatesPage(
+            controller: controller,
+            indexController: indexController,
+          ),
         ),
       ),
     );
@@ -546,5 +553,56 @@ void main() {
     }
     expect(find.text('Delete'), findsNWidgets(2));
     expect(find.text('Keep'), findsNWidgets(2));
+  });
+
+  /// #3556: an admin sees whether the index behind these results is
+  /// complete; anyone else has no way to know, and sees nothing.
+  PhotoIndexController indexController(List<String> fetched) =>
+      PhotoIndexController(
+        fetch: () async {
+          fetched.add('fetch');
+          return const PhotoIndexStatus(
+            total: 5000,
+            hashed: 1200,
+            datesRead: 1100,
+            failed: 0,
+            failures: [],
+            running: true,
+            paused: false,
+          );
+        },
+        events: const Stream.empty(),
+      );
+
+  testWidgets('an admin is told results may be incomplete', (tester) async {
+    AppSettings.instance.isAdmin.value = true;
+    addTearDown(() => AppSettings.instance.isAdmin.value = false);
+    final fetched = <String>[];
+    final index = indexController(fetched);
+    addTearDown(index.dispose);
+    await pumpPage(tester, indexController: index);
+
+    expect(fetched, ['fetch']);
+    expect(
+      find.text('Still indexing, so results may be incomplete'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('photo_index_pause')), findsOneWidget);
+    expect(find.text('Identical copies · 2'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a non-admin sees nothing and nothing is fetched', (
+    tester,
+  ) async {
+    AppSettings.instance.isAdmin.value = false;
+    final fetched = <String>[];
+    final index = indexController(fetched);
+    addTearDown(index.dispose);
+    await pumpPage(tester, indexController: index);
+
+    expect(fetched, isEmpty);
+    expect(find.byKey(const ValueKey('photo_index_status')), findsNothing);
+    expect(find.text('Identical copies · 2'), findsOneWidget);
   });
 }

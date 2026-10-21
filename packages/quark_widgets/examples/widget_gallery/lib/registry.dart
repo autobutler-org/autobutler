@@ -1963,6 +1963,35 @@ final List<GalleryEntry> registry = [
         SizedBox(height: 480, child: DuplicateGroupListDemo(log: log)),
   ),
   GalleryEntry(
+    name: 'PhotoIndexStatusPanel',
+    group: 'Photos',
+    build: (context, log) => PhotoIndexStatusPanel(
+      total: 5000,
+      hashed: 1200,
+      datesRead: 1100,
+      failed: 2,
+      isRunning: true,
+      failures: const [
+        PhotoIndexFailureItem(
+          id: ':photos/broken.jpg',
+          name: 'broken.jpg',
+          location: 'Photos',
+          reason: "Can't be read as a photo",
+        ),
+        PhotoIndexFailureItem(
+          id: 'usb:Camera/IMG_1.CR2',
+          name: 'IMG_1.CR2',
+          location: 'USB drive · Camera',
+          reason: 'Needs a RAW converter this Quark does not have',
+        ),
+      ],
+      showFailures: true,
+      onToggleFailures: () => log('PhotoIndexStatusPanel.onToggleFailures'),
+      onPause: () => log('PhotoIndexStatusPanel.onPause'),
+      onResume: () => log('PhotoIndexStatusPanel.onResume'),
+    ),
+  ),
+  GalleryEntry(
     name: 'PhotoCategoryList',
     group: 'Photos',
     build: (context, log) => SizedBox(

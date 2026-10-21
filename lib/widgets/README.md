@@ -133,6 +133,10 @@ lib/widgets/
   photos/
     add_to_album_sheet.dart     AddToAlbumSheet host for a photo in an album
                                 view: calls AlbumService, shows snack bars
+    photo_index_status_section.dart
+                                PhotoIndexStatusPanel host above duplicates:
+                                reads AppSettings.isAdmin, words errors with
+                                Errors, owns PhotoIndexController
   settings/
     change_password/
       change_password_dialog.dart

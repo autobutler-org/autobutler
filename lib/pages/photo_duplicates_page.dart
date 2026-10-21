@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:quark/widgets/layout/chrome_app_bar.dart';
 import 'package:quark/controllers/duplicates_controller.dart';
+import 'package:quark/controllers/photo_index_controller.dart';
 import 'package:quark/utils/auto_refresh_mixin.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/quark_widget.dart';
 import 'package:quark/utils/trash_config.dart';
+import 'package:quark/widgets/photos/photo_index_status_section.dart';
 import 'package:quark/widgets/photos/photo_thumbnail.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
@@ -16,10 +18,14 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// Nothing is marked until the user marks it or taps Select suggested, and
 /// the confirmation names every marked copy before any is deleted (#3362).
 class PhotoDuplicatesPage extends StatefulWidget {
-  const PhotoDuplicatesPage({super.key, this.controller});
+  const PhotoDuplicatesPage({super.key, this.controller, this.indexController});
 
   /// Overrides the controller, for a test. Null uses the real services.
   final DuplicatesController? controller;
+
+  /// Overrides the index status controller, for a test. Null uses the real
+  /// services.
+  final PhotoIndexController? indexController;
 
   @override
   State<PhotoDuplicatesPage> createState() => _PhotoDuplicatesPageState();
@@ -86,25 +92,32 @@ class _PhotoDuplicatesPageState extends State<PhotoDuplicatesPage>
                 ),
             ],
           ),
-          body: DuplicateGroupList(
-            groups: _controller.groups,
-            selectedIds: _controller.selectedIds,
-            isLoading: _controller.isLoading,
-            isDeleting: _controller.isDeleting,
-            error: error == null
-                ? null
-                : Errors.message(error, 'find duplicate photos'),
-            thumbnailBuilder: (context, photo) => PhotoThumbnail(
-              url: _controller.thumbnailUrl(photo.id),
-              path: _controller.thumbnailSource(photo.id)?.path,
-              serial: _controller.thumbnailSource(photo.id)?.serial,
-            ),
-            onToggle: _controller.toggle,
-            onDeleteSelected: _deleteSelected,
-            onSelectSuggested: _controller.hasSuggestions
-                ? _controller.selectSuggested
-                : null,
-            onClearSelection: _controller.clearSelection,
+          body: Column(
+            children: [
+              PhotoIndexStatusSection(controller: widget.indexController),
+              Expanded(
+                child: DuplicateGroupList(
+                  groups: _controller.groups,
+                  selectedIds: _controller.selectedIds,
+                  isLoading: _controller.isLoading,
+                  isDeleting: _controller.isDeleting,
+                  error: error == null
+                      ? null
+                      : Errors.message(error, 'find duplicate photos'),
+                  thumbnailBuilder: (context, photo) => PhotoThumbnail(
+                    url: _controller.thumbnailUrl(photo.id),
+                    path: _controller.thumbnailSource(photo.id)?.path,
+                    serial: _controller.thumbnailSource(photo.id)?.serial,
+                  ),
+                  onToggle: _controller.toggle,
+                  onDeleteSelected: _deleteSelected,
+                  onSelectSuggested: _controller.hasSuggestions
+                      ? _controller.selectSuggested
+                      : null,
+                  onClearSelection: _controller.clearSelection,
+                ),
+              ),
+            ],
           ),
         );
       },
