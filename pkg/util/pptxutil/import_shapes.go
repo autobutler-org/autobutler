@@ -1,6 +1,6 @@
 package pptxutil
 
-// cspell:ignore autofit chartex clr descr dgm grp ph prst xfrm
+// cspell:ignore autofit chartex clr descr dgm diagStripe flowChartDelay grp ph prst round2SameRect rtTriangle xfrm
 
 import (
 	"bytes"
@@ -39,6 +39,19 @@ var presetKinds = func() map[string]string {
 	}
 	return kinds
 }()
+
+// pathPresets are the preset geometries imported as a path shape: the preset
+// name and its adjust values, drawn by the editor's guide evaluator. Keep
+// this set in step with the definitions in
+// packages/quark_slides/lib/src/geometry/preset_geometry.dart. Any other
+// preset the editor cannot draw stays a rectangle.
+var pathPresets = map[string]bool{
+	"diagStripe":     true,
+	"flowChartDelay": true,
+	"round2SameRect": true,
+	"rtTriangle":     true,
+	"trapezoid":      true,
+}
 
 // linePresets are the geometries that import as a line, and whether the
 // line is drawn straight in place of the path PowerPoint draws.
@@ -241,17 +254,28 @@ func (s *slideReader) presetShape(sp *xShape, prst string, frame outFrame, fill 
 		return outShape{}, err
 	}
 	kind, ok := presetKinds[prst]
+	var preset string
+	var adjust map[string]float64
 	switch {
 	case sp.Props.Custom != nil:
 		s.warn("Freeform shapes were drawn as rectangles.")
 		kind = "rectangle"
-	case prst == "":
-		kind = "rectangle"
-	case !ok:
+	case prst == "" || ok:
+		if prst == "" {
+			kind = "rectangle"
+		}
+	case pathPresets[prst]:
+		kind = "path"
+		preset = prst
+		adjust = presetAdjust(sp)
+	default:
 		s.warn(fmt.Sprintf("Shapes of a kind the editor does not have (%s) were drawn as rectangles.", prst))
 		kind = "rectangle"
 	}
-	shape := outShape{ID: s.id(), Type: typeShape, Frame: frame, Kind: kind, Fill: fill, Stroke: stroke}
+	shape := outShape{
+		ID: s.id(), Type: typeShape, Frame: frame, Kind: kind,
+		Preset: preset, Adjust: adjust, Fill: fill, Stroke: stroke,
+	}
 	if kind == "roundedRectangle" {
 		adj := float64(defaultRoundRectAdj)
 		for _, gd := range sp.Props.Geometry.Guides {
@@ -265,6 +289,31 @@ func (s *slideReader) presetShape(sp *xShape, prst string, frame outFrame, fill 
 		shape.CornerRadius = &radius
 	}
 	return shape, nil
+}
+
+// presetAdjust reads a path preset's adjust values: each guide whose formula
+// is "val N". A guide that is not a literal is left out; the editor's
+// definition supplies its own default.
+func presetAdjust(sp *xShape) map[string]float64 {
+	if sp.Props.Geometry == nil {
+		return nil
+	}
+	var adjust map[string]float64
+	for _, gd := range sp.Props.Geometry.Guides {
+		v, ok := strings.CutPrefix(strings.TrimSpace(gd.Formula), "val ")
+		if !ok || gd.Name == "" {
+			continue
+		}
+		n, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+		if err != nil {
+			continue
+		}
+		if adjust == nil {
+			adjust = map[string]float64{}
+		}
+		adjust[gd.Name] = n
+	}
+	return adjust
 }
 
 // convertLine converts a line or connector, drawn across its frame's

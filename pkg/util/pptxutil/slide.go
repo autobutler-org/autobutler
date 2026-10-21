@@ -5,8 +5,13 @@ package pptxutil
 import (
 	"fmt"
 	"math"
+	"regexp"
+	"sort"
 	"strings"
 )
+
+// guideName is a preset or adjust name safe to write into the markup.
+var guideName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
 
 // The editor's defaults for what a .qslide leaves unset.
 const (
@@ -90,6 +95,11 @@ func (s *slideWriter) writeElement(el qslideElement) {
 	case typeShape:
 		if prst, ok := shapeGeometry[el.Kind]; ok {
 			s.writeShape(el, prst)
+		} else if el.Kind == "path" && guideName.MatchString(el.Preset) {
+			// A path shape that names a preset is written back as that
+			// preset. One that only has contours is left out until freeform
+			// export exists.
+			s.writeShape(el, el.Preset)
 		}
 	case typeImage:
 		s.writePicture(el)
@@ -162,7 +172,12 @@ func (s *slideWriter) writeShape(el qslideElement, prst string) {
 	s.nonVisual(s.id(), "Shape", "")
 	s.out.put(`<p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>`)
 	s.xfrm(el.Frame, "", "")
-	s.out.put(`<a:prstGeom prst="` + prst + `"><a:avLst>` + s.adjustments(el) + `</a:avLst></a:prstGeom>`)
+	adj := s.adjustments(el)
+	if adj == "" {
+		s.out.put(`<a:prstGeom prst="` + prst + `"><a:avLst/></a:prstGeom>`)
+	} else {
+		s.out.put(`<a:prstGeom prst="` + prst + `"><a:avLst>` + adj + `</a:avLst></a:prstGeom>`)
+	}
 	if c, ok := resolveColor(el.Fill, s.theme); ok {
 		s.out.put(solidFill(c, opacity))
 	} else {
@@ -202,8 +217,27 @@ func (s *slideWriter) adjustments(el qslideElement) string {
 		// The editor's inner corners sit at 0.4 of the outer radius; 50,000
 		// is the whole radius.
 		return `<a:gd name="adj" fmla="val 20000"/>`
+	case "path":
+		return pathAdjustments(el.Adjust)
 	}
 	return ""
+}
+
+// pathAdjustments writes a path shape's stored adjust values, guide names
+// in order, skipping any name that is not safe to write into the markup.
+func pathAdjustments(adjust map[string]float64) string {
+	names := make([]string, 0, len(adjust))
+	for name := range adjust {
+		if guideName.MatchString(name) {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	var b strings.Builder
+	for _, name := range names {
+		fmt.Fprintf(&b, `<a:gd name="%s" fmla="val %d"/>`, name, int64(math.Round(adjust[name])))
+	}
+	return b.String()
 }
 
 // writeLineProps writes an outline as the element tag — a:ln, or a table

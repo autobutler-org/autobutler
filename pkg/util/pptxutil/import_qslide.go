@@ -99,14 +99,16 @@ type outRun struct {
 
 // outShape is a preset shape.
 type outShape struct {
-	ID           string     `json:"id"`
-	Type         string     `json:"type"`
-	Frame        outFrame   `json:"frame"`
-	Kind         string     `json:"kind"`
-	Fill         string     `json:"fill,omitempty"`
-	Stroke       *outStroke `json:"stroke,omitempty"`
-	CornerRadius *float64   `json:"cornerRadius,omitempty"`
-	Opacity      *float64   `json:"opacity,omitempty"`
+	ID           string             `json:"id"`
+	Type         string             `json:"type"`
+	Frame        outFrame           `json:"frame"`
+	Kind         string             `json:"kind"`
+	Preset       string             `json:"preset,omitempty"`
+	Adjust       map[string]float64 `json:"adjust,omitempty"`
+	Fill         string             `json:"fill,omitempty"`
+	Stroke       *outStroke         `json:"stroke,omitempty"`
+	CornerRadius *float64           `json:"cornerRadius,omitempty"`
+	Opacity      *float64           `json:"opacity,omitempty"`
 }
 
 // outStroke is an outline; dash is left out when solid.
