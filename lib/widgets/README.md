@@ -48,6 +48,16 @@ lib/widgets/
                                 CodeViewerController; reads AppSettings for
                                 the disconnected state and writes its
                                 sentences with Errors
+  document_viewer/
+    document_viewer_body.dart   QuarkDocumentView fed from a
+                                DocumentViewerController; reads AppSettings
+                                for the disconnected state and writes its
+                                sentences with Errors
+    document_viewer_image.dart  an image inside a document: calls
+                                PreviewsService for its part URL and auth
+    document_viewer_conflict_dialog.dart
+                                asks before "Open as Quark doc" replaces a
+                                .qdoc; pops a choice through Navigator
   file_browser/
     file_browser_view.dart      lists files, calls FilesService; keeps the
                                 caller's snapshot listing (#1781) on screen
