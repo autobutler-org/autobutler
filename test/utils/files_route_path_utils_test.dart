@@ -66,7 +66,6 @@ void main() {
   group('usesGenericFileViewer', () {
     test('covers the document types that had no viewer', () {
       // These reached the "No supported editor" dead end before #1184.
-      expect(usesGenericFileViewer(FileKind.docx), isTrue);
       expect(usesGenericFileViewer(FileKind.slideshow), isTrue);
       expect(usesGenericFileViewer(FileKind.epub), isTrue);
     });
@@ -92,6 +91,8 @@ void main() {
         FileKind.video,
         FileKind.audio,
         FileKind.pdf,
+        // The document viewer reads these (#2987).
+        FileKind.docx,
         FileKind.text,
         FileKind.code,
         FileKind.archive,
