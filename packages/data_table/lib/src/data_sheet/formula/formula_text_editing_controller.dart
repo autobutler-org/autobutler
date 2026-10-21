@@ -36,10 +36,7 @@ class FormulaTextEditingController extends TextEditingController {
       spans.add(
         TextSpan(
           text: text.substring(source.start, source.end),
-          style: TextStyle(
-            color: reference.color,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: reference.color, fontWeight: FontWeight.w600),
         ),
       );
       cursor = source.end;

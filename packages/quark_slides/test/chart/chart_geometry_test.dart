@@ -28,7 +28,8 @@ void main() {
         expect(scale.ticks.length, lessThanOrEqualTo(6), reason: '$low..$high');
         expect(scale.min, lessThanOrEqualTo(low));
         expect(scale.max, greaterThanOrEqualTo(high));
-        final mantissa = scale.step /
+        final mantissa =
+            scale.step /
             math.pow(10, (math.log(scale.step) / math.ln10).floor());
         expect(
           [1, 2, 2.5, 5, 10].any((m) => (mantissa - m).abs() < 1e-9),
@@ -167,7 +168,9 @@ void main() {
     ]);
     expect(
       chartBaselineY(
-          const Rect.fromLTWH(0, 0, 400, 100), ChartAxisScale.nice(-10, 10)),
+        const Rect.fromLTWH(0, 0, 400, 100),
+        ChartAxisScale.nice(-10, 10),
+      ),
       50,
     );
   });
@@ -181,8 +184,13 @@ void main() {
       final centers = [for (var i = 0; i < 10; i++) i * 10.0];
       expect(chartVisibleLabels(centers, List.filled(10, 15)), [0, 2, 4, 6, 8]);
       expect(chartVisibleLabels(centers, List.filled(10, 25)), [0, 3, 6, 9]);
-      expect(chartVisibleLabels(centers, List.filled(10, 10), gap: 1),
-          [0, 2, 4, 6, 8]);
+      expect(chartVisibleLabels(centers, List.filled(10, 10), gap: 1), [
+        0,
+        2,
+        4,
+        6,
+        8,
+      ]);
     });
 
     test('value labels that overlap a kept one or leave the bounds drop', () {
@@ -241,10 +249,14 @@ void main() {
       // The value axis title is turned up the left side, centered on the
       // plot; the category axis title is centered under it.
       expect(layout.valueAxisTitle.size, const Size(20, 100));
-      expect(layout.valueAxisTitle.center.dy,
-          closeTo(layout.plot.center.dy, 1e-9));
-      expect(layout.categoryAxisTitle.center.dx,
-          closeTo(layout.plot.center.dx, 1e-9));
+      expect(
+        layout.valueAxisTitle.center.dy,
+        closeTo(layout.plot.center.dy, 1e-9),
+      );
+      expect(
+        layout.categoryAxisTitle.center.dx,
+        closeTo(layout.plot.center.dx, 1e-9),
+      );
     });
 
     test('a horizontal chart swaps which axis goes where', () {
@@ -273,7 +285,9 @@ void main() {
 
     test('font sizes follow the chart, within bounds', () {
       expect(
-          ChartLayout.titleFontSize(const Size(1200, 700)), closeTo(49, 1e-9));
+        ChartLayout.titleFontSize(const Size(1200, 700)),
+        closeTo(49, 1e-9),
+      );
       expect(ChartLayout.titleFontSize(const Size(100, 100)), 16);
       expect(ChartLayout.labelFontSize(const Size(4000, 4000)), 32);
     });

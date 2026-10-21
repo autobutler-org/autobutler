@@ -8,10 +8,10 @@ void main() {
       const formula = r'=SUM(b2:$D$9) + A1';
       final refs = formulaReferences(formula);
       expect(refs.map((r) => r.label), ['B2:D9', 'A1']);
-      expect(
-        refs.map((r) => formula.substring(r.source.start, r.source.end)),
-        [r'b2:$D$9', 'A1'],
-      );
+      expect(refs.map((r) => formula.substring(r.source.start, r.source.end)), [
+        r'b2:$D$9',
+        'A1',
+      ]);
       expect(refs.first.cells, CellRange.tryParse('B2:D9'));
     });
 

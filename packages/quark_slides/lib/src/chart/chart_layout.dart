@@ -77,7 +77,11 @@ class ChartLayout {
       var base = Rect.zero;
       if (!baseTitle.isEmpty) {
         base = Rect.fromLTWH(
-            0, bottom - baseTitle.height, baseTitle.width, baseTitle.height);
+          0,
+          bottom - baseTitle.height,
+          baseTitle.width,
+          baseTitle.height,
+        );
         bottom -= baseTitle.height + pad / 2;
       }
       if (!sideTitle.isEmpty) {

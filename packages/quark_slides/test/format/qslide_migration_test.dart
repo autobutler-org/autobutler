@@ -128,10 +128,9 @@ void main() {
       expect(json['transition'], {'kind': 'fade', 'duration': 700});
       final deck = QslideCodec.decode(fixture('sample.qslide'));
       expect(
-          deck.defaultTransition,
-          const SlideTransitionSpec.fade(
-            durationMs: 700,
-          ));
+        deck.defaultTransition,
+        const SlideTransitionSpec.fade(durationMs: 700),
+      );
       expect(deck.transitionFor(deck.slideById('s1')!), deck.defaultTransition);
       expect(
         deck.transitionFor(deck.slideById('s4')!),
@@ -174,8 +173,10 @@ void main() {
     test('the golden v3 file reads as the sample deck', () {
       final json = jsonDecode(fixture('v3_sample.qslide')) as Map;
       expect(json['schemaVersion'], 3);
-      expect(QslideCodec.decode(fixture('v3_sample.qslide')),
-          samplePresentation());
+      expect(
+        QslideCodec.decode(fixture('v3_sample.qslide')),
+        samplePresentation(),
+      );
     });
 
     test('it saves as version 6 and otherwise byte for byte as before', () {
@@ -185,10 +186,9 @@ void main() {
       expect(saved, fixture('sample.qslide'));
       expect(
         saved,
-        fixture('v3_sample.qslide').replaceFirst(
-          '"schemaVersion": 3',
-          '"schemaVersion": 6',
-        ),
+        fixture(
+          'v3_sample.qslide',
+        ).replaceFirst('"schemaVersion": 3', '"schemaVersion": 6'),
       );
     });
 
@@ -255,12 +255,14 @@ void main() {
     });
 
     test('a text role this version does not know reads as body', () {
-      final box = SlideElement.fromJson({
-        'id': 't',
-        'type': 'text',
-        'frame': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
-        'textRole': 'caption',
-      }, r'$') as TextBox;
+      final box =
+          SlideElement.fromJson({
+                'id': 't',
+                'type': 'text',
+                'frame': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
+                'textRole': 'caption',
+              }, r'$')
+              as TextBox;
       expect(box.textRole, ThemeTextRole.body);
     });
   });

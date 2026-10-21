@@ -145,18 +145,19 @@ void main() {
         expect(cellAt(2, 2).isInRange, true);
         expect(cellAt(3, 3).isInRange, false);
 
-        final primary = Theme.of(tester.element(_cell(1, 1)))
-            .colorScheme
-            .primary
-            .withValues(alpha: kRangeTintAlpha);
-        BoxDecoration decorationAt(int r, int c) => tester
-            .widget<Container>(
-              find.descendant(
-                of: _cell(r, c),
-                matching: find.byType(Container),
-              ),
-            )
-            .decoration! as BoxDecoration;
+        final primary = Theme.of(
+          tester.element(_cell(1, 1)),
+        ).colorScheme.primary.withValues(alpha: kRangeTintAlpha);
+        BoxDecoration decorationAt(int r, int c) =>
+            tester
+                    .widget<Container>(
+                      find.descendant(
+                        of: _cell(r, c),
+                        matching: find.byType(Container),
+                      ),
+                    )
+                    .decoration!
+                as BoxDecoration;
         expect(decorationAt(2, 2).color, primary);
         expect(decorationAt(1, 1).color, isNull);
         expect(decorationAt(3, 3).color, isNull);
@@ -178,9 +179,7 @@ void main() {
         expect(controller.selection.highlightedCol, 0);
       });
 
-      testWidgets('a long-press drag on touch selects a range', (
-        tester,
-      ) async {
+      testWidgets('a long-press drag on touch selects a range', (tester) async {
         await _pumpSheet(tester, size);
         final gesture = await tester.startGesture(
           tester.getCenter(_cell(1, 0)),
@@ -194,9 +193,7 @@ void main() {
         expect(_nameBox(tester), 'A2:C4');
       });
 
-      testWidgets('a touch swipe scrolls instead of selecting', (
-        tester,
-      ) async {
+      testWidgets('a touch swipe scrolls instead of selecting', (tester) async {
         final controller = await _pumpSheet(tester, size);
         final before = tester.getTopLeft(_cell(5, 0)).dy;
 
@@ -275,8 +272,9 @@ void main() {
       String at(DataSheetController c, int r, int col) =>
           c.cellAt(r, col).value;
 
-      testWidgets('Delete clears every cell in the range, undone at once',
-          (tester) async {
+      testWidgets('Delete clears every cell in the range, undone at once', (
+        tester,
+      ) async {
         final c = await _pumpSheet(tester, size);
         await _selectB2toC3(tester);
 
@@ -292,8 +290,9 @@ void main() {
         expect([at(c, 1, 1), at(c, 2, 2)], ['1,1', '2,2']);
       });
 
-      testWidgets('copy then paste lands the block at the new cell',
-          (tester) async {
+      testWidgets('copy then paste lands the block at the new cell', (
+        tester,
+      ) async {
         final c = await _pumpSheet(tester, size);
         await _selectB2toC3(tester);
         await _ctrlKey(tester, LogicalKeyboardKey.keyC);
@@ -321,8 +320,9 @@ void main() {
         expect([at(c, 4, 0), at(c, 5, 1)], ['1,1', '2,2']);
       });
 
-      testWidgets('one copied cell pasted over a range fills it',
-          (tester) async {
+      testWidgets('one copied cell pasted over a range fills it', (
+        tester,
+      ) async {
         final c = await _pumpSheet(tester, size);
         await tester.tap(_cell(0, 0));
         await tester.pump();

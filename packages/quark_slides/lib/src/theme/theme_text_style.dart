@@ -48,24 +48,23 @@ class ThemeTextStyle {
 
   /// The text style as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        'fontSize': jsonNumber(fontSize),
-        'color': color.toHex(),
-        if (heading) 'heading': true,
-      };
+    ...extra,
+    'fontSize': jsonNumber(fontSize),
+    'color': color.toHex(),
+    if (heading) 'heading': true,
+  };
 
   /// Returns a copy with the given fields replaced.
   ThemeTextStyle copyWith({
     double? fontSize,
     SlideColor? color,
     bool? heading,
-  }) =>
-      ThemeTextStyle(
-        fontSize: fontSize ?? this.fontSize,
-        color: color ?? this.color,
-        heading: heading ?? this.heading,
-        extra: extra,
-      );
+  }) => ThemeTextStyle(
+    fontSize: fontSize ?? this.fontSize,
+    color: color ?? this.color,
+    heading: heading ?? this.heading,
+    extra: extra,
+  );
 
   @override
   bool operator ==(Object other) =>

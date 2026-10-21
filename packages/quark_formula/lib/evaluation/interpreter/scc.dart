@@ -41,7 +41,8 @@ Set<(int, int)> findCycleMembers(DependencyGraph graph) {
       } while (w != v);
 
       // A trivial SCC of size 1 is only a cycle if the node has a self-edge.
-      final isCycle = scc.length > 1 ||
+      final isCycle =
+          scc.length > 1 ||
           (graph.dependsOn[scc[0]]?.contains(scc[0]) ?? false);
       if (isCycle) {
         cycleMembers.addAll(scc);

@@ -86,7 +86,7 @@ class SlideSelectionOverlay extends StatelessWidget {
         if (single != null)
           for (final handle in [
             ...SlideHandle.resizeHandles,
-            SlideHandle.rotate
+            SlideHandle.rotate,
           ])
             Positioned.fromRect(
               rect: Rect.fromCenter(

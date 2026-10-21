@@ -121,16 +121,23 @@ void main() {
   });
 
   group('hit testing', () {
-    final slide = Slide(id: 's', elements: [
-      ShapeElement(
-          id: 'back', frame: ElementFrame(x: 0, y: 0, width: 400, height: 400)),
-      ShapeElement(
+    final slide = Slide(
+      id: 's',
+      elements: [
+        ShapeElement(
+          id: 'back',
+          frame: ElementFrame(x: 0, y: 0, width: 400, height: 400),
+        ),
+        ShapeElement(
           id: 'front',
-          frame: ElementFrame(x: 100, y: 100, width: 100, height: 100)),
-      LineElement(
+          frame: ElementFrame(x: 100, y: 100, width: 100, height: 100),
+        ),
+        LineElement(
           id: 'line',
-          frame: ElementFrame(x: 500, y: 100, width: 200, height: 0)),
-    ]);
+          frame: ElementFrame(x: 500, y: 100, width: 200, height: 0),
+        ),
+      ],
+    );
 
     test('elementAt finds the element in front', () {
       expect(slide.elementAt(const Offset(150, 150))?.id, 'front');
@@ -140,10 +147,7 @@ void main() {
 
     test('a flat line is hit within the tolerance', () {
       expect(slide.elementAt(const Offset(600, 104))?.id, isNull);
-      expect(
-        slide.elementAt(const Offset(600, 104), tolerance: 6)?.id,
-        'line',
-      );
+      expect(slide.elementAt(const Offset(600, 104), tolerance: 6)?.id, 'line');
     });
 
     test('a diagonal line is hit on its stroke, not across its frame', () {
@@ -162,10 +166,10 @@ void main() {
         slide.elementsInside(const Rect.fromLTRB(90, 90, 790, 95)),
         isEmpty,
       );
-      expect(
-        slide.elementsInside(const Rect.fromLTRB(90, 90, 790, 210)),
-        ['front', 'line'],
-      );
+      expect(slide.elementsInside(const Rect.fromLTRB(90, 90, 790, 210)), [
+        'front',
+        'line',
+      ]);
     });
 
     test('boundsOf unions the selection', () {

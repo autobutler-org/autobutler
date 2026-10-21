@@ -34,8 +34,8 @@ class FormulaEvaluator {
     this.originRow = 0,
     this.originCol = 0,
     Map<String, BuiltinFn>? builtins,
-  })  : _cellAccessor = cellAccessor,
-        _builtins = builtins ?? builtinFunctions;
+  }) : _cellAccessor = cellAccessor,
+       _builtins = builtins ?? builtinFunctions;
 
   FormulaValue evaluate(FormulaNode node) {
     return switch (node) {
@@ -43,8 +43,9 @@ class FormulaEvaluator {
       StringNode(:final value) => StringValue(value),
       BoolNode(:final value) => BoolValue(value),
       CellRefNode(:final ref) => _readCell(ref),
-      RangeNode() =>
-        valueError('Range values can only be consumed by functions'),
+      RangeNode() => valueError(
+        'Range values can only be consumed by functions',
+      ),
       UnaryNode() => _evaluateUnary(node),
       BinaryNode() => _evaluateBinary(node),
       CallNode() => _evaluateCall(node),
@@ -88,8 +89,7 @@ class FormulaEvaluator {
       TokenKind.lt ||
       TokenKind.lte ||
       TokenKind.gt ||
-      TokenKind.gte =>
-        _compareValues(left, right, node.operatorKind),
+      TokenKind.gte => _compareValues(left, right, node.operatorKind),
       _ => valueError('Unsupported binary operator ${node.operatorKind.name}'),
     };
   }
@@ -168,17 +168,15 @@ class FormulaEvaluator {
       return valueError('Unsupported comparison operands');
     }
 
-    return BoolValue(
-      switch (operatorKind) {
-        TokenKind.eqEq => comparison == 0,
-        TokenKind.neq => comparison != 0,
-        TokenKind.lt => comparison < 0,
-        TokenKind.lte => comparison <= 0,
-        TokenKind.gt => comparison > 0,
-        TokenKind.gte => comparison >= 0,
-        _ => false,
-      },
-    );
+    return BoolValue(switch (operatorKind) {
+      TokenKind.eqEq => comparison == 0,
+      TokenKind.neq => comparison != 0,
+      TokenKind.lt => comparison < 0,
+      TokenKind.lte => comparison <= 0,
+      TokenKind.gt => comparison > 0,
+      TokenKind.gte => comparison >= 0,
+      _ => false,
+    });
   }
 
   FormulaValue _readCell(String ref) {

@@ -39,7 +39,8 @@ class SlideViewport {
       pan.dx.clamp(-slack.dx, slack.dx),
       pan.dy.clamp(-slack.dy, slack.dy),
     );
-    origin = padding.topLeft +
+    origin =
+        padding.topLeft +
         Offset(
           (available.width - scaledSlideSize.width) / 2,
           (available.height - scaledSlideSize.height) / 2,
@@ -97,7 +98,8 @@ class SlideViewport {
   Offset panToPlace(Offset slidePoint, Offset viewPoint, double zoom) {
     final newScale = fitScale * zoom;
     final available = padding.deflateSize(viewportSize);
-    final centered = padding.topLeft +
+    final centered =
+        padding.topLeft +
         Offset(
           (available.width - slideSize.width * newScale) / 2,
           (available.height - slideSize.height * newScale) / 2,

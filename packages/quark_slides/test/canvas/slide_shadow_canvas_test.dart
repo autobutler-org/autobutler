@@ -42,15 +42,17 @@ Presentation shadowDeck(ElementShadow shadow, {double rotation = 0}) =>
 
 /// The render object painting the element [id], its first custom paint.
 RenderObject painterOf(WidgetTester tester, String id) => tester.renderObject(
-      find
-          .descendant(of: elementKey(id), matching: find.byType(CustomPaint))
-          .first,
-    );
+  find.descendant(of: elementKey(id), matching: find.byType(CustomPaint)).first,
+);
 
 /// Whether [method] and [args] are a shadow layer tinted [color] and
 /// blurred to [sigma].
 bool isShadowLayer(
-    Symbol method, List<dynamic> args, Color color, double sigma) {
+  Symbol method,
+  List<dynamic> args,
+  Color color,
+  double sigma,
+) {
   if (method != #saveLayer) return false;
   final paint = args[1] as Paint;
   return paint.colorFilter == ColorFilter.mode(color, BlendMode.srcIn) &&
@@ -90,9 +92,13 @@ void main() {
       final turned = shadowOffset(shadow, 30);
       final a = 30 * math.pi / 180;
       expect(
-          turned.dx * math.cos(a) - turned.dy * math.sin(a), closeTo(3, 1e-9));
+        turned.dx * math.cos(a) - turned.dy * math.sin(a),
+        closeTo(3, 1e-9),
+      );
       expect(
-          turned.dx * math.sin(a) + turned.dy * math.cos(a), closeTo(4, 1e-9));
+        turned.dx * math.sin(a) + turned.dy * math.cos(a),
+        closeTo(4, 1e-9),
+      );
     });
 
     test('blurs by a Gaussian of half the blur distance', () {
@@ -100,10 +106,15 @@ void main() {
     });
   });
 
-  testBothViewports('the editor draws a shape shadow under the shape',
-      (tester, size) async {
-    await pumpCanvas(tester, SlideDocumentNotifier(shadowDeck(shadow)),
-        size: size);
+  testBothViewports('the editor draws a shape shadow under the shape', (
+    tester,
+    size,
+  ) async {
+    await pumpCanvas(
+      tester,
+      SlideDocumentNotifier(shadowDeck(shadow)),
+      size: size,
+    );
     expect(
       painterOf(tester, 'box'),
       castsShadow(const Color(0x7F000000), 5, 3, 4)
@@ -111,10 +122,15 @@ void main() {
     );
   });
 
-  testBothViewports('the editor draws a picture shadow behind its frame',
-      (tester, size) async {
-    await pumpCanvas(tester, SlideDocumentNotifier(shadowDeck(shadow)),
-        size: size);
+  testBothViewports('the editor draws a picture shadow behind its frame', (
+    tester,
+    size,
+  ) async {
+    await pumpCanvas(
+      tester,
+      SlideDocumentNotifier(shadowDeck(shadow)),
+      size: size,
+    );
     expect(
       painterOf(tester, 'pic'),
       castsShadow(const Color(0x7F000000), 5, 3, 4)
@@ -122,8 +138,10 @@ void main() {
     );
   });
 
-  testBothViewports('a turned shape casts its shadow the slide\'s way',
-      (tester, size) async {
+  testBothViewports('a turned shape casts its shadow the slide\'s way', (
+    tester,
+    size,
+  ) async {
     final sharp = ElementShadow(color: SlideColor.black, x: 6);
     await pumpCanvas(
       tester,
@@ -162,27 +180,41 @@ void main() {
     );
   });
 
-  testBothViewports('a shape without a shadow paints no shadow layer',
-      (tester, size) async {
+  testBothViewports('a shape without a shadow paints no shadow layer', (
+    tester,
+    size,
+  ) async {
     final deck = shadowDeck(shadow);
-    final plain = (deck.slides.single.elements.first as ShapeElement)
-        .copyWith(shadow: null);
+    final plain = (deck.slides.single.elements.first as ShapeElement).copyWith(
+      shadow: null,
+    );
     await pumpCanvas(
       tester,
-      SlideDocumentNotifier(Presentation(slides: [
-        Slide(id: 's', elements: [plain]),
-      ])),
+      SlideDocumentNotifier(
+        Presentation(
+          slides: [
+            Slide(id: 's', elements: [plain]),
+          ],
+        ),
+      ),
       size: size,
     );
-    expect(painterOf(tester, 'box'),
-        isNot(paints..something((method, args) => method == #saveLayer)));
+    expect(
+      painterOf(tester, 'box'),
+      isNot(paints..something((method, args) => method == #saveLayer)),
+    );
   });
 
-  testBothViewports('a shadow with no blur is not blurred',
-      (tester, size) async {
+  testBothViewports('a shadow with no blur is not blurred', (
+    tester,
+    size,
+  ) async {
     final sharp = ElementShadow(color: SlideColor.black, x: 2, y: 2);
-    await pumpCanvas(tester, SlideDocumentNotifier(shadowDeck(sharp)),
-        size: size);
+    await pumpCanvas(
+      tester,
+      SlideDocumentNotifier(shadowDeck(sharp)),
+      size: size,
+    );
     expect(
       painterOf(tester, 'box'),
       castsShadow(const Color(0xFF000000), 0, 2, 2),

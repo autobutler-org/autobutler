@@ -27,8 +27,9 @@ class SlideBackground {
     final json = asObject(value, path);
     final color = optionalString(json, 'color', path);
     return SlideBackground(
-      color:
-          color == null ? null : SlideColor.parse(color, path: '$path.color'),
+      color: color == null
+          ? null
+          : SlideColor.parse(color, path: '$path.color'),
       image: optionalString(json, 'image', path),
       extra: unknownFields(json, _known),
     );
@@ -36,10 +37,10 @@ class SlideBackground {
 
   /// The background as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        if (color != null) 'color': color!.toHex(),
-        if (image != null) 'image': image,
-      };
+    ...extra,
+    if (color != null) 'color': color!.toHex(),
+    if (image != null) 'image': image,
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` to clear one.
   SlideBackground copyWith({Object? color = unset, Object? image = unset}) =>

@@ -35,8 +35,8 @@ class SlideTableCell {
     this.rowSpan = 1,
     this.colSpan = 1,
     this.extra = const {},
-  })  : assert(rowSpan >= 1),
-        assert(colSpan >= 1);
+  }) : assert(rowSpan >= 1),
+       assert(colSpan >= 1);
 
   /// A blank cell with no lines.
   static const empty = SlideTableCell();
@@ -112,15 +112,15 @@ class SlideTableCell {
 
   /// The cell as its `.qslide` object; a blank cell is `{}`.
   JsonMap toJson() => {
-        ...extra,
-        if (paragraphs.isNotEmpty)
-          'paragraphs': [for (final p in paragraphs) p.toJson()],
-        if (fill != null) 'fill': fill!.toHex(),
-        if (!borders.isEmpty) 'borders': borders.toJson(),
-        if (anchor != TextAnchor.top) 'anchor': anchor.name,
-        if (rowSpan != 1) 'rowSpan': rowSpan,
-        if (colSpan != 1) 'colSpan': colSpan,
-      };
+    ...extra,
+    if (paragraphs.isNotEmpty)
+      'paragraphs': [for (final p in paragraphs) p.toJson()],
+    if (fill != null) 'fill': fill!.toHex(),
+    if (!borders.isEmpty) 'borders': borders.toJson(),
+    if (anchor != TextAnchor.top) 'anchor': anchor.name,
+    if (rowSpan != 1) 'rowSpan': rowSpan,
+    if (colSpan != 1) 'colSpan': colSpan,
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` as [fill]
   /// to clear it.
@@ -131,23 +131,19 @@ class SlideTableCell {
     TextAnchor? anchor,
     int? rowSpan,
     int? colSpan,
-  }) =>
-      SlideTableCell(
-        paragraphs: paragraphs ?? this.paragraphs,
-        fill: identical(fill, unset) ? this.fill : fill as SlideColor?,
-        borders: borders ?? this.borders,
-        anchor: anchor ?? this.anchor,
-        rowSpan: rowSpan ?? this.rowSpan,
-        colSpan: colSpan ?? this.colSpan,
-        extra: extra,
-      );
+  }) => SlideTableCell(
+    paragraphs: paragraphs ?? this.paragraphs,
+    fill: identical(fill, unset) ? this.fill : fill as SlideColor?,
+    borders: borders ?? this.borders,
+    anchor: anchor ?? this.anchor,
+    rowSpan: rowSpan ?? this.rowSpan,
+    colSpan: colSpan ?? this.colSpan,
+    extra: extra,
+  );
 
   /// The cell with rows and columns swapped, as transposing a table needs.
-  SlideTableCell get transposed => copyWith(
-        borders: borders.transposed,
-        rowSpan: colSpan,
-        colSpan: rowSpan,
-      );
+  SlideTableCell get transposed =>
+      copyWith(borders: borders.transposed, rowSpan: colSpan, colSpan: rowSpan);
 
   @override
   bool operator ==(Object other) =>
@@ -162,12 +158,12 @@ class SlideTableCell {
 
   @override
   int get hashCode => Object.hash(
-        Object.hashAll(paragraphs),
-        fill,
-        borders,
-        anchor,
-        rowSpan,
-        colSpan,
-        jsonHash(extra),
-      );
+    Object.hashAll(paragraphs),
+    fill,
+    borders,
+    anchor,
+    rowSpan,
+    colSpan,
+    jsonHash(extra),
+  );
 }

@@ -114,9 +114,13 @@ abstract final class SlideThemes {
   );
 
   /// Every built-in theme, in picker order.
-  static final all = List<SlideTheme>.unmodifiable(
-    [light, dark, warm, cool, highContrast],
-  );
+  static final all = List<SlideTheme>.unmodifiable([
+    light,
+    dark,
+    warm,
+    cool,
+    highContrast,
+  ]);
 
   /// The built-in theme with [id], or `null` when there is none.
   static SlideTheme? byId(String id) {

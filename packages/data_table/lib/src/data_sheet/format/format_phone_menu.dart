@@ -26,15 +26,12 @@ class FormatPhoneMenu extends StatelessWidget {
       String label,
       IconData icon,
       List<FormatChoice> choices,
-    ) =>
-        SubmenuButton(
-          key: ValueKey(key),
-          leadingIcon: Icon(icon, size: 18),
-          menuChildren: [
-            for (final c in choices) FormatChoiceItem(choice: c),
-          ],
-          child: Text(label),
-        );
+    ) => SubmenuButton(
+      key: ValueKey(key),
+      leadingIcon: Icon(icon, size: 18),
+      menuChildren: [for (final c in choices) FormatChoiceItem(choice: c)],
+      child: Text(label),
+    );
 
     return MenuAnchor(
       menuChildren: [
@@ -74,8 +71,9 @@ class FormatPhoneMenu extends StatelessWidget {
           key: const ValueKey('format_menu'),
           icon: const Icon(QuarkIcons.format_menu, size: 20),
           label: const Text('Format'),
-          onPressed:
-              enabled ? () => menu.isOpen ? menu.close() : menu.open() : null,
+          onPressed: enabled
+              ? () => menu.isOpen ? menu.close() : menu.open()
+              : null,
         ),
       ),
     );

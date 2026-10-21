@@ -22,8 +22,8 @@ class Harness {
   List<String> get slideIds => [for (final s in doc.presentation.slides) s.id];
 
   List<String> elementIds(String slideId) => [
-        for (final e in doc.presentation.slideById(slideId)!.elements) e.id,
-      ];
+    for (final e in doc.presentation.slideById(slideId)!.elements) e.id,
+  ];
 
   ElementFrame frameOf(String slideId, String elementId) =>
       doc.presentation.slideById(slideId)!.elementById(elementId)!.frame;
@@ -57,7 +57,9 @@ void main() {
       expect(copy.background, source.background);
       for (var i = 0; i < source.elements.length; i++) {
         expect(
-            copy.elements[i].withId(source.elements[i].id), source.elements[i]);
+          copy.elements[i].withId(source.elements[i].id),
+          source.elements[i],
+        );
       }
     });
 
@@ -169,11 +171,15 @@ void main() {
     test('resizeElement keeps the corner unless told to move it', () {
       final h = Harness();
       h.doc.resizeElement('s2', 'e5', width: 50, height: 60);
-      expect(h.frameOf('s2', 'e5'),
-          ElementFrame(x: 1200, y: 700, width: 50, height: 60));
+      expect(
+        h.frameOf('s2', 'e5'),
+        ElementFrame(x: 1200, y: 700, width: 50, height: 60),
+      );
       h.doc.resizeElement('s2', 'e5', x: 1100, width: 150, height: 60);
-      expect(h.frameOf('s2', 'e5'),
-          ElementFrame(x: 1100, y: 700, width: 150, height: 60));
+      expect(
+        h.frameOf('s2', 'e5'),
+        ElementFrame(x: 1100, y: 700, width: 150, height: 60),
+      );
       expect(
         () => h.doc.resizeElement('s2', 'e5', width: -1, height: 1),
         throwsArgumentError,

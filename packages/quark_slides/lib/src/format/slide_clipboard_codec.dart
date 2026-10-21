@@ -29,10 +29,10 @@ abstract final class SlideClipboardCodec {
 
   /// The clipboard text for [elements].
   static String encode(List<SlideElement> elements) => jsonEncode({
-        'format': format,
-        'version': version,
-        'elements': [for (final e in elements) e.toJson()],
-      });
+    'format': format,
+    'version': version,
+    'elements': [for (final e in elements) e.toJson()],
+  });
 
   /// The elements in [text], or `null` when [text] is not a payload of
   /// this format — plain text copied from somewhere else.

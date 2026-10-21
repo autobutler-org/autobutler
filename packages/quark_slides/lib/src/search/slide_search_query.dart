@@ -141,13 +141,12 @@ class SlideSearchQuery {
     bool? caseSensitive,
     bool? wholeWord,
     bool? regex,
-  }) =>
-      SlideSearchQuery(
-        text ?? this.text,
-        caseSensitive: caseSensitive ?? this.caseSensitive,
-        wholeWord: wholeWord ?? this.wholeWord,
-        regex: regex ?? this.regex,
-      );
+  }) => SlideSearchQuery(
+    text ?? this.text,
+    caseSensitive: caseSensitive ?? this.caseSensitive,
+    wholeWord: wholeWord ?? this.wholeWord,
+    regex: regex ?? this.regex,
+  );
 
   @override
   bool operator ==(Object other) =>

@@ -18,9 +18,9 @@ DataSheetController _make(List<List<String>> values) {
 }
 
 List<List<String>> _values(DataSheetController c) => [
-      for (var r = 0; r < c.rowCount; r++)
-        [for (var col = 0; col < c.colCount; col++) c.cellAt(r, col).value],
-    ];
+  for (var r = 0; r < c.rowCount; r++)
+    [for (var col = 0; col < c.colCount; col++) c.cellAt(r, col).value],
+];
 
 CellRange _range(int top, int left, int bottom, int right) =>
     CellRange(top: top, left: left, bottom: bottom, right: right);
@@ -298,9 +298,7 @@ void main() {
 
     test('columns shrink the band by how many frozen columns went', () {
       final c = DataSheetController.fromTable(
-        DataTable([
-          DataRow(List.generate(6, (i) => DataCell('$i'))),
-        ]),
+        DataTable([DataRow(List.generate(6, (i) => DataCell('$i')))]),
         frozenColumns: 2,
       );
       addTearDown(c.dispose);

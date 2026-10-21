@@ -16,8 +16,8 @@ class ChartAxisScale {
     required this.min,
     required this.max,
     required this.step,
-  })  : assert(max > min),
-        assert(step > 0);
+  }) : assert(max > min),
+       assert(step > 0);
 
   /// The scale that covers [low] to [high] in at most [maxTicks] ticks on
   /// round numbers, its ends on ticks. A range of one value is widened to
@@ -36,11 +36,15 @@ class ChartAxisScale {
       }
     }
     final rough = (high - low) / (maxTicks - 1);
-    final magnitude =
-        math.pow(10, (math.log(rough) / math.ln10).floor()).toDouble();
-    final step = _niceSteps.map((s) => s * magnitude).firstWhere(
-        (s) => _ticksFor(low, high, s) <= maxTicks,
-        orElse: () => 10 * magnitude);
+    final magnitude = math
+        .pow(10, (math.log(rough) / math.ln10).floor())
+        .toDouble();
+    final step = _niceSteps
+        .map((s) => s * magnitude)
+        .firstWhere(
+          (s) => _ticksFor(low, high, s) <= maxTicks,
+          orElse: () => 10 * magnitude,
+        );
     return ChartAxisScale(
       min: _snap((low / step).floor() * step, step),
       max: _snap((high / step).ceil() * step, step),
@@ -81,9 +85,9 @@ class ChartAxisScale {
 
   /// Every tick, from [min] to [max].
   List<double> get ticks => [
-        for (var i = 0; i <= ((max - min) / step).round(); i++)
-          _snap(min + i * step, step),
-      ];
+    for (var i = 0; i <= ((max - min) / step).round(); i++)
+      _snap(min + i * step, step),
+  ];
 
   /// Where [value] falls along the axis: 0 at [min], 1 at [max].
   double fraction(double value) => (value - min) / (max - min);

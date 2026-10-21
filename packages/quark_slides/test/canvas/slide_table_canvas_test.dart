@@ -31,15 +31,17 @@ Presentation tableDeck() {
 
 /// The screen point at the center of cell [row], [column] of `tbl`.
 Offset cellCenter(WidgetTester tester, int row, int column) => slideToGlobal(
-    tester, Offset(360 + 400 * column + 200.0, 300 + 150 * row + 75.0));
+  tester,
+  Offset(360 + 400 * column + 200.0, 300 + 150 * row + 75.0),
+);
 
 Finder cellKey(int row, int column) =>
     find.byKey(ValueKey(SlideTableView.cellKeyName('tbl', row, column)));
 
 /// The editor's paragraph field that has focus.
 EditableText focusedField(WidgetTester tester) => tester.widget<EditableText>(
-      find.byWidgetPredicate((w) => w is EditableText && w.focusNode.hasFocus),
-    );
+  find.byWidgetPredicate((w) => w is EditableText && w.focusNode.hasFocus),
+);
 
 Future<void> typeText(WidgetTester tester, String text) async {
   final value = focusedField(tester).controller.value;
@@ -103,10 +105,15 @@ void main() {
   }
 
   group('drawing', () {
-    testBothViewports('each cell is drawn and keyed, merges once',
-        (tester, size) async {
+    testBothViewports('each cell is drawn and keyed, merges once', (
+      tester,
+      size,
+    ) async {
       doc.controller.mergeCells(
-          's', 'tbl', const CellRange(top: 2, left: 0, bottom: 2, right: 1));
+        's',
+        'tbl',
+        const CellRange(top: 2, left: 0, bottom: 2, right: 1),
+      );
       await pump(tester, size);
       expect(cellKey(0, 0), findsOne);
       expect(cellKey(2, 0), findsOne);
@@ -118,8 +125,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testBothViewports('text keeps its slide size at a 2.0 text scale',
-        (tester, size) async {
+    testBothViewports('text keeps its slide size at a 2.0 text scale', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       final before = tester.getSize(find.text('North', findRichText: true));
       await pump(tester, size, textScale: 2);
@@ -152,8 +161,10 @@ void main() {
   });
 
   group('selecting cells', () {
-    testBothViewports('the first tap selects the table, the next a cell',
-        (tester, size) async {
+    testBothViewports('the first tap selects the table, the next a cell', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await selectTable(tester);
       expect(cells.hasSelection, isFalse);
@@ -163,8 +174,10 @@ void main() {
       expect(harness(tester).selection, {'tbl'});
     });
 
-    testBothViewports('a drag across cells selects the cells between',
-        (tester, size) async {
+    testBothViewports('a drag across cells selects the cells between', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await selectTable(tester);
       final gesture = await tester.startGesture(cellCenter(tester, 0, 0));
@@ -173,15 +186,19 @@ void main() {
       await gesture.up();
       await tester.pump();
       expect(
-          cells.range, const CellRange(top: 0, left: 0, bottom: 2, right: 1));
+        cells.range,
+        const CellRange(top: 0, left: 0, bottom: 2, right: 1),
+      );
       expect(cells.active, (row: 0, column: 0));
       // Selecting cells moved nothing.
       expect(doc.controller.canUndo, isFalse);
       expect(table().frame.x, 360);
     });
 
-    testBothViewports('a drag on a table not yet selected moves it',
-        (tester, size) async {
+    testBothViewports('a drag on a table not yet selected moves it', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       final gesture = await tester.startGesture(cellCenter(tester, 1, 1));
       await gesture.moveBy(const Offset(0, 40));
@@ -193,8 +210,9 @@ void main() {
       expect(cells.hasSelection, isFalse);
     });
 
-    testWidgets('a drag from the edge of a selected table moves it',
-        (tester) async {
+    testWidgets('a drag from the edge of a selected table moves it', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
       // Clear of the handles: between the left edge's corner and middle.
@@ -208,8 +226,9 @@ void main() {
       expect(cells.hasSelection, isFalse);
     });
 
-    testWidgets('arrows move, Shift+arrows grow and shrink, Escape lets go',
-        (tester) async {
+    testWidgets('arrows move, Shift+arrows grow and shrink, Escape lets go', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
       await tap(tester, cellCenter(tester, 1, 1));
@@ -222,10 +241,14 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       expect(
-          cells.range, const CellRange(top: 0, left: 1, bottom: 1, right: 2));
+        cells.range,
+        const CellRange(top: 0, left: 1, bottom: 1, right: 2),
+      );
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       expect(
-          cells.range, const CellRange(top: 0, left: 2, bottom: 1, right: 2));
+        cells.range,
+        const CellRange(top: 0, left: 2, bottom: 1, right: 2),
+      );
       await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
       expect(cells.active, (row: 1, column: 2));
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -237,16 +260,22 @@ void main() {
       expect(table().frame.x, 361);
     });
 
-    testWidgets('Tab and Shift+Tab step through the cells, past merges',
-        (tester) async {
+    testWidgets('Tab and Shift+Tab step through the cells, past merges', (
+      tester,
+    ) async {
       doc.controller.mergeCells(
-          's', 'tbl', const CellRange(top: 1, left: 0, bottom: 1, right: 1));
+        's',
+        'tbl',
+        const CellRange(top: 1, left: 0, bottom: 1, right: 1),
+      );
       await pump(tester, wideViewport);
       await selectTable(tester);
       await tap(tester, cellCenter(tester, 0, 2));
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       expect(
-          cells.range, const CellRange(top: 1, left: 0, bottom: 1, right: 1));
+        cells.range,
+        const CellRange(top: 1, left: 0, bottom: 1, right: 1),
+      );
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       expect(cells.range, const CellRange.single(1, 2));
       await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
@@ -255,8 +284,9 @@ void main() {
       expect(cells.active, (row: 1, column: 0));
     });
 
-    testWidgets('Delete empties the selected cells as one step',
-        (tester) async {
+    testWidgets('Delete empties the selected cells as one step', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
       final gesture = await tester.startGesture(cellCenter(tester, 0, 0));
@@ -270,8 +300,9 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testWidgets('selecting something else lets go of the cells',
-        (tester) async {
+    testWidgets('selecting something else lets go of the cells', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
       await tap(tester, cellCenter(tester, 1, 1));
@@ -281,8 +312,10 @@ void main() {
   });
 
   group('editing a cell', () {
-    testBothViewports('a double tap opens the cell; Escape writes it',
-        (tester, size) async {
+    testBothViewports('a double tap opens the cell; Escape writes it', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await doubleTap(tester, cellCenter(tester, 1, 1));
       expect(editing.isEditing, isTrue);
@@ -299,8 +332,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('Enter edits the keyboard cell; Tab moves on, one step each',
-        (tester) async {
+    testWidgets('Enter edits the keyboard cell; Tab moves on, one step each', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -324,8 +358,9 @@ void main() {
       expect(undoAll(doc), 2);
     });
 
-    testWidgets('formatting while editing a cell writes its runs',
-        (tester) async {
+    testWidgets('formatting while editing a cell writes its runs', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await doubleTap(tester, cellCenter(tester, 1, 1));
       editing.selectAll();
@@ -335,8 +370,9 @@ void main() {
       expect(table().cell(1, 1).paragraphs.single.runs.single.bold, isTrue);
     });
 
-    testWidgets('a cell that grows with its text grows its row',
-        (tester) async {
+    testWidgets('a cell that grows with its text grows its row', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await doubleTap(tester, cellCenter(tester, 2, 2));
       for (var i = 0; i < 6; i++) {
@@ -346,13 +382,17 @@ void main() {
       await tester.pump();
       expect(table().rowHeights[2], greaterThan(150));
       expect(
-          table().frame.height, table().rowHeights.fold(0.0, (a, b) => a + b));
+        table().frame.height,
+        table().rowHeights.fold(0.0, (a, b) => a + b),
+      );
     });
   });
 
   group('grips', () {
-    testBothViewports('a selected table shows a grip per inner line',
-        (tester, size) async {
+    testBothViewports('a selected table shows a grip per inner line', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await selectTable(tester);
       for (final key in [
@@ -368,8 +408,9 @@ void main() {
       }
     });
 
-    testWidgets('dragging a column grip moves the line, as one step',
-        (tester) async {
+    testWidgets('dragging a column grip moves the line, as one step', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
       final grip = tester.getCenter(
@@ -387,12 +428,14 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testWidgets('dragging a row grip makes the row and table taller',
-        (tester) async {
+    testWidgets('dragging a row grip makes the row and table taller', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
-      final grip =
-          tester.getCenter(find.byKey(const ValueKey('slide_table_row_1')));
+      final grip = tester.getCenter(
+        find.byKey(const ValueKey('slide_table_row_1')),
+      );
       final scale = canvasViewport(tester).scale;
       final gesture = await tester.startGesture(grip);
       await gesture.moveBy(Offset(0, 30 * scale));
@@ -403,8 +446,9 @@ void main() {
       expect(table().frame.height, closeTo(510, 1));
     });
 
-    testWidgets('the corner handle scales every column and row',
-        (tester) async {
+    testWidgets('the corner handle scales every column and row', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
       final corner = tester.getCenter(handleKey(SlideHandle.bottomRight));
@@ -422,13 +466,16 @@ void main() {
   });
 
   group('the table tool', () {
-    testBothViewports('a drag draws a table of the tool size, selected',
-        (tester, size) async {
+    testBothViewports('a drag draws a table of the tool size, selected', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       harness(tester).useTool(const SlideCanvasTool.table(2, 4));
       await tester.pump();
-      final gesture = await tester
-          .startGesture(slideToGlobal(tester, const Offset(100, 100)));
+      final gesture = await tester.startGesture(
+        slideToGlobal(tester, const Offset(100, 100)),
+      );
       await gesture.moveTo(slideToGlobal(tester, const Offset(500, 200)));
       await gesture.moveTo(slideToGlobal(tester, const Offset(900, 300)));
       await gesture.up();
@@ -450,10 +497,14 @@ void main() {
       await tester.tapAt(slideToGlobal(tester, const Offset(100, 100)));
       await tester.pump();
       final drawn = table(harness(tester).selection.single);
-      expect(drawn.frame.width,
-          2 * SlideDocumentController.defaultTableColumnWidth);
-      expect(drawn.frame.height,
-          3 * SlideDocumentController.defaultTableRowHeight);
+      expect(
+        drawn.frame.width,
+        2 * SlideDocumentController.defaultTableColumnWidth,
+      );
+      expect(
+        drawn.frame.height,
+        3 * SlideDocumentController.defaultTableRowHeight,
+      );
     });
 
     testWidgets('the tool reads as an insert action', (tester) async {
@@ -467,8 +518,9 @@ void main() {
   });
 
   group('toolbar commands', () {
-    testWidgets('merge, insert and delete act on the selected cells',
-        (tester) async {
+    testWidgets('merge, insert and delete act on the selected cells', (
+      tester,
+    ) async {
       await pump(tester, wideViewport);
       await selectTable(tester);
       final gesture = await tester.startGesture(cellCenter(tester, 0, 0));
