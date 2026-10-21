@@ -14,6 +14,7 @@ import 'package:quark/models/trim_result.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/services/file_save.dart';
+import 'package:quark/services/upload_batch.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_kind.dart';
 import 'package:quark/utils/web_download_stub.dart'
@@ -587,6 +588,10 @@ class FilesService with AuthenticatedService {
   /// Returns the files-relative path each file landed at, in the order sent,
   /// so a caller can act on a file [keepBoth] renamed (#2240). A Quark too old
   /// to report them answers with an empty list.
+  ///
+  /// A refusal partway through the batch throws an [UploadBatchFailure] naming
+  /// the files that landed before it (#3533); [sendUploadBatch] resends only
+  /// the rest.
   static Future<List<String>> uploadFilesFromFormData(
     String uploadPath,
     List<http.MultipartFile> formDataFiles, {
@@ -612,12 +617,12 @@ class FilesService with AuthenticatedService {
     request.headers.addAll(_authHeaders);
 
     final response = await request.send();
+    // Either answer is a list of names, bounded by the files in this request.
+    final body = await response.stream.bytesToString();
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(response.statusCode, 'Failed to upload files');
+      throwUploadFailure(response.statusCode, body, 'Failed to upload files');
     }
 
-    // The answer is a list of names, bounded by the files in this request.
-    final body = await response.stream.bytesToString();
     final decoded = body.isEmpty ? null : jsonDecode(body);
     final paths = decoded is Map<String, dynamic> ? decoded['paths'] : null;
     return paths is List ? paths.whereType<String>().toList() : const [];
