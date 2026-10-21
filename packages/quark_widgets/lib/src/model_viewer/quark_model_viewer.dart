@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
@@ -66,6 +67,12 @@ class QuarkModelViewer extends StatefulWidget {
 
   /// The model; `parseQuarkModel` makes one from a file's bytes. Null shows
   /// the empty state.
+  ///
+  /// A mesh with a `QuarkModelMesh.preview` draws the preview while it is
+  /// turned, moved or zoomed by a drag, a pinch, the wheel or a held arrow
+  /// key, and the full mesh again once the gesture ends or the input has
+  /// rested for [settleDelay] (#3231), so a model too detailed to redraw
+  /// every frame still moves smoothly.
   final QuarkModelMesh? mesh;
 
   /// Whether the model is still loading, which shows a loader.
@@ -97,6 +104,10 @@ class QuarkModelViewer extends StatefulWidget {
   /// How much one zoom button or key press zooms.
   static const double zoomStep = 1.25;
 
+  /// How long the wheel or a held arrow key must rest before a model with
+  /// a preview is drawn in full again.
+  static const Duration settleDelay = Duration(milliseconds: 250);
+
   @override
   State<QuarkModelViewer> createState() => _QuarkModelViewerState();
 }
@@ -105,7 +116,10 @@ class _QuarkModelViewerState extends State<QuarkModelViewer> {
   final FocusNode _focusNode = FocusNode(debugLabel: 'QuarkModelViewer');
   QuarkModelCamera _camera = QuarkModelCamera.initial;
   ModelRenderer? _renderer;
+  ModelRenderer? _previewRenderer;
   bool _focused = false;
+  bool _moving = false;
+  Timer? _settle;
 
   // Gesture bookkeeping.
   Offset _lastFocal = Offset.zero;
@@ -120,16 +134,45 @@ class _QuarkModelViewerState extends State<QuarkModelViewer> {
     return _renderer = ModelRenderer(mesh);
   }
 
+  /// The renderer for the mesh's preview, null when it has none to draw.
+  ModelRenderer? get _rendererForPreview {
+    final preview = widget.mesh?.preview;
+    if (preview == null || preview.isEmpty) return null;
+    final renderer = _previewRenderer;
+    if (renderer != null && identical(renderer.mesh, preview)) {
+      return renderer;
+    }
+    return _previewRenderer = ModelRenderer(preview);
+  }
+
+  /// Draws the preview until the gesture ends, or with [settle], until
+  /// input has rested for `settleDelay`.
+  void _startMoving({bool settle = false}) {
+    if (_rendererForPreview == null) return;
+    _settle?.cancel();
+    if (!_moving) setState(() => _moving = true);
+    if (settle) _settle = Timer(QuarkModelViewer.settleDelay, _stopMoving);
+  }
+
+  void _stopMoving() {
+    _settle?.cancel();
+    _settle = null;
+    if (_moving && mounted) setState(() => _moving = false);
+  }
+
   @override
   void didUpdateWidget(QuarkModelViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.mesh, widget.mesh)) {
       _camera = QuarkModelCamera.initial;
+      _settle?.cancel();
+      _moving = false;
     }
   }
 
   @override
   void dispose() {
+    _settle?.cancel();
     _focusNode.dispose();
     super.dispose();
   }
@@ -175,6 +218,7 @@ class _QuarkModelViewerState extends State<QuarkModelViewer> {
       _ => null,
     };
     if (direction != null) {
+      if (event is KeyRepeatEvent) _startMoving(settle: true);
       _setCamera(
         shift
             ? _camera.pan(direction.dx * step, -direction.dy * step)
@@ -209,6 +253,7 @@ class _QuarkModelViewerState extends State<QuarkModelViewer> {
     final onRetry = widget.onRetry;
     final mesh = widget.mesh;
     final renderer = _rendererForMesh;
+    final preview = _moving ? _rendererForPreview : null;
     if (widget.isLoading) return const Center(child: QuarkLoader());
     if (error != null) {
       return EmptyStateWidget(
@@ -257,9 +302,9 @@ class _QuarkModelViewerState extends State<QuarkModelViewer> {
                           onPointerSignal: (event) {
                             if (event is! PointerScrollEvent) return;
                             GestureBinding.instance.pointerSignalResolver
-                                .register(
-                                  event,
-                                  (event) => _zoom(
+                                .register(event, (event) {
+                                  _startMoving(settle: true);
+                                  _zoom(
                                     math
                                         .pow(
                                           1.002,
@@ -268,8 +313,8 @@ class _QuarkModelViewerState extends State<QuarkModelViewer> {
                                               .dy,
                                         )
                                         .toDouble(),
-                                  ),
-                                );
+                                  );
+                                });
                           },
                           child: GestureDetector(
                             key: const ValueKey('model_viewer_canvas'),
@@ -278,7 +323,9 @@ class _QuarkModelViewerState extends State<QuarkModelViewer> {
                             onScaleStart: (details) {
                               _lastFocal = details.localFocalPoint;
                               _lastScale = 1;
+                              _startMoving();
                             },
+                            onScaleEnd: (_) => _stopMoving(),
                             onScaleUpdate: (details) {
                               final delta =
                                   details.localFocalPoint - _lastFocal;
@@ -310,7 +357,7 @@ class _QuarkModelViewerState extends State<QuarkModelViewer> {
                               child: CustomPaint(
                                 size: size,
                                 painter: ModelViewerPainter(
-                                  renderer: renderer,
+                                  renderer: preview ?? renderer,
                                   camera: _camera,
                                   color: tokens.primary,
                                   edgeColor: tokens.foreground,
