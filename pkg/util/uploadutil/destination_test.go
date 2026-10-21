@@ -172,6 +172,55 @@ func TestWriteMultipartToDeviceReportsWhatItWrote(t *testing.T) {
 	}
 }
 
+// A body that saves nothing is ErrNoFiles: a part named anything but "files",
+// a "files" part with no file name, or no parts at all (#3618).
+func TestWriteMultipartWithoutAFilesPart(t *testing.T) {
+	dest, filesDir := newDeviceDestination(t)
+	fsys := dest.FilesVFS(deviceSerial)
+
+	bodies := []struct {
+		name  string
+		parts []struct{ form, file string }
+	}{
+		{name: "part named file", parts: []struct{ form, file string }{{"file", "note.txt"}}},
+		{name: "no parts"},
+		{name: "files part without a file name", parts: []struct{ form, file string }{{"files", ""}}},
+	}
+	for _, tc := range bodies {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			mw := multipart.NewWriter(&buf)
+			for _, p := range tc.parts {
+				w, err := mw.CreateFormFile(p.form, p.file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := w.Write([]byte("lost")); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := mw.Close(); err != nil {
+				t.Fatal(err)
+			}
+			result, err := uploadutil.WriteMultipartVFS(uploadutil.WriteMultipartParams{
+				Ctx: context.Background(), FS: fsys, Reader: multipart.NewReader(&buf, mw.Boundary()), RootDir: "inbox",
+			})
+			if !errors.Is(err, uploadutil.ErrNoFiles) {
+				t.Fatalf("WriteMultipartVFS returned %v, want ErrNoFiles", err)
+			}
+			if err.Error() != "no files in upload; send each file as a multipart part named files" {
+				t.Errorf("error text = %q", err.Error())
+			}
+			if len(result.Written) != 0 {
+				t.Errorf("wrote %+v", result.Written)
+			}
+			if _, statErr := os.Stat(filepath.Join(filesDir, "inbox")); !os.IsNotExist(statErr) {
+				t.Errorf("inbox was created (stat %v); a refused body should not", statErr)
+			}
+		})
+	}
+}
+
 // A part that is not a file is handed to the sidecar with the files written
 // before it (#2379).
 func TestWriteMultipartHandsSidecarsTheFilesSoFar(t *testing.T) {

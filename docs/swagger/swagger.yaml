@@ -7004,7 +7004,7 @@ paths:
         path each file landed at, after any keepBoth rename. A photo or video's client-rendered
         thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail
         whose filename is the file's; one that names no earlier file, or is not a
-        valid JPEG, is skipped.
+        valid JPEG, is skipped. A request with no part named files is a 400.
       parameters:
       - description: Device serial number to upload to
         in: query
@@ -7019,11 +7019,14 @@ paths:
         in: query
         name: keepBoth
         type: boolean
-      - description: File to upload
+      - collectionFormat: multi
+        description: One file per part; repeat the part to upload more than one
         in: formData
-        name: file
+        items:
+          type: file
+        name: files
         required: true
-        type: file
+        type: array
       - description: Thumbnail JPEG for the file of the same filename sent before
           it
         in: formData
@@ -7215,7 +7218,7 @@ paths:
         file landed at, after any keepBoth rename. A photo or video's client-rendered
         thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail
         whose filename is the file's; one that names no earlier file, or is not a
-        valid JPEG, is skipped.
+        valid JPEG, is skipped. A request with no part named files is a 400.
       parameters:
       - description: Directory to upload into
         in: path
@@ -7235,11 +7238,14 @@ paths:
         in: query
         name: keepBoth
         type: boolean
-      - description: File to upload
+      - collectionFormat: multi
+        description: One file per part; repeat the part to upload more than one
         in: formData
-        name: file
+        items:
+          type: file
+        name: files
         required: true
-        type: file
+        type: array
       - description: Thumbnail JPEG for the file of the same filename sent before
           it
         in: formData

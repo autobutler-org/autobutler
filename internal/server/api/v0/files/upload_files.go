@@ -15,14 +15,14 @@ import (
 
 // uploadFiles godoc
 // @Summary Upload files to the top-level directory
-// @Description Upload one or more files via multipart/form-data. Needs write access on the top-level directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped.
+// @Description Upload one or more files via multipart/form-data. Needs write access on the top-level directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped. A request with no part named files is a 400.
 // @Tags files
 // @Accept multipart/form-data
 // @Produce json
 // @Param serial query string false "Device serial number to upload to"
 // @Param overwrite query boolean false "Replace a file of the same name"
 // @Param keepBoth query boolean false "Land under the first free name, e.g. file_(1).txt, when the name is taken"
-// @Param file formData file true "File to upload"
+// @Param files formData []file true "One file per part; repeat the part to upload more than one" collectionFormat(multi)
 // @Param thumbnail formData file false "Thumbnail JPEG for the file of the same filename sent before it"
 // @Success 200 {object} uploadFilesResponse "OK"
 // @Failure 400 {object} serverutil.Response "Bad Request"
@@ -37,7 +37,7 @@ func uploadFiles(c *gin.Context) *serverutil.Response {
 
 // uploadFiles godoc
 // @Summary Upload files to a nested directory
-// @Description Upload one or more files via multipart/form-data. Needs write access on the directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped.
+// @Description Upload one or more files via multipart/form-data. Needs write access on the directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped. A request with no part named files is a 400.
 // @Tags files
 // @Accept multipart/form-data
 // @Produce json
@@ -45,7 +45,7 @@ func uploadFiles(c *gin.Context) *serverutil.Response {
 // @Param serial query string false "Device serial number to upload to"
 // @Param overwrite query boolean false "Replace a file of the same name"
 // @Param keepBoth query boolean false "Land under the first free name, e.g. file_(1).txt, when the name is taken"
-// @Param file formData file true "File to upload"
+// @Param files formData []file true "One file per part; repeat the part to upload more than one" collectionFormat(multi)
 // @Param thumbnail formData file false "Thumbnail JPEG for the file of the same filename sent before it"
 // @Success 200 {object} uploadFilesResponse "OK"
 // @Failure 400 {object} serverutil.Response "Bad Request"
@@ -103,6 +103,8 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 	grantOwners(c, deps, access, serial, written.Written)
 	publishUpload(deps, serial, rootDir, written.Written)
 	switch {
+	case errors.Is(err, uploadutil.ErrNoFiles):
+		return serverutil.BadRequest(err)
 	case err == nil:
 		return serverutil.Ok().WithData(uploadedPaths(written.Written))
 	case nameTaken(err):
