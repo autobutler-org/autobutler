@@ -2213,6 +2213,15 @@ definitions:
           ModTime is the file's modification time, so a client can remember a
           render that failed for this version of the file and not retry it.
         type: string
+      reason:
+        description: |-
+          Reason says why the device could not render a video: "unsupported"
+          for a codec it has no decoder for, "unreadable" for a file that does
+          not parse as a video. Absent when it is neither, and for a photo.
+        enum:
+        - unsupported
+        - unreadable
+        type: string
     type: object
   v0_trash.deletedResponse:
     properties:
@@ -9194,7 +9203,9 @@ paths:
         one, generated from the file otherwise. When the device cannot render a video
         or HEIC itself, the 404 body carries "clientRender": true, telling a client
         that may write the file to render a thumbnail (JPEG, long edge 400) and PUT
-        it to this path.'
+        it to this path. For a video, its "reason" says why the device could not:
+        "unsupported" for a codec it has no decoder for, "unreadable" for a file that
+        does not parse as a video.'
       parameters:
       - description: Path to the image file
         in: path

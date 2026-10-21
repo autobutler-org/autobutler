@@ -57,6 +57,14 @@ const (
 	SizeLg Size = "lg" // 400×400 – detail view (legacy default)
 )
 
+// The reasons [ClientRenderReason] gives.
+const (
+	// ClientRenderUnsupported is a video whose codec the device cannot decode.
+	ClientRenderUnsupported = "unsupported"
+	// ClientRenderUnreadable is a video file that does not parse as one.
+	ClientRenderUnreadable = "unreadable"
+)
+
 // ErrInvalidThumbnail reports an uploaded thumbnail that is not a JPEG, is
 // larger than [MaxClientThumbnailBytes], or is bigger on a side than a
 // thumbnail needs to be.

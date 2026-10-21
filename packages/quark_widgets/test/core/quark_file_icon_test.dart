@@ -55,6 +55,11 @@ void main() {
 
     expect(iconFor('a.HEIC'), QuarkIcons.image_outlined);
     expect(iconFor('a.mkv'), QuarkIcons.video_file_outlined);
+    // Every video the app plays reads as a video, an MPEG transport stream
+    // included (#3559).
+    for (final ext in ['ts', 'ogv', '3gp', '3g2', 'mpeg', 'mpg']) {
+      expect(iconFor('a.$ext'), QuarkIcons.video_file_outlined, reason: ext);
+    }
     expect(iconFor('a.flac'), QuarkIcons.audio_file_outlined);
     expect(iconFor('a.pdf'), QuarkIcons.picture_as_pdf_outlined);
     expect(iconFor('a.zst'), QuarkIcons.archive_outlined);

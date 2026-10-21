@@ -201,6 +201,7 @@ func clientRenderNotFound(filePath string, modTime time.Time, cause error) *serv
 			Error:        fmt.Sprintf("no thumbnail for %s: %v", filePath, cause),
 			ClientRender: true,
 			ModTime:      modTime.UTC(),
+			Reason:       thumbnailutil.ClientRenderReason(cause),
 		})
 }
 

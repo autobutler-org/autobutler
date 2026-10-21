@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/services/thumbnail_backfill.dart';
 import 'package:quark/services/thumbnail_cache_manager.dart';
+import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/file_kind.dart';
 import 'package:quark/widgets/file_browser/file_browser_view/file_node_display.dart';
 import 'package:quark/widgets/thumbnails/backfilling_thumbnail.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -24,9 +27,12 @@ import 'package:shimmer/shimmer.dart';
 /// once and a tile coming back from a viewer or a scroll shows its own
 /// picture again (#3355).
 class FileGridPreview extends StatelessWidget {
-  const FileGridPreview({required this.item, super.key});
+  const FileGridPreview({required this.item, this.backfill, super.key});
 
   final FileNode item;
+
+  /// The backfill the thumbnail asks; [ThumbnailBackfill.instance] when null.
+  final ThumbnailBackfill? backfill;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +57,22 @@ class FileGridPreview extends StatelessWidget {
           : BackfillingThumbnail(
               path: item.apiPath,
               serial: item.deviceSerial,
+              backfill: backfill,
+              // A video no one could render a thumbnail for says why
+              // (#3559).
+              failedBuilder: (context, issue) => KeyedSubtree(
+                key: thumbKey,
+                child: QuarkThumbnailUnavailable(
+                  name: item.name,
+                  issue: issue,
+                  reason: Errors.thumbnailUnavailable(
+                    issue,
+                    isVideo: fileKindForName(item.name) == FileKind.video,
+                  ),
+                  label: Errors.thumbnailUnavailableShort(issue),
+                  iconSize: 48,
+                ),
+              ),
               // Each generation is a new element: a failed load is not cached,
               // so the element after a backfill loads afresh under the same
               // cache key.

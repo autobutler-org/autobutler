@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -15,6 +16,8 @@ import (
 	"time"
 
 	"github.com/autobutler-org/quark/internal/db/dbtest"
+	"github.com/autobutler-org/quark/pkg/util/videoutil"
+	"github.com/autobutler-org/sprocket/pkg/sprocket"
 )
 
 // clientJPEG is a JPEG like the thumbnail a client uploads.
@@ -168,6 +171,27 @@ func TestNeedsClientRender(t *testing.T) {
 	} {
 		if got := NeedsClientRender(name); got != want {
 			t.Errorf("NeedsClientRender(%q) = %v, want %v", name, got, want)
+		}
+	}
+}
+
+// TestClientRenderReason: a codec the device cannot decode and a file that is
+// not a video are told apart, and a failure that is neither says nothing
+// (#3559).
+func TestClientRenderReason(t *testing.T) {
+	for _, tc := range []struct {
+		err  error
+		want string
+	}{
+		{fmt.Errorf("decode video frame: %w", videoutil.ErrNoDecoder), ClientRenderUnsupported},
+		{fmt.Errorf("keyframe: %w", sprocket.ErrCorrupt), ClientRenderUnreadable},
+		{fmt.Errorf("keyframe: %w", sprocket.ErrUnsupportedContainer), ClientRenderUnreadable},
+		{fmt.Errorf("keyframe: %w", sprocket.ErrNoVideo), ClientRenderUnreadable},
+		{errors.New("heic: no decoder"), ""},
+		{nil, ""},
+	} {
+		if got := ClientRenderReason(tc.err); got != tc.want {
+			t.Errorf("ClientRenderReason(%v) = %q, want %q", tc.err, got, tc.want)
 		}
 	}
 }

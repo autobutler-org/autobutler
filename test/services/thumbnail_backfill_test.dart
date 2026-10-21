@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/models/thumbnail_probe.dart';
 import 'package:quark/services/thumbnail_backfill.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:quark_widgets/quark_widgets.dart' show ThumbnailIssue;
 
 /// The Quark and the renderers, in memory.
 class _Fake {
@@ -203,5 +204,102 @@ void main() {
 
     expect(results, [true, true]);
     expect(fake.calls.where((c) => c.startsWith('probe')), hasLength(1));
+  });
+
+  group('a render that fails is recorded for the file (#3559)', () {
+    ThumbnailProbe said(String reason) => ThumbnailProbe(
+      served: false,
+      clientRender: true,
+      modTime: 't1',
+      reason: reason,
+    );
+
+    test('a format this device cannot decode', () async {
+      final fake = _Fake()
+        ..rendered = null
+        ..probes['a/hevc.mov'] = said('unsupported');
+      final backfill = fake.build();
+
+      expect(await backfill.fill(path: 'a/hevc.mov', serial: 'sd1'), isFalse);
+      expect(
+        backfill.failureFor('a/hevc.mov', serial: 'sd1'),
+        ThumbnailIssue.unsupportedFormat,
+      );
+      expect(backfill.failureFor('a/hevc.mov'), isNull, reason: 'by device');
+    });
+
+    test('with no word from the Quark, it is the format', () async {
+      final fake = _Fake()..rendered = null;
+      final backfill = fake.build();
+
+      await backfill.fill(path: 'a.ts');
+      expect(backfill.failureFor('a.ts'), ThumbnailIssue.unsupportedFormat);
+    });
+
+    test('a file the Quark could not read either', () async {
+      final fake = _Fake()
+        ..rendered = null
+        ..probes['truncated.mp4'] = said('unreadable');
+      final backfill = fake.build();
+
+      await backfill.fill(path: 'truncated.mp4');
+      expect(backfill.failureFor('truncated.mp4'), ThumbnailIssue.unreadable);
+    });
+
+    test('a render that throws or runs out of time', () async {
+      final fake = _Fake()
+        ..gate = true
+        ..probes['slow.mov'] = said('unsupported');
+      final backfill = fake.build(budget: const Duration(milliseconds: 10));
+
+      await backfill.fill(path: 'slow.mov');
+      expect(backfill.failureFor('slow.mov'), ThumbnailIssue.unsupportedFormat);
+      for (final g in fake.gates) {
+        g.complete();
+      }
+    });
+
+    test('is kept when the tile asks again, and not rendered again', () async {
+      final fake = _Fake()..rendered = null;
+      final backfill = fake.build();
+
+      await backfill.fill(path: 'a.mov');
+      await backfill.fill(path: 'a.mov');
+      expect(fake.calls.where((c) => c.startsWith('render')), hasLength(1));
+      expect(backfill.failureFor('a.mov'), ThumbnailIssue.unsupportedFormat);
+    });
+
+    test('is cleared once a new version renders', () async {
+      final fake = _Fake()..rendered = null;
+      final backfill = fake.build();
+      await backfill.fill(path: 'a.mov');
+
+      fake
+        ..rendered = Uint8List.fromList([1])
+        ..probes['a.mov'] = const ThumbnailProbe(
+          served: false,
+          clientRender: true,
+          modTime: 't2',
+        );
+      expect(await backfill.fill(path: 'a.mov'), isTrue);
+      expect(backfill.failureFor('a.mov'), isNull);
+    });
+
+    test('an upload the Quark refused is not a failed render', () async {
+      final fake = _Fake()..putError = const ApiException(403);
+      final backfill = fake.build();
+
+      await backfill.fill(path: 'shared/a.mov');
+      expect(backfill.failureFor('shared/a.mov'), isNull);
+    });
+
+    test('a plain 404 records nothing', () async {
+      final fake = _Fake()
+        ..probes['a.mp4'] = const ThumbnailProbe(served: false);
+      final backfill = fake.build();
+
+      await backfill.fill(path: 'a.mp4');
+      expect(backfill.failureFor('a.mp4'), isNull);
+    });
   });
 }

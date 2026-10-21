@@ -58,6 +58,7 @@ export 'src/core/quark_step_indicator.dart';
 export 'src/core/quark_storage_bar.dart';
 export 'src/core/quark_submenu_button.dart';
 export 'src/core/quark_tappable.dart';
+export 'src/core/quark_thumbnail_unavailable.dart';
 export 'src/core/scroll_up_hint.dart';
 export 'src/core/show_quark_menu.dart';
 export 'src/document_view/document_properties.dart';
