@@ -57,8 +57,9 @@ class ChatMessagesController extends ChangeNotifier {
     Future<ChatMessage> Function(
       int channelId,
       int keyVersion,
-      Uint8List ciphertext,
-    )?
+      Uint8List ciphertext, {
+      String? clientMessageId,
+    })?
     postMessage,
     Future<ChatMessage> Function(int messageId)? deleteMessage,
     Future<ChatReaction> Function(
@@ -107,8 +108,9 @@ class ChatMessagesController extends ChangeNotifier {
   final Future<ChatMessage> Function(
     int channelId,
     int keyVersion,
-    Uint8List ciphertext,
-  )
+    Uint8List ciphertext, {
+    String? clientMessageId,
+  })
   _postMessage;
   final Future<ChatMessage> Function(int messageId) _deleteMessage;
   final Future<ChatReaction> Function(
@@ -227,7 +229,11 @@ class ChatMessagesController extends ChangeNotifier {
   /// Encrypts [text] under the channel's current key and posts it. Throws a
   /// [MessageException] while waiting for the key or when the message is over
   /// the Quark's cap; network failures propagate as the service throws them.
-  Future<void> send(String text) async {
+  ///
+  /// A retry encrypts again under a fresh nonce, so it passes the
+  /// [clientMessageId] its first attempt did: that is how the Quark knows a
+  /// send whose response was lost and answers with the stored message.
+  Future<void> send(String text, {String? clientMessageId}) async {
     final (crypto, version, key) = await _currentKey();
     final ciphertext = crypto.encrypt(
       Uint8List.fromList(utf8.encode(text)),
@@ -240,7 +246,12 @@ class ChatMessagesController extends ChangeNotifier {
     if (ciphertext.length > ChatMessagesService.maxCiphertextBytes) {
       throw const MessageException(Errors.chatMessageTooLong);
     }
-    final stored = await _postMessage(channelId, version, ciphertext);
+    final stored = await _postMessage(
+      channelId,
+      version,
+      ciphertext,
+      clientMessageId: clientMessageId,
+    );
     _put(stored, text: text);
     _notify();
   }

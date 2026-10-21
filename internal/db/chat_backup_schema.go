@@ -16,8 +16,11 @@ const ChatBackupVersion = 1
 // that numbered its accounts differently. No password hash is ever copied.
 //
 // A migration that changes a chat table changes this too, and bumps
-// ChatBackupVersion; TestChatBackupSchema_MatchesLiveTables in pkg/backup
-// fails until the columns agree.
+// ChatBackupVersion when a restore could no longer read the file;
+// TestChatBackupSchema_MatchesLiveTables in pkg/backup fails until the columns
+// agree. chat_messages.client_message_id (#3531) is exported but never
+// restored, so it left the version at 1: a file with or without it restores
+// the same.
 const ChatBackupSchemaDDL = `
 PRAGMA user_version = 1;
 
@@ -101,15 +104,16 @@ CREATE TABLE chat_channel_events (
 );
 
 CREATE TABLE chat_messages (
-    id          INTEGER PRIMARY KEY,
-    channel_id  INTEGER NOT NULL,
-    author_id   INTEGER,
-    key_version INTEGER NOT NULL,
-    ciphertext  BLOB,
-    created_at  DATETIME NOT NULL,
-    edited_at   DATETIME,
-    deleted_at  DATETIME,
-    nonce       BLOB
+    id                INTEGER PRIMARY KEY,
+    channel_id        INTEGER NOT NULL,
+    author_id         INTEGER,
+    key_version       INTEGER NOT NULL,
+    ciphertext        BLOB,
+    created_at        DATETIME NOT NULL,
+    edited_at         DATETIME,
+    deleted_at        DATETIME,
+    nonce             BLOB,
+    client_message_id TEXT
 );
 
 CREATE TABLE chat_reactions (
