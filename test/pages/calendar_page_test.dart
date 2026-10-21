@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -91,6 +92,29 @@ void main() {
           ]),
           200,
         );
+      }
+      if (request.url.path == '/api/v0/calendar/events/1/move') {
+        if (updateStatus != 200) {
+          return http.Response('{"error":"no"}', updateStatus);
+        }
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        final series = {
+          ...plumber(),
+          'start': body['start'],
+          'end': body['end'],
+        };
+        plumberSaved = series;
+        final created = body['scope'] == 'all'
+            ? null
+            : event(9, 'Plumber visit', 9);
+        return http.Response(
+          jsonEncode({'series': series, 'created': ?created}),
+          200,
+        );
+      }
+      if (request.method == 'DELETE' &&
+          request.url.path.startsWith('/api/v0/calendar/events/')) {
+        return http.Response('', 204);
       }
       if (request.url.path == '/api/v0/calendar/events/1') {
         if (request.method == 'PUT' && updateStatus == 200) {
@@ -437,8 +461,56 @@ void main() {
       expect(body['end'], todayAt(10));
     }, variant: TargetPlatformVariant.desktop());
 
-    testWidgets('a repeating event asks before its whole series moves '
-        '(#3184)', (tester) async {
+    testWidgets('a repeating event asks which occurrences move (#3215)', (
+      tester,
+    ) async {
+      plumberRepeat = 'weekly';
+
+      // Each choice starts from the visit where it began. "This event" skips
+      // the dragged day, so a later drag cannot look for that same chip.
+      Future<void> dragAndTap(String key) async {
+        requests.clear();
+        plumberSaved = null;
+        await pumpCalendar(
+          tester,
+          AppRoutes.calendarView(CalendarView.week),
+          const Size(1280, 800),
+        );
+        await dragADay(tester);
+        expect(
+          find.byKey(const ValueKey('calendar_move_this')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('calendar_move_following')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('calendar_move_all')), findsOneWidget);
+        await tester.tap(find.byKey(ValueKey(key)));
+        await tester.pumpAndSettle();
+      }
+
+      await dragAndTap('calendar_move_cancel');
+      expect(requests.where((r) => r.url.path.endsWith('/move')), isEmpty);
+      expect(plumber, findsOneWidget);
+
+      for (final (key, scope) in [
+        ('calendar_move_this', 'one'),
+        ('calendar_move_following', 'following'),
+        ('calendar_move_all', 'all'),
+      ]) {
+        await dragAndTap(key);
+        final body =
+            jsonDecode(
+                  requests.lastWhere((r) => r.url.path.endsWith('/move')).body,
+                )
+                as Map<String, dynamic>;
+        expect(body['scope'], scope, reason: key);
+        expect(requests.where((r) => r.method == 'PUT'), isEmpty);
+      }
+    }, variant: TargetPlatformVariant.desktop());
+
+    testWidgets('Ctrl+Z puts a repeating move back (#3215)', (tester) async {
       plumberRepeat = 'weekly';
       await pumpCalendar(
         tester,
@@ -446,23 +518,47 @@ void main() {
         const Size(1280, 800),
       );
       await dragADay(tester);
+      await tester.tap(find.byKey(const ValueKey('calendar_move_all')));
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      final restore = requests.lastWhere((r) => r.method == 'PUT');
+      final body = jsonDecode(restore.body) as Map<String, dynamic>;
+      expect(body['start'], todayAt(9));
+      expect(body['end'], todayAt(10));
+    }, variant: TargetPlatformVariant.desktop());
+
+    testWidgets('narrow: the move question fits and Cancel leaves it', (
+      tester,
+    ) async {
+      plumberRepeat = 'weekly';
+      await pumpCalendar(
+        tester,
+        AppRoutes.calendarView(CalendarView.day, date: today),
+        const Size(360, 640),
+      );
+      final finger = await tester.startGesture(
+        tester.getTopLeft(plumber) + const Offset(20, 8),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+      await finger.moveBy(const Offset(0, 32));
+      await tester.pump();
+      await finger.up();
+      await tester.pumpAndSettle();
+
       expect(
-        find.byKey(const ValueKey('calendar_move_series_confirm')),
+        find.byKey(const ValueKey('calendar_move_following')),
         findsOneWidget,
       );
-      await tester.tap(
-        find.byKey(const ValueKey('calendar_move_series_cancel')),
-      );
+      await tester.tap(find.byKey(const ValueKey('calendar_move_cancel')));
       await tester.pumpAndSettle();
-      expect(requests.where((r) => r.method == 'PUT'), isEmpty);
-
-      await dragADay(tester);
-      await tester.tap(
-        find.byKey(const ValueKey('calendar_move_series_confirm')),
-      );
-      await tester.pumpAndSettle();
-      expect(requests.where((r) => r.method == 'PUT'), hasLength(1));
-    }, variant: TargetPlatformVariant.desktop());
+      expect(requests.where((r) => r.url.path.endsWith('/move')), isEmpty);
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('a move the Quark refuses says so and goes back', (
       tester,

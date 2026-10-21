@@ -24,6 +24,7 @@ List<CalendarEventItem> expandOccurrences(
       from,
       stop.isBefore(to) ? stop : to,
     )) {
+      if (_excluded(event, start)) continue;
       final end = _endFor(event, start);
       if (!end.isAfter(from) || !start.isBefore(to)) continue;
       items.add(
@@ -48,6 +49,39 @@ List<CalendarEventItem> expandOccurrences(
   });
   return items;
 }
+
+/// Whether [start] is one the series was told to skip (#3215).
+///
+/// A timed start matches an excluded instant to the second. An all-day start
+/// matches the calendar date the excluded midnight UTC stands for.
+bool _excluded(CalendarEvent event, DateTime start) {
+  if (event.excludedStarts.isEmpty) return false;
+  if (event.allDay) {
+    for (final skipped in event.excludedStarts) {
+      if (skipped.year == start.year &&
+          skipped.month == start.month &&
+          skipped.day == start.day) {
+        return true;
+      }
+    }
+    return false;
+  }
+  final at = _second(start.toUtc());
+  for (final skipped in event.excludedStarts) {
+    if (_second(skipped.toUtc()) == at) return true;
+  }
+  return false;
+}
+
+/// [time] with anything finer than a second dropped, in UTC.
+DateTime _second(DateTime time) => DateTime.utc(
+  time.year,
+  time.month,
+  time.day,
+  time.hour,
+  time.minute,
+  time.second,
+);
 
 /// The most occurrences one event yields for one range, a guard against a
 /// range far wider than any view asks for.

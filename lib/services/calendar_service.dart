@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:quark/models/calendar_event.dart';
+import 'package:quark/models/calendar_move.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/utils/error_text.dart';
@@ -8,7 +9,7 @@ import 'package:quark/utils/local_time_zone.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 /// Calls `/api/v0/calendar/events`: the household calendar's events, listed by
-/// range, created, updated and deleted (#1144).
+/// range, created, updated, moved and deleted (#1144, #3215).
 class CalendarService with AuthenticatedService {
   static final CalendarService _instance = CalendarService._();
   CalendarService._();
@@ -43,9 +44,14 @@ class CalendarService with AuthenticatedService {
   static Future<CalendarEvent> saveEvent(
     CalendarEventDraft draft, {
     int? id,
+    List<DateTime> excludedStarts = const [],
   }) async {
     final body = json.encode(
-      CalendarEvent.requestBody(draft, timeZone: localTimeZoneName),
+      CalendarEvent.requestBody(
+        draft,
+        timeZone: localTimeZoneName,
+        excludedStarts: excludedStarts,
+      ),
     );
     const headers = {'Content-Type': 'application/json'};
     final response = id == null
@@ -64,6 +70,40 @@ class CalendarService with AuthenticatedService {
     }
     return CalendarEvent.fromJson(
       json.decode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  /// Moves event [id]. [occurrenceStart] is the start of the occurrence that
+  /// moved, and [start] and [end] are where it was dropped, all on the local
+  /// clock. [scope] says whether that one, that one and every one after it,
+  /// or the whole series moves.
+  static Future<CalendarMoveResult> moveEvent({
+    required int id,
+    required CalendarMoveScope scope,
+    required DateTime occurrenceStart,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final response = await instance.authenticatedPost(
+      _apiUri('/calendar/events/$id/move'),
+      headers: const {'Content-Type': 'application/json'},
+      body: json.encode({
+        'scope': scope.name,
+        'occurrenceStart': occurrenceStart.toUtc().toIso8601String(),
+        'start': start.toUtc().toIso8601String(),
+        'end': end.toUtc().toIso8601String(),
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(response.statusCode, 'move calendar event');
+    }
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    final created = data['created'];
+    return CalendarMoveResult(
+      series: CalendarEvent.fromJson(data['series'] as Map<String, dynamic>),
+      created: created is Map<String, dynamic>
+          ? CalendarEvent.fromJson(created)
+          : null,
     );
   }
 

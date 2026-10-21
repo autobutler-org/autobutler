@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/controllers/calendar_controller.dart';
 import 'package:quark/models/calendar_event.dart';
+import 'package:quark/models/calendar_move.dart';
 import 'package:quark/models/calendar_view.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -37,6 +38,7 @@ class _Server {
   List<CalendarEvent> events;
   final ranges = <(DateTime, DateTime)>[];
   final saved = <(CalendarEventDraft, int?)>[];
+  final excluded = <List<DateTime>>[];
   final deleted = <int>[];
   Object? failWith;
 
@@ -51,8 +53,13 @@ class _Server {
     ];
   }
 
-  Future<CalendarEvent> save(CalendarEventDraft draft, {int? id}) async {
+  Future<CalendarEvent> save(
+    CalendarEventDraft draft, {
+    int? id,
+    List<DateTime> excludedStarts = const [],
+  }) async {
     saved.add((draft, id));
+    excluded.add(excludedStarts);
     return _event(99, draft.start, draft.end.difference(draft.start));
   }
 
@@ -257,10 +264,11 @@ void main() {
 
     CalendarController held() => CalendarController(
       listEvents: server.list,
-      saveEvent: (draft, {id}) async {
+      saveEvent: (draft, {id, excludedStarts = const []}) async {
         final gate = Completer<void>();
         gates.add(gate);
         server.saved.add((draft, id));
+        server.excluded.add(excludedStarts);
         await gate.future;
         final saved = server.events
             .firstWhere((e) => e.id == id)
@@ -390,6 +398,157 @@ void main() {
       );
       await calendar.reschedule(gone, _now, _now);
       expect(server.saved, isEmpty);
+    });
+  });
+
+  group('move one occurrence (#3215)', () {
+    late _Server server;
+    late List<Completer<CalendarMoveResult>> gates;
+    final moves = <CalendarMoveScope>[];
+
+    CalendarController opened() => CalendarController(
+      listEvents: server.list,
+      saveEvent: server.save,
+      deleteEvent: server.delete,
+      moveEvent:
+          ({
+            required id,
+            required scope,
+            required occurrenceStart,
+            required start,
+            required end,
+          }) async {
+            moves.add(scope);
+            final gate = Completer<CalendarMoveResult>();
+            gates.add(gate);
+            return gate.future;
+          },
+      canListPeople: () => false,
+      clock: () => _now,
+    );
+
+    setUp(() {
+      server = _Server([soccer]);
+      gates = [];
+      moves.clear();
+    });
+
+    test('moving one occurrence hides it and shows a one-off', () async {
+      final calendar = opened();
+      await calendar.refresh();
+      final practice = calendar.occurrences.singleWhere((o) => o.eventId == 7);
+      expect(practice.start, DateTime(2026, 10, 1, 17, 30));
+      final dropped = DateTime(2026, 10, 2, 18);
+      final moving = calendar.move(
+        practice,
+        dropped,
+        DateTime(2026, 10, 2, 19),
+        CalendarMoveScope.one,
+      );
+      expect(calendar.occurrences.where((o) => o.eventId == 7), isEmpty);
+      expect(calendar.occurrences.map((o) => o.start), contains(dropped));
+
+      await pumpEventQueue();
+      expect(moves, [CalendarMoveScope.one]);
+      gates.single.complete(
+        CalendarMoveResult(
+          series: soccer,
+          created: _event(50, dropped, const Duration(hours: 1)),
+        ),
+      );
+      await moving;
+
+      await calendar.undo();
+      expect(server.deleted, [50]);
+      expect(server.saved.single.$2, 7);
+      expect(server.saved.single.$1.start, DateTime(2026, 9, 3, 17, 30));
+    });
+
+    test('this and following ends the series the day before', () async {
+      final calendar = opened();
+      await calendar.refresh();
+      final practice = calendar.occurrences.singleWhere((o) => o.eventId == 7);
+      final moving = calendar.move(
+        practice,
+        DateTime(2026, 10, 2, 18),
+        DateTime(2026, 10, 2, 19, 30),
+        CalendarMoveScope.following,
+      );
+      expect(calendar.occurrences.where((o) => o.eventId == 7), isEmpty);
+      final created = calendar.occurrences.single;
+      expect(created.start, DateTime(2026, 10, 2, 18));
+      expect(created.repeat, CalendarRepeat.weekly);
+
+      await pumpEventQueue();
+      gates.single.complete(CalendarMoveResult(series: soccer));
+      await moving;
+    });
+
+    test(
+      'the first occurrence and the ones after it move the series',
+      () async {
+        final calendar = opened();
+        await calendar.show(CalendarView.month, DateTime(2026, 9, 3));
+        final first = calendar.occurrences.firstWhere(
+          (o) => o.start == DateTime(2026, 9, 3, 17, 30),
+        );
+        final moving = calendar.move(
+          first,
+          DateTime(2026, 9, 4, 18),
+          DateTime(2026, 9, 4, 19, 30),
+          CalendarMoveScope.following,
+        );
+        expect(
+          calendar.occurrences.where((o) => o.eventId == 7).first.start,
+          DateTime(2026, 9, 4, 18),
+        );
+        expect(calendar.occurrences.where((o) => o.eventId < 0), isEmpty);
+        await pumpEventQueue();
+        expect(moves, [CalendarMoveScope.following]);
+        gates.single.complete(CalendarMoveResult(series: soccer));
+        await moving;
+      },
+    );
+
+    test('a failed move puts the occurrence back', () async {
+      final calendar = opened();
+      await calendar.refresh();
+      final practice = calendar.occurrences.single;
+      final failure = const ApiException(500, 'move calendar event');
+      final moving = calendar.move(
+        practice,
+        DateTime(2026, 10, 2, 18),
+        DateTime(2026, 10, 2, 19),
+        CalendarMoveScope.one,
+      );
+      expect(calendar.occurrences.where((o) => o.eventId == 7), isEmpty);
+      await pumpEventQueue();
+      gates.single.completeError(failure);
+      await expectLater(moving, throwsA(failure));
+      expect(calendar.occurrences.where((o) => o.eventId == 7), isNotEmpty);
+    });
+
+    test('saving a series keeps the starts it skips', () async {
+      final skipped = DateTime(2026, 10, 8, 17, 30).toUtc();
+      final practice = CalendarEvent(
+        id: 7,
+        title: 'Event 7',
+        start: DateTime(2026, 9, 3, 17, 30).toUtc(),
+        end: DateTime(2026, 9, 3, 19).toUtc(),
+        repeat: CalendarRepeat.weekly,
+        excludedStarts: [skipped],
+      );
+      server = _Server([practice]);
+      final calendar = server.controller();
+      await calendar.refresh();
+      await calendar.save(practice.toDraft(), id: 7);
+      expect(server.excluded.single, [skipped]);
+
+      await calendar.save(
+        practice.toDraft().copyWith(repeat: CalendarRepeat.none),
+        id: 7,
+      );
+      expect(server.excluded.last, isEmpty);
     });
   });
 
