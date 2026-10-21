@@ -218,8 +218,8 @@ Set in `ios/Runner.xcodeproj/project.pbxproj`:
 
 - No hardcoded `CODE_SIGN_IDENTITY`. Automatic signing picks Apple Development for local
   builds and Apple Distribution for archives. Do not pin it back.
-- `IPHONEOS_DEPLOYMENT_TARGET = 15.0`. Apple rejects uploads below 15.0 from Spring 2027.
-  This costs no devices — iOS 15 runs on the same hardware as iOS 13 (iPhone 6s onward).
+- `IPHONEOS_DEPLOYMENT_TARGET = 16.0`. `fc_native_video_thumbnail` 4.x requires 16.0, and
+  Apple rejects uploads below 15.0 from Spring 2027. iOS 16 needs an iPhone 8 or newer.
 
 `ios/ExportOptions.plist` drives the export: `app-store-connect` method, automatic
 signing, symbols uploaded.
@@ -266,9 +266,9 @@ release path cannot upload.
 
 ### `MinimumOSVersion too low (90068)`
 
-A warning, not a failure. Fixed already by the 15.0 deployment target — if it reappears,
+A warning, not a failure. Fixed already by the 16.0 deployment target — if it reappears,
 check `IPHONEOS_DEPLOYMENT_TARGET` in the pbxproj and `platform :ios` in `ios/Podfile`
-are both 15.0.
+are both 16.0.
 
 ### Debug build shipped to TestFlight
 
