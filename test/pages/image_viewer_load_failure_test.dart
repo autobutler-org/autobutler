@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/pages/image_viewer_page.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:quark/widgets/image_viewer/current_photo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// #1708: a photo that failed to load always said "Image no longer available"
@@ -24,7 +25,11 @@ void main() {
 
   /// Pumps the viewer on image 1 of 3 whose loader always throws [error],
   /// swipes to the next photo, and returns how many loads were attempted.
-  Future<List<int>> pumpAndSwipe(WidgetTester tester, Object error) async {
+  Future<List<int>> pumpAndSwipe(
+    WidgetTester tester,
+    Object error, {
+    bool Function()? failing,
+  }) async {
     final requested = <int>[];
     final page = MaterialApp(
       home: ImageViewerPage(
@@ -34,7 +39,8 @@ void main() {
         imageCount: 3,
         onLoadImage: (index) async {
           requested.add(index);
-          throw error;
+          if (failing?.call() ?? true) throw error;
+          return (bytes, 'p$index.jpg', null, null);
         },
       ),
     );
@@ -71,6 +77,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(requested, [2, 2]);
+  });
+
+  // #3486: the failed swipe put the view back on page 1, and a retry that
+  // loaded photo 2 left it there, a spinner under a counter reading 3 / 3.
+  testWidgets('a retry that loads turns the page to the photo', (tester) async {
+    var failing = true;
+    await pumpAndSwipe(
+      tester,
+      Exception('dropped request'),
+      failing: () => failing,
+    );
+
+    failing = false;
+    await tester.tap(find.widgetWithText(SnackBarAction, 'Retry'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('3 / 3'), findsOneWidget);
+    expect(find.byType(CurrentPhoto), findsOneWidget);
   });
 
   testWidgets('a 404 says the photo is gone and offers no retry', (
