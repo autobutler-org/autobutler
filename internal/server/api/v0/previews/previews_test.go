@@ -287,3 +287,85 @@ func TestGetPart_Refusals(t *testing.T) {
 		}
 	}
 }
+
+// writePackage writes parts as a zip at rel.
+func (h harness) writePackage(t *testing.T, rel string, parts map[string]string) {
+	t.Helper()
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for name, content := range parts {
+		w, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	h.writeFile(t, rel, buf.Bytes())
+}
+
+func TestGetProperties_EachFormat(t *testing.T) {
+	h := newHarness(t)
+	h.writePackage(t, "shared/a.docx", map[string]string{
+		"docProps/core.xml": `<coreProperties><title>Report</title><creator>Ada</creator></coreProperties>`,
+		"docProps/app.xml":  `<Properties><Application>Word</Application><Pages>3</Pages><Words>40</Words></Properties>`,
+	})
+	h.writePackage(t, "shared/a.odt", map[string]string{
+		"meta.xml": `<document-meta><meta><title>Notes</title><document-statistic page-count="2" word-count="9"/></meta></document-meta>`,
+	})
+	h.writeFile(t, "shared/a.rtf", []byte(`{\rtf1{\info{\title Memo}\nofpages5}}`))
+
+	for file, want := range map[string]map[string]any{
+		"shared/a.docx": {"title": "Report", "author": "Ada", "application": "Word", "pages": float64(3), "words": float64(40)},
+		"shared/a.odt":  {"title": "Notes", "pages": float64(2), "words": float64(9)},
+		"shared/a.rtf":  {"title": "Memo", "pages": float64(5)},
+	} {
+		w := h.get("properties", map[string]string{"filePath": file})
+		if w.Code != http.StatusOK {
+			t.Fatalf("%s: status = %d: %s", file, w.Code, w.Body.String())
+		}
+		var body map[string]any
+		if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+			t.Fatalf("%s: %v: %s", file, err, w.Body.String())
+		}
+		if body["countsSource"] != "saved" {
+			t.Errorf("%s: countsSource = %v", file, body["countsSource"])
+		}
+		for k, v := range want {
+			if body[k] != v {
+				t.Errorf("%s: %s = %v, want %v (%v)", file, k, body[k], v, body)
+			}
+		}
+	}
+}
+
+func TestGetProperties_Refusals(t *testing.T) {
+	h := newHarness(t)
+	h.writePackage(t, "other/secret.docx", map[string]string{"docProps/core.xml": `<a><title>x</title></a>`})
+	h.writeFile(t, "shared/fake.docx", []byte("this is plain text"))
+	h.writeFile(t, "shared/notes.txt", []byte("notes"))
+	h.writePackage(t, "shared/huge.docx", map[string]string{
+		"docProps/core.xml": "<a>" + strings.Repeat("x", 2<<20) + "</a>",
+	})
+
+	for name, tc := range map[string]struct {
+		filePath string
+		want     int
+	}{
+		"no access":          {"other/secret.docx", http.StatusNotFound},
+		"missing":            {"shared/missing.docx", http.StatusNotFound},
+		"not what it claims": {"shared/fake.docx", http.StatusBadRequest},
+		"not a document":     {"shared/notes.txt", http.StatusBadRequest},
+		"oversize metadata":  {"shared/huge.docx", http.StatusBadRequest},
+		"no filePath":        {"", http.StatusBadRequest},
+	} {
+		w := h.get("properties", map[string]string{"filePath": tc.filePath})
+		if w.Code != tc.want {
+			t.Errorf("%s: status = %d, want %d: %s", name, w.Code, tc.want, w.Body.String())
+		}
+	}
+}
