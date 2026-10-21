@@ -151,4 +151,36 @@ void main() {
     expect(side.color, QuarkTokens.dark.primary);
     expect(side.width, 2);
   });
+
+  // #3645: a tooltip wrapped around the chip left its text on whatever
+  // ancestor had a semantics node, which can be the whole page.
+  testBothViewports('names only the chip, never a page-sized ancestor', (
+    tester,
+    size,
+  ) async {
+    final handle = tester.ensureSemantics();
+    for (final tooltip in <String?>['Add files from this device', null]) {
+      await pumpAt(
+        tester,
+        chip(onPressed: () {}, tooltip: tooltip),
+        size: size,
+      );
+      final message = tooltip ?? 'Upload';
+      final carriers = find.semantics
+          .byPredicate((node) {
+            final data = node.getSemanticsData();
+            return data.label.contains(message) ||
+                data.tooltip.contains(message);
+          })
+          .evaluate()
+          .toList();
+
+      expect(carriers, hasLength(1), reason: message);
+      final node = carriers.single;
+      final chipSize = tester.getSize(find.byKey(key));
+      expect(node.rect.width, lessThanOrEqualTo(chipSize.width));
+      expect(node.rect.height, lessThanOrEqualTo(chipSize.height));
+    }
+    handle.dispose();
+  });
 }
