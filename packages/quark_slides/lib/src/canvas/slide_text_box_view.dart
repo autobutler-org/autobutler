@@ -67,9 +67,9 @@ class SlideTextBoxView extends StatelessWidget {
         showPlaceholder && box.placeholder.isNotEmpty && box.plainText.isEmpty;
     final paragraphs = placeholder
         ? [
-            TextParagraph.plain(box.placeholder).copyWith(
-              alignment: box.paragraphs.firstOrNull?.alignment,
-            ),
+            TextParagraph.plain(
+              box.placeholder,
+            ).copyWith(alignment: box.paragraphs.firstOrNull?.alignment),
           ]
         : box.paragraphs;
     final markers = listMarkers(paragraphs);
@@ -94,8 +94,9 @@ class SlideTextBoxView extends StatelessWidget {
                       ? TextSpan(
                           text: box.placeholder,
                           style: layout
-                              .rootStyle(box.paragraphs.firstOrNull ??
-                                  paragraphs.first)
+                              .rootStyle(
+                                box.paragraphs.firstOrNull ?? paragraphs.first,
+                              )
                               .copyWith(color: style.placeholderColor),
                         )
                       : layout.paragraphSpan(paragraphs[i], scale: scale),

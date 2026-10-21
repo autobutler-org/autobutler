@@ -157,7 +157,9 @@ void main() {
       doc = SlideDocumentController(deck(), newId: () => 'x');
       final id = doc.insertTextBox('s', at: (x: 0, y: 0));
       expect(
-          box(id).frame.height, SlideDocumentController.defaultTextBoxHeight);
+        box(id).frame.height,
+        SlideDocumentController.defaultTextBoxHeight,
+      );
     });
   });
 

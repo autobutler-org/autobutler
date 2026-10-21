@@ -78,8 +78,12 @@ void main() {
         );
 
     test('the replacement takes the first matched run, spanning runs', () {
-      final result =
-          replaceInParagraphs(paragraphs, [match(2, 6, 'g ca')], 'X');
+      final result = replaceInParagraphs(
+          paragraphs,
+          [
+            match(2, 6, 'g ca'),
+          ],
+          'X');
       expect(result.count, 1);
       expect(result.paragraphs.single.runs, const [
         TextRun('BiX', bold: true),
@@ -89,8 +93,12 @@ void main() {
     });
 
     test('a match inside one run keeps that run whole', () {
-      final result =
-          replaceInParagraphs(paragraphs, [match(4, 7, 'cat')], 'dog');
+      final result = replaceInParagraphs(
+          paragraphs,
+          [
+            match(4, 7, 'cat'),
+          ],
+          'dog');
       expect(result.paragraphs.single.runs, const [
         TextRun('Big ', bold: true),
         TextRun('dog', italic: true),
@@ -99,14 +107,22 @@ void main() {
     });
 
     test('a replacement styled like its neighbor merges into it', () {
-      final result =
-          replaceInParagraphs(paragraphs, [match(0, 7, 'Big cat')], 'A');
+      final result = replaceInParagraphs(
+          paragraphs,
+          [
+            match(0, 7, 'Big cat'),
+          ],
+          'A');
       expect(result.paragraphs.single.runs, const [
         TextRun('A', bold: true),
         TextRun(' sat'),
       ]);
-      final merged =
-          replaceInParagraphs(paragraphs, [match(7, 11, ' sat')], 'x');
+      final merged = replaceInParagraphs(
+          paragraphs,
+          [
+            match(7, 11, ' sat'),
+          ],
+          'x');
       expect(merged.paragraphs.single.runs, const [
         TextRun('Big ', bold: true),
         TextRun('cat', italic: true),
@@ -124,7 +140,12 @@ void main() {
       expect(result.count, 0);
       expect(result.paragraphs, paragraphs);
       expect(
-        replaceInParagraphs(paragraphs, [match(0, 3, 'x', paragraph: 3)], 'y')
+        replaceInParagraphs(
+                paragraphs,
+                [
+                  match(0, 3, 'x', paragraph: 3),
+                ],
+                'y')
             .count,
         0,
       );
@@ -148,9 +169,10 @@ void main() {
 
   group('replaceInNotes', () {
     test('replaces matches across lines', () {
-      final matches = find(deck(), 'cat').where(
-        (m) => m.field == SlideMatchField.notes,
-      );
+      final matches = find(
+        deck(),
+        'cat',
+      ).where((m) => m.field == SlideMatchField.notes);
       final result = replaceInNotes('say cat\ncat again', matches, 'dog');
       expect(result, (notes: 'say dog\ndog again', count: 2));
     });
@@ -218,7 +240,12 @@ void main() {
 
     test('matches on a deleted slide are skipped', () {
       final doc = SlideDocumentController(
-        Presentation(slides: [...deck().slides, const Slide(id: 'x')]),
+        Presentation(
+          slides: [
+            ...deck().slides,
+            const Slide(id: 'x'),
+          ],
+        ),
       );
       final matches = find(doc.presentation, 'cat');
       doc.deleteSlide('s');

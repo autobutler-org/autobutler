@@ -152,8 +152,10 @@ ElementStyle elementStyleOf(Iterable<SlideElement> elements) {
           .where((s) => s.kind == ShapeKind.roundedRectangle)
           .map((s) => s.cornerRadius),
     ),
-    opacity: shared(
-        [...shapes.map((s) => s.opacity), ...lines.map((l) => l.opacity)]),
+    opacity: shared([
+      ...shapes.map((s) => s.opacity),
+      ...lines.map((l) => l.opacity),
+    ]),
     kind: shared(shapes.map((s) => s.kind)),
     startCap: shared(lines.map((l) => l.startCap)),
     endCap: shared(lines.map((l) => l.endCap)),

@@ -179,7 +179,9 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 	switch ext {
 	case ".pdf":
 		return FileTypePDF
-	case ".pptx", ".ppt":
+	// .pptm is .pptx with macros attached, read into the same presentation
+	// viewer (#3268).
+	case ".pptx", ".pptm", ".ppt":
 		return FileTypeSlideshow
 	// SVG is XML, not a raster codec: it cannot be decoded, resized into a
 	// thumbnail, or converted to JPEG the way the formats below can, so it
@@ -203,7 +205,9 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 		return FileTypeQsheet
 	case ".qslide":
 		return FileTypeQslide
-	case ".docx":
+	// .docm is .docx with macros attached; .odt and .rtf read into the same
+	// document viewer (#2987).
+	case ".docx", ".docm", ".odt", ".rtf":
 		return FileTypeDocx
 	// .xlsm is the same OOXML package as .xlsx with macros attached, so it
 	// reads identically. .xls is deliberately absent: the legacy binary

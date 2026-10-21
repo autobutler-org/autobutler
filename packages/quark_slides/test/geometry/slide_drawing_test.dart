@@ -29,8 +29,11 @@ void main() {
 
     test('fromCenter grows out from the point pressed', () {
       expect(
-        drawnBox(const Offset(100, 100), const Offset(130, 110),
-            fromCenter: true),
+        drawnBox(
+          const Offset(100, 100),
+          const Offset(130, 110),
+          fromCenter: true,
+        ),
         const Rect.fromLTRB(70, 90, 130, 110),
       );
       expect(
@@ -76,11 +79,17 @@ void main() {
       final flat = drawnLine(Offset.zero, const Offset(100, 8), snap: true);
       expect(flat.box.height, 0);
       expect(flat.box.width, closeTo(const Offset(100, 8).distance, 1e-9));
-      final diagonal =
-          drawnLine(Offset.zero, const Offset(100, 90), snap: true);
+      final diagonal = drawnLine(
+        Offset.zero,
+        const Offset(100, 90),
+        snap: true,
+      );
       expect(diagonal.box.width, closeTo(diagonal.box.height, 1e-9));
-      final vertical =
-          drawnLine(Offset.zero, const Offset(-5, -100), snap: true);
+      final vertical = drawnLine(
+        Offset.zero,
+        const Offset(-5, -100),
+        snap: true,
+      );
       expect(vertical.box.width, 0);
       expect(vertical.reversed, isTrue);
     });

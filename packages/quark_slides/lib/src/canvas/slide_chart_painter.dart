@@ -87,10 +87,9 @@ class _ChartPaint {
     );
     final painter = TextPainter(
       text: layout.paragraphSpan(
-        TextParagraph(
-          [TextRun(text, bold: bold)],
-          alignment: TextAlignment.center,
-        ),
+        TextParagraph([
+          TextRun(text, bold: bold),
+        ], alignment: TextAlignment.center),
       ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
@@ -148,19 +147,31 @@ class _ChartPaint {
       final categoryWidth = horizontal
           ? size.width * 0.3
           : math.max(
-              labelSize * 3, size.width / math.max(1, data.categories.length));
+              labelSize * 3,
+              size.width / math.max(1, data.categories.length),
+            );
       categoryLabels = [
         for (final c in data.categories)
-          _text(c,
-              fontSize: labelSize, color: _mutedColor, maxWidth: categoryWidth),
+          _text(
+            c,
+            fontSize: labelSize,
+            color: _mutedColor,
+            maxWidth: categoryWidth,
+          ),
       ];
       if (options.valueAxisTitle.trim().isNotEmpty) {
-        valueTitle = _text(options.valueAxisTitle.trim(),
-            fontSize: labelSize, maxWidth: size.height * 0.8);
+        valueTitle = _text(
+          options.valueAxisTitle.trim(),
+          fontSize: labelSize,
+          maxWidth: size.height * 0.8,
+        );
       }
       if (options.categoryAxisTitle.trim().isNotEmpty) {
-        categoryTitle = _text(options.categoryAxisTitle.trim(),
-            fontSize: labelSize, maxWidth: size.height * 0.8);
+        categoryTitle = _text(
+          options.categoryAxisTitle.trim(),
+          fontSize: labelSize,
+          maxWidth: size.height * 0.8,
+        );
       }
     }
     Size largest(Iterable<TextPainter> texts) => texts.isEmpty
@@ -232,14 +243,20 @@ class _ChartPaint {
           final height = items[i].height;
           canvas.drawRect(
             Rect.fromLTWH(
-                origin.dx, origin.dy + (height - swatch) / 2, swatch, swatch),
+              origin.dx,
+              origin.dy + (height - swatch) / 2,
+              swatch,
+              swatch,
+            ),
             Paint()..color = Color(e.color.resolve(theme)),
           );
           texts[i].paint(
             canvas,
             origin +
                 Offset(
-                    swatch + labelSize * 0.4, (height - texts[i].height) / 2),
+                  swatch + labelSize * 0.4,
+                  (height - texts[i].height) / 2,
+                ),
           );
         }
       },
@@ -287,19 +304,20 @@ class _ChartPaint {
             : chartCategoryCenter(c, count, plot.left, plot.width),
     ];
     final shown = chartVisibleLabels(
-      centers,
-      [
-        for (final l in categoryLabels) horizontal ? l.height : l.width,
-      ],
-      gap: labelSize * 0.3,
-    );
+        centers,
+        [
+          for (final l in categoryLabels) horizontal ? l.height : l.width,
+        ],
+        gap: labelSize * 0.3);
     for (final c in shown) {
       final label = categoryLabels[c];
       label.paint(
         canvas,
         horizontal
             ? Offset(
-                plot.left - gap - label.width, centers[c] - label.height / 2)
+                plot.left - gap - label.width,
+                centers[c] - label.height / 2,
+              )
             : Offset(centers[c] - label.width / 2, plot.bottom + gap),
       );
     }

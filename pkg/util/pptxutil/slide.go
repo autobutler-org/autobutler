@@ -1,12 +1,17 @@
 package pptxutil
 
-// cspell:ignore autofit descr fmla prst srgb xfrm
+// cspell:ignore autofit Bez cust descr fmla Geom prst Shdw srgb xfrm
 
 import (
 	"fmt"
 	"math"
+	"regexp"
+	"sort"
 	"strings"
 )
+
+// guideName is a preset or adjust name safe to write into the markup.
+var guideName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
 
 // The editor's defaults for what a .qslide leaves unset.
 const (
@@ -88,8 +93,15 @@ func (s *slideWriter) writeElement(el qslideElement) {
 	case typeText:
 		s.writeTextBox(el)
 	case typeShape:
-		if prst, ok := shapeGeometry[el.Kind]; ok {
-			s.writeShape(el, prst)
+		// A path shape is written back as a freeform of its contours, which
+		// the editor draws ahead of a preset, or else as the preset it names.
+		switch prst, ok := shapeGeometry[el.Kind]; {
+		case ok:
+			s.writeShape(el, s.presetGeometry(el, prst))
+		case el.Kind == "path" && len(el.Contours) > 0:
+			s.writeShape(el, s.customGeometry(el))
+		case el.Kind == "path" && guideName.MatchString(el.Preset):
+			s.writeShape(el, s.presetGeometry(el, el.Preset))
 		}
 	case typeImage:
 		s.writePicture(el)
@@ -155,14 +167,15 @@ func rotation(degrees float64) int64 {
 	return rot
 }
 
-// writeShape writes a filled and outlined preset shape.
-func (s *slideWriter) writeShape(el qslideElement, prst string) {
+// writeShape writes a filled and outlined shape of the given geometry
+// markup.
+func (s *slideWriter) writeShape(el qslideElement, geometry string) {
 	opacity := opacityOf(el.Opacity)
 	s.out.put(`<p:sp><p:nvSpPr>`)
 	s.nonVisual(s.id(), "Shape", "")
 	s.out.put(`<p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>`)
 	s.xfrm(el.Frame, "", "")
-	s.out.put(`<a:prstGeom prst="` + prst + `"><a:avLst>` + s.adjustments(el) + `</a:avLst></a:prstGeom>`)
+	s.out.put(geometry)
 	if c, ok := resolveColor(el.Fill, s.theme); ok {
 		s.out.put(solidFill(c, opacity))
 	} else {
@@ -173,7 +186,77 @@ func (s *slideWriter) writeShape(el qslideElement, prst string) {
 	} else {
 		s.out.put(`<a:ln><a:noFill/></a:ln>`)
 	}
+	s.writeShadow(el.Shadow, opacity)
 	s.out.put(`</p:spPr></p:sp>`)
+}
+
+// writeShadow writes a drop shadow, at its color's alpha times opacity, as
+// the spPr's effect list. Its offset is the slide's, so it does not turn
+// with the shape. A color that cannot be resolved is black.
+func (s *slideWriter) writeShadow(shadow *qslideShadow, opacity float64) {
+	if shadow == nil {
+		return
+	}
+	c, ok := resolveColor(shadow.Color, s.theme)
+	if !ok {
+		c = color{rgb: "000000", alpha: 1}
+	}
+	s.out.printf(`<a:effectLst><a:outerShdw blurRad="%d" dist="%d" dir="%d" rotWithShape="0">`,
+		s.size(shadow.Blur), s.size(math.Hypot(shadow.X, shadow.Y)),
+		rotation(math.Atan2(shadow.Y, shadow.X)*180/math.Pi))
+	s.out.put(srgbColor(c, opacity) + `</a:outerShdw></a:effectLst>`)
+}
+
+// presetGeometry is the prstGeom markup for the preset prst.
+func (s *slideWriter) presetGeometry(el qslideElement, prst string) string {
+	if adj := s.adjustments(el); adj != "" {
+		return `<a:prstGeom prst="` + prst + `"><a:avLst>` + adj + `</a:avLst></a:prstGeom>`
+	}
+	return `<a:prstGeom prst="` + prst + `"><a:avLst/></a:prstGeom>`
+}
+
+// customGeometry is the custGeom markup for a path shape's contours. Each
+// path is in the shape's own EMU, so an arc's angles mean what they mean in
+// the editor, which draws them in the frame's space.
+func (s *slideWriter) customGeometry(el qslideElement) string {
+	w, h := s.size(el.Frame.Width), s.size(el.Frame.Height)
+	x := func(f float64) int64 { return int64(math.Round(f * float64(w))) }
+	y := func(f float64) int64 { return int64(math.Round(f * float64(h))) }
+	angle := func(deg float64) int64 { return int64(math.Round(deg * 60_000)) }
+	var b strings.Builder
+	b.WriteString(`<a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="l" t="t" r="r" b="b"/><a:pathLst>`)
+	for _, contour := range el.Contours {
+		fmt.Fprintf(&b, `<a:path w="%d" h="%d"`, w, h)
+		if contour.Fill != nil && !*contour.Fill {
+			b.WriteString(` fill="none"`)
+		}
+		if contour.Stroke != nil && !*contour.Stroke {
+			b.WriteString(` stroke="0"`)
+		}
+		b.WriteString(`>`)
+		for _, c := range contour.Commands {
+			switch c.Op {
+			case "move":
+				fmt.Fprintf(&b, `<a:moveTo><a:pt x="%d" y="%d"/></a:moveTo>`, x(c.X), y(c.Y))
+			case "line":
+				fmt.Fprintf(&b, `<a:lnTo><a:pt x="%d" y="%d"/></a:lnTo>`, x(c.X), y(c.Y))
+			case "quad":
+				fmt.Fprintf(&b, `<a:quadBezTo><a:pt x="%d" y="%d"/><a:pt x="%d" y="%d"/></a:quadBezTo>`,
+					x(c.X1), y(c.Y1), x(c.X), y(c.Y))
+			case "cubic":
+				fmt.Fprintf(&b, `<a:cubicBezTo><a:pt x="%d" y="%d"/><a:pt x="%d" y="%d"/><a:pt x="%d" y="%d"/></a:cubicBezTo>`,
+					x(c.X1), y(c.Y1), x(c.X2), y(c.Y2), x(c.X), y(c.Y))
+			case "arc":
+				fmt.Fprintf(&b, `<a:arcTo wR="%d" hR="%d" stAng="%d" swAng="%d"/>`,
+					x(c.WR), y(c.HR), angle(c.Start), angle(c.Swing))
+			case "close":
+				b.WriteString(`<a:close/>`)
+			}
+		}
+		b.WriteString(`</a:path>`)
+	}
+	b.WriteString(`</a:pathLst></a:custGeom>`)
+	return b.String()
 }
 
 // adjustments are the guide values that make a preset match the editor's
@@ -202,8 +285,27 @@ func (s *slideWriter) adjustments(el qslideElement) string {
 		// The editor's inner corners sit at 0.4 of the outer radius; 50,000
 		// is the whole radius.
 		return `<a:gd name="adj" fmla="val 20000"/>`
+	case "path":
+		return pathAdjustments(el.Adjust)
 	}
 	return ""
+}
+
+// pathAdjustments writes a path shape's stored adjust values, guide names
+// in order, skipping any name that is not safe to write into the markup.
+func pathAdjustments(adjust map[string]float64) string {
+	names := make([]string, 0, len(adjust))
+	for name := range adjust {
+		if guideName.MatchString(name) {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	var b strings.Builder
+	for _, name := range names {
+		fmt.Fprintf(&b, `<a:gd name="%s" fmla="val %d"/>`, name, int64(math.Round(adjust[name])))
+	}
+	return b.String()
 }
 
 // writeLineProps writes an outline as the element tag — a:ln, or a table
@@ -274,7 +376,9 @@ func (s *slideWriter) writePicture(el qslideElement) {
 		s.out.put(`<p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>`)
 		s.xfrm(el.Frame, "", "")
 		s.out.put(`<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`)
-		s.out.put(solidFill(color{rgb: placeholderFill, alpha: 1}, 1) + `<a:ln><a:noFill/></a:ln></p:spPr></p:sp>`)
+		s.out.put(solidFill(color{rgb: placeholderFill, alpha: 1}, 1) + `<a:ln><a:noFill/></a:ln>`)
+		s.writeShadow(el.Shadow, 1)
+		s.out.put(`</p:spPr></p:sp>`)
 		return
 	}
 	rel, ok := s.rels[part.name]
@@ -291,7 +395,9 @@ func (s *slideWriter) writePicture(el qslideElement) {
 	s.out.put(`<p:blipFill><a:blip r:embed="` + rel + `"/>` + crop + `<a:stretch><a:fillRect/></a:stretch></p:blipFill>`)
 	s.out.put(`<p:spPr>`)
 	s.xfrm(frame, "", "")
-	s.out.put(`<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`)
+	s.out.put(`<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`)
+	s.writeShadow(el.Shadow, 1)
+	s.out.put(`</p:spPr></p:pic>`)
 }
 
 // fitPicture fits a picture iw by ih pixels to frame as fit says: "fill"
@@ -476,11 +582,16 @@ func (s *slideWriter) writeRunProps(tag string, run qslideRun, style runStyle) {
 
 // solidFill is c at its own alpha times opacity.
 func solidFill(c color, opacity float64) string {
+	return `<a:solidFill>` + srgbColor(c, opacity) + `</a:solidFill>`
+}
+
+// srgbColor is the srgbClr of c at its own alpha times opacity.
+func srgbColor(c color, opacity float64) string {
 	alpha := int64(math.Round(c.alpha * opacity * 100_000))
 	if alpha >= 100_000 {
-		return `<a:solidFill><a:srgbClr val="` + c.rgb + `"/></a:solidFill>`
+		return `<a:srgbClr val="` + c.rgb + `"/>`
 	}
-	return fmt.Sprintf(`<a:solidFill><a:srgbClr val="%s"><a:alpha val="%d"/></a:srgbClr></a:solidFill>`, c.rgb, max(alpha, 0))
+	return fmt.Sprintf(`<a:srgbClr val="%s"><a:alpha val="%d"/></a:srgbClr>`, c.rgb, max(alpha, 0))
 }
 
 // opacityOf is an element's opacity, 1 when unset, within 0 to 1.

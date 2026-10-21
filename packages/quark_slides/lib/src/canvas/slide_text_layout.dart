@@ -120,7 +120,10 @@ class SlideTextLayout {
         children: [
           for (final run in paragraph.runs)
             if (run.text.isNotEmpty)
-              TextSpan(text: run.text, style: runStyle(run, scale: scale)),
+              TextSpan(
+                text: run.text,
+                style: runStyle(run, scale: scale),
+              ),
         ],
       );
 
@@ -147,7 +150,10 @@ class SlideTextLayout {
       text.dispose();
       if (markers[i] != null) {
         final marker = _paint(
-          TextSpan(text: markers[i], style: rootStyle(paragraph, scale: scale)),
+          TextSpan(
+            text: markers[i],
+            style: rootStyle(paragraph, scale: scale),
+          ),
           TextAlign.end,
           gutter,
         );
@@ -164,9 +170,10 @@ class SlideTextLayout {
   ///
   /// With no theme, the box is measured as a canvas draws a deck with none:
   /// in [SlideThemes.light].
-  double measure(TextBox box, [SlideTheme? theme]) =>
-      SlideTextLayout.forBox(box, theme ?? SlideThemes.light)
-          .contentHeight(box);
+  double measure(TextBox box, [SlideTheme? theme]) => SlideTextLayout.forBox(
+        box,
+        theme ?? SlideThemes.light,
+      ).contentHeight(box);
 
   /// The scale at which [box]'s text fits its frame's height: 1 when it
   /// already fits or the box does not shrink text, and never below

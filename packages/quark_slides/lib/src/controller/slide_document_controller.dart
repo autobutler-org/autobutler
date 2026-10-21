@@ -243,10 +243,8 @@ class SlideDocumentController {
 
   static final _random = Random();
 
-  static String _randomId() => List.generate(
-        10,
-        (_) => _random.nextInt(36).toRadixString(36),
-      ).join();
+  static String _randomId() =>
+      List.generate(10, (_) => _random.nextInt(36).toRadixString(36)).join();
 
   // ---------------------------------------------------------------------------
   // Slides
@@ -343,8 +341,11 @@ class SlideDocumentController {
         }
         final box = slide.findElement(elementId!);
         if (box is! TextBox) continue;
-        final replaced =
-            replaceInParagraphs(box.paragraphs, found, replacement);
+        final replaced = replaceInParagraphs(
+          box.paragraphs,
+          found,
+          replacement,
+        );
         if (replaced.count > 0) {
           editText(slideId, box.id, replaced.paragraphs);
         }
@@ -362,10 +363,7 @@ class SlideDocumentController {
   /// doc.setSlideBackground(slideId, const SlideBackground(color: c));
   /// ```
   void setSlideBackground(String slideId, SlideBackground? background) =>
-      _updateSlide(
-        slideId,
-        (slide) => slide.copyWith(background: background),
-      );
+      _updateSlide(slideId, (slide) => slide.copyWith(background: background));
 
   // ---------------------------------------------------------------------------
   // Transitions
@@ -378,10 +376,7 @@ class SlideDocumentController {
   /// doc.setSlideTransition(slideId, const SlideTransitionSpec.fade());
   /// ```
   void setSlideTransition(String slideId, SlideTransitionSpec? transition) =>
-      _updateSlide(
-        slideId,
-        (slide) => slide.copyWith(transition: transition),
-      );
+      _updateSlide(slideId, (slide) => slide.copyWith(transition: transition));
 
   /// Makes [transition] the deck's default and clears every slide's own, so
   /// every slide — and every slide added later — plays it, as one step.
@@ -421,9 +416,7 @@ class SlideDocumentController {
         slides: [
           for (final slide in _presentation.slides)
             slide.copyWith(
-              elements: [
-                for (final e in slide.elements) _fitted(e, theme),
-              ],
+              elements: [for (final e in slide.elements) _fitted(e, theme)],
             ),
         ],
       ),
@@ -579,8 +572,12 @@ class SlideDocumentController {
     }
     _updateTree(slideId, [elementId], (e, parent) {
       final onSlide = parent == null ? e.frame : frameInParent(parent, e.frame);
-      final resized =
-          onSlide.copyWith(x: x, y: y, width: width, height: height);
+      final resized = onSlide.copyWith(
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+      );
       return _fitted(
         reframe(e, parent == null ? resized : frameInGroup(parent, resized)),
       );
@@ -912,7 +909,10 @@ class SlideDocumentController {
         (e, _) => e is ImageElement
             ? e.copyWith(altText: altText)
             : throw ArgumentError.value(
-                elementId, 'elementId', 'is not an image'),
+                elementId,
+                'elementId',
+                'is not an image',
+              ),
       );
 
   /// The side of the square [insertShape] makes when given no frame.
@@ -1139,11 +1139,7 @@ class SlideDocumentController {
     CellRange range,
     CellFormat format,
   ) =>
-      _updateTable(
-        slideId,
-        tableId,
-        (t) => formatTableCells(t, range, format),
-      );
+      _updateTable(slideId, tableId, (t) => formatTableCells(t, range, format));
 
   /// Merges the cells of [range] in the table [tableId] into one, as one
   /// step. See [mergeTableCells].
@@ -1211,7 +1207,7 @@ class SlideDocumentController {
         categories: const ['Q1', 'Q2', 'Q3', 'Q4'],
         series: kind == ChartKind.pie
             ? [
-                ChartSeries(name: 'Series 1', values: const [40, 25, 20, 15])
+                ChartSeries(name: 'Series 1', values: const [40, 25, 20, 15]),
               ]
             : [
                 ChartSeries(name: 'Series 1', values: const [12, 19, 15, 24]),
@@ -1310,13 +1306,15 @@ class SlideDocumentController {
         final series = c.data.series;
         return c.copyWith(
           data: _checkedChartData(
-            c.data.copyWith(series: [
-              ...series,
-              ChartSeries(
-                name: name ?? 'Series ${series.length + 1}',
-                values: values ?? const [],
-              ),
-            ]),
+            c.data.copyWith(
+              series: [
+                ...series,
+                ChartSeries(
+                  name: name ?? 'Series ${series.length + 1}',
+                  values: values ?? const [],
+                ),
+              ],
+            ),
           ),
         );
       });
@@ -1345,11 +1343,7 @@ class SlideDocumentController {
   /// in order, as one step; those past the end take the theme's accents
   /// (see `ChartElement.defaultPalette`). An empty list goes back to them
   /// all.
-  void setChartColors(
-    String slideId,
-    String chartId,
-    List<SlideColor> colors,
-  ) {
+  void setChartColors(String slideId, String chartId, List<SlideColor> colors) {
     if (colors.length > ChartData.maxCategories) {
       throw ArgumentError.value(colors.length, 'colors', 'too many');
     }
@@ -1691,7 +1685,10 @@ class SlideDocumentController {
     final missing = {...ids}..removeAll(slide.allElements.map((e) => e.id));
     if (missing.isNotEmpty) {
       throw ArgumentError.value(
-          missing.first, 'elementId', 'not on ${slide.id}');
+        missing.first,
+        'elementId',
+        'not on ${slide.id}',
+      );
     }
   }
 

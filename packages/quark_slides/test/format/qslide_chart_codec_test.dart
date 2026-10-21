@@ -9,9 +9,8 @@ import '../support/sample_presentation.dart';
 
 String fixture(String name) => File('test/fixtures/$name').readAsStringSync();
 
-Matcher throwsFormatAt(String path) => throwsA(
-      isA<QslideFormatException>().having((e) => e.path, 'path', path),
-    );
+Matcher throwsFormatAt(String path) =>
+    throwsA(isA<QslideFormatException>().having((e) => e.path, 'path', path));
 
 /// A one-slide deck at [version] holding [chart], a chart object.
 Map<String, Object?> deckWith(Map<String, Object?> chart, {int version = 5}) =>
@@ -53,8 +52,10 @@ ChartElement onlyChart(Presentation deck) =>
 void main() {
   group('golden chart_sample.qslide', () {
     test('encoding the chart deck matches the fixture byte for byte', () {
-      expect(QslideCodec.encode(chartSamplePresentation()),
-          fixture('chart_sample.qslide'));
+      expect(
+        QslideCodec.encode(chartSamplePresentation()),
+        fixture('chart_sample.qslide'),
+      );
     });
 
     test('decoding the fixture gives the chart deck', () {
@@ -118,30 +119,42 @@ void main() {
 
   group('reading', () {
     test('a short series is padded with zeros and a long one cut', () {
-      final chart = onlyChart(QslideCodec.fromJson(deckWith(chartJson(
-        categories: ['A', 'B', 'C'],
-        series: [
-          {
-            'values': [1],
-          },
-          {
-            'values': [1, 2, 3, 4],
-          },
-        ],
-      ))));
+      final chart = onlyChart(
+        QslideCodec.fromJson(
+          deckWith(
+            chartJson(
+              categories: ['A', 'B', 'C'],
+              series: [
+                {
+                  'values': [1],
+                },
+                {
+                  'values': [1, 2, 3, 4],
+                },
+              ],
+            ),
+          ),
+        ),
+      );
       expect(chart.data.series[0].values, [1, 0, 0]);
       expect(chart.data.series[1].values, [1, 2, 3]);
     });
 
     test('a null value reads as 0 and a numeric category as text', () {
-      final chart = onlyChart(QslideCodec.fromJson(deckWith(chartJson(
-        categories: [2024, 'B'],
-        series: [
-          {
-            'values': [null, 5],
-          },
-        ],
-      ))));
+      final chart = onlyChart(
+        QslideCodec.fromJson(
+          deckWith(
+            chartJson(
+              categories: [2024, 'B'],
+              series: [
+                {
+                  'values': [null, 5],
+                },
+              ],
+            ),
+          ),
+        ),
+      );
       expect(chart.data.categories, ['2024', 'B']);
       expect(chart.data.series.single.values, [0, 5]);
     });
@@ -154,11 +167,17 @@ void main() {
 
     test('a value that is not a number is refused at its path', () {
       expect(
-        () => QslideCodec.fromJson(deckWith(chartJson(series: [
-          {
-            'values': [1, 'x'],
-          },
-        ]))),
+        () => QslideCodec.fromJson(
+          deckWith(
+            chartJson(
+              series: [
+                {
+                  'values': [1, 'x'],
+                },
+              ],
+            ),
+          ),
+        ),
         throwsFormatAt(r'$.slides[0].elements[0].series[0].values[1]'),
       );
     });
@@ -172,47 +191,57 @@ void main() {
 
     test('a chart past the limits is refused', () {
       expect(
-        () => QslideCodec.fromJson(deckWith(chartJson(
-          categories: List.filled(ChartData.maxCategories + 1, 'x'),
-        ))),
+        () => QslideCodec.fromJson(
+          deckWith(
+            chartJson(
+              categories: List.filled(ChartData.maxCategories + 1, 'x'),
+            ),
+          ),
+        ),
         throwsFormatAt(r'$.slides[0].elements[0]'),
       );
       expect(
-        () => QslideCodec.fromJson(deckWith(chartJson(
-          categories: List.filled(200, 'x'),
-          series: List.filled(30, {'values': <int>[]}),
-        ))),
+        () => QslideCodec.fromJson(
+          deckWith(
+            chartJson(
+              categories: List.filled(200, 'x'),
+              series: List.filled(30, {'values': <int>[]}),
+            ),
+          ),
+        ),
         throwsFormatAt(r'$.slides[0].elements[0]'),
       );
     });
   });
 
   group('migration', () {
-    test('this version writes schema 5', () {
-      expect(QslideCodec.schemaVersion, 5);
+    test('this version writes schema 6', () {
+      expect(QslideCodec.schemaVersion, 6);
     });
 
     test('the golden v4 file reads as the sample deck', () {
       final json = jsonDecode(fixture('v4_sample.qslide')) as Map;
       expect(json['schemaVersion'], 4);
-      expect(QslideCodec.decode(fixture('v4_sample.qslide')),
-          samplePresentation());
-    });
-
-    test('it saves as version 5 and otherwise byte for byte as before', () {
-      final saved =
-          QslideCodec.encode(QslideCodec.decode(fixture('v4_sample.qslide')));
-      expect(saved, fixture('sample.qslide'));
       expect(
-        saved,
-        fixture('v4_sample.qslide').replaceFirst(
-          '"schemaVersion": 4',
-          '"schemaVersion": 5',
-        ),
+        QslideCodec.decode(fixture('v4_sample.qslide')),
+        samplePresentation(),
       );
     });
 
-    test('every older version migrates to 5', () {
+    test('it saves as version 6 and otherwise byte for byte as before', () {
+      final saved = QslideCodec.encode(
+        QslideCodec.decode(fixture('v4_sample.qslide')),
+      );
+      expect(saved, fixture('sample.qslide'));
+      expect(
+        saved,
+        fixture(
+          'v4_sample.qslide',
+        ).replaceFirst('"schemaVersion": 4', '"schemaVersion": 6'),
+      );
+    });
+
+    test('every older version migrates to 6', () {
       for (final name in [
         'v1_sample.qslide',
         'v2_sample.qslide',
@@ -220,7 +249,7 @@ void main() {
         'v4_sample.qslide',
       ]) {
         final json = QslideCodec.toJson(QslideCodec.decode(fixture(name)));
-        expect(json['schemaVersion'], 5, reason: name);
+        expect(json['schemaVersion'], 6, reason: name);
       }
     });
 

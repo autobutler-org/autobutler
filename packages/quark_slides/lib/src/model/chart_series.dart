@@ -65,9 +65,11 @@ class ChartSeries {
   /// This series with [count] values: cut short, or padded with zeros.
   ChartSeries withLength(int count) => values.length == count
       ? this
-      : copyWith(values: [
-          for (var i = 0; i < count; i++) i < values.length ? values[i] : 0,
-        ]);
+      : copyWith(
+          values: [
+            for (var i = 0; i < count; i++) i < values.length ? values[i] : 0,
+          ],
+        );
 
   @override
   bool operator ==(Object other) =>

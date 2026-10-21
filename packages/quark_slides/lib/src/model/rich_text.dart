@@ -272,8 +272,9 @@ List<TextRun> _slice(List<TextRun> runs, int start, int end) {
     final a = math.max(start, offset);
     final b = math.min(end, offset + run.text.length);
     if (a < b) {
-      result
-          .add(run.copyWith(text: run.text.substring(a - offset, b - offset)));
+      result.add(
+        run.copyWith(text: run.text.substring(a - offset, b - offset)),
+      );
     }
     offset += run.text.length;
   }

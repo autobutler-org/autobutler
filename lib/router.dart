@@ -13,6 +13,8 @@ import 'package:quark/pages/document_editor_page.dart';
 import 'package:quark/pages/file_browser_page.dart';
 import 'package:quark/pages/file_viewer_page.dart';
 import 'package:quark/pages/login_page.dart';
+import 'package:quark/pages/document_viewer_page.dart';
+import 'package:quark/pages/presentation_viewer_page.dart';
 import 'package:quark/pages/markdown_viewer_page.dart';
 import 'package:quark/pages/model_viewer_page.dart';
 import 'package:quark/pages/photo_duplicates_page.dart';
@@ -39,6 +41,8 @@ import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/file_kind.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
+import 'package:quark/utils/document_viewer_files.dart';
+import 'package:quark/utils/presentation_viewer_files.dart';
 import 'package:quark/utils/markdown_viewer_files.dart';
 import 'package:quark/utils/model_viewer_files.dart';
 import 'package:quark_slides/quark_slides.dart' show Presentation;
@@ -213,6 +217,12 @@ class AppRoutes {
   /// The 3D model viewer, `/model/<path>` (#2988).
   static const modelViewer = '/model';
 
+  /// The read-only document viewer, `/document/<path>` (#2987).
+  static const documentViewer = '/document';
+
+  /// The read-only presentation viewer, `/presentation/<path>` (#3268).
+  static const presentationViewer = '/presentation';
+
   /// Percent-encode a file path for use in a URL, keeping `/` as the segment
   /// separator.
   ///
@@ -274,6 +284,24 @@ class AppRoutes {
   /// Device serial is passed as a query param when non-empty.
   static String modelViewerPath(String path, {String? serial}) =>
       _withSerial('$modelViewer/${encodeFilePath(path)}', serial);
+
+  /// Build a URL for a DOCX, DOCM, ODT or RTF file in the document viewer.
+  /// e.g. documentViewerPath('work/q3.docx') → '/document/work/q3.docx'
+  static String documentViewerPath(String path, {String? serial}) =>
+      _withSerial('$documentViewer/${encodeFilePath(path)}', serial);
+
+  /// Build a URL for a PowerPoint file in the presentation viewer, open at
+  /// the [slide]th slide counting from 1 when given.
+  /// e.g. presentationViewerPath('talks/q1.pptx') → '/presentation/talks/q1.pptx'
+  static String presentationViewerPath(
+    String path, {
+    String? serial,
+    int? slide,
+  }) => _editorUrl(
+    '$presentationViewer/${encodeFilePath(path)}',
+    serial: serial,
+    slide: slide,
+  );
 
   /// Build a deep-link URL that opens [path] in the correct viewer.
   /// e.g. viewFile('photos/beach.jpg') → '/view/photos/beach.jpg'
@@ -544,6 +572,10 @@ List<GoRoute> tabbedRoutes<T extends RouteTab>({
 ///
 /// The editor's `/slides/:path(.*)` matches this URL too, and go_router takes
 /// the first route that matches, so this one goes before it.
+///
+/// A PowerPoint file is presented only from the deck the presentation viewer
+/// read and handed over; without one, a reload or a link, it goes back to
+/// that viewer, since only the Quark can read the file (#3268).
 GoRoute slidePresentRoute({
   Widget Function(
         String filePath,
@@ -555,6 +587,8 @@ GoRoute slidePresentRoute({
       _slidePresentPage,
 }) => GoRoute(
   path: '${AppRoutes.slides}/:path(.*)/present',
+  redirect: (context, state) =>
+      state.extra is Presentation ? null : _powerPointViewer(state),
   builder: (context, state) {
     final extra = state.extra;
     return builder(
@@ -574,11 +608,16 @@ GoRoute slidePresentRoute({
 ///
 /// [builder] gets the file, the serial and the slide to open at counting
 /// from 0.
+///
+/// A PowerPoint file has no editor: it goes to the presentation viewer, at
+/// the same slide, which is where ending a presentation of one lands
+/// (#3268).
 GoRoute slideEditorRoute({
   Widget Function(String filePath, String serial, int startIndex) builder =
       _slideEditorPage,
 }) => GoRoute(
   path: '${AppRoutes.slides}/:path(.*)',
+  redirect: (context, state) => _powerPointViewer(state),
   builder: (context, state) => builder(
     state.pathParameters['path'] ?? '',
     state.uri.queryParameters['serial'] ?? '',
@@ -592,6 +631,18 @@ Widget _slideEditorPage(String filePath, String serial, int startIndex) =>
       deviceSerial: serial,
       startIndex: startIndex,
     );
+
+/// The presentation viewer at the same file, serial and slide, when the slide
+/// route [state] names a PowerPoint file; null for anything else.
+String? _powerPointViewer(GoRouterState state) {
+  final path = state.pathParameters['path'] ?? '';
+  if (!opensInPresentationViewer(path)) return null;
+  return AppRoutes.presentationViewerPath(
+    path,
+    serial: state.uri.queryParameters['serial'],
+    slide: int.tryParse(state.uri.queryParameters['slide'] ?? ''),
+  );
+}
 
 /// The `?slide=N` a slide route was given, counting from 0; 0 without one.
 int _slideIndex(GoRouterState state) {
@@ -922,6 +973,26 @@ final router = GoRouter(
         deviceSerial: state.uri.queryParameters['serial'] ?? '',
       ),
     ),
+    GoRoute(
+      // Matches /document/<anything including slashes> — the document viewer.
+      path: '${AppRoutes.documentViewer}/:path(.*)',
+      builder: (context, state) => DocumentViewerPage(
+        key: ValueKey(state.uri.toString()),
+        filePath: state.pathParameters['path'] ?? '',
+        deviceSerial: state.uri.queryParameters['serial'] ?? '',
+      ),
+    ),
+    GoRoute(
+      // Matches /presentation/<anything including slashes> — the
+      // presentation viewer, at ?slide=N when given.
+      path: '${AppRoutes.presentationViewer}/:path(.*)',
+      builder: (context, state) => PresentationViewerPage(
+        key: ValueKey(state.uri.toString()),
+        filePath: state.pathParameters['path'] ?? '',
+        deviceSerial: state.uri.queryParameters['serial'] ?? '',
+        startIndex: _slideIndex(state),
+      ),
+    ),
   ],
   errorBuilder: (context, state) =>
       Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
@@ -930,7 +1001,8 @@ final router = GoRouter(
 /// Where `/view/[path]` belongs instead, or null when [FileViewerPage] shows
 /// it. Docs, sheets and presentations have editors at their own URLs, source
 /// and plain text the code viewer, Markdown its rendered viewer, 3D models the
-/// model viewer; a folder or an archive is browsed in Files. [serial] rides
+/// model viewer, word-processing documents the document viewer, PowerPoint
+/// files the presentation viewer; a folder or an archive is browsed in Files. [serial] rides
 /// along to whichever it is.
 String? viewFileRedirect(String path, String? serial) {
   final folder = AppRoutes.filesPath(path);
@@ -943,6 +1015,12 @@ String? viewFileRedirect(String path, String? serial) {
   }
   if (opensInModelViewer(path)) {
     return AppRoutes.modelViewerPath(path, serial: serial);
+  }
+  if (opensInDocumentViewer(path)) {
+    return AppRoutes.documentViewerPath(path, serial: serial);
+  }
+  if (opensInPresentationViewer(path)) {
+    return AppRoutes.presentationViewerPath(path, serial: serial);
   }
   return switch (fileKindForName(path)) {
     FileKind.qdoc => AppRoutes.docFile(path, serial: serial),

@@ -62,8 +62,9 @@ class _ColumnFilterPanelState extends State<ColumnFilterPanel> {
 
   late final Set<String> _hidden = {...?widget.initial?.hiddenValues};
   late FilterConditionKind? _kind = widget.initial?.condition?.kind;
-  late final TextEditingController _operand =
-      TextEditingController(text: widget.initial?.condition?.value ?? '');
+  late final TextEditingController _operand = TextEditingController(
+    text: widget.initial?.condition?.value ?? '',
+  );
   final TextEditingController _search = TextEditingController();
 
   @override
@@ -86,12 +87,14 @@ class _ColumnFilterPanelState extends State<ColumnFilterPanel> {
 
   void _apply() {
     final operand = _operand.text;
-    widget.onApply(ColumnFilter(
-      hiddenValues: _hidden.intersection(widget.values.toSet()),
-      condition: _kind != null && operand.trim().isNotEmpty
-          ? FilterCondition(_kind!, operand)
-          : null,
-    ));
+    widget.onApply(
+      ColumnFilter(
+        hiddenValues: _hidden.intersection(widget.values.toSet()),
+        condition: _kind != null && operand.trim().isNotEmpty
+            ? FilterCondition(_kind!, operand)
+            : null,
+      ),
+    );
   }
 
   @override

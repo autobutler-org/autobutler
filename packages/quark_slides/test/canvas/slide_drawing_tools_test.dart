@@ -11,8 +11,9 @@ void main() {
   setUp(() => doc = SlideDocumentNotifier(canvasDeck()));
   tearDown(() => doc.dispose());
 
-  List<String> ids() =>
-      [for (final e in doc.presentation.slideById('s')!.elements) e.id];
+  List<String> ids() => [
+        for (final e in doc.presentation.slideById('s')!.elements) e.id,
+      ];
 
   /// The element the last insertion added: the front one.
   SlideElement added() => doc.presentation.slideById('s')!.elements.last;
@@ -41,8 +42,10 @@ void main() {
   }
 
   group('shape tool', () {
-    testBothViewports('a drag draws the shape, selects it, as one step',
-        (tester, size) async {
+    testBothViewports('a drag draws the shape, selects it, as one step', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       harness(tester).useTool(const SlideCanvasTool.shape(ShapeKind.star));
       await tester.pump();
@@ -59,8 +62,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testBothViewports('a click places one at the default size',
-        (tester, size) async {
+    testBothViewports('a click places one at the default size', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       harness(tester).useTool(const SlideCanvasTool.shape(ShapeKind.ellipse));
       await tester.pump();
@@ -68,7 +73,9 @@ void main() {
       await tester.pump();
       const side = SlideDocumentController.defaultShapeSize;
       expectFrame(
-          added().frame, const Offset(1000, 100) & const Size(side, side));
+        added().frame,
+        const Offset(1000, 100) & const Size(side, side),
+      );
       expect((added() as ShapeElement).kind, ShapeKind.ellipse);
       expect(undoAll(doc), 1);
     });
@@ -83,8 +90,10 @@ void main() {
       expectFrame(added().frame, const Offset(300, 300) & const Size(400, 400));
     });
 
-    testBothViewports('Alt draws out from the point pressed',
-        (tester, size) async {
+    testBothViewports('Alt draws out from the point pressed', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       harness(tester).useTool(const SlideCanvasTool.shape(ShapeKind.triangle));
       await tester.pump();
@@ -94,8 +103,10 @@ void main() {
       expectFrame(added().frame, const Rect.fromLTRB(760, 440, 1160, 640));
     });
 
-    testBothViewports('the drawn shape is previewed while dragging',
-        (tester, size) async {
+    testBothViewports('the drawn shape is previewed while dragging', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       harness(tester).useTool(const SlideCanvasTool.shape(ShapeKind.diamond));
       await tester.pump();
@@ -133,8 +144,10 @@ void main() {
   });
 
   group('line tool', () {
-    testBothViewports('a drag up and right draws a flipped line',
-        (tester, size) async {
+    testBothViewports('a drag up and right draws a flipped line', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       harness(tester).useTool(SlideCanvasTool.line);
       await tester.pump();
@@ -147,8 +160,10 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testBothViewports('an arrow points where the drag ended',
-        (tester, size) async {
+    testBothViewports('an arrow points where the drag ended', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       harness(tester).useTool(SlideCanvasTool.arrowLine);
       await tester.pump();
@@ -179,14 +194,18 @@ void main() {
       await tester.pump();
       const length = SlideDocumentController.defaultLineLength;
       expectFrame(
-          added().frame, const Offset(1000, 100) & const Size(length, 0));
+        added().frame,
+        const Offset(1000, 100) & const Size(length, 0),
+      );
       expect((added() as LineElement).endCap, LineCap.arrow);
     });
   });
 
   group('image tool', () {
-    testBothViewports('a click asks for a picture for the default place',
-        (tester, size) async {
+    testBothViewports('a click asks for a picture for the default place', (
+      tester,
+      size,
+    ) async {
       final requests = <ElementFrame?>[];
       await pumpCanvas(tester, doc, size: size, onPickImage: requests.add);
       harness(tester).useTool(SlideCanvasTool.image);
@@ -198,8 +217,10 @@ void main() {
       expect(harness(tester).tool, SlideCanvasTool.select);
     });
 
-    testBothViewports('a drag asks for a picture to fit the box',
-        (tester, size) async {
+    testBothViewports('a drag asks for a picture to fit the box', (
+      tester,
+      size,
+    ) async {
       final requests = <ElementFrame?>[];
       await pumpCanvas(tester, doc, size: size, onPickImage: requests.add);
       harness(tester).useTool(SlideCanvasTool.image);
@@ -212,8 +233,9 @@ void main() {
   });
 
   group('image resize', () {
-    testWidgets('keeps the aspect ratio at an edge and a corner',
-        (tester) async {
+    testWidgets('keeps the aspect ratio at an edge and a corner', (
+      tester,
+    ) async {
       await pumpCanvas(tester, doc);
       await tester.tap(elementKey('pic'));
       await tester.pump();
@@ -246,8 +268,9 @@ void main() {
       expect(frame.width, closeTo(300, 0.5));
     });
 
-    testWidgets('a shape still keeps its aspect only with Shift',
-        (tester) async {
+    testWidgets('a shape still keeps its aspect only with Shift', (
+      tester,
+    ) async {
       await pumpCanvas(tester, doc);
       await tester.tap(elementKey('box'));
       await tester.pump();
@@ -260,8 +283,10 @@ void main() {
   });
 
   group('keyboard', () {
-    testBothViewports('Escape returns to select without drawing',
-        (tester, size) async {
+    testBothViewports('Escape returns to select without drawing', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       harness(tester).useTool(SlideCanvasTool.line);
       await tester.pump();
@@ -276,8 +301,10 @@ void main() {
       expect(ids(), ['title', 'box', 'ball', 'pic']);
     });
 
-    testBothViewports('Enter inserts at the slide center as one step',
-        (tester, size) async {
+    testBothViewports('Enter inserts at the slide center as one step', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       // Give the canvas focus, as a click on it would.
       await tester.tapAt(slideToGlobal(tester, const Offset(10, 10)));
@@ -293,8 +320,9 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testWidgets('Enter with the text tool opens a centered box for typing',
-        (tester) async {
+    testWidgets('Enter with the text tool opens a centered box for typing', (
+      tester,
+    ) async {
       final editing = SlideTextEditingController();
       addTearDown(editing.dispose);
       await pumpCanvas(tester, doc, textEditing: editing);
@@ -322,38 +350,43 @@ void main() {
 
   group('accessibility', () {
     testBothViewports(
-        'switching tools keeps the canvas and its semantics intact',
-        (tester, size) async {
-      final semantics = tester.ensureSemantics();
-      await pumpCanvas(tester, doc, size: size);
-      Element inner() => tester.element(find
-          .descendant(
-            of: find.byType(SlideCanvas),
-            matching: find.byType(LayoutBuilder),
-          )
-          .first);
-      final before = inner();
-      for (final tool in [
-        SlideCanvasTool.text,
-        const SlideCanvasTool.shape(ShapeKind.star),
-        SlideCanvasTool.select,
-      ]) {
-        harness(tester).useTool(tool);
+      'switching tools keeps the canvas and its semantics intact',
+      (tester, size) async {
+        final semantics = tester.ensureSemantics();
+        await pumpCanvas(tester, doc, size: size);
+        Element inner() => tester.element(
+              find
+                  .descendant(
+                    of: find.byType(SlideCanvas),
+                    matching: find.byType(LayoutBuilder),
+                  )
+                  .first,
+            );
+        final before = inner();
+        for (final tool in [
+          SlideCanvasTool.text,
+          const SlideCanvasTool.shape(ShapeKind.star),
+          SlideCanvasTool.select,
+        ]) {
+          harness(tester).useTool(tool);
+          await tester.pump();
+        }
+        await tester.tap(elementKey('box'));
         await tester.pump();
-      }
-      await tester.tap(elementKey('box'));
-      await tester.pump();
-      await tester.tap(elementKey('ball'));
-      await tester.pump();
-      expect(harness(tester).selection, {'ball'});
-      // The canvas was rebuilt in place, not torn down and remade.
-      expect(inner(), same(before));
-      expect(tester.takeException(), isNull);
-      semantics.dispose();
-    });
+        await tester.tap(elementKey('ball'));
+        await tester.pump();
+        expect(harness(tester).selection, {'ball'});
+        // The canvas was rebuilt in place, not torn down and remade.
+        expect(inner(), same(before));
+        expect(tester.takeException(), isNull);
+        semantics.dispose();
+      },
+    );
 
-    testBothViewports('a drawing tool labels the canvas, and a tap inserts',
-        (tester, size) async {
+    testBothViewports('a drawing tool labels the canvas, and a tap inserts', (
+      tester,
+      size,
+    ) async {
       final semantics = tester.ensureSemantics();
       await pumpCanvas(tester, doc, size: size);
       expect(find.bySemanticsLabel('Insert star'), findsNothing);
@@ -378,8 +411,10 @@ void main() {
       semantics.dispose();
     });
 
-    testBothViewports('200% text scale leaves drawing alone',
-        (tester, size) async {
+    testBothViewports('200% text scale leaves drawing alone', (
+      tester,
+      size,
+    ) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pumpCanvas(tester, doc, size: size);
@@ -392,8 +427,9 @@ void main() {
   });
 
   group('drawing', () {
-    testWidgets('dashed, translucent shapes and lines paint without error',
-        (tester) async {
+    testWidgets('dashed, translucent shapes and lines paint without error', (
+      tester,
+    ) async {
       final deck = canvasDeck();
       final slide = deck.slides.single;
       final frame = ElementFrame(x: 100, y: 100, width: 300, height: 200);
@@ -427,10 +463,7 @@ void main() {
       addTearDown(styledDoc.dispose);
       await pumpCanvas(tester, styledDoc);
       expect(
-        find.descendant(
-          of: elementKey('star'),
-          matching: find.byType(Opacity),
-        ),
+        find.descendant(of: elementKey('star'), matching: find.byType(Opacity)),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);

@@ -86,9 +86,8 @@ class SlideTextEditor extends StatelessWidget {
                       textAlign: layout.textAlign(paragraphs[i]),
                       scale: scale,
                       cursorColor: style.selectionColor,
-                      selectionColor: style.selectionColor.withValues(
-                        alpha: 0.35,
-                      ),
+                      selectionColor:
+                          style.selectionColor.withValues(alpha: 0.35),
                       onDone: onDone,
                       onTab: onTab,
                     ),

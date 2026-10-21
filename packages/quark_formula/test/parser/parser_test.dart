@@ -108,15 +108,17 @@ void main() {
       expect(root.right, isA<NumberNode>());
     });
 
-    test('parses cell references and deduplicates metadata in encounter order',
-        () {
-      final parsed = parseTokens(lex('=SUM(A1, A1, B2, A1, B2) + A1'));
+    test(
+      'parses cell references and deduplicates metadata in encounter order',
+      () {
+        final parsed = parseTokens(lex('=SUM(A1, A1, B2, A1, B2) + A1'));
 
-      expect(parsed.calledFunctions, orderedEquals(['SUM']));
-      expect(parsed.cellRefs, orderedEquals(['A1', 'B2']));
-      expect(parsed.rangeRefs, isEmpty);
-      expect(parsed.hasRangeArgs, isFalse);
-    });
+        expect(parsed.calledFunctions, orderedEquals(['SUM']));
+        expect(parsed.cellRefs, orderedEquals(['A1', 'B2']));
+        expect(parsed.rangeRefs, isEmpty);
+        expect(parsed.hasRangeArgs, isFalse);
+      },
+    );
 
     test('parses nested function calls with range arguments', () {
       final parsed = parseTokens(lex('=IF(A1>0, SUM(B1:B3), MAX(C1:C3))'));

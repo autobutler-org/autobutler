@@ -8,7 +8,8 @@
 /// and the `SlideTextEditingController` a toolbar formats through; and the
 /// drawing tools: `SlideCanvasTool` and the `SlideToolController` a toolbar
 /// picks them through, the insertion commands, `ElementStyle`, `ImageSource`,
-/// and the pure path and drag geometry behind shapes and lines; grouping
+/// and the pure path and drag geometry behind shapes and lines, including
+/// a path shape's preset outline and its frame-relative contours; grouping
 /// (`GroupElement`, `SlideTree`, the group geometry), alignment
 /// (`alignFrames`, `distributeFrames`, `matchFrameSizes`), and copy and
 /// paste through a `SlideClipboard` and its `SlideClipboardCodec`; and
@@ -30,7 +31,8 @@
 /// geometry (`ChartAxisScale`, `ChartPieSlice`, `ChartLayout`,
 /// `chartBars` and the rest), and the `SlideChartEditingController` a
 /// toolbar works on the selected chart through; and the canvas's
-/// `SlideCanvasInteraction`, which locks it to selecting or viewing.
+/// `SlideCanvasInteraction`, which locks it to selecting or viewing; and
+/// the `ElementShadow` a shape or picture casts.
 library;
 
 export 'src/clipboard/slide_clipboard.dart';
@@ -61,6 +63,7 @@ export 'src/format/qslide_format_exception.dart';
 export 'src/format/slide_clipboard_codec.dart';
 export 'src/geometry/frame_geometry.dart';
 export 'src/geometry/group_geometry.dart';
+export 'src/geometry/preset_geometry.dart';
 export 'src/geometry/slide_alignment.dart';
 export 'src/geometry/slide_drawing.dart';
 export 'src/geometry/slide_handle.dart';
@@ -81,10 +84,12 @@ export 'src/model/chart_kind.dart';
 export 'src/model/chart_options.dart';
 export 'src/model/chart_series.dart';
 export 'src/model/element_frame.dart';
+export 'src/model/element_shadow.dart';
 export 'src/model/element_style.dart';
 export 'src/model/image_source.dart';
 export 'src/model/presentation.dart';
 export 'src/model/rich_text.dart';
+export 'src/model/shape_contour.dart';
 export 'src/model/slide.dart';
 export 'src/model/slide_background.dart';
 export 'src/model/slide_color.dart';
