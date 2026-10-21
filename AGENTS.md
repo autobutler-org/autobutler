@@ -157,20 +157,42 @@ the same thing.
 
 ### Verification before claiming done
 
-- Run `make check` and the relevant `make test/...` targets locally before every push. CI has gone red
-  repeatedly on `gofmt`, `dart format`, cspell, and `scripts/check-go-structure.bash` — all of which run
-  locally in seconds.
 - Report exactly what was run. Never write "verified by hand", "tested manually", or the like — in a PR, a
-  commit, an issue, or an upstream project — unless that verification actually happened in this session.
+  commit, an issue, or an upstream project — unless that verification actually happened in this session. When
+  the suites ran only in GitHub Actions, the PR says "tested by CI".
 - A PR or commit never carries a Claude Code session link (`https://claude.ai/code/session_...`), and all prose
   and new identifiers use American spelling (`color`, `behavior`, `canceled`).
+
+#### CI-first for agents
+
+An agent running under saddle leans on GitHub Actions for the full gate rather than running it locally. The
+`check`, `test`, `build` and CodeQL workflows (`check-*`, `security-backend`, `test-backend`, `test-postgres`,
+`test-frontend`, `api-chaos`, `power-cut`, `build-*`) run on the PR, and a red job comes back as a repair task.
+
+- **Run the cheap checks CI keeps failing on**, each of which finishes in seconds: `gofmt` and `dart format` on
+  what you changed, the one test file or package you touched, `make check/spelling` when you touched words, and
+  `make check/structure/go` or `make check/migrations` when you touched a package layout or a migration.
+- **Write the failing test first.** It is the evidence for a fix, and it runs on its own in seconds.
+- **Do not run the long suites as a routine:** the full `make check`, the full `make test/unit/*`,
+  `make test/integration/backend`, `make test/db/postgres`, or the e2e and Probe suites. Push, let CI run them,
+  and fix what it reports.
+- **Not relaxed:** generated code is still regenerated and committed when its inputs change —
+  `make generate/backend` after a `sql/queries/`, migration or swagger change, and
+  `make generate/frontend/widget-docs` after a widget's `///` class comment — because CI fails on the diff.
+  Formatting still has to be clean.
+- **The commit hook still runs `make check`.** `make setup/hooks` installs it as the pre-commit hook, so in a
+  fresh worktree run `flutter pub get` first, or `dart format` rewrites hundreds of files under `packages/`.
+  Slimming the hook is tracked in #3663; leave the hooks and the `Makefile` alone.
+
+Every target stays available to humans, and the full `make check` or a single `make test/...` target is the
+right tool for reproducing a CI failure locally.
 
 ### The schmeide factory
 
 [schmeide](https://github.com/autobutler-org/schmeide) is the org's software factory. Given an assigned issue
 carrying the `schmeide:ready` label, it runs a fresh Claude Code or Grok CLI session in a worktree, runs the
 gate, opens a PR as the schmeide GitHub App, and reviews it. `.schmeide/config.toml` sets the gate to
-`make check test` (through `gmake` where it exists), the check this file already asks for before every push,
+`make check test` (through `gmake` where it exists), the same targets CI runs on every PR,
 and turns on factory merge: a PR that passes review goes into the merge queue once its checks are green, with
 no person in the loop. It replaces saddle: the `saddle:` labels, `saddle/...` branches and `Saddle-Task:`
 trailers in older history are the predecessor's, and new work goes through schmeide.
@@ -565,7 +587,7 @@ yet rather than a rule violation. Decouple it with the `page-decoupler` agent in
   keep private helper widgets near the public API that uses them.
 - Constructor patterns: public widgets should accept a named `Key? key` (use `super.key`), prefer `super` parameter forwarding,
   and avoid adding unused `key` parameters to private/internal widgets.
-- Validation: after refactor run the analyzer (`flutter analyze` / `make check`), update or add focused unit/widget tests,
+- Validation: after refactor run `flutter analyze` on what you changed, update or add focused unit/widget tests,
   and update example/demo imports and documentation.
 
 ### State and async behavior
@@ -775,7 +797,8 @@ widgets and reads in one screen.
   Build and test jobs are path-filtered there as they are on a PR, against the entry queued ahead; only the
   push to `main` runs every job, so a path missing from `.github/path-filters.yml` goes red after the merge.
   Rebase when there is a real conflict, or when the queue rejects the PR
-- Run `make check` before pushing; the pre-commit hook runs it too, once `make setup/hooks` has
+- Humans run `make check` before pushing, and the pre-commit hook runs it too once `make setup/hooks` has;
+  an agent follows "CI-first for agents" under Verification before claiming done instead
 
 ### Platform and generated code
 
