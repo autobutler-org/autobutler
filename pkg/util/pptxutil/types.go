@@ -62,12 +62,16 @@ type qslideElement struct {
 	// body when left out.
 	TextRole string `json:"textRole"`
 
-	// A shape, and the stroke and opacity a line shares.
-	Kind         string        `json:"kind"`
-	Fill         string        `json:"fill"`
-	Stroke       *qslideStroke `json:"stroke"`
-	CornerRadius *float64      `json:"cornerRadius"`
-	Opacity      *float64      `json:"opacity"`
+	// A shape, and the stroke and opacity a line shares. Preset and Adjust
+	// are a path shape's preset geometry and the adjust values the file
+	// stored; other kinds leave them empty.
+	Kind         string             `json:"kind"`
+	Preset       string             `json:"preset"`
+	Adjust       map[string]float64 `json:"adjust"`
+	Fill         string             `json:"fill"`
+	Stroke       *qslideStroke      `json:"stroke"`
+	CornerRadius *float64           `json:"cornerRadius"`
+	Opacity      *float64           `json:"opacity"`
 
 	// A picture.
 	Source  string `json:"source"`
