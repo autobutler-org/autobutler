@@ -928,13 +928,11 @@ func TestChatConverge_ChannelState(t *testing.T) {
 	h.expect(t, http.StatusNotFound, http.MethodGet, path+"/messages", "carol", "", nil)
 }
 
-// TestChatConverge_ReadMarkerCatchUp is the catch-up half of a read marker.
-// A session that misses chat_read_marker_changed can still read unreadCount
-// off the channel list, but nothing returns lastReadMessageId. PUT
-// /chat/channels/{id}/read moves the marker when the id is newer, so it is
-// not a safe query. The body fails until one of those reads exists.
+// TestChatConverge_ReadMarkerCatchUp is the catch-up half of a read marker
+// (#3543). A session that misses chat_read_marker_changed reads unreadCount
+// and lastReadMessageId off the channel list. PUT /chat/channels/{id}/read
+// moves the marker when the id is newer, so it is not a safe query.
 func TestChatConverge_ReadMarkerCatchUp(t *testing.T) {
-	t.Skip("gap #3543: no read returns lastReadMessageId; GET /chat/channels has unreadCount only, and PUT /chat/channels/{id}/read moves the marker when given a newer id")
 
 	h := newHarness(t)
 	roomID, room := roomWithKey(t, h)
@@ -959,8 +957,7 @@ func TestChatConverge_ReadMarkerCatchUp(t *testing.T) {
 
 	carol2.reconnect(t)
 	carol2.catchUp(t, messages)
-	// Unread count survives on the channel list. The marker id does not,
-	// unless a read of it was added.
+	// Unread count and marker both survive on the channel list.
 	if got := h.unreadCount(t, "carol", roomID); got != marked.UnreadCount {
 		t.Fatalf("carol unread on the list = %d, mark-read answered %d", got, marked.UnreadCount)
 	}
@@ -974,8 +971,8 @@ func TestChatConverge_ReadMarkerCatchUp(t *testing.T) {
 }
 
 // readMarker is a session's marker as a later read can see it: GET
-// /chat/channels/{id}/read when that route exists, otherwise lastReadMessageId
-// on the channel list. Neither exists today.
+// /chat/channels/{id}/read if that route is ever added, otherwise
+// lastReadMessageId on the channel list.
 func readMarker(t *testing.T, h harness, room, as string, channelID int64) (chatutil.MarkReadResult, bool) {
 	t.Helper()
 	code, body := h.do(t, http.MethodGet, room+"/read", as, "")

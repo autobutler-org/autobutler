@@ -16,9 +16,9 @@ func (f fixture) markRead(as string, channelID, messageID int64) (chatutil.MarkR
 	})
 }
 
-// unread is the account's unread count on a channel in its list, all=1 for an
-// admin, and -1 when the channel isn't listed.
-func (f fixture) unread(t *testing.T, as string, channelID int64) int64 {
+// listed is a channel as the account's list shows it, all=1 for an admin,
+// and false when the channel isn't listed.
+func (f fixture) listed(t *testing.T, as string, channelID int64) (chatutil.Channel, bool) {
 	t.Helper()
 	result, err := chatutil.ListChannels(chatutil.ListChannelsParams{
 		Ctx: context.Background(), Database: f.database, Principal: f.as(as), All: as == "admin",
@@ -28,8 +28,18 @@ func (f fixture) unread(t *testing.T, as string, channelID int64) int64 {
 	}
 	for _, channel := range result.Channels {
 		if channel.ID == channelID {
-			return channel.UnreadCount
+			return channel, true
 		}
+	}
+	return chatutil.Channel{}, false
+}
+
+// unread is the account's unread count on a channel in its list, and -1 when
+// the channel isn't listed.
+func (f fixture) unread(t *testing.T, as string, channelID int64) int64 {
+	t.Helper()
+	if channel, ok := f.listed(t, as, channelID); ok {
+		return channel.UnreadCount
 	}
 	return -1
 }
@@ -210,5 +220,36 @@ func TestReadMarkersRespectPermissions(t *testing.T) {
 	}
 	if got := f.unread(t, "carol", room); got != 0 {
 		t.Errorf("unread without read_messages = %d, want 0", got)
+	}
+}
+
+// TestListedReadMarker restores a marker from the channel list (#3543): a
+// session that missed chat_read_marker_changed reads lastReadMessageId there.
+// It is the account's own, 0 before any read, and 0 without read_messages.
+func TestListedReadMarker(t *testing.T) {
+	f := newFixture(t)
+	room := f.keyedRoom(t, "room")
+	ids := f.postN(t, "bob", room, 'a', 3)
+
+	if channel, _ := f.listed(t, "carol", room); channel.LastReadMessageID != 0 {
+		t.Errorf("marker before a read = %d, want 0", channel.LastReadMessageID)
+	}
+	marked, err := f.markRead("carol", room, ids[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	channel, _ := f.listed(t, "carol", room)
+	if channel.LastReadMessageID != marked.LastReadMessageID || channel.UnreadCount != marked.UnreadCount {
+		t.Errorf("listed marker %d unread %d, mark-read answered %+v", channel.LastReadMessageID, channel.UnreadCount, marked)
+	}
+	if channel, _ := f.listed(t, "bob", room); channel.LastReadMessageID != 0 {
+		t.Errorf("bob's marker = %d after carol read, want 0", channel.LastReadMessageID)
+	}
+
+	if err := f.set(t, "bob", room, f.users["carol"], 0, chatutil.PermManageMembers); err != nil {
+		t.Fatal(err)
+	}
+	if channel, _ := f.listed(t, "carol", room); channel.LastReadMessageID != 0 {
+		t.Errorf("marker without read_messages = %d, want 0", channel.LastReadMessageID)
 	}
 }

@@ -3107,7 +3107,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns the channels the caller is a member of, directly, through a group, or through everyone, general first and then by name, each with the caller's effective permissions there: the union of every row that reaches them, and unreadCount: the messages after the caller's read marker (PUT /chat/channels/{id}/read) that someone else wrote and nobody deleted, 0 on a channel the caller lacks read_messages on. A channel on which that set is empty is left out. Admins get only their own channels too, unless they pass all=1: then the channels they are not in follow, in the same order, with an empty set.",
+                "description": "Returns the channels the caller is a member of, directly, through a group, or through everyone, general first and then by name, each with the caller's effective permissions there: the union of every row that reaches them, and unreadCount: the messages after the caller's read marker (PUT /chat/channels/{id}/read) that someone else wrote and nobody deleted, 0 on a channel the caller lacks read_messages on, and lastReadMessageId: the caller's read marker there, so a session that missed chat_read_marker_changed can restore it, 0 before the first read and without read_messages. A channel on which that set is empty is left out. Admins get only their own channels too, unless they pass all=1: then the channels they are not in follow, in the same order, with an empty set.",
                 "produces": [
                     "application/json"
                 ],
@@ -11199,6 +11199,10 @@ const docTemplate = `{
                 "kind": {
                     "description": "Kind is channel; dm is reserved for direct messages (#2423).",
                     "type": "string"
+                },
+                "lastReadMessageId": {
+                    "description": "LastReadMessageID is the caller's read marker there, as PUT\n/chat/channels/{id}/read leaves it, so a session that missed\nchat_read_marker_changed can restore it (#3543). It is 0 before the\nfirst read and without read_messages.",
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"

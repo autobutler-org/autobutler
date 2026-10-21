@@ -637,16 +637,25 @@ func unreadCounts(ctx context.Context, queries db.Querier, userID int64) (map[in
 	return counts, err
 }
 
-// attachUnread sets UnreadCount on each channel the account reads.
-func attachUnread(ctx context.Context, queries db.Querier, userID int64, channels []Channel) error {
+// attachReadState sets UnreadCount and LastReadMessageID on each channel the
+// account reads.
+// ponytail: one marker query per readable channel. Fold the markers into
+// CountChatUnreadForUser if a long channel list ever makes this slow.
+func attachReadState(ctx context.Context, queries db.Querier, userID int64, channels []Channel) error {
 	unread, err := unreadCounts(ctx, queries, userID)
 	if err != nil {
 		return err
 	}
 	for i := range channels {
-		if channels[i].Permissions.Has(PermReadMessages) {
-			channels[i].UnreadCount = unread[channels[i].ID]
+		if !channels[i].Permissions.Has(PermReadMessages) {
+			continue
 		}
+		channels[i].UnreadCount = unread[channels[i].ID]
+		marker, err := queries.GetChatReadMarker(ctx, db.GetChatReadMarkerParams{UserID: userID, ChannelID: channels[i].ID})
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		channels[i].LastReadMessageID = marker
 	}
 	return nil
 }
