@@ -11,7 +11,7 @@ import 'qslide_format_exception.dart';
 /// `schemaVersion` beside the fields of [Presentation.toJson].
 ///
 /// ```json
-/// {"schemaVersion": 5, "title": "Demo",
+/// {"schemaVersion": 6, "title": "Demo",
 ///  "size": {"width": 1920, "height": 1080},
 ///  "slides": [{"id": "s1", "elements": []}]}
 /// ```
@@ -32,8 +32,8 @@ import 'qslide_format_exception.dart';
 ///   theme colors: its theme becomes the built-in one of that id, or none,
 ///   and every slide is blank-layout. Version 2 had no transitions: every
 ///   slide cuts, which is what a version 3 file without them means too.
-///   Version 3 had no tables, and version 4 no charts, so each reads as it
-///   is.
+///   Version 3 had no tables, version 4 no charts, and version 5 no
+///   shadows, so each reads as it is.
 abstract final class QslideCodec {
   /// The schema version this package writes and the newest it reads.
   ///
@@ -46,8 +46,11 @@ abstract final class QslideCodec {
   /// (`ChartElement`), a new version for the same reason. A path shape —
   /// a preset name and its adjust values, or a list of contours — is
   /// additive at version 5 and does not bump it: a reader that does not
-  /// know the kind keeps the element as an unknown element.
-  static const schemaVersion = 5;
+  /// know the kind keeps the element as an unknown element. Version 6
+  /// added the `shadow` a shape or picture casts (`ElementShadow`): a
+  /// reader that kept it as an unknown field would draw the element without
+  /// it, so it asks to be updated instead.
+  static const schemaVersion = 6;
 
   /// The file extension, including the dot.
   static const fileExtension = '.qslide';
@@ -97,6 +100,7 @@ abstract final class QslideCodec {
     2: _fromVersion2,
     3: _fromVersion3,
     4: _fromVersion4,
+    5: _fromVersion5,
   };
 
   /// Version 1 to 2: the `theme` string — "its id or file path", which no
@@ -129,6 +133,12 @@ abstract final class QslideCodec {
   /// `chart` that a version 4 file carried — none was ever written — is
   /// read as a chart from here on.
   static JsonMap _fromVersion4(JsonMap json) => {...json, 'schemaVersion': 5};
+
+  /// Version 5 to 6: shadows are new, and nothing a version 5 file holds
+  /// changes meaning, so only the version changes. A `shadow` that a
+  /// version 5 file carried as an unknown field — a PowerPoint import
+  /// writes one at version 1 — is read as a shadow from here on.
+  static JsonMap _fromVersion5(JsonMap json) => {...json, 'schemaVersion': 6};
 
   /// The `.qslide` root object for [presentation].
   static JsonMap toJson(Presentation presentation) => {

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "title": "Written by a newer Quark",
   "size": {"width": 1024, "height": 768, "unit": "pt"},
   "theme": {
@@ -48,7 +48,7 @@
           "kind": "rectangle",
           "frame": {"x": 0, "y": 0, "width": 10, "height": 10},
           "stroke": {"color": "#000000", "width": 1, "dash": [4, 2]},
-          "shadow": {"blur": 8}
+          "glow": {"radius": 8}
         },
         {
           "id": "e3",

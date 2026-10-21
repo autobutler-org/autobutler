@@ -9,6 +9,7 @@ import 'chart_data.dart';
 import 'chart_kind.dart';
 import 'chart_options.dart';
 import 'element_frame.dart';
+import 'element_shadow.dart';
 import 'image_source.dart';
 import 'shape_contour.dart';
 import 'slide_color.dart';
@@ -131,6 +132,7 @@ sealed class SlideElement {
           cornerRadius:
               _nonNegative(optionalNumber(json, 'cornerRadius', path)),
           opacity: _opacity(json, path),
+          shadow: _shadow(json, path),
           extra: unknownFields(json, ShapeElement._known),
         );
       case ImageElement.typeName:
@@ -140,6 +142,7 @@ sealed class SlideElement {
           source: requireString(json, 'source', path),
           altText: optionalString(json, 'altText', path) ?? '',
           fit: enumByName(json, 'fit', ImageFit.values, ImageFit.contain),
+          shadow: _shadow(json, path),
           extra: unknownFields(json, ImageElement._known),
         );
       case LineElement.typeName:
@@ -184,6 +187,11 @@ sealed class SlideElement {
 /// Reads an element's `opacity`, 1 when absent, clamped to 0–1.
 double _opacity(JsonMap json, String path) =>
     (optionalNumber(json, 'opacity', path) ?? 1).clamp(0.0, 1.0);
+
+/// Reads an element's optional `shadow`.
+ElementShadow? _shadow(JsonMap json, String path) => json['shadow'] == null
+    ? null
+    : ElementShadow.fromJson(json['shadow'], '$path.shadow');
 
 double? _nonNegative(double? value) =>
     value == null ? null : math.max(0, value);
@@ -425,6 +433,8 @@ enum ShapeKind {
 /// A [ShapeKind.path] draws [contours] when it has any, and otherwise the
 /// preset named by [preset] at [adjust]. Both are optional and additive:
 /// a file from before path shapes has neither, and reads as it did.
+///
+/// A [shadow], when it has one, is cast by the fill and outline together.
 class ShapeElement extends SlideElement {
   /// Creates a shape; [opacity] runs from 0 (invisible) to 1 (opaque).
   const ShapeElement({
@@ -438,6 +448,7 @@ class ShapeElement extends SlideElement {
     this.stroke,
     this.cornerRadius,
     this.opacity = 1,
+    this.shadow,
     super.extra,
   })  : assert(cornerRadius == null || cornerRadius >= 0),
         assert(opacity >= 0 && opacity <= 1);
@@ -457,6 +468,7 @@ class ShapeElement extends SlideElement {
     'stroke',
     'cornerRadius',
     'opacity',
+    'shadow',
   };
 
   /// Which figure to draw.
@@ -486,6 +498,9 @@ class ShapeElement extends SlideElement {
   /// How opaque the whole shape is, fill and outline together: 0 to 1.
   final double opacity;
 
+  /// The drop shadow the shape casts, or `null` for none.
+  final ElementShadow? shadow;
+
   @override
   String get type => typeName;
 
@@ -504,10 +519,11 @@ class ShapeElement extends SlideElement {
         if (stroke != null) 'stroke': stroke!.toJson(),
         if (cornerRadius != null) 'cornerRadius': jsonNumber(cornerRadius!),
         if (opacity != 1) 'opacity': jsonNumber(opacity),
+        if (shadow != null) 'shadow': shadow!.toJson(),
       };
 
   /// Returns a copy with the given fields replaced; pass `null` to clear
-  /// [fill], [stroke], [cornerRadius] or [preset].
+  /// [fill], [stroke], [cornerRadius], [preset] or [shadow].
   ///
   /// Changing [kind] drops [preset], [adjust] and [contours] unless the
   /// call passes new values, so restyling a path to another figure does
@@ -523,6 +539,7 @@ class ShapeElement extends SlideElement {
     Object? preset = unset,
     Object? adjust = unset,
     Object? contours = unset,
+    Object? shadow = unset,
   }) {
     final resetPath = kind != null && kind != this.kind;
     return ShapeElement(
@@ -544,6 +561,7 @@ class ShapeElement extends SlideElement {
           ? this.cornerRadius
           : cornerRadius as double?,
       opacity: opacity ?? this.opacity,
+      shadow: identical(shadow, unset) ? this.shadow : shadow as ElementShadow?,
       extra: extra,
     );
   }
@@ -567,6 +585,7 @@ class ShapeElement extends SlideElement {
       other.stroke == stroke &&
       other.cornerRadius == cornerRadius &&
       other.opacity == opacity &&
+      other.shadow == shadow &&
       jsonEquals(other.extra, extra);
 
   @override
@@ -581,6 +600,7 @@ class ShapeElement extends SlideElement {
         stroke,
         cornerRadius,
         opacity,
+        shadow,
         jsonHash(extra),
       );
 }
@@ -598,7 +618,7 @@ enum ImageFit {
   fill,
 }
 
-/// A picture placed on the slide.
+/// A picture placed on the slide, casting [shadow] when it has one.
 class ImageElement extends SlideElement {
   /// Creates an image element.
   const ImageElement({
@@ -607,13 +627,22 @@ class ImageElement extends SlideElement {
     required this.source,
     this.altText = '',
     this.fit = ImageFit.contain,
+    this.shadow,
     super.extra,
   });
 
   /// The `type` discriminator, `image`.
   static const typeName = 'image';
 
-  static const _known = {'id', 'type', 'frame', 'source', 'altText', 'fit'};
+  static const _known = {
+    'id',
+    'type',
+    'frame',
+    'source',
+    'altText',
+    'fit',
+    'shadow',
+  };
 
   /// The picture, as an [ImageSource] reference string — a Quark file path
   /// or `asset:<id>` for an uploaded asset — that the host app resolves.
@@ -630,6 +659,10 @@ class ImageElement extends SlideElement {
   /// How the picture fits the frame.
   final ImageFit fit;
 
+  /// The drop shadow the frame casts, or `null` for none. It is the
+  /// frame's shadow whatever [fit] leaves of it uncovered.
+  final ElementShadow? shadow;
+
   @override
   String get type => typeName;
 
@@ -638,15 +671,18 @@ class ImageElement extends SlideElement {
         'source': source,
         if (altText.isNotEmpty) 'altText': altText,
         if (fit != ImageFit.contain) 'fit': fit.name,
+        if (shadow != null) 'shadow': shadow!.toJson(),
       };
 
-  /// Returns a copy with the given fields replaced.
+  /// Returns a copy with the given fields replaced; pass `null` to clear
+  /// [shadow].
   ImageElement copyWith({
     String? id,
     ElementFrame? frame,
     String? source,
     String? altText,
     ImageFit? fit,
+    Object? shadow = unset,
   }) =>
       ImageElement(
         id: id ?? this.id,
@@ -654,6 +690,8 @@ class ImageElement extends SlideElement {
         source: source ?? this.source,
         altText: altText ?? this.altText,
         fit: fit ?? this.fit,
+        shadow:
+            identical(shadow, unset) ? this.shadow : shadow as ElementShadow?,
         extra: extra,
       );
 
@@ -671,11 +709,12 @@ class ImageElement extends SlideElement {
       other.source == source &&
       other.altText == altText &&
       other.fit == fit &&
+      other.shadow == shadow &&
       jsonEquals(other.extra, extra);
 
   @override
   int get hashCode =>
-      Object.hash(id, frame, source, altText, fit, jsonHash(extra));
+      Object.hash(id, frame, source, altText, fit, shadow, jsonHash(extra));
 }
 
 /// What is drawn at an end of a [LineElement]. A value this version does

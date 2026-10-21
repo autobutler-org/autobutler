@@ -31,7 +31,8 @@
 /// geometry (`ChartAxisScale`, `ChartPieSlice`, `ChartLayout`,
 /// `chartBars` and the rest), and the `SlideChartEditingController` a
 /// toolbar works on the selected chart through; and the canvas's
-/// `SlideCanvasInteraction`, which locks it to selecting or viewing.
+/// `SlideCanvasInteraction`, which locks it to selecting or viewing; and
+/// the `ElementShadow` a shape or picture casts.
 library;
 
 export 'src/clipboard/slide_clipboard.dart';
@@ -83,6 +84,7 @@ export 'src/model/chart_kind.dart';
 export 'src/model/chart_options.dart';
 export 'src/model/chart_series.dart';
 export 'src/model/element_frame.dart';
+export 'src/model/element_shadow.dart';
 export 'src/model/element_style.dart';
 export 'src/model/image_source.dart';
 export 'src/model/presentation.dart';
