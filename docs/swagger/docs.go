@@ -10470,6 +10470,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/vault/legacy": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lists the shared household vault from before per-account vaults (#3616): the copy kept beside the database when an upgrade dropped its tables, and any vault.db an older Quark left on a drive. None of it is in anyone's new vault, because it is encrypted under the old shared master password. Nothing is changed or deleted; the list is empty when there is nothing to report.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vault"
+                ],
+                "summary": "List the household vaults an earlier Quark left on this device",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/vaultutil.ListLegacyVaultsResult"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/version": {
             "get": {
                 "security": [
@@ -14807,6 +14844,50 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "integer"
+                    }
+                }
+            }
+        },
+        "vaultutil.LegacyVault": {
+            "type": "object",
+            "properties": {
+                "deviceName": {
+                    "description": "DeviceName names the drive a LegacyVaultOnDrive file is on.",
+                    "type": "string"
+                },
+                "deviceSerial": {
+                    "description": "DeviceSerial is that drive's serial or, for a kept copy, the drive the\nhousehold vault had been moved to.",
+                    "type": "string"
+                },
+                "entries": {
+                    "description": "Entries and Folders count what it holds.",
+                    "type": "integer"
+                },
+                "folders": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "description": "Kind is LegacyVaultKept or LegacyVaultOnDrive.",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "Path is the file on this Quark.",
+                    "type": "string"
+                },
+                "readable": {
+                    "description": "Readable is false for a file that is not a database Quark can count;\nit is listed all the same, with no counts.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "vaultutil.ListLegacyVaultsResult": {
+            "type": "object",
+            "properties": {
+                "vaults": {
+                    "description": "Vaults lists the kept copies first, oldest first, then each drive's\nvault.db. It is empty, never nil, when there are none.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/vaultutil.LegacyVault"
                     }
                 }
             }
