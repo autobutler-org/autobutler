@@ -38,19 +38,20 @@ func (d Destination) Writable(serial string) bool {
 // WriteMultipartVFS streams every file part of a multipart body into the VFS
 // namespace. Parts that are not files under the "files" form name are skipped,
 // and each one is written straight from the wire — the body is never buffered.
-// The caller publishes the upload event once, after the last part lands.
+// A body that saves no file is [ErrNoFiles]. The caller publishes the upload
+// event once, after the last part lands.
 func WriteMultipartVFS(params WriteMultipartParams) (WriteMultipartResult, error) {
 	var result WriteMultipartResult
-	// Ensure the destination directory exists.
-	if params.RootDir != "" {
-		if err := params.FS.MkdirAll(params.Ctx, params.RootDir); err != nil {
-			return result, err
-		}
-	}
+	// The destination directory is created with the first file, so a body
+	// that saves nothing does not leave an empty folder behind.
+	var dirReady bool
 
 	for {
 		part, err := params.Reader.NextPart()
 		if errors.Is(err, io.EOF) {
+			if len(result.Written) == 0 {
+				return result, ErrNoFiles
+			}
 			return result, nil
 		}
 		if err != nil {
@@ -64,6 +65,13 @@ func WriteMultipartVFS(params WriteMultipartParams) (WriteMultipartResult, error
 			}
 			part.Close()
 			continue
+		}
+		if !dirReady && params.RootDir != "" {
+			if err := params.FS.MkdirAll(params.Ctx, params.RootDir); err != nil {
+				part.Close()
+				return result, err
+			}
+			dirReady = true
 		}
 
 		// The client-supplied name never carries structure; rootDir does (#1603).

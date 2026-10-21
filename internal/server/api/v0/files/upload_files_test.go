@@ -1,8 +1,12 @@
 package v0_files_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"sync"
@@ -149,6 +153,120 @@ func TestConcurrentUploadsIntoTheSameNestedDir(t *testing.T) {
 			}
 		})
 	}
+}
+
+// noFilesUploadMessage is the 400 a body that saves nothing must carry (#3618).
+const noFilesUploadMessage = "no files in upload; send each file as a multipart part named files"
+
+// A body that never sends a part named "files" used to answer 200 with an
+// empty list: Swagger told clients to use "file", and every other name was
+// skipped. Both upload routes now refuse it. A part named files still lands,
+// including one whose content is empty — a new text file is zero bytes, and
+// that is a file.
+func TestUploadWithoutFilesPartIsBadRequest(t *testing.T) {
+	t.Parallel()
+
+	routes := []string{"/api/v0/files/upload", "/api/v0/files/upload/notes"}
+	cases := []struct {
+		name    string
+		build   func(t *testing.T, mw *multipart.Writer)
+		want    int
+		landed  string
+		content string
+	}{
+		{
+			name: "part named file",
+			build: func(t *testing.T, mw *multipart.Writer) {
+				writeUploadPart(t, mw, "file", "note.txt", "lost")
+			},
+			want: http.StatusBadRequest,
+		},
+		{
+			name:  "no parts",
+			build: func(t *testing.T, mw *multipart.Writer) {},
+			want:  http.StatusBadRequest,
+		},
+		{
+			name: "files part",
+			build: func(t *testing.T, mw *multipart.Writer) {
+				writeUploadPart(t, mw, "files", "note.txt", "kept")
+			},
+			want:    http.StatusOK,
+			landed:  "note.txt",
+			content: "kept",
+		},
+		{
+			name: "empty files part",
+			build: func(t *testing.T, mw *multipart.Writer) {
+				writeUploadPart(t, mw, "files", "empty.txt", "")
+			},
+			want:    http.StatusOK,
+			landed:  "empty.txt",
+			content: "",
+		},
+	}
+
+	for _, target := range uploadTargets {
+		for _, route := range routes {
+			for _, tc := range cases {
+				t.Run(tc.name+" "+route+" ("+target.name+")", func(t *testing.T) {
+					t.Parallel()
+					e, filesDir := target.engine(t)
+					url := target.on(route)
+					w := postUpload(t, e, url, tc.build)
+					if w.Code != tc.want {
+						t.Fatalf("returned %d, want %d: %s", w.Code, tc.want, w.Body.String())
+					}
+					nested := route == "/api/v0/files/upload/notes"
+					if tc.want == http.StatusBadRequest {
+						var body struct {
+							Error string `json:"error"`
+						}
+						if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+							t.Fatalf("decode error: %v (%s)", err, w.Body.String())
+						}
+						if body.Error != noFilesUploadMessage {
+							t.Errorf("error = %q, want %q", body.Error, noFilesUploadMessage)
+						}
+						assertAbsent(t, filepath.Join(filesDir, "note.txt"))
+						// A refused body must not leave the directory it would
+						// have uploaded into.
+						if nested {
+							assertAbsent(t, filepath.Join(filesDir, "notes"))
+						}
+						return
+					}
+					rel := tc.landed
+					if nested {
+						rel = filepath.Join("notes", tc.landed)
+					}
+					assertContent(t, filepath.Join(filesDir, rel), tc.content)
+				})
+			}
+		}
+	}
+}
+
+func writeUploadPart(t *testing.T, mw *multipart.Writer, field, name, content string) {
+	t.Helper()
+	part, err := mw.CreateFormFile(field, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func postUpload(t *testing.T, e *gin.Engine, url string, build func(t *testing.T, mw *multipart.Writer)) *httptest.ResponseRecorder {
+	t.Helper()
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	build(t, mw)
+	if err := mw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return doRequest(e, http.MethodPost, url, &buf, mw.FormDataContentType())
 }
 
 // Saving over an editor document snapshots what it replaces first (#1173),

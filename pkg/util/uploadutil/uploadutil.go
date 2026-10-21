@@ -73,6 +73,12 @@ var (
 	// end: cut off, or not multipart at all. The files before the break have
 	// landed; the client has to resend the rest.
 	ErrInvalidBody = errors.New("uploadutil: malformed multipart body")
+
+	// ErrNoFiles marks a multipart body that saved nothing: no part named
+	// "files", or every such part lacked a file name. A thumbnail or any
+	// other part does not count. The text is the 400 POST /files/upload
+	// returns.
+	ErrNoFiles = errors.New("no files in upload; send each file as a multipart part named files")
 )
 
 // ContentRange is a parsed Content-Range request header: `bytes 0-262143/1000000`.
