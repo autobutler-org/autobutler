@@ -60,3 +60,23 @@ func TestVaultKeyPut_SharesTheAuthLimit(t *testing.T) {
 	}
 	t.Error("50 PUTs from one IP never hit 429")
 }
+
+// TestVaultDelete_SharesTheAuthLimit checks that deleting a vault, which
+// re-confirms the login password, shares the per-IP sign-in limit (#3615).
+func TestVaultDelete_SharesTheAuthLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	middleware.Use(engine, deputil.NewDependencies())
+	const path = "/api/v0/vault"
+	for range 50 {
+		if doMiddlewareReq(engine, httptest.NewRequest(http.MethodGet, path, nil)).Code == http.StatusTooManyRequests {
+			t.Fatal("GET of the vault hit the sign-in limit")
+		}
+	}
+	for range 50 {
+		if doMiddlewareReq(engine, httptest.NewRequest(http.MethodDelete, path, nil)).Code == http.StatusTooManyRequests {
+			return
+		}
+	}
+	t.Error("50 DELETEs from one IP never hit 429")
+}

@@ -64,7 +64,7 @@ class VaultController extends ChangeNotifier {
     Future<AccountCrypto> Function()? loadCrypto,
     Future<WrappedVaultKey?> Function()? fetchKey,
     Future<void> Function(WrappedVaultKey key, String authKey)? putKey,
-    Future<void> Function()? deleteVault,
+    Future<void> Function(String authKey)? deleteVault,
     Future<List<VaultCiphertext>> Function()? listItems,
     Future<VaultCiphertext> Function(VaultCiphertext item)? createItem,
     Future<void> Function(int id, VaultCiphertext item)? updateItem,
@@ -96,7 +96,7 @@ class VaultController extends ChangeNotifier {
   final Future<AccountCrypto> Function() _loadCrypto;
   final Future<WrappedVaultKey?> Function() _fetchKey;
   final Future<void> Function(WrappedVaultKey key, String authKey) _putKey;
-  final Future<void> Function() _deleteVault;
+  final Future<void> Function(String authKey) _deleteVault;
   final Future<List<VaultCiphertext>> Function() _listItems;
   final Future<VaultCiphertext> Function(VaultCiphertext item) _createItem;
   final Future<void> Function(int id, VaultCiphertext item) _updateItem;
@@ -372,8 +372,25 @@ class VaultController extends ChangeNotifier {
 
   /// Deletes the vault, its key and every item, so the account can set up a
   /// new one: the way out for a vault nothing opens any more.
-  Future<void> startOver() async {
-    await _deleteVault();
+  ///
+  /// [password] is the login password, which the user knows even when it no
+  /// longer opens the vault: after a recovery it is the new one. The Quark
+  /// re-confirms its auth key, from [AccountCrypto.deriveAuthKeys] as in
+  /// [setUp], before it deletes anything (#3615). A 403 throws a
+  /// [MessageException] carrying [Errors.incorrectPassword], and the vault
+  /// is left as it was.
+  Future<void> startOver(String password) async {
+    final crypto = await _cryptoLoaded();
+    final keys = crypto.deriveAuthKeys(password, await _authSalt(), kdfParams);
+    keys.dispose();
+    try {
+      await _deleteVault(keys.authKey);
+    } on ApiException catch (e) {
+      if (e.statusCode == 403) {
+        throw const MessageException(Errors.incorrectPassword);
+      }
+      rethrow;
+    }
     _forget();
     _stored = null;
     _formError = null;

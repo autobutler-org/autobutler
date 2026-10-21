@@ -1,11 +1,8 @@
 package v0_vault
 
 import (
-	"errors"
 	"net/http"
 
-	"github.com/autobutler-org/quark/pkg/util/authutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/util/vaultutil"
 
@@ -44,20 +41,8 @@ func createVaultKey(c *gin.Context) *serverutil.Response {
 	}
 	// Checked before anything is written: a key wrapped under anything but the
 	// login password would not open after the next password change.
-	username, _ := ctxutil.Get[string](c, "username")
-	_, err := authutil.VerifyPassword(c.Request.Context(), authutil.VerifyPasswordParams{
-		Queries:  deps.Database().Queries,
-		Username: username,
-		Password: body.Password,
-	})
-	switch {
-	case errors.Is(err, authutil.ErrIncorrectPassword):
-		return serverutil.NewResponse().WithStatusCode(http.StatusForbidden).WithError(err)
-	case errors.Is(err, authutil.ErrUserNotFound):
-		return serverutil.Unauthorized(errors.New("not authenticated"))
-	case err != nil:
-		// ErrAppTooOld is a 426 HttpError, whatever status this names.
-		return serverutil.InternalServerError(err)
+	if failed := reconfirm(c, deps, body.Password); failed != nil {
+		return failed
 	}
 	result, err := vaultutil.CreateKey(vaultutil.CreateKeyParams{Ctx: c.Request.Context(), Queries: deps.Database().Queries, UserID: userID, Key: body.Key})
 	if err != nil {
