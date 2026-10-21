@@ -432,6 +432,15 @@ type Querier interface {
 	// soon as it tries to write. name is not a key column, so on PostgreSQL the
 	// lock does not hold up an insert that references the channel.
 	LockChatChannel(ctx context.Context, id int64) error
+	// LockInstall changes nothing: it is a no-op UPDATE run for the row lock it
+	// takes on the install's one row, which every database has from its first
+	// migration, as the first statement of first-boot setup (#3647). Before setup
+	// there is no user row to lock, so two setups at READ COMMITTED on PostgreSQL
+	// would each count no users and both create a founding admin; with the lock
+	// the second waits here until the first commits and its count sees the first's
+	// user. On SQLite the transaction already holds the write lock (BEGIN
+	// IMMEDIATE), and this changes nothing.
+	LockInstall(ctx context.Context) error
 	MoveAlbum(ctx context.Context, arg MoveAlbumParams) (PhotoAlbum, error)
 	// MoveAlbumItems points album rows at a moved file, or at everything under a
 	// moved folder. The count guard skips a row whose destination the album already
