@@ -230,7 +230,7 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 	// A shape with neither fill nor outline is still a shape the editor can
 	// select, unless it is only there to hold text.
 	if drawn || (!textBox && !hasText) {
-		shape, err := s.presetShape(sp, prst, frame, fill, stroke)
+		shape, err := s.presetShape(sp, prst, xfrm, frame, fill, stroke)
 		if err != nil {
 			return nil, err
 		}
@@ -247,19 +247,25 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 	return out, nil
 }
 
-// presetShape is the shape a geometry draws, a rectangle when the editor
-// has no such kind.
-func (s *slideReader) presetShape(sp *xShape, prst string, frame outFrame, fill string, stroke *outStroke) (outShape, error) {
+// presetShape is the shape a geometry draws: a freeform as a path of its
+// contours, and a rectangle when the editor has no such kind.
+func (s *slideReader) presetShape(sp *xShape, prst string, xfrm *xXfrm, frame outFrame, fill string, stroke *outStroke) (outShape, error) {
 	if err := s.countElement(); err != nil {
 		return outShape{}, err
 	}
 	kind, ok := presetKinds[prst]
 	var preset string
 	var adjust map[string]float64
+	var contours []shapeContour
 	switch {
 	case sp.Props.Custom != nil:
-		s.warn("Freeform shapes were drawn as rectangles.")
-		kind = "rectangle"
+		var drawn bool
+		if contours, drawn = freeformContours(sp.Props.Custom, xfrm, frame); drawn {
+			kind = "path"
+		} else {
+			s.warn("Freeform shapes that could not be read were drawn as rectangles.")
+			kind = "rectangle"
+		}
 	case prst == "" || ok:
 		if prst == "" {
 			kind = "rectangle"
@@ -274,7 +280,7 @@ func (s *slideReader) presetShape(sp *xShape, prst string, frame outFrame, fill 
 	}
 	shape := outShape{
 		ID: s.id(), Type: typeShape, Frame: frame, Kind: kind,
-		Preset: preset, Adjust: adjust, Fill: fill, Stroke: stroke,
+		Preset: preset, Adjust: adjust, Contours: contours, Fill: fill, Stroke: stroke,
 	}
 	if kind == "roundedRectangle" {
 		adj := float64(defaultRoundRectAdj)

@@ -105,6 +105,7 @@ type outShape struct {
 	Kind         string             `json:"kind"`
 	Preset       string             `json:"preset,omitempty"`
 	Adjust       map[string]float64 `json:"adjust,omitempty"`
+	Contours     []shapeContour     `json:"contours,omitempty"`
 	Fill         string             `json:"fill,omitempty"`
 	Stroke       *outStroke         `json:"stroke,omitempty"`
 	CornerRadius *float64           `json:"cornerRadius,omitempty"`
