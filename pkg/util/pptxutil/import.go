@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 )
 
@@ -42,7 +43,15 @@ type importer struct {
 	mediaBytes int64
 	elements   int
 	nextID     int
-	result     ImportPptxResult
+	// shadows counts the shapes whose shadows were left out, a layout's or
+	// master's once however many slides show it; templateShadows is the
+	// template shapes counted, shadowed the slides a shadow was on, and
+	// slideShadowed whether the slide being read has one.
+	shadows         int
+	templateShadows map[string]bool
+	shadowed        []int
+	slideShadowed   bool
+	result          ImportPptxResult
 }
 
 // templatePart is a layout or master, read once and drawn behind every slide
@@ -61,11 +70,12 @@ type templatePart struct {
 // readPptx converts every slide in show order, writing each as it goes.
 func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error) {
 	im := &importer{
-		a:         a,
-		params:    params,
-		templates: map[string]*templatePart{},
-		media:     map[string]string{},
-		skipped:   map[string]string{},
+		a:               a,
+		params:          params,
+		templates:       map[string]*templatePart{},
+		media:           map[string]string{},
+		skipped:         map[string]string{},
+		templateShadows: map[string]bool{},
 	}
 	presPart, err := im.mainPart()
 	if err != nil {
@@ -80,6 +90,15 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 		return im.result, err
 	}
 	im.defaultText = pres.DefaultTextStyle
+	if len(pres.EmbeddedFonts) > 0 {
+		var typefaces []string
+		for _, f := range pres.EmbeddedFonts {
+			if f.Typeface != "" && !slices.Contains(typefaces, f.Typeface) {
+				typefaces = append(typefaces, f.Typeface)
+			}
+		}
+		im.result.Warnings = append(im.result.Warnings, ImportWarning{Message: embeddedFontsWarning(typefaces)})
+	}
 	size := im.setSize(int64(pres.SlideSize.CX), int64(pres.SlideSize.CY))
 
 	out := &qslideWriter{w: params.Out}
@@ -94,6 +113,8 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 		rel, ok := presRels[id.RelID]
 		var slide outSlide
 		var warnings []string
+		shadows := im.shadows
+		im.slideShadowed = false
 		if target, inside := resolveTarget(presPart, rel.Target); ok && inside && a.has(target) {
 			slide, warnings, err = im.readSlide(target)
 		} else {
@@ -107,6 +128,10 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 			// its place in the show as an empty slide.
 			slide = outSlide{Elements: []outElement{}}
 			warnings = []string{"This slide could not be read, so it was left empty."}
+			im.shadows, im.slideShadowed = shadows, false
+		}
+		if im.slideShadowed {
+			im.shadowed = append(im.shadowed, number)
 		}
 		slide.ID = fmt.Sprintf("s%d", number)
 		for _, w := range warnings {
@@ -117,7 +142,33 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 		}
 		im.result.Slides++
 	}
+	// The count is the whole deck's, so the summary lists every slide with a
+	// shadow under one line.
+	for _, number := range im.shadowed {
+		im.result.Warnings = append(im.result.Warnings, ImportWarning{Slide: number, Message: shadowsWarning(im.shadows)})
+	}
 	return im.result, out.close()
+}
+
+// shadowsWarning says how many shapes' shadows were left out.
+func shadowsWarning(shapes int) string {
+	if shapes == 1 {
+		return "The shadow on 1 shape was left out."
+	}
+	return fmt.Sprintf("Shadows on %d shapes were left out.", shapes)
+}
+
+// embeddedFontsWarning says the fonts a package embeds were not used,
+// naming their typefaces when it can.
+func embeddedFontsWarning(typefaces []string) string {
+	names := ""
+	switch n := len(typefaces); {
+	case n == 1:
+		names = " (" + typefaces[0] + ")"
+	case n > 1:
+		names = " (" + strings.Join(typefaces[:n-1], ", ") + " and " + typefaces[n-1] + ")"
+	}
+	return "Embedded fonts" + names + " were not carried over, so text may look different."
 }
 
 // isFileFault reports whether err is the package's fault rather than the
@@ -374,6 +425,23 @@ func (s *slideReader) warn(message string) {
 		s.warned[message] = true
 		s.warnings = append(s.warnings, message)
 	}
+}
+
+// noteShadow counts a converted shape or picture whose shadow is left out.
+// A layout's or master's shape counts once, however many slides show it.
+func (s *slideReader) noteShadow(props xShapeProps, nv xNonVisual, template bool) {
+	if !props.hasShadow() {
+		return
+	}
+	s.slideShadowed = true
+	if template {
+		key := s.source.part + "#" + nv.Common.ID
+		if s.templateShadows[key] {
+			return
+		}
+		s.templateShadows[key] = true
+	}
+	s.shadows++
 }
 
 // id returns the next element id.
