@@ -285,9 +285,9 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/desktop_drop"
-      ref: main
-      resolved-ref: "29e5924fa2da5e0d840482157839adba8b310e21"
-      url: "https://github.com/autobutler-org/flutter-plugins.git"
+      ref: "541ad007b7fa7a3316778f559415d3eb3cebfe67"
+      resolved-ref: "541ad007b7fa7a3316778f559415d3eb3cebfe67"
+      url: "https://github.com/MixinNetwork/flutter-plugins.git"
     source: git
     version: "0.8.4"
   diff_match_patch:
