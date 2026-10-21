@@ -17,10 +17,11 @@ import (
 // page covers every message once, the page past the start is an empty list,
 // and a room the caller cannot read contributes nothing.
 //
-// Not covered here, because the server never sees the text: the search bar's
-// match list and no-results line, case and unicode folding, a pending send,
-// a locked chat dropping the query, and clearing the query when the channel,
-// the lock, or a resync changes. TestChatSearch_PlaintextQuery names that gap.
+// Not covered here, because the server never sees the text and has no route
+// for it (#3540): the match list and no-results line, case folding, a pending
+// send, and a locked chat or a channel switch dropping the query. Those are
+// the "on-device search (#2429)" group in test/controllers/chat_controller_test.dart
+// and the search case in test/pages/chat_page_test.dart.
 
 // postMessages stores n messages in order. Each has its own fill byte, so
 // each ciphertext is a different message.
@@ -276,11 +277,4 @@ func TestChatSearch_UnreadableRoomsStayHidden(t *testing.T) {
 	if got := h.emptyMessages(t, general, "carol"); strings.Contains(got, hiddenSecret) {
 		t.Fatalf("general page before another channel's message = %s", got)
 	}
-}
-
-// TestChatSearch_PlaintextQuery records the #3479 scenarios that have no
-// route: a plaintext query, a pending send, and a lock flag. Search runs on
-// the device (#2429).
-func TestChatSearch_PlaintextQuery(t *testing.T) {
-	t.Skip("gap #3540: GET /chat/channels/{id}/messages has no query, pending-send, or lock parameter. Do not add a server search to let this test run")
 }
