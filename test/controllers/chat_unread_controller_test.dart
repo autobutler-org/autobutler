@@ -85,6 +85,21 @@ void main() {
     unread.dispose();
   });
 
+  test('a channel list restores the read marker it carries (#3543)', () async {
+    final unread = build();
+    unread.setChannels(const [
+      ChatChannel(id: 1, name: 'general', lastReadMessageId: 5),
+    ]);
+
+    await unread.markRead(1, 4);
+    await unread.markRead(1, 5);
+    expect(marked, isEmpty);
+
+    await unread.markRead(1, 6);
+    expect(marked, ['1 6']);
+    unread.dispose();
+  });
+
   test('a marker never moves backward from this client', () async {
     final unread = build();
 

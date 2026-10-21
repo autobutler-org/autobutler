@@ -15,6 +15,7 @@ class ChatChannel {
     this.permissions = const {},
     this.createdBy,
     this.unreadCount = 0,
+    this.lastReadMessageId = 0,
   });
 
   /// The channel's id, the `/chat/:channelId` in its URL.
@@ -45,6 +46,10 @@ class ChatChannel {
   /// marker, deleted ones left out (#2424). Zero on a channel the caller
   /// doesn't read.
   final int unreadCount;
+
+  /// The caller's read marker here (#3543); 0 before the first read and on a
+  /// channel the caller doesn't read.
+  final int lastReadMessageId;
 
   /// Whether the caller has any row here. A channel an admin lists without
   /// being in it has none.
@@ -84,6 +89,7 @@ class ChatChannel {
     permissions: chatPermissionsFromJson(json['permissions']),
     createdBy: (json['createdBy'] as num?)?.toInt(),
     unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
+    lastReadMessageId: (json['lastReadMessageId'] as num?)?.toInt() ?? 0,
   );
 }
 
