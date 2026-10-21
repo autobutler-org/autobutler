@@ -18,6 +18,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/indexutil"
 	"github.com/autobutler-org/quark/pkg/util/iosemutil"
 	"github.com/autobutler-org/quark/pkg/util/jobutil"
+	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/util/ratelimitutil"
 	"github.com/autobutler-org/quark/pkg/util/repairutil"
 	"github.com/autobutler-org/quark/pkg/util/settingsutil"
@@ -68,6 +69,9 @@ type Dependencies interface {
 	// sign-ins. It is in memory only, so no lockout travels with a drive
 	// (#1861).
 	LoginGuard() *ratelimitutil.LoginGuard
+	// PhotoIndex is the photo library index pass's status and pause flag
+	// (#3556), in memory only.
+	PhotoIndex() *photoutil.IndexControl
 	RepairSystem() repairutil.System
 	SSHSystem() sshutil.System
 	StorageService() *storageutil.StorageService
@@ -88,6 +92,7 @@ type Dependencies interface {
 	WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies
 	WithJobQueue(q *jobutil.Queue) Dependencies
 	WithLoginGuard(guard *ratelimitutil.LoginGuard) Dependencies
+	WithPhotoIndex(control *photoutil.IndexControl) Dependencies
 	WithRepairSystem(system repairutil.System) Dependencies
 	WithSSHSystem(system sshutil.System) Dependencies
 	MetadataStore() vfs.MetadataStore
@@ -143,6 +148,9 @@ func NewDependencies() Dependencies {
 		// hostnameSystem is the real host as well, and likewise renames
 		// nothing anywhere but the installed service (#2344).
 		hostnameSystem: hostnameutil.DefaultSystem(),
+		// photoIndex is a mutex and counters, reported into by the photo
+		// hash backfill (#3556).
+		photoIndex: photoutil.NewIndexControl(),
 	}
 }
 

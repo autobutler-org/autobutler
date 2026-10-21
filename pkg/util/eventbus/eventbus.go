@@ -110,6 +110,12 @@ const (
 	// debounced to at most one per device every two seconds while changes keep
 	// landing, and only says "fetch again": the fetch is access-filtered.
 	EventMusicLibraryChanged EventKind = "music_library_changed"
+
+	// EventPhotoIndexChanged fires when the photo library index pass starts,
+	// finishes, is paused or resumed, or makes progress (#3556); progress is
+	// throttled to at most one every two seconds. Path and Data are empty: it
+	// only says "fetch GET /photos/index-status again", which is admin-only.
+	EventPhotoIndexChanged EventKind = "photo_index_changed"
 )
 
 // HostnameChanged is the data of a hostname_changed event.

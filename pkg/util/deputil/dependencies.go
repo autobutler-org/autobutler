@@ -13,6 +13,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/indexutil"
 	"github.com/autobutler-org/quark/pkg/util/iosemutil"
 	"github.com/autobutler-org/quark/pkg/util/jobutil"
+	"github.com/autobutler-org/quark/pkg/util/photoutil"
 	"github.com/autobutler-org/quark/pkg/util/ratelimitutil"
 	"github.com/autobutler-org/quark/pkg/util/repairutil"
 	"github.com/autobutler-org/quark/pkg/util/sshutil"
@@ -40,6 +41,7 @@ type dependencies struct {
 	hostnameSystem hostnameutil.System
 	repairSystem   repairutil.System
 	ioSemaphore    *iosemutil.Semaphore
+	photoIndex     *photoutil.IndexControl
 	storageService *storageutil.StorageService
 	uploadSessions *uploadutil.SessionStore
 	vfsRegistry    vfs.Registry
@@ -180,6 +182,15 @@ func (d *dependencies) IOSemaphore() *iosemutil.Semaphore {
 
 func (d *dependencies) WithIOSemaphore(sem *iosemutil.Semaphore) Dependencies {
 	d.ioSemaphore = sem
+	return d
+}
+
+func (d *dependencies) PhotoIndex() *photoutil.IndexControl {
+	return d.photoIndex
+}
+
+func (d *dependencies) WithPhotoIndex(control *photoutil.IndexControl) Dependencies {
+	d.photoIndex = control
 	return d
 }
 
