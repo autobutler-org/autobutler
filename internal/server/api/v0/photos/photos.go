@@ -1,5 +1,5 @@
-// Package v0_photos serves /api/v0/photos: the photo library listing, a photo's metadata, likely duplicates, and
-// rotating or copying a photo.
+// Package v0_photos serves /api/v0/photos: the photo library listing and its file name search, a photo's
+// metadata, likely duplicates, and rotating or copying a photo.
 package v0_photos
 
 import "github.com/autobutler-org/quark/pkg/util/serverutil"

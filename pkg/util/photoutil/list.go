@@ -67,6 +67,10 @@ type ListPhotosParams struct {
 	// Queries reads the capture dates SortTaken orders by, and records the
 	// ones the listing reads. Nil sorts SortTaken by the date added alone.
 	Queries db.Querier
+	// Query keeps the photos whose file name contains it, ignoring case.
+	// Blank keeps every photo. Total counts the matches, so a caller pages
+	// the whole result with Offset and Limit (#3523).
+	Query string
 	// Offset and Limit page the sorted result.
 	Offset int
 	Limit  int
@@ -199,6 +203,8 @@ func sortPhotos(photos []PhotoSummary, sortBy, order string) {
 }
 
 // ListPhotos returns one page of the photo library, sorted by Sort and Order.
+// Query narrows the page to photos whose file name contains that text, and
+// Total counts those matches.
 //
 // TODO: For very large collections, an index/cache would be needed instead
 // of walking the entire directory tree on every request. The walk itself is
@@ -227,7 +233,8 @@ func ListPhotos(params ListPhotosParams) (ListPhotosResult, error) {
 	for _, fi := range infos {
 		serial := deviceSerial(fi)
 		if fi.IsDir || !strings.HasPrefix(fi.MimeType, "image/") ||
-			!params.Access.Check(serial, fi.Path, accessutil.Read).Readable {
+			!params.Access.Check(serial, fi.Path, accessutil.Read).Readable ||
+			!nameMatches(fi.Name, params.Query) {
 			continue
 		}
 		allPhotos = append(allPhotos, PhotoSummary{

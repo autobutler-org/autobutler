@@ -7115,7 +7115,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Finds all photos across all managed devices with pagination support. Under sort=taken each photo carries its EXIF capture date as takenAt, read on the spot for a photo never read before, and pendingDates counts those left for a later listing.",
+                "description": "Finds all photos across all managed devices with pagination support. Under sort=taken each photo carries its EXIF capture date as takenAt, read on the spot for a photo never read before, and pendingDates counts those left for a later listing. q keeps the photos whose file name contains that text, ignoring case, and total counts those matches.",
                 "produces": [
                     "application/json"
                 ],
@@ -7152,6 +7152,12 @@
                         "type": "string",
                         "description": "Sort order: asc or desc (default desc)",
                         "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "File name substring to keep, ignoring case. Blank lists the whole library",
+                        "name": "q",
                         "in": "query"
                     }
                 ],

@@ -26,7 +26,7 @@ type PaginatedPhotosResponse struct {
 
 // listPhotos godoc
 // @Summary List photos
-// @Description Finds all photos across all managed devices with pagination support. Under sort=taken each photo carries its EXIF capture date as takenAt, read on the spot for a photo never read before, and pendingDates counts those left for a later listing.
+// @Description Finds all photos across all managed devices with pagination support. Under sort=taken each photo carries its EXIF capture date as takenAt, read on the spot for a photo never read before, and pendingDates counts those left for a later listing. q keeps the photos whose file name contains that text, ignoring case, and total counts those matches.
 // @Tags photos
 // @Produce json
 // @Param offset query int false "Pagination offset (default 0)"
@@ -34,6 +34,7 @@ type PaginatedPhotosResponse struct {
 // @Param serial query string false "Device serial to filter by"
 // @Param sort query string false "Sort field: added (date added), taken (date taken) or name (default added)"
 // @Param order query string false "Sort order: asc or desc (default desc)"
+// @Param q query string false "File name substring to keep, ignoring case. Blank lists the whole library"
 // @Success 200 {object} PaginatedPhotosResponse
 // @Failure 500 {object} serverutil.Response "Internal Server Error"
 // @Security BearerAuth
@@ -65,6 +66,7 @@ func listPhotos(c *gin.Context) *serverutil.Response {
 		Access:   access,
 		Sort:     photoutil.ParseSort(c.Query("sort")),
 		Order:    photoutil.ParseOrder(c.Query("order")),
+		Query:    c.Query("q"),
 		Queries:  queries,
 		Offset:   offset,
 		Limit:    limit,
