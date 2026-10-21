@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:quark/controllers/vault_controller.dart';
 import 'package:quark/models/account_keys.dart';
+import 'package:quark/models/legacy_vault.dart';
 import 'package:quark/models/vault_item.dart';
 import 'package:quark/models/vault_key.dart';
 import 'package:quark/services/account_crypto.dart';
@@ -105,6 +106,13 @@ class FakeVault {
   /// `DELETE /vault/items/:id`.
   Future<void> deleteItem(int id) async => items.remove(id);
 
+  /// What `GET /vault/legacy` lists: the household vaults an earlier Quark
+  /// left (#3616). None by default.
+  List<LegacyVault> legacyVaults = const [];
+
+  /// `GET /vault/legacy`.
+  Future<List<LegacyVault>> listLegacyVaults() async => legacyVaults;
+
   /// A controller over this vault, on real libsodium ([crypto]) at
   /// [cheapKdf]. The caller disposes it.
   VaultController controller(
@@ -123,6 +131,7 @@ class FakeVault {
     updateItem: updateItem,
     deleteItem: deleteItem,
     authSalt: () async => fakeVaultSalt,
+    listLegacyVaults: listLegacyVaults,
     events: events,
     session: session,
     kdfParams: kdfParams,

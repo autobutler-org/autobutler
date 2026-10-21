@@ -3207,6 +3207,25 @@ final List<GalleryEntry> registry = [
     ),
   ),
   GalleryEntry(
+    name: 'VaultLegacyNotice',
+    group: 'Vault',
+    build: (context, log) => const VaultLegacyNotice(
+      vaults: [
+        LegacyVaultItem(
+          path: '/var/lib/quark/data/household-vault-20261021T120000Z.db',
+          entries: 12,
+          folders: 3,
+        ),
+        LegacyVaultItem(
+          path: '/media/backup/quark/data/vault.db',
+          onDrive: true,
+          deviceName: 'Backup drive',
+          entries: 1,
+        ),
+      ],
+    ),
+  ),
+  GalleryEntry(
     name: 'VaultEntryDetails',
     group: 'Vault',
     build: (context, log) => VaultEntryDetails(

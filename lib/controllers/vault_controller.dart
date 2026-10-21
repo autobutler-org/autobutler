@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:quark/models/account_keys.dart';
+import 'package:quark/models/legacy_vault.dart';
 import 'package:quark/models/vault_item.dart';
 import 'package:quark/models/vault_key.dart';
 import 'package:quark/services/account_crypto.dart';
@@ -17,7 +18,7 @@ import 'package:quark/utils/vault_import.dart';
 import 'package:quark/utils/vault_import_summary.dart';
 import 'package:quark/utils/vault_password_generator.dart';
 import 'package:quark_widgets/quark_widgets.dart'
-    show VaultEntryDraft, VaultEntryItem, VaultFolderItem;
+    show LegacyVaultItem, VaultEntryDraft, VaultEntryItem, VaultFolderItem;
 import 'package:sodium/sodium_sumo.dart' show SecureKey;
 
 /// Where the vault page stands.
@@ -70,6 +71,7 @@ class VaultController extends ChangeNotifier {
     Future<void> Function(int id, VaultCiphertext item)? updateItem,
     Future<void> Function(int id)? deleteItem,
     Future<Uint8List> Function()? authSalt,
+    Future<List<LegacyVault>> Function()? listLegacyVaults,
     Stream<FileEvent>? events,
     Listenable? session,
     this.kdfParams = KdfParams.standard,
@@ -83,6 +85,7 @@ class VaultController extends ChangeNotifier {
        _updateItem = updateItem ?? VaultService.updateItem,
        _deleteItem = deleteItem ?? VaultService.deleteItem,
        _authSalt = authSalt ?? _accountAuthSalt,
+       _listLegacyVaults = listLegacyVaults ?? VaultService.listLegacyVaults,
        _eventStream = events,
        _session = session {
     _session?.addListener(_onSessionChanged);
@@ -102,6 +105,7 @@ class VaultController extends ChangeNotifier {
   final Future<void> Function(int id, VaultCiphertext item) _updateItem;
   final Future<void> Function(int id) _deleteItem;
   final Future<Uint8List> Function() _authSalt;
+  final Future<List<LegacyVault>> Function() _listLegacyVaults;
   final Stream<FileEvent>? _eventStream;
   final Listenable? _session;
 
@@ -118,6 +122,7 @@ class VaultController extends ChangeNotifier {
   WrappedVaultKey? _stored;
   SecureKey? _key;
   List<VaultItem> _items = const [];
+  List<LegacyVault> _legacyVaults = const [];
   Object? _error;
   bool _busy = false;
   Object? _formError;
@@ -150,6 +155,21 @@ class VaultController extends ChangeNotifier {
   /// Whether the account's vault key has a recovery phrase wrap, so a
   /// recovery can open it.
   bool get hasPhraseWrap => _stored?.byPhrase != null;
+
+  /// The household vaults an earlier Quark left on this device (#3616), as
+  /// `VaultLegacyNotice` lists them. Empty until [load] finds any, and when
+  /// the Quark could not say.
+  List<LegacyVaultItem> get legacyVaults => [
+    for (final vault in _legacyVaults)
+      LegacyVaultItem(
+        path: vault.path,
+        onDrive: vault.onDrive,
+        deviceName: vault.deviceName,
+        readable: vault.readable,
+        entries: vault.entries,
+        folders: vault.folders,
+      ),
+  ];
 
   /// Every folder, by name.
   List<VaultItem> get folders => _sorted(VaultItemKind.folder);
@@ -253,8 +273,9 @@ class VaultController extends ChangeNotifier {
     ];
   }
 
-  /// Reads the account's vault key and, while unlocked, every item again. A
-  /// vault deleted from another session locks this one.
+  /// Reads the account's vault key, the [legacyVaults] on this Quark, and,
+  /// while unlocked, every item again. A vault deleted from another session
+  /// locks this one.
   Future<void> load() async {
     _events ??= (_eventStream ?? EventsService.instance.events).listen(
       _onEvent,
@@ -271,6 +292,12 @@ class VaultController extends ChangeNotifier {
       _error = null;
     } catch (e) {
       _error = e;
+    }
+    try {
+      _legacyVaults = await _listLegacyVaults();
+    } catch (_) {
+      // Only a notice: a Quark from before the route, or one that could not
+      // look, still serves the vault.
     }
     notifyListeners();
   }
@@ -634,6 +661,7 @@ class VaultController extends ChangeNotifier {
     _forget();
     _checked = false;
     _stored = null;
+    _legacyVaults = const [];
     _error = null;
     _formError = null;
     notifyListeners();

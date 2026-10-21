@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/controllers/vault_controller.dart';
+import 'package:quark/models/legacy_vault.dart';
 import 'package:quark/models/vault_item.dart';
 import 'package:quark/pages/vault_page.dart';
 import 'package:quark/services/account_crypto.dart';
@@ -309,6 +310,52 @@ void main() {
         expect(server.items, isNotEmpty);
         expect(find.text(Errors.incorrectPassword), findsOneWidget);
         expect(find.byKey(const ValueKey('vault_unlock')), findsOneWidget);
+      });
+
+      testWidgets('tells the member the old shared vault was kept, and '
+          'still sets up their own (#3616)', (tester) async {
+        useSize(tester);
+        server.legacyVaults = const [
+          LegacyVault(
+            kind: 'kept',
+            path: '/var/lib/quark/data/household-vault-20261021T120000Z.db',
+            readable: true,
+            entries: 12,
+            folders: 3,
+          ),
+          LegacyVault(
+            kind: 'drive',
+            path: '/media/backup/quark/data/vault.db',
+            readable: true,
+            entries: 2,
+            folders: 0,
+            deviceName: 'Backup drive',
+          ),
+        ];
+        final vault = await pump(tester);
+
+        expect(find.text(VaultLegacyNotice.title), findsOneWidget);
+        expect(
+          find.text('Kept on this Quark: 12 entries, 3 folders'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('On the drive "Backup drive": 2 entries'),
+          findsOneWidget,
+        );
+        expect(find.text('Set up your vault'), findsOneWidget);
+
+        await submitPassword(tester, _password);
+        expect(server.key, isNotNull);
+        expect(find.text(VaultLegacyNotice.title), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        vault.lock();
+      });
+
+      testWidgets('shows no notice when nothing was left', (tester) async {
+        useSize(tester);
+        await pump(tester);
+        expect(find.byKey(const ValueKey('vault_legacy_notice')), findsNothing);
       });
 
       testWidgets('a failed load offers a retry', (tester) async {
