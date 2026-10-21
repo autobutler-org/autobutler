@@ -117,11 +117,16 @@ class VaultLegacyNotice extends StatelessWidget {
                                 describe(vault),
                                 style: TextStyle(color: tokens.foreground),
                               ),
-                              SelectableText(
-                                vault.path,
-                                style: TextStyle(
-                                  color: tokens.mutedForeground,
-                                  fontSize: 12,
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: kMinInteractiveDimension,
+                                ),
+                                child: SelectableText(
+                                  vault.path,
+                                  style: TextStyle(
+                                    color: tokens.mutedForeground,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
