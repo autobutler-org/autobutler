@@ -56,6 +56,18 @@ func guardingAdmins(ctx context.Context, database *db.DatabaseSqlc, change func(
 	})
 }
 
+// ensureSetupOpen refuses first-boot setup once any account exists.
+func ensureSetupOpen(ctx context.Context, q db.Querier) error {
+	complete, err := IsSetupComplete(ctx, q)
+	if err != nil {
+		return err
+	}
+	if complete {
+		return errors.New("setup already complete")
+	}
+	return nil
+}
+
 // usernamePattern is what a new account's username must match. A username
 // also names a folder and a URL path segment, so it cannot hold a slash, start
 // with a dot, or be ".." (#1908). Accounts created before the rule keep theirs.

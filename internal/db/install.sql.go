@@ -20,6 +20,23 @@ func (q *Queries) GetInstallID(ctx context.Context) (string, error) {
 	return install_id, err
 }
 
+const lockInstall = `-- name: LockInstall :exec
+UPDATE install SET install_id = install_id WHERE id = 1
+`
+
+// LockInstall changes nothing: it is a no-op UPDATE run for the row lock it
+// takes on the install's one row, which every database has from its first
+// migration, as the first statement of first-boot setup (#3647). Before setup
+// there is no user row to lock, so two setups at READ COMMITTED on PostgreSQL
+// would each count no users and both create a founding admin; with the lock
+// the second waits here until the first commits and its count sees the first's
+// user. On SQLite the transaction already holds the write lock (BEGIN
+// IMMEDIATE), and this changes nothing.
+func (q *Queries) LockInstall(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, lockInstall)
+	return err
+}
+
 const rotateInstallID = `-- name: RotateInstallID :exec
 UPDATE install SET install_id = ?1 WHERE id = 1
 `

@@ -669,12 +669,10 @@ func Setup(ctx context.Context, params SetupParams) (*SetupResult, error) {
 	}
 	queries := params.Database.Queries
 
-	complete, err := IsSetupComplete(ctx, queries)
-	if err != nil {
+	// A cheap refusal before the credentials are made. It decides nothing: the
+	// check inside the transaction below is the one two setups cannot both pass.
+	if err := ensureSetupOpen(ctx, queries); err != nil {
 		return nil, err
-	}
-	if complete {
-		return nil, fmt.Errorf("setup already complete")
 	}
 
 	authKeyHash, authSalt, err := newCredentials(params.Username, params.AuthKey, params.SaltSecret)
@@ -689,6 +687,14 @@ func Setup(ctx context.Context, params SetupParams) (*SetupResult, error) {
 	var userID int64
 	madeDir := ""
 	err = db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
+		// The lock comes first, so a second setup waits for the first to
+		// commit and then counts its founding admin (#3647).
+		if err := q.LockInstall(ctx); err != nil {
+			return fmt.Errorf("lock install: %w", err)
+		}
+		if err := ensureSetupOpen(ctx, q); err != nil {
+			return err
+		}
 		user, err := q.CreateUser(ctx, db.CreateUserParams{
 			Username:        params.Username,
 			AuthKeyHash:     authKeyHash,
