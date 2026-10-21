@@ -73,6 +73,7 @@ class _FakeQuark {
           String? serial,
           PhotoSortField sort = PhotoSortField.added,
           PhotoSortOrder order = PhotoSortOrder.desc,
+          String? q,
         }) async => wire.PaginatedPhotosResponse(
           photos: [
             for (var i = 0; i < 3; i++)

@@ -13,7 +13,6 @@ import 'package:quark/controllers/file_browser_cache.dart';
 import 'package:quark/controllers/photo_bytes_cache.dart';
 import 'package:quark/controllers/photos_controller.dart';
 import 'package:quark/controllers/photos_list_cache.dart';
-import 'package:quark/models/file_node.dart';
 import 'package:quark/models/paginated_photos_response.dart' as wire;
 import 'package:quark/models/photo_album.dart';
 import 'package:quark/models/photo_sort.dart';
@@ -44,8 +43,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// Swipe, double-tap zoom and pinch are the viewer's own and do not depend on
 /// where it was opened: `image_viewer_gestures_test` covers them. Videos do
-/// not appear in Photos yet (#3428); the search case checks that a video
-/// among the results never reaches the photo viewer.
+/// not appear in Photos yet (#3428). Photo search asks the photos list, which
+/// returns images only, so a video that shares the name never reaches the grid.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -233,20 +232,35 @@ void main() {
         addedAt: DateTime(2026),
       );
 
-  FileNode found(String serial, String name, DateTime modifiedAt) => FileNode(
-    name: name,
-    size: 1,
-    isDir: false,
-    deviceName: serial,
-    devicePath: '/dev/$serial',
-    deviceSerial: serial,
-    dirPath: 'trip/$name',
-    modifiedAt: modifiedAt,
-  );
+  /// Image matches for a search of "photo", newest first. The photos list
+  /// returns images only, so the video that shares the name is absent.
+  final searchMatches = <wire.PhotoItem>[
+    wire.PhotoItem(
+      relPath: 'trip/photo.jpg',
+      fileName: 'photo.jpg',
+      size: 1,
+      mtime: DateTime(2026).millisecondsSinceEpoch,
+      serial: 'A',
+    ),
+    wire.PhotoItem(
+      relPath: 'trip/photo.jpg',
+      fileName: 'photo.jpg',
+      size: 1,
+      mtime: DateTime(2025).millisecondsSinceEpoch,
+      serial: 'B',
+    ),
+    wire.PhotoItem(
+      relPath: 'trip/photo_old.jpg',
+      fileName: 'photo_old.jpg',
+      size: 1,
+      mtime: DateTime(2024).millisecondsSinceEpoch,
+      serial: 'B',
+    ),
+  ];
 
   /// A Photos page over the two-device library: 364 photos fetched 50 at a
   /// time, A's photo.jpg then B's at the top; an album holding both; and a
-  /// search that finds both, a third photo, and a video.
+  /// search that finds both photo.jpg copies and photo_old.jpg.
   Future<PhotosController> pumpPhotos(
     WidgetTester tester, {
     String? album,
@@ -266,30 +280,39 @@ void main() {
             String? serial,
             PhotoSortField sort = PhotoSortField.added,
             PhotoSortOrder order = PhotoSortOrder.desc,
+            String? q,
           }) async {
-            final end = (offset + limit).clamp(0, 364);
+            final query = q?.trim().toLowerCase() ?? '';
+            final all = query.isEmpty
+                ? <wire.PhotoItem>[
+                    for (var i = 0; i < 364; i++)
+                      switch (i) {
+                        0 || 1 => wire.PhotoItem(
+                          relPath: 'trip/photo.jpg',
+                          fileName: 'photo.jpg',
+                          size: 1,
+                          mtime: 0,
+                          serial: i == 0 ? 'A' : 'B',
+                        ),
+                        _ => wire.PhotoItem(
+                          relPath: 'camera/$i.jpg',
+                          fileName: '$i.jpg',
+                          size: 1,
+                          mtime: 0,
+                          serial: 'A',
+                        ),
+                      },
+                  ]
+                : [
+                    for (final photo in searchMatches)
+                      if (photo.fileName.toLowerCase().contains(query)) photo,
+                  ];
+            final start = offset.clamp(0, all.length);
+            final end = (start + limit).clamp(start, all.length);
             return wire.PaginatedPhotosResponse(
-              photos: [
-                for (var i = offset; i < end; i++)
-                  switch (i) {
-                    0 || 1 => wire.PhotoItem(
-                      relPath: 'trip/photo.jpg',
-                      fileName: 'photo.jpg',
-                      size: 1,
-                      mtime: 0,
-                      serial: i == 0 ? 'A' : 'B',
-                    ),
-                    _ => wire.PhotoItem(
-                      relPath: 'camera/$i.jpg',
-                      fileName: '$i.jpg',
-                      size: 1,
-                      mtime: 0,
-                      serial: 'A',
-                    ),
-                  },
-              ],
-              total: 364,
-              offset: offset,
+              photos: all.sublist(start, end),
+              total: all.length,
+              offset: start,
               limit: limit,
             );
           },
@@ -312,12 +335,6 @@ void main() {
         scheme: DemoPhotosService.assetScheme,
         path: '${DemoPhotosService.assetDir}/aurora.jpg',
       ),
-      searchFiles: (query, {List<String>? serials}) async => [
-        found('B', 'photo_old.jpg', DateTime(2024)),
-        found('A', 'photo.jpg', DateTime(2026)),
-        found('B', 'photo.mp4', DateTime(2026, 6)),
-        found('B', 'photo.jpg', DateTime(2025)),
-      ],
       searchDelay: Duration.zero,
     );
     await tester.runAsync(() async {

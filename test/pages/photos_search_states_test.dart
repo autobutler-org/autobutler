@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:quark/controllers/albums_cache.dart';
 import 'package:quark/controllers/photos_controller.dart';
 import 'package:quark/controllers/photos_list_cache.dart';
-import 'package:quark/models/file_node.dart';
 import 'package:quark/models/paginated_photos_response.dart' as wire;
 import 'package:quark/models/photo_sort.dart';
 import 'package:quark/pages/photos_page.dart';
@@ -186,6 +185,53 @@ void main() {
       expect(find.text('No photos yet'), findsNothing);
     });
   }
+
+  testWidgets('a search of 600 matches scrolls past 500 (#3523)', (
+    tester,
+  ) async {
+    final library = _Library([for (var i = 0; i < 600; i++) 'shot-$i.jpg']);
+    final controller = library.controller();
+    await pumpPhotos(tester, controller, narrowViewport);
+    await openSearch(tester);
+    await typeQuery(tester, 'shot');
+
+    List<int> asked() => [
+      for (final page in library.pages)
+        if (page.q == 'shot') page.offset,
+    ];
+
+    // The first page is painted before the rest is asked for.
+    expect(asked().first, 0);
+    expect(asked(), isNot(contains(500)));
+    expect(controller.photos, hasLength(PhotosController.pageSize));
+    expect(controller.hasMore, isTrue);
+    expect(controller.photoTotal, 600);
+    expect(
+      find.byKey(const ValueKey('photo_tile_sd1:camera/shot-0.jpg')),
+      findsWidgets,
+    );
+
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .ancestor(
+                of: find.byType(PhotoGridTile).first,
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    for (var n = 0; n < 40 && !asked().contains(500); n++) {
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+      await settle(tester);
+    }
+
+    expect(asked(), contains(50));
+    expect(asked(), contains(500));
+    expect(controller.photos.length, greaterThan(500));
+    expect(tester.takeException(), isNull);
+  });
 }
 
 String _fieldText(WidgetTester tester) {
@@ -200,8 +246,8 @@ String _fieldText(WidgetTester tester) {
       .text;
 }
 
-/// A Quark library of [names], searched by file name the way the files
-/// search is: every kind of file, images and a notes file alike.
+/// A Quark library of [names]. Search asks getPhotos with `q` and pages the
+/// matches; each page's total is the match count (#3523).
 class _Library {
   _Library(this.names);
 
@@ -210,8 +256,11 @@ class _Library {
   /// What a search throws instead of answering, when set.
   Object? searchError;
 
-  /// Every query the page asked the Quark, in order.
+  /// Every non-blank query the page asked the Quark, in order.
   final List<String> queries = [];
+
+  /// Every getPhotos page, with the query it carried. Null is the library.
+  final List<({int offset, String? q})> pages = [];
 
   PhotosController controller() => PhotosController(
     isWeb: true,
@@ -226,57 +275,44 @@ class _Library {
           String? serial,
           PhotoSortField sort = PhotoSortField.added,
           PhotoSortOrder order = PhotoSortOrder.desc,
-        }) async => wire.PaginatedPhotosResponse(
-          photos: [
+          String? q,
+        }) async {
+          final query = q?.trim() ?? '';
+          pages.add((offset: offset, q: query.isEmpty ? null : query));
+          if (query.isNotEmpty) {
+            queries.add(query);
+            final error = searchError;
+            if (error != null) throw error;
+          }
+          final matched = [
             for (final name in names)
-              wire.PhotoItem(
-                relPath: 'camera/$name',
-                fileName: name,
-                size: 1,
-                mtime: 1,
-                serial: 'sd1',
-              ),
-          ],
-          total: names.length,
-          offset: 0,
-          limit: limit,
-        ),
+              if (query.isEmpty ||
+                  name.toLowerCase().contains(query.toLowerCase()))
+                name,
+          ];
+          final start = offset.clamp(0, matched.length);
+          final end = (start + limit).clamp(start, matched.length);
+          return wire.PaginatedPhotosResponse(
+            photos: [
+              for (final name in matched.sublist(start, end))
+                wire.PhotoItem(
+                  relPath: 'camera/$name',
+                  fileName: name,
+                  size: 1,
+                  mtime: 1,
+                  serial: 'sd1',
+                ),
+            ],
+            total: matched.length,
+            offset: start,
+            limit: limit,
+          );
+        },
     listFavoriteKeys: () async => {},
     listAlbums: ({bool tree = false}) async => [],
     thumbnailUrl: (path, {String? serial, String? size}) => Uri(
       scheme: DemoPhotosService.assetScheme,
       path: '${DemoPhotosService.assetDir}/aurora.jpg',
     ),
-    searchFiles: (query, {List<String>? serials}) async {
-      queries.add(query);
-      final error = searchError;
-      if (error != null) throw error;
-      return [
-        for (final name in names)
-          if (name.toLowerCase().contains(query.toLowerCase())) _image(name),
-        _notes(),
-      ];
-    },
-  );
-
-  FileNode _image(String name) => FileNode(
-    name: name,
-    size: 1,
-    isDir: false,
-    deviceName: '',
-    devicePath: '',
-    deviceSerial: 'sd1',
-    dirPath: 'camera/$name',
-    modifiedAt: DateTime.utc(2024, 6, 1),
-  );
-
-  FileNode _notes() => const FileNode(
-    name: 'notes.txt',
-    size: 1,
-    isDir: false,
-    deviceName: '',
-    devicePath: '',
-    deviceSerial: 'sd1',
-    dirPath: 'docs/notes.txt',
   );
 }

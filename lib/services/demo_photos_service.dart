@@ -77,27 +77,45 @@ class DemoPhotosService {
 
   // ── Stand-ins for the real services ──────────────────────────────────────
 
-  /// The whole library as one page, so nothing pages further.
+  /// One page of the sample library.
+  ///
+  /// [q] keeps the photos whose file name contains it, ignoring case, and the
+  /// page is taken from that list. A blank [q] is the whole library. A [limit]
+  /// of 0 returns every remaining photo, which is how an unpaged call still
+  /// covers the catalog.
   static Future<PaginatedPhotosResponse> getPhotos({
     int offset = 0,
     int limit = 0,
     String? serial,
     PhotoSortField sort = PhotoSortField.added,
     PhotoSortOrder order = PhotoSortOrder.desc,
+    String? q,
   }) async {
+    final query = q?.trim().toLowerCase() ?? '';
+    final matched = query.isEmpty
+        ? photos
+        : [
+            for (final photo in photos)
+              if (photo.fileName.toLowerCase().contains(query)) photo,
+          ];
     final sorted = _sorted(
-      photos,
+      matched,
       sort,
       order,
       (p) => p.fileName,
       (p) => p.mtime,
       (p) => p.takenAt ?? p.mtime,
     );
+    final start = offset.clamp(0, sorted.length);
+    final end = limit <= 0
+        ? sorted.length
+        : (start + limit).clamp(start, sorted.length);
+    final page = sorted.sublist(start, end);
     return PaginatedPhotosResponse(
-      photos: sorted,
+      photos: page,
       total: sorted.length,
-      offset: 0,
-      limit: sorted.length,
+      offset: start,
+      limit: limit <= 0 ? page.length : limit,
     );
   }
 
