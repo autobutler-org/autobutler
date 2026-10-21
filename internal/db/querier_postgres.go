@@ -1186,6 +1186,10 @@ func (a *postgresQueries) LockChatChannel(ctx context.Context, id int64) error {
 	return a.q.LockChatChannel(ctx, id)
 }
 
+func (a *postgresQueries) LockInstall(ctx context.Context) error {
+	return a.q.LockInstall(ctx)
+}
+
 func (a *postgresQueries) MoveAlbum(ctx context.Context, arg MoveAlbumParams) (PhotoAlbum, error) {
 	row, err := a.q.MoveAlbum(ctx, pgdb.MoveAlbumParams(arg))
 	return PhotoAlbum(row), err
