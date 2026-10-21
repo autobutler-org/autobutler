@@ -7864,6 +7864,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/previews/properties": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns what a document says about itself: title, author, subject, created and modified dates, and the page, word, character, slide and sheet counts its authoring application last saved, as {title, author, subject, created, modified, pages, words, characters, slides, sheets, application, countsSource}. Fields the document does not carry are left out, and countsSource is always \"saved\": the counts are not recounted, and pages cannot be, since that needs a layout engine. Only the small metadata entry is read (docProps for DOCX, PPTX and XLSX, meta.xml for ODT, ODP and ODS, the \\info group for RTF), never the body. A file that is not what its name says, or whose metadata is oversize, is a 400. Needs read access on the document.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "previews"
+                ],
+                "summary": "Get a document's properties",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Path to the document",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device serial number",
+                        "name": "serial",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/docpropsutil.Properties"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/sbom": {
             "get": {
                 "security": [
@@ -11707,6 +11765,49 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/chatutil.KeyGrant"
                     }
+                }
+            }
+        },
+        "docpropsutil.Properties": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "characters": {
+                    "type": "integer"
+                },
+                "countsSource": {
+                    "description": "CountsSource is always [CountsSourceSaved].",
+                    "type": "string"
+                },
+                "created": {
+                    "description": "Created and Modified are RFC 3339 when the document's date parses as\none, and the document's own text otherwise.",
+                    "type": "string"
+                },
+                "modified": {
+                    "type": "string"
+                },
+                "pages": {
+                    "type": "integer"
+                },
+                "sheets": {
+                    "type": "integer"
+                },
+                "slides": {
+                    "type": "integer"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "words": {
+                    "type": "integer"
                 }
             }
         },
