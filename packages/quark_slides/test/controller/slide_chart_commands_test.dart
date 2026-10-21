@@ -6,19 +6,19 @@ import '../support/chart_sample.dart';
 /// A 1920×1080 deck with one slide `s` holding [sampleChart] (`chart`) and
 /// a shape `box`.
 Presentation deck() => Presentation(
-      slides: [
-        Slide(
-          id: 's',
-          elements: [
-            sampleChart(),
-            ShapeElement(
-              id: 'box',
-              frame: ElementFrame(x: 0, y: 0, width: 10, height: 10),
-            ),
-          ],
+  slides: [
+    Slide(
+      id: 's',
+      elements: [
+        sampleChart(),
+        ShapeElement(
+          id: 'box',
+          frame: ElementFrame(x: 0, y: 0, width: 10, height: 10),
         ),
       ],
-    );
+    ),
+  ],
+);
 
 void main() {
   late SlideDocumentController doc;
@@ -68,12 +68,13 @@ void main() {
       final data = ChartData(
         categories: const ['x'],
         series: [
-          ChartSeries(values: const [1])
+          ChartSeries(values: const [1]),
         ],
       );
       final frame = ElementFrame(x: 1, y: 2, width: 300, height: 200);
-      final c =
-          chart(doc.insertChart('s', ChartKind.area, frame: frame, data: data));
+      final c = chart(
+        doc.insertChart('s', ChartKind.area, frame: frame, data: data),
+      );
       expect(c.frame, frame);
       expect(c.data, data);
     });
@@ -86,8 +87,10 @@ void main() {
         ),
         newId: () => 'n${next++}',
       );
-      expect(chart(doc.insertChart('s', ChartKind.bar)).frame.width,
-          SlideSize.standard.width * 0.8);
+      expect(
+        chart(doc.insertChart('s', ChartKind.bar)).frame.width,
+        SlideSize.standard.width * 0.8,
+      );
     });
   });
 
@@ -121,13 +124,15 @@ void main() {
   });
 
   test('setChartOptions changes what it is given and keeps the rest', () {
-    oneStep(() => doc.setChartOptions(
-          's',
-          'chart',
-          showLegend: false,
-          showGridlines: false,
-          title: '',
-        ));
+    oneStep(
+      () => doc.setChartOptions(
+        's',
+        'chart',
+        showLegend: false,
+        showGridlines: false,
+        title: '',
+      ),
+    );
     expect(
       chart().options,
       const ChartOptions(
@@ -138,13 +143,15 @@ void main() {
         valueAxisTitle: 'USD',
       ),
     );
-    oneStep(() => doc.setChartOptions(
-          's',
-          'chart',
-          showDataLabels: false,
-          categoryAxisTitle: 'Q',
-          valueAxisTitle: '',
-        ));
+    oneStep(
+      () => doc.setChartOptions(
+        's',
+        'chart',
+        showDataLabels: false,
+        categoryAxisTitle: 'Q',
+        valueAxisTitle: '',
+      ),
+    );
     expect(chart().options.categoryAxisTitle, 'Q');
     expect(chart().options.showDataLabels, isFalse);
   });
@@ -155,7 +162,8 @@ void main() {
       expect(chart().data.series.last.name, 'Series 3');
       expect(chart().data.series.last.values, [0, 0, 0]);
       oneStep(
-          () => doc.addChartSeries('s', 'chart', name: 'Tax', values: [1, 2]));
+        () => doc.addChartSeries('s', 'chart', name: 'Tax', values: [1, 2]),
+      );
       expect(chart().data.series.last.values, [1, 2, 0]);
     });
 
@@ -165,9 +173,7 @@ void main() {
         'chart',
         ChartData(
           categories: const ['a'],
-          series: [
-            for (var i = 0; i < ChartData.maxSeries; i++) ChartSeries(),
-          ],
+          series: [for (var i = 0; i < ChartData.maxSeries; i++) ChartSeries()],
         ),
       );
       expect(() => doc.addChartSeries('s', 'chart'), throwsArgumentError);
@@ -197,11 +203,11 @@ void main() {
   });
 
   test('setChartColors sets the colors and an empty list clears them', () {
-    oneStep(() => doc.setChartColors(
-          's',
-          'chart',
-          const [SlideColor.theme(ThemeColor.accent5)],
-        ));
+    oneStep(
+      () => doc.setChartColors('s', 'chart', const [
+        SlideColor.theme(ThemeColor.accent5),
+      ]),
+    );
     expect(chart().colorOf(0), const SlideColor.theme(ThemeColor.accent5));
     oneStep(() => doc.setChartColors('s', 'chart', const []));
     expect(chart().colorOf(0), ChartElement.defaultPalette.first);
@@ -209,7 +215,9 @@ void main() {
 
   test('chart commands refuse an element that is not a chart', () {
     expect(
-        () => doc.setChartKind('s', 'box', ChartKind.pie), throwsArgumentError);
+      () => doc.setChartKind('s', 'box', ChartKind.pie),
+      throwsArgumentError,
+    );
     expect(() => doc.addChartSeries('s', 'missing'), throwsArgumentError);
   });
 

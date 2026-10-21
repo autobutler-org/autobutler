@@ -27,10 +27,16 @@ void main() {
       expect(table.anchorOf(2, 1), (row: 2, column: 0));
       expect(table.isCovered(2, 1), isTrue);
       expect(table.isCovered(2, 0), isFalse);
-      expect(table.areaOf(2, 1),
-          const CellRange(top: 2, left: 0, bottom: 2, right: 1));
       expect(
-          table.cellBox(2, 1), (x: 0.0, y: 80.0, width: 220.0, height: 40.0));
+        table.areaOf(2, 1),
+        const CellRange(top: 2, left: 0, bottom: 2, right: 1),
+      );
+      expect(table.cellBox(2, 1), (
+        x: 0.0,
+        y: 80.0,
+        width: 220.0,
+        height: 40.0,
+      ));
     });
 
     test('cellAt finds the anchor under a table-local point', () {
@@ -49,7 +55,8 @@ void main() {
       );
       expect(
         table.expandToMerges(
-            const CellRange(top: 1, left: 1, bottom: 2, right: 1)),
+          const CellRange(top: 1, left: 1, bottom: 2, right: 1),
+        ),
         const CellRange(top: 1, left: 0, bottom: 2, right: 1),
       );
     });
@@ -117,8 +124,9 @@ void main() {
   group('withFrame', () {
     test('scales every column and row in proportion', () {
       final table = sampleTable();
-      final resized =
-          table.withFrame(table.frame.copyWith(width: 600, height: 60));
+      final resized = table.withFrame(
+        table.frame.copyWith(width: 600, height: 60),
+      );
       expect(resized.columnWidths, [200, 240, 160]);
       expect(resized.rowHeights, [20, 20, 20]);
     });
@@ -172,9 +180,13 @@ void main() {
 
   test('a table reads to a screen reader as its size', () {
     expect(
-        defaultSlideElementLabel(sampleTable()), 'Table, 3 rows by 3 columns');
-    expect(defaultSlideTableCellLabel(1, 2, 'Revenue'),
-        'Row 2, column 3: Revenue');
+      defaultSlideElementLabel(sampleTable()),
+      'Table, 3 rows by 3 columns',
+    );
+    expect(
+      defaultSlideTableCellLabel(1, 2, 'Revenue'),
+      'Row 2, column 3: Revenue',
+    );
     expect(defaultSlideTableCellLabel(0, 0, ' '), 'Row 1, column 1: empty');
   });
 }

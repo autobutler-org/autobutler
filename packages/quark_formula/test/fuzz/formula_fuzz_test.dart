@@ -16,8 +16,11 @@ void main() {
         try {
           final tokens = lex(candidate).toList();
           expect(tokens, isNotEmpty, reason: 'candidate: $candidate');
-          expect(tokens.last.kind, TokenKind.eof,
-              reason: 'candidate: $candidate');
+          expect(
+            tokens.last.kind,
+            TokenKind.eof,
+            reason: 'candidate: $candidate',
+          );
           expect(
             tokens.map((token) => token.offset),
             orderedEquals([...tokens.map((token) => token.offset)]..sort()),
@@ -43,8 +46,9 @@ void main() {
           reason: 'formula: $formula',
         );
         expect(
-          parsed.cellRefs
-              .every((ref) => RegExp(r'^[A-Z]+[1-9][0-9]*$').hasMatch(ref)),
+          parsed.cellRefs.every(
+            (ref) => RegExp(r'^[A-Z]+[1-9][0-9]*$').hasMatch(ref),
+          ),
           isTrue,
           reason: 'formula: $formula',
         );
@@ -90,7 +94,10 @@ String _randomAsciiFormula(Random random, {required int maxLength}) {
 }
 
 String _generateExpression(
-    Random random, int depth, bool insideFunctionArgument) {
+  Random random,
+  int depth,
+  bool insideFunctionArgument,
+) {
   if (depth >= 3) {
     return _generateTerminal(random, insideFunctionArgument);
   }
@@ -105,27 +112,13 @@ String _generateExpression(
     case 2:
       return '(${_generateExpression(random, depth + 1, insideFunctionArgument)})';
     case 3:
-      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, [
-            '+',
-            '-'
-          ])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
+      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, ['+', '-'])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
     case 4:
-      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, [
-            '*',
-            '/',
-            '%'
-          ])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
+      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, ['*', '/', '%'])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
     case 5:
       return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ^ ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
     case 6:
-      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, [
-            '==',
-            '!=',
-            '<',
-            '<=',
-            '>',
-            '>='
-          ])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
+      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, ['==', '!=', '<', '<=', '>', '>='])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
     default:
       return _generateFunctionCall(random, depth + 1);
   }
@@ -140,8 +133,9 @@ String _generateTerminal(Random random, bool insideFunctionArgument) {
   ];
 
   if (insideFunctionArgument) {
-    choices
-        .add(() => '${_generateCellRef(random)}:${_generateCellRef(random)}');
+    choices.add(
+      () => '${_generateCellRef(random)}:${_generateCellRef(random)}',
+    );
   }
 
   return choices[random.nextInt(choices.length)]();

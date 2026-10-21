@@ -133,7 +133,8 @@ extension FrameGeometry on ElementFrame {
     final anchor = toSlide(
       Offset(-handle.dx * width / 2, -handle.dy * height / 2),
     );
-    final newCenter = anchor -
+    final newCenter =
+        anchor -
         rotateOffset(
           Offset(-handle.dx * newWidth / 2, -handle.dy * newHeight / 2),
           rotation,
@@ -149,8 +150,11 @@ extension FrameGeometry on ElementFrame {
   /// The rotation, in degrees within [0, 360), that turns the frame's top
   /// toward [point], as dragging the rotate handle there does. [snap] rounds
   /// it to a multiple of [snapStep], as Shift does.
-  double rotationToward(Offset point,
-      {bool snap = false, double snapStep = 15}) {
+  double rotationToward(
+    Offset point, {
+    bool snap = false,
+    double snapStep = 15,
+  }) {
     final toPoint = point - center;
     var degrees = math.atan2(toPoint.dy, toPoint.dx) * 180 / math.pi + 90;
     if (snap) degrees = (degrees / snapStep).roundToDouble() * snapStep;
@@ -191,8 +195,10 @@ double _distanceToSegment(Offset p, Offset a, Offset b) {
   final ab = b - a;
   final lengthSquared = ab.distanceSquared;
   if (lengthSquared == 0) return (p - a).distance;
-  final t = (((p - a).dx * ab.dx + (p - a).dy * ab.dy) / lengthSquared)
-      .clamp(0.0, 1.0);
+  final t = (((p - a).dx * ab.dx + (p - a).dy * ab.dy) / lengthSquared).clamp(
+    0.0,
+    1.0,
+  );
   return (p - (a + ab * t)).distance;
 }
 
@@ -210,9 +216,9 @@ extension SlideHitTest on Slide {
   /// The ids, back to front, of every element whose rotated bounds lie
   /// wholly inside [area] — what a marquee drag selects.
   List<String> elementsInside(Rect area) => [
-        for (final element in elements)
-          if (_encloses(area, element.frame.bounds)) element.id,
-      ];
+    for (final element in elements)
+      if (_encloses(area, element.frame.bounds)) element.id,
+  ];
 
   /// The smallest box holding the bounds of every element in [ids] — on the
   /// slide or inside a group — or `null` when none of them is on the slide.

@@ -93,8 +93,8 @@ class FormulaParser {
   FormulaNode _parseAddition() {
     var left = _parseTerm();
 
-    while (
-        _current.kind == TokenKind.plus || _current.kind == TokenKind.minus) {
+    while (_current.kind == TokenKind.plus ||
+        _current.kind == TokenKind.minus) {
       final operator = _current;
       _advance();
       final right = _parseTerm();
@@ -204,18 +204,25 @@ class FormulaParser {
     }
 
     if (_functionArgumentDepth == 0) {
-      _error('Range references are only allowed inside function arguments.',
-          _current.offset);
+      _error(
+        'Range references are only allowed inside function arguments.',
+        _current.offset,
+      );
     }
 
     _advance();
-    final end =
-        _expect(TokenKind.cellRef, 'Expected cell reference after ":".');
+    final end = _expect(
+      TokenKind.cellRef,
+      'Expected cell reference after ":".',
+    );
     final rangeRef = '${start.value}:${end.value}';
     _rangeRefs.add(rangeRef);
     _hasRangeArgs = true;
     return RangeNode(
-        startRef: start.value, endRef: end.value, offset: start.offset);
+      startRef: start.value,
+      endRef: end.value,
+      offset: start.offset,
+    );
   }
 
   FormulaNode _parseCall() {

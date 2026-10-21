@@ -98,21 +98,21 @@ class TextFormat {
 
   /// [run] with this format's run fields applied.
   TextRun applyToRun(TextRun run) => run.copyWith(
-        bold: bold,
-        italic: italic,
-        underline: underline,
-        strikethrough: strikethrough,
-        fontSize: fontSize,
-        fontFamily: fontFamily,
-        color: color,
-      );
+    bold: bold,
+    italic: italic,
+    underline: underline,
+    strikethrough: strikethrough,
+    fontSize: fontSize,
+    fontFamily: fontFamily,
+    color: color,
+  );
 
   /// [paragraph] with this format's paragraph fields applied.
   TextParagraph applyToParagraph(TextParagraph paragraph) => paragraph.copyWith(
-        alignment: alignment,
-        lineSpacing: lineSpacing,
-        list: list,
-      );
+    alignment: alignment,
+    lineSpacing: lineSpacing,
+    list: list,
+  );
 
   /// [box] with this format's box fields applied; its text is untouched.
   TextBox applyToBox(TextBox box) =>
@@ -156,36 +156,24 @@ class TextFormat {
 
   @override
   int get hashCode => Object.hash(
-        bold,
-        italic,
-        underline,
-        strikethrough,
-        fontSize,
-        fontFamily,
-        color,
-        alignment,
-        lineSpacing,
-        list,
-        anchor,
-        autoFit,
-      );
+    bold,
+    italic,
+    underline,
+    strikethrough,
+    fontSize,
+    fontFamily,
+    color,
+    alignment,
+    lineSpacing,
+    list,
+    anchor,
+    autoFit,
+  );
 
   @override
-  String toString() => 'TextFormat('
-      '${[
-        if (bold != null) 'bold: $bold',
-        if (italic != null) 'italic: $italic',
-        if (underline != null) 'underline: $underline',
-        if (strikethrough != null) 'strikethrough: $strikethrough',
-        if (!identical(fontSize, unset)) 'fontSize: $fontSize',
-        if (!identical(fontFamily, unset)) 'fontFamily: $fontFamily',
-        if (!identical(color, unset)) 'color: $color',
-        if (alignment != null) 'alignment: ${alignment!.name}',
-        if (!identical(lineSpacing, unset)) 'lineSpacing: $lineSpacing',
-        if (list != null) 'list: ${list!.name}',
-        if (anchor != null) 'anchor: ${anchor!.name}',
-        if (autoFit != null) 'autoFit: ${autoFit!.name}',
-      ].join(', ')})';
+  String toString() =>
+      'TextFormat('
+      '${[if (bold != null) 'bold: $bold', if (italic != null) 'italic: $italic', if (underline != null) 'underline: $underline', if (strikethrough != null) 'strikethrough: $strikethrough', if (!identical(fontSize, unset)) 'fontSize: $fontSize', if (!identical(fontFamily, unset)) 'fontFamily: $fontFamily', if (!identical(color, unset)) 'color: $color', if (alignment != null) 'alignment: ${alignment!.name}', if (!identical(lineSpacing, unset)) 'lineSpacing: $lineSpacing', if (list != null) 'list: ${list!.name}', if (anchor != null) 'anchor: ${anchor!.name}', if (autoFit != null) 'autoFit: ${autoFit!.name}'].join(', ')})';
 }
 
 /// The on/off formatting commands a toolbar button or a shortcut flips.
@@ -213,30 +201,29 @@ enum TextToggle {
   /// or paragraph already has it, as other editors do with a mixed
   /// selection.
   TextFormat changeFrom(TextFormat current) => switch (this) {
-        bold => TextFormat(bold: current.bold != true),
-        italic => TextFormat(italic: current.italic != true),
-        underline => TextFormat(underline: current.underline != true),
-        strikethrough =>
-          TextFormat(strikethrough: current.strikethrough != true),
-        bulletList => TextFormat(
-            list: current.list == TextListStyle.bullet
-                ? TextListStyle.none
-                : TextListStyle.bullet,
-          ),
-        numberedList => TextFormat(
-            list: current.list == TextListStyle.numbered
-                ? TextListStyle.none
-                : TextListStyle.numbered,
-          ),
-      };
+    bold => TextFormat(bold: current.bold != true),
+    italic => TextFormat(italic: current.italic != true),
+    underline => TextFormat(underline: current.underline != true),
+    strikethrough => TextFormat(strikethrough: current.strikethrough != true),
+    bulletList => TextFormat(
+      list: current.list == TextListStyle.bullet
+          ? TextListStyle.none
+          : TextListStyle.bullet,
+    ),
+    numberedList => TextFormat(
+      list: current.list == TextListStyle.numbered
+          ? TextListStyle.none
+          : TextListStyle.numbered,
+    ),
+  };
 
   /// Whether a selection formatted as [current] has this toggle on.
   bool isOn(TextFormat current) => switch (this) {
-        bold => current.bold == true,
-        italic => current.italic == true,
-        underline => current.underline == true,
-        strikethrough => current.strikethrough == true,
-        bulletList => current.list == TextListStyle.bullet,
-        numberedList => current.list == TextListStyle.numbered,
-      };
+    bold => current.bold == true,
+    italic => current.italic == true,
+    underline => current.underline == true,
+    strikethrough => current.strikethrough == true,
+    bulletList => current.list == TextListStyle.bullet,
+    numberedList => current.list == TextListStyle.numbered,
+  };
 }

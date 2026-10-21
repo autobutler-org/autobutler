@@ -19,11 +19,17 @@ Presentation themedDeck(SlideTheme? theme) {
         id: 's',
         layoutId: layout.id,
         elements: [
-          layout.placeholder('title')!.emptyBox('title', size).copyWith(
-            paragraphs: [
-              TextParagraph.plain('Agenda', alignment: TextAlignment.center),
-            ],
-          ),
+          layout
+              .placeholder('title')!
+              .emptyBox('title', size)
+              .copyWith(
+                paragraphs: [
+                  TextParagraph.plain(
+                    'Agenda',
+                    alignment: TextAlignment.center,
+                  ),
+                ],
+              ),
           layout.placeholder('subtitle')!.emptyBox('sub', size),
           ShapeElement(
             id: 'box',
@@ -48,8 +54,8 @@ Color backgroundColor(WidgetTester tester) => tester
 
 /// The render object painting the element [id]'s shape.
 RenderObject shapeOf(WidgetTester tester, String id) => tester.renderObject(
-      find.descendant(of: elementKey(id), matching: find.byType(CustomPaint)),
-    );
+  find.descendant(of: elementKey(id), matching: find.byType(CustomPaint)),
+);
 
 /// The root text style of the element [id]'s first paragraph.
 TextStyle textStyleOf(WidgetTester tester, String id) => tester
@@ -63,11 +69,16 @@ TextStyle textStyleOf(WidgetTester tester, String id) => tester
 
 void main() {
   group('a themed deck', () {
-    testBothViewports('paints role colors and text styles from its theme',
-        (tester, size) async {
+    testBothViewports('paints role colors and text styles from its theme', (
+      tester,
+      size,
+    ) async {
       final theme = SlideThemes.warm;
-      await pumpCanvas(tester, SlideDocumentNotifier(themedDeck(theme)),
-          size: size);
+      await pumpCanvas(
+        tester,
+        SlideDocumentNotifier(themedDeck(theme)),
+        size: size,
+      );
       expect(backgroundColor(tester), const Color(0xFFFFF8F0));
       expect(
         shapeOf(tester, 'box'),
@@ -79,8 +90,10 @@ void main() {
       expect(title.color, const Color(0xFF3B2A20));
     });
 
-    testBothViewports('restyles in place when the theme changes',
-        (tester, size) async {
+    testBothViewports('restyles in place when the theme changes', (
+      tester,
+      size,
+    ) async {
       final doc = SlideDocumentNotifier(themedDeck(SlideThemes.light));
       await pumpCanvas(tester, doc, size: size);
       expect(backgroundColor(tester), const Color(0xFFFFFFFF));
@@ -97,8 +110,10 @@ void main() {
       expect(backgroundColor(tester), const Color(0xFFFFFFFF));
     });
 
-    testBothViewports('keeps slide type at 2.0 text scale',
-        (tester, size) async {
+    testBothViewports('keeps slide type at 2.0 text scale', (
+      tester,
+      size,
+    ) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pumpCanvas(
@@ -111,7 +126,9 @@ void main() {
       final paragraph = tester.renderObject<RenderParagraph>(
         find
             .descendant(
-                of: elementKey('title'), matching: find.byType(RichText))
+              of: elementKey('title'),
+              matching: find.byType(RichText),
+            )
             .first,
       );
       expect(paragraph.textScaler, TextScaler.noScaling);
@@ -135,8 +152,10 @@ void main() {
   });
 
   group('a deck without a theme', () {
-    testBothViewports('draws in the light theme under any app theme',
-        (tester, size) async {
+    testBothViewports('draws in the light theme under any app theme', (
+      tester,
+      size,
+    ) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -154,7 +173,9 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             theme: app,
-            home: Scaffold(body: SlideCanvas(document: document, slideId: 's')),
+            home: Scaffold(
+              body: SlideCanvas(document: document, slideId: 's'),
+            ),
           ),
         );
         await tester.pumpAndSettle();

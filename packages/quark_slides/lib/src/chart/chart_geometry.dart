@@ -77,15 +77,13 @@ List<Offset> chartLinePoints(
   List<double> values,
   Rect plot,
   ChartAxisScale scale,
-) =>
-    [
-      for (final (c, v) in values.indexed)
-        Offset(
-          chartCategoryCenter(c, values.length, plot.left, plot.width),
-          plot.bottom -
-              scale.fraction(v.clamp(scale.min, scale.max)) * plot.height,
-        ),
-    ];
+) => [
+  for (final (c, v) in values.indexed)
+    Offset(
+      chartCategoryCenter(c, values.length, plot.left, plot.width),
+      plot.bottom - scale.fraction(v.clamp(scale.min, scale.max)) * plot.height,
+    ),
+];
 
 /// The height in [plot] of [scale]'s baseline, which an area fills down
 /// (or up) to.
@@ -127,7 +125,8 @@ List<bool> chartPlaceLabels(List<Rect> labels, Rect bounds) {
   return [
     for (final label in labels)
       () {
-        final fits = label.left >= bounds.left - 1e-6 &&
+        final fits =
+            label.left >= bounds.left - 1e-6 &&
             label.top >= bounds.top - 1e-6 &&
             label.right <= bounds.right + 1e-6 &&
             label.bottom <= bounds.bottom + 1e-6 &&
@@ -173,8 +172,5 @@ List<bool> chartPlaceLabels(List<Rect> labels, Rect bounds) {
     }
     y += height + rowGap;
   }
-  return (
-    offsets: offsets,
-    size: Size(total, rows.isEmpty ? 0 : y - rowGap),
-  );
+  return (offsets: offsets, size: Size(total, rows.isEmpty ? 0 : y - rowGap));
 }

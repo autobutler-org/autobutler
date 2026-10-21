@@ -95,11 +95,9 @@ void main() {
       ],
     );
     final pieces = shapePieces(shape, const Rect.fromLTWH(0, 0, 200, 150));
-    expect([
-      for (final p in pieces) (p.fill, p.stroke)
-    ], [
-      (false, true),
-      (true, false),
-    ]);
+    expect(
+      [for (final p in pieces) (p.fill, p.stroke)],
+      [(false, true), (true, false)],
+    );
   });
 }

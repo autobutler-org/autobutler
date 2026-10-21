@@ -54,48 +54,46 @@ class SlideTextEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-        listenable: session,
-        builder: (context, _) {
-          final draft = session.draft;
-          if (draft == null) return const SizedBox.shrink();
-          final layout = SlideTextLayout.forBox(draft, theme);
-          final fit = layout.shrinkScale(draft);
-          session.configureFields(layout, fit);
-          final paragraphs = draft.paragraphs;
-          final markers = listMarkers(paragraphs);
-          final fields = session.paragraphControllers.length;
-          return OverflowBox(
-            alignment: SlideTextBoxView.alignmentOf(draft.anchor),
-            minHeight: 0,
-            maxHeight: double.infinity,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < paragraphs.length && i < fields; i++)
-                  SlideTextParagraphView(
-                    key: ValueKey(keyName(i)),
-                    paragraph: paragraphs[i],
-                    layout: layout,
-                    marker: markers[i],
-                    scale: fit,
-                    child: SlideParagraphField(
-                      session: session,
-                      index: i,
-                      style: layout.rootStyle(paragraphs[i], scale: fit),
-                      textAlign: layout.textAlign(paragraphs[i]),
-                      scale: scale,
-                      cursorColor: style.selectionColor,
-                      selectionColor: style.selectionColor.withValues(
-                        alpha: 0.35,
-                      ),
-                      onDone: onDone,
-                      onTab: onTab,
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
+    listenable: session,
+    builder: (context, _) {
+      final draft = session.draft;
+      if (draft == null) return const SizedBox.shrink();
+      final layout = SlideTextLayout.forBox(draft, theme);
+      final fit = layout.shrinkScale(draft);
+      session.configureFields(layout, fit);
+      final paragraphs = draft.paragraphs;
+      final markers = listMarkers(paragraphs);
+      final fields = session.paragraphControllers.length;
+      return OverflowBox(
+        alignment: SlideTextBoxView.alignmentOf(draft.anchor),
+        minHeight: 0,
+        maxHeight: double.infinity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < paragraphs.length && i < fields; i++)
+              SlideTextParagraphView(
+                key: ValueKey(keyName(i)),
+                paragraph: paragraphs[i],
+                layout: layout,
+                marker: markers[i],
+                scale: fit,
+                child: SlideParagraphField(
+                  session: session,
+                  index: i,
+                  style: layout.rootStyle(paragraphs[i], scale: fit),
+                  textAlign: layout.textAlign(paragraphs[i]),
+                  scale: scale,
+                  cursorColor: style.selectionColor,
+                  selectionColor: style.selectionColor.withValues(alpha: 0.35),
+                  onDone: onDone,
+                  onTab: onTab,
+                ),
+              ),
+          ],
+        ),
       );
+    },
+  );
 }

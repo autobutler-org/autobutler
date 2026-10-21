@@ -63,13 +63,13 @@ class Cell extends StatelessWidget {
           color: referenceColor != null
               ? referenceColor!.withValues(alpha: 0.08)
               : isActive
-                  ? cs.primaryContainer
-                  : isInRange && !isHighlighted
-                      ? Color.alphaBlend(
-                          cs.primary.withValues(alpha: kRangeTintAlpha),
-                          fillColor ?? const Color(0x00000000),
-                        )
-                      : fillColor,
+              ? cs.primaryContainer
+              : isInRange && !isHighlighted
+              ? Color.alphaBlend(
+                  cs.primary.withValues(alpha: kRangeTintAlpha),
+                  fillColor ?? const Color(0x00000000),
+                )
+              : fillColor,
           border: referenceColor != null
               ? Border.all(color: referenceColor!, width: 1.0)
               : Border.all(

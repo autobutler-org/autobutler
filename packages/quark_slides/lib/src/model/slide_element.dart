@@ -65,12 +65,12 @@ sealed class SlideElement {
 
   /// The element as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        'id': id,
-        'type': type,
-        'frame': frame.toJson(),
-        ..._fieldsToJson(),
-      };
+    ...extra,
+    'id': id,
+    'type': type,
+    'frame': frame.toJson(),
+    ..._fieldsToJson(),
+  };
 
   JsonMap _fieldsToJson();
 
@@ -124,13 +124,15 @@ sealed class SlideElement {
           preset: preset == null || preset.isEmpty ? null : preset,
           adjust: _adjust(json, path),
           contours: _contours(json, path),
-          fill:
-              fill == null ? null : SlideColor.parse(fill, path: '$path.fill'),
+          fill: fill == null
+              ? null
+              : SlideColor.parse(fill, path: '$path.fill'),
           stroke: json['stroke'] == null
               ? null
               : Stroke.fromJson(json['stroke'], '$path.stroke'),
-          cornerRadius:
-              _nonNegative(optionalNumber(json, 'cornerRadius', path)),
+          cornerRadius: _nonNegative(
+            optionalNumber(json, 'cornerRadius', path),
+          ),
           opacity: _opacity(json, path),
           shadow: _shadow(json, path),
           extra: unknownFields(json, ShapeElement._known),
@@ -314,13 +316,13 @@ class TextBox extends SlideElement {
 
   @override
   JsonMap _fieldsToJson() => {
-        'paragraphs': [for (final p in paragraphs) p.toJson()],
-        if (anchor != TextAnchor.top) 'anchor': anchor.name,
-        if (autoFit != TextAutoFit.grow) 'autoFit': autoFit.name,
-        if (placeholder.isNotEmpty) 'placeholder': placeholder,
-        if (slot != null) 'slot': slot,
-        if (textRole != ThemeTextRole.body) 'textRole': textRole.name,
-      };
+    'paragraphs': [for (final p in paragraphs) p.toJson()],
+    if (anchor != TextAnchor.top) 'anchor': anchor.name,
+    if (autoFit != TextAutoFit.grow) 'autoFit': autoFit.name,
+    if (placeholder.isNotEmpty) 'placeholder': placeholder,
+    if (slot != null) 'slot': slot,
+    if (textRole != ThemeTextRole.body) 'textRole': textRole.name,
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` as [slot]
   /// to make the box an ordinary one.
@@ -333,18 +335,17 @@ class TextBox extends SlideElement {
     String? placeholder,
     Object? slot = unset,
     ThemeTextRole? textRole,
-  }) =>
-      TextBox(
-        id: id ?? this.id,
-        frame: frame ?? this.frame,
-        paragraphs: paragraphs ?? this.paragraphs,
-        anchor: anchor ?? this.anchor,
-        autoFit: autoFit ?? this.autoFit,
-        placeholder: placeholder ?? this.placeholder,
-        slot: identical(slot, unset) ? this.slot : slot as String?,
-        textRole: textRole ?? this.textRole,
-        extra: extra,
-      );
+  }) => TextBox(
+    id: id ?? this.id,
+    frame: frame ?? this.frame,
+    paragraphs: paragraphs ?? this.paragraphs,
+    anchor: anchor ?? this.anchor,
+    autoFit: autoFit ?? this.autoFit,
+    placeholder: placeholder ?? this.placeholder,
+    slot: identical(slot, unset) ? this.slot : slot as String?,
+    textRole: textRole ?? this.textRole,
+    extra: extra,
+  );
 
   @override
   TextBox withFrame(ElementFrame frame) => copyWith(frame: frame);
@@ -367,16 +368,16 @@ class TextBox extends SlideElement {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        frame,
-        Object.hashAll(paragraphs),
-        anchor,
-        autoFit,
-        placeholder,
-        slot,
-        textRole,
-        jsonHash(extra),
-      );
+    id,
+    frame,
+    Object.hashAll(paragraphs),
+    anchor,
+    autoFit,
+    placeholder,
+    slot,
+    textRole,
+    jsonHash(extra),
+  );
 }
 
 /// The geometric figures a [ShapeElement] can draw, each fitted to the
@@ -450,8 +451,8 @@ class ShapeElement extends SlideElement {
     this.opacity = 1,
     this.shadow,
     super.extra,
-  })  : assert(cornerRadius == null || cornerRadius >= 0),
-        assert(opacity >= 0 && opacity <= 1);
+  }) : assert(cornerRadius == null || cornerRadius >= 0),
+       assert(opacity >= 0 && opacity <= 1);
 
   /// The `type` discriminator, `shape`.
   static const typeName = 'shape';
@@ -506,21 +507,21 @@ class ShapeElement extends SlideElement {
 
   @override
   JsonMap _fieldsToJson() => {
-        'kind': kind.name,
-        if (preset != null) 'preset': preset,
-        if (adjust.isNotEmpty)
-          'adjust': {
-            for (final key in (adjust.keys.toList()..sort()))
-              key: jsonNumber(adjust[key]!),
-          },
-        if (contours.isNotEmpty)
-          'contours': [for (final contour in contours) contour.toJson()],
-        if (fill != null) 'fill': fill!.toHex(),
-        if (stroke != null) 'stroke': stroke!.toJson(),
-        if (cornerRadius != null) 'cornerRadius': jsonNumber(cornerRadius!),
-        if (opacity != 1) 'opacity': jsonNumber(opacity),
-        if (shadow != null) 'shadow': shadow!.toJson(),
-      };
+    'kind': kind.name,
+    if (preset != null) 'preset': preset,
+    if (adjust.isNotEmpty)
+      'adjust': {
+        for (final key in (adjust.keys.toList()..sort()))
+          key: jsonNumber(adjust[key]!),
+      },
+    if (contours.isNotEmpty)
+      'contours': [for (final contour in contours) contour.toJson()],
+    if (fill != null) 'fill': fill!.toHex(),
+    if (stroke != null) 'stroke': stroke!.toJson(),
+    if (cornerRadius != null) 'cornerRadius': jsonNumber(cornerRadius!),
+    if (opacity != 1) 'opacity': jsonNumber(opacity),
+    if (shadow != null) 'shadow': shadow!.toJson(),
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` to clear
   /// [fill], [stroke], [cornerRadius], [preset] or [shadow].
@@ -590,19 +591,19 @@ class ShapeElement extends SlideElement {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        frame,
-        kind,
-        preset,
-        jsonHash(adjust),
-        Object.hashAll(contours),
-        fill,
-        stroke,
-        cornerRadius,
-        opacity,
-        shadow,
-        jsonHash(extra),
-      );
+    id,
+    frame,
+    kind,
+    preset,
+    jsonHash(adjust),
+    Object.hashAll(contours),
+    fill,
+    stroke,
+    cornerRadius,
+    opacity,
+    shadow,
+    jsonHash(extra),
+  );
 }
 
 /// How an [ImageElement]'s picture is fitted to its frame. A value this
@@ -668,11 +669,11 @@ class ImageElement extends SlideElement {
 
   @override
   JsonMap _fieldsToJson() => {
-        'source': source,
-        if (altText.isNotEmpty) 'altText': altText,
-        if (fit != ImageFit.contain) 'fit': fit.name,
-        if (shadow != null) 'shadow': shadow!.toJson(),
-      };
+    'source': source,
+    if (altText.isNotEmpty) 'altText': altText,
+    if (fit != ImageFit.contain) 'fit': fit.name,
+    if (shadow != null) 'shadow': shadow!.toJson(),
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` to clear
   /// [shadow].
@@ -683,17 +684,15 @@ class ImageElement extends SlideElement {
     String? altText,
     ImageFit? fit,
     Object? shadow = unset,
-  }) =>
-      ImageElement(
-        id: id ?? this.id,
-        frame: frame ?? this.frame,
-        source: source ?? this.source,
-        altText: altText ?? this.altText,
-        fit: fit ?? this.fit,
-        shadow:
-            identical(shadow, unset) ? this.shadow : shadow as ElementShadow?,
-        extra: extra,
-      );
+  }) => ImageElement(
+    id: id ?? this.id,
+    frame: frame ?? this.frame,
+    source: source ?? this.source,
+    altText: altText ?? this.altText,
+    fit: fit ?? this.fit,
+    shadow: identical(shadow, unset) ? this.shadow : shadow as ElementShadow?,
+    extra: extra,
+  );
 
   @override
   ImageElement withFrame(ElementFrame frame) => copyWith(frame: frame);
@@ -744,8 +743,8 @@ class LineElement extends SlideElement {
     this.endCap = LineCap.none,
     this.opacity = 1,
     super.extra,
-  })  : assert(opacity >= 0 && opacity <= 1),
-        stroke = stroke ?? Stroke();
+  }) : assert(opacity >= 0 && opacity <= 1),
+       stroke = stroke ?? Stroke();
 
   /// The `type` discriminator, `line`.
   static const typeName = 'line';
@@ -781,12 +780,12 @@ class LineElement extends SlideElement {
 
   @override
   JsonMap _fieldsToJson() => {
-        'stroke': stroke.toJson(),
-        if (flipped) 'flipped': true,
-        if (startCap != LineCap.none) 'startCap': startCap.name,
-        if (endCap != LineCap.none) 'endCap': endCap.name,
-        if (opacity != 1) 'opacity': jsonNumber(opacity),
-      };
+    'stroke': stroke.toJson(),
+    if (flipped) 'flipped': true,
+    if (startCap != LineCap.none) 'startCap': startCap.name,
+    if (endCap != LineCap.none) 'endCap': endCap.name,
+    if (opacity != 1) 'opacity': jsonNumber(opacity),
+  };
 
   /// Returns a copy with the given fields replaced.
   LineElement copyWith({
@@ -797,17 +796,16 @@ class LineElement extends SlideElement {
     LineCap? startCap,
     LineCap? endCap,
     double? opacity,
-  }) =>
-      LineElement(
-        id: id ?? this.id,
-        frame: frame ?? this.frame,
-        stroke: stroke ?? this.stroke,
-        flipped: flipped ?? this.flipped,
-        startCap: startCap ?? this.startCap,
-        endCap: endCap ?? this.endCap,
-        opacity: opacity ?? this.opacity,
-        extra: extra,
-      );
+  }) => LineElement(
+    id: id ?? this.id,
+    frame: frame ?? this.frame,
+    stroke: stroke ?? this.stroke,
+    flipped: flipped ?? this.flipped,
+    startCap: startCap ?? this.startCap,
+    endCap: endCap ?? this.endCap,
+    opacity: opacity ?? this.opacity,
+    extra: extra,
+  );
 
   @override
   LineElement withFrame(ElementFrame frame) => copyWith(frame: frame);
@@ -829,15 +827,15 @@ class LineElement extends SlideElement {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        frame,
-        stroke,
-        flipped,
-        startCap,
-        endCap,
-        opacity,
-        jsonHash(extra),
-      );
+    id,
+    frame,
+    stroke,
+    flipped,
+    startCap,
+    endCap,
+    opacity,
+    jsonHash(extra),
+  );
 }
 
 /// Elements moved, resized and rotated as one: the [children], back to
@@ -875,21 +873,20 @@ class GroupElement extends SlideElement {
 
   @override
   JsonMap _fieldsToJson() => {
-        'children': [for (final c in children) c.toJson()],
-      };
+    'children': [for (final c in children) c.toJson()],
+  };
 
   /// Returns a copy with the given fields replaced.
   GroupElement copyWith({
     String? id,
     ElementFrame? frame,
     List<SlideElement>? children,
-  }) =>
-      GroupElement(
-        id: id ?? this.id,
-        frame: frame ?? this.frame,
-        children: children ?? this.children,
-        extra: extra,
-      );
+  }) => GroupElement(
+    id: id ?? this.id,
+    frame: frame ?? this.frame,
+    children: children ?? this.children,
+    extra: extra,
+  );
 
   /// Returns a copy with [frame] replaced and the children left as they
   /// are — a move or a rotation. A resize scales the children too; see

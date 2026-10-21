@@ -7,10 +7,8 @@ import '../model/image_source.dart';
 /// Quark file path or an uploaded asset — however it fetches files, and a
 /// test or gallery returns a placeholder. The picture's semantics come from
 /// the element's alt text, so the builder's widget need not label itself.
-typedef SlideImageBuilder = Widget Function(
-  BuildContext context,
-  SlideImageSource image,
-);
+typedef SlideImageBuilder =
+    Widget Function(BuildContext context, SlideImageSource image);
 
 /// A picture a slide asks the host app to draw: an image element's picture
 /// or a background image.

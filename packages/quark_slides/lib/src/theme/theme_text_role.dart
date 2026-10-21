@@ -17,8 +17,8 @@ enum ThemeTextRole {
 
   /// The English name a screen reader announces a placeholder by.
   String get label => switch (this) {
-        title => 'Title',
-        subtitle => 'Subtitle',
-        body => 'Content',
-      };
+    title => 'Title',
+    subtitle => 'Subtitle',
+    body => 'Content',
+  };
 }

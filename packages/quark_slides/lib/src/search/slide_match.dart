@@ -91,8 +91,8 @@ class SlideMatch implements Comparable<SlideMatch> {
 
   /// The plain text of each of [box]'s paragraphs, for [offsetIn].
   static List<String> paragraphsOf(TextBox box) => [
-        for (final p in box.paragraphs) p.plainText,
-      ];
+    for (final p in box.paragraphs) p.plainText,
+  ];
 
   @override
   int compareTo(SlideMatch other) {
@@ -131,16 +131,16 @@ class SlideMatch implements Comparable<SlideMatch> {
 
   @override
   int get hashCode => Object.hash(
-        slideId,
-        slideIndex,
-        field,
-        elementOrder,
-        paragraph,
-        start,
-        end,
-        text,
-        Object.hashAll(elementPath),
-      );
+    slideId,
+    slideIndex,
+    field,
+    elementOrder,
+    paragraph,
+    start,
+    end,
+    text,
+    Object.hashAll(elementPath),
+  );
 
   @override
   String toString() =>

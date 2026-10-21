@@ -83,9 +83,9 @@ T enumByName<T extends Enum>(
 /// The entries of [json] whose keys are not in [known]: the fields a newer
 /// writer added, kept so that saving the document again does not drop them.
 JsonMap unknownFields(JsonMap json, Set<String> known) => Map.unmodifiable({
-      for (final entry in json.entries)
-        if (!known.contains(entry.key)) entry.key: entry.value,
-    });
+  for (final entry in json.entries)
+    if (!known.contains(entry.key)) entry.key: entry.value,
+});
 
 /// Writes [value] as an integer when it has no fractional part, so files
 /// read `1920` rather than `1920.0`.
@@ -118,11 +118,7 @@ int jsonHash(Object? value) {
 
 /// Element-wise equality of two lists, comparing items with [equals] (`==`
 /// by default).
-bool listEquals<T>(
-  List<T> a,
-  List<T> b, [
-  bool Function(T, T)? equals,
-]) {
+bool listEquals<T>(List<T> a, List<T> b, [bool Function(T, T)? equals]) {
   if (identical(a, b)) return true;
   if (a.length != b.length) return false;
   for (var i = 0; i < a.length; i++) {

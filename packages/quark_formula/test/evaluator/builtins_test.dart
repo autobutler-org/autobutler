@@ -25,7 +25,7 @@ void main() {
     test('AVERAGE', () {
       expect(
         call('AVERAGE', [
-          range([const NumberValue(2), const NumberValue(4)])
+          range([const NumberValue(2), const NumberValue(4)]),
         ]),
         const NumberValue(3),
       );
@@ -34,7 +34,7 @@ void main() {
     test('MIN', () {
       expect(
         call('MIN', [
-          range([const NumberValue(2), const NumberValue(-1)])
+          range([const NumberValue(2), const NumberValue(-1)]),
         ]),
         const NumberValue(-1),
       );
@@ -43,7 +43,7 @@ void main() {
     test('MAX', () {
       expect(
         call('MAX', [
-          range([const NumberValue(2), const NumberValue(9)])
+          range([const NumberValue(2), const NumberValue(9)]),
         ]),
         const NumberValue(9),
       );
@@ -51,13 +51,17 @@ void main() {
 
     test('ABS', () {
       expect(
-          call('ABS', [scalar(const NumberValue(-3))]), const NumberValue(3));
+        call('ABS', [scalar(const NumberValue(-3))]),
+        const NumberValue(3),
+      );
     });
 
     test('ROUND', () {
       expect(
-        call('ROUND',
-            [scalar(const NumberValue(3.14159)), scalar(const NumberValue(2))]),
+        call('ROUND', [
+          scalar(const NumberValue(3.14159)),
+          scalar(const NumberValue(2)),
+        ]),
         const NumberValue(3.14),
       );
     });
@@ -78,16 +82,20 @@ void main() {
 
     test('MOD', () {
       expect(
-        call('MOD',
-            [scalar(const NumberValue(10)), scalar(const NumberValue(4))]),
+        call('MOD', [
+          scalar(const NumberValue(10)),
+          scalar(const NumberValue(4)),
+        ]),
         const NumberValue(2),
       );
     });
 
     test('POWER', () {
       expect(
-        call('POWER',
-            [scalar(const NumberValue(2)), scalar(const NumberValue(5))]),
+        call('POWER', [
+          scalar(const NumberValue(2)),
+          scalar(const NumberValue(5)),
+        ]),
         const NumberValue(32),
       );
     });
@@ -111,8 +119,10 @@ void main() {
     });
 
     test('LEN', () {
-      expect(call('LEN', [scalar(const StringValue('hello'))]),
-          const NumberValue(5));
+      expect(
+        call('LEN', [scalar(const StringValue('hello'))]),
+        const NumberValue(5),
+      );
     });
 
     test('UPPER', () {
@@ -138,16 +148,20 @@ void main() {
 
     test('LEFT', () {
       expect(
-        call('LEFT',
-            [scalar(const StringValue('hello')), scalar(const NumberValue(2))]),
+        call('LEFT', [
+          scalar(const StringValue('hello')),
+          scalar(const NumberValue(2)),
+        ]),
         const StringValue('he'),
       );
     });
 
     test('RIGHT', () {
       expect(
-        call('RIGHT',
-            [scalar(const StringValue('hello')), scalar(const NumberValue(2))]),
+        call('RIGHT', [
+          scalar(const StringValue('hello')),
+          scalar(const NumberValue(2)),
+        ]),
         const StringValue('lo'),
       );
     });
@@ -218,7 +232,9 @@ void main() {
 
     test('NOT', () {
       expect(
-          call('NOT', [scalar(const BoolValue(false))]), const BoolValue(true));
+        call('NOT', [scalar(const BoolValue(false))]),
+        const BoolValue(true),
+      );
     });
 
     test('IFERROR', () {
@@ -236,13 +252,17 @@ void main() {
     });
 
     test('ISNUMBER', () {
-      expect(call('ISNUMBER', [scalar(const NumberValue(1))]),
-          const BoolValue(true));
+      expect(
+        call('ISNUMBER', [scalar(const NumberValue(1))]),
+        const BoolValue(true),
+      );
     });
 
     test('ISTEXT', () {
-      expect(call('ISTEXT', [scalar(const StringValue('x'))]),
-          const BoolValue(true));
+      expect(
+        call('ISTEXT', [scalar(const StringValue('x'))]),
+        const BoolValue(true),
+      );
     });
 
     test('COUNT', () {

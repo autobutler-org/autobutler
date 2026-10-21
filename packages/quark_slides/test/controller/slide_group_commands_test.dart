@@ -7,33 +7,36 @@ ElementFrame f(double x, double y, double w, double h, [double r = 0]) =>
 /// A 1920×1080 deck with slide `s` holding shapes `a`, `b` and `c` and a
 /// text box `t`, back to front, and an empty slide `s2`.
 Presentation deck() => Presentation(
-      slides: [
-        Slide(
-          id: 's',
-          elements: [
-            ShapeElement(id: 'a', frame: f(100, 100, 200, 100)),
-            ShapeElement(id: 'b', frame: f(400, 300, 100, 100)),
-            ShapeElement(id: 'c', frame: f(1000, 600, 300, 200)),
-            TextBox(
-              id: 't',
-              frame: f(800, 100, 200, 50),
-              paragraphs: const [
-                TextParagraph([TextRun('Hi')]),
-              ],
-            ),
+  slides: [
+    Slide(
+      id: 's',
+      elements: [
+        ShapeElement(id: 'a', frame: f(100, 100, 200, 100)),
+        ShapeElement(id: 'b', frame: f(400, 300, 100, 100)),
+        ShapeElement(id: 'c', frame: f(1000, 600, 300, 200)),
+        TextBox(
+          id: 't',
+          frame: f(800, 100, 200, 50),
+          paragraphs: const [
+            TextParagraph([TextRun('Hi')]),
           ],
         ),
-        const Slide(id: 's2'),
       ],
-    );
+    ),
+    const Slide(id: 's2'),
+  ],
+);
 
 Matcher frameNear(ElementFrame expected) => isA<ElementFrame>()
     .having((e) => e.x, 'x', closeTo(expected.x, 1e-6))
     .having((e) => e.y, 'y', closeTo(expected.y, 1e-6))
     .having((e) => e.width, 'width', closeTo(expected.width, 1e-6))
     .having((e) => e.height, 'height', closeTo(expected.height, 1e-6))
-    .having((e) => e.rotation % 360, 'rotation',
-        closeTo(expected.rotation % 360, 1e-6));
+    .having(
+      (e) => e.rotation % 360,
+      'rotation',
+      closeTo(expected.rotation % 360, 1e-6),
+    );
 
 void main() {
   late SlideDocumentController doc;
@@ -155,18 +158,20 @@ void main() {
       ];
       expect(ids, hasLength(5));
       expect(
-          ids.toSet().intersection(
-            {for (final e in slide().allElements) e.id},
-          ),
-          isEmpty);
+        ids.toSet().intersection({for (final e in slide().allElements) e.id}),
+        isEmpty,
+      );
     });
 
     test('newId skips ids taken inside groups', () {
       var calls = 0;
-      final d = SlideDocumentController(doc.presentation, newId: () {
-        calls++;
-        return calls == 1 ? 'a' : 'fresh';
-      });
+      final d = SlideDocumentController(
+        doc.presentation,
+        newId: () {
+          calls++;
+          return calls == 1 ? 'a' : 'fresh';
+        },
+      );
       expect(d.newId(), 'fresh');
     });
   });
@@ -194,8 +199,14 @@ void main() {
 
     test('resize and rotate take frames on the slide', () {
       final shown = slide().frameOnSlide('a')!;
-      doc.resizeElement('s', 'a',
-          x: shown.x, y: shown.y, width: 300, height: shown.height);
+      doc.resizeElement(
+        's',
+        'a',
+        x: shown.x,
+        y: shown.y,
+        width: 300,
+        height: shown.height,
+      );
       expect(slide().frameOnSlide('a')!.width, closeTo(300, 1e-6));
       doc.rotateElement('s', 'a', 135);
       expect(slide().frameOnSlide('a')!.rotation, closeTo(135, 1e-6));
@@ -223,8 +234,10 @@ void main() {
   group('alignment commands', () {
     test('align, one step, moving only', () {
       doc.alignElements('s', {'a', 'b', 'c'}, ElementAlignment.top);
-      expect([for (final id in 'abc'.split('')) slide().frameOnSlide(id)!.y],
-          [100, 100, 100]);
+      expect(
+        [for (final id in 'abc'.split('')) slide().frameOnSlide(id)!.y],
+        [100, 100, 100],
+      );
       expect(slide().elementById('c')!.frame.width, 300);
       expect(undoAll(), 1);
     });
@@ -270,8 +283,10 @@ void main() {
         measureText: (box, theme) => 400,
       );
       grow.matchSize('s', {'t', 'b'}, SizeMatch.width, reference: 'b');
-      expect(grow.presentation.slideById('s')!.elementById('t')!.frame.height,
-          400);
+      expect(
+        grow.presentation.slideById('s')!.elementById('t')!.frame.height,
+        400,
+      );
     });
   });
 }

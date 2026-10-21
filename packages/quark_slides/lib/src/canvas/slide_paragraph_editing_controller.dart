@@ -6,12 +6,8 @@ import 'slide_text_layout.dart';
 /// Called when the user changes a paragraph field's text: the field
 /// characters from [start] to [end] became [inserted], and [value] is what
 /// the field asked to hold afterward.
-typedef SlideParagraphEdit = void Function(
-  int start,
-  int end,
-  String inserted,
-  TextEditingValue value,
-);
+typedef SlideParagraphEdit =
+    void Function(int start, int end, String inserted, TextEditingValue value);
 
 /// The [TextEditingController] of one paragraph in the in-place text
 /// editor: it maps between the field's plain text and the paragraph's
@@ -120,8 +116,9 @@ class SlideParagraphEditingController extends TextEditingController {
         ? newValue.selection.extentOffset
         : next.length;
     final added = next.length - old.length;
-    final prefixLimit =
-        added > 0 ? (caret - added).clamp(0, shortest) : shortest;
+    final prefixLimit = added > 0
+        ? (caret - added).clamp(0, shortest)
+        : shortest;
     while (prefix < prefixLimit && old[prefix] == next[prefix]) {
       prefix++;
     }

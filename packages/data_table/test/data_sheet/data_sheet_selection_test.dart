@@ -153,8 +153,10 @@ void main() {
     test('extendTo up and left normalizes the range', () {
       selection.setHighlighted(4, 4);
       selection.extendTo(2, 1);
-      expect(selection.range,
-          const CellRange(top: 2, left: 1, bottom: 4, right: 4));
+      expect(
+        selection.range,
+        const CellRange(top: 2, left: 1, bottom: 4, right: 4),
+      );
     });
 
     test('extendTo with no highlight starts at the target', () {

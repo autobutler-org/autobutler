@@ -27,10 +27,11 @@ String formatCellValue(String value, CellFormat format) {
     CellNumberFormat.number => _grouped(n, decimals),
     CellNumberFormat.currency => _grouped(n, decimals, prefix: r'$'),
     CellNumberFormat.percent => '${_grouped(n * 100, decimals)}%',
-    CellNumberFormat.date => _serialEpoch
-        .add(Duration(days: n.floor()))
-        .toIso8601String()
-        .substring(0, 10),
+    CellNumberFormat.date =>
+      _serialEpoch
+          .add(Duration(days: n.floor()))
+          .toIso8601String()
+          .substring(0, 10),
   };
 }
 

@@ -13,8 +13,10 @@ void main() {
   tearDown(() => doc.dispose());
 
   group('rendering', () {
-    testBothViewports('draws every element in a 16:9 letterbox',
-        (tester, size) async {
+    testBothViewports('draws every element in a 16:9 letterbox', (
+      tester,
+      size,
+    ) async {
       final requests = <SlideImageSource>[];
       await pumpCanvas(
         tester,
@@ -46,8 +48,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('read-only draws the slide in its aspect ratio, no chrome',
-        (tester) async {
+    testWidgets('read-only draws the slide in its aspect ratio, no chrome', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Center(
@@ -70,8 +73,10 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testBothViewports('200% text scale leaves slide text and chrome alone',
-        (tester, size) async {
+    testBothViewports('200% text scale leaves slide text and chrome alone', (
+      tester,
+      size,
+    ) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pumpCanvas(tester, doc, size: size);
@@ -93,8 +98,10 @@ void main() {
   });
 
   group('selection', () {
-    testBothViewports('a tap selects an element and shows its handles',
-        (tester, size) async {
+    testBothViewports('a tap selects an element and shows its handles', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       expect(handleKey(SlideHandle.topLeft), findsNothing);
       await tester.tap(elementKey('box'));
@@ -110,8 +117,10 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testBothViewports('Shift adds to and removes from the selection',
-        (tester, size) async {
+    testBothViewports('Shift adds to and removes from the selection', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       await tester.tap(elementKey('box'));
       await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
@@ -125,8 +134,10 @@ void main() {
       expect(harness(tester).selection, {'ball'});
     });
 
-    testBothViewports('a tap inside a multi-selection narrows it to one',
-        (tester, size) async {
+    testBothViewports('a tap inside a multi-selection narrows it to one', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       harness(tester).select({'box', 'ball'});
       await tester.pump();
@@ -135,8 +146,10 @@ void main() {
       expect(harness(tester).selection, {'ball'});
     });
 
-    testBothViewports('a marquee selects what it wholly encloses',
-        (tester, size) async {
+    testBothViewports('a marquee selects what it wholly encloses', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final gesture = await tester.startGesture(
         slideToGlobal(tester, const Offset(100, 350)),
@@ -153,41 +166,45 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testBothViewports('each element reads to a screen reader, selected or not',
-        (tester, size) async {
-      final semantics = tester.ensureSemantics();
-      await pumpCanvas(tester, doc, size: size);
-      expect(find.bySemanticsLabel('Quarterly review'), findsOne);
-      expect(find.bySemanticsLabel('Image: A dog'), findsOne);
-      await tester.tap(elementKey('box'));
-      await tester.pump();
-      expect(
-        tester.getSemantics(find.bySemanticsLabel('Rectangle shape')),
-        isSemantics(
-          label: 'Rectangle shape',
-          isSelected: true,
-          hasSelectedState: true,
-          hasTapAction: true,
-        ),
-      );
-      expect(
-        tester.getSemantics(find.bySemanticsLabel('Ellipse shape')),
-        isSemantics(
-          label: 'Ellipse shape',
-          hasSelectedState: true,
-          hasTapAction: true,
-        ),
-      );
-      tester.semantics.tap(find.semantics.byLabel('Ellipse shape'));
-      await tester.pump();
-      expect(harness(tester).selection, {'ball'});
-      semantics.dispose();
-    });
+    testBothViewports(
+      'each element reads to a screen reader, selected or not',
+      (tester, size) async {
+        final semantics = tester.ensureSemantics();
+        await pumpCanvas(tester, doc, size: size);
+        expect(find.bySemanticsLabel('Quarterly review'), findsOne);
+        expect(find.bySemanticsLabel('Image: A dog'), findsOne);
+        await tester.tap(elementKey('box'));
+        await tester.pump();
+        expect(
+          tester.getSemantics(find.bySemanticsLabel('Rectangle shape')),
+          isSemantics(
+            label: 'Rectangle shape',
+            isSelected: true,
+            hasSelectedState: true,
+            hasTapAction: true,
+          ),
+        );
+        expect(
+          tester.getSemantics(find.bySemanticsLabel('Ellipse shape')),
+          isSemantics(
+            label: 'Ellipse shape',
+            hasSelectedState: true,
+            hasTapAction: true,
+          ),
+        );
+        tester.semantics.tap(find.semantics.byLabel('Ellipse shape'));
+        await tester.pump();
+        expect(harness(tester).selection, {'ball'});
+        semantics.dispose();
+      },
+    );
   });
 
   group('manipulation', () {
-    testBothViewports('dragging moves the selection as one undo step',
-        (tester, size) async {
+    testBothViewports('dragging moves the selection as one undo step', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final scale = canvasViewport(tester).scale;
       await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
@@ -200,12 +217,16 @@ void main() {
       expect(frame.y, closeTo(400 + 20 / scale, 0.01));
       expect(frameOf(doc, 'ball').x, 1300);
       expect(undoAll(doc), 1);
-      expect(frameOf(doc, 'box'),
-          ElementFrame(x: 200, y: 400, width: 600, height: 450));
+      expect(
+        frameOf(doc, 'box'),
+        ElementFrame(x: 200, y: 400, width: 600, height: 450),
+      );
     });
 
-    testBothViewports('dragging a multi-selection moves all of it',
-        (tester, size) async {
+    testBothViewports('dragging a multi-selection moves all of it', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final scale = canvasViewport(tester).scale;
       harness(tester).select({'box', 'ball'});
@@ -222,8 +243,9 @@ void main() {
       await pumpCanvas(tester, doc, size: size);
       final scale = canvasViewport(tester).scale;
       // The box's center (500, 625) lands 5 and 3 units off (960, 540).
-      final gesture =
-          await tester.startGesture(tester.getCenter(elementKey('box')));
+      final gesture = await tester.startGesture(
+        tester.getCenter(elementKey('box')),
+      );
       await gesture.moveBy(const Offset(0, 30));
       await gesture.moveBy(Offset(465 * scale, -82 * scale - 30));
       await tester.pump();
@@ -235,8 +257,10 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testBothViewports('the corner handle resizes as one undo step',
-        (tester, size) async {
+    testBothViewports('the corner handle resizes as one undo step', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final scale = canvasViewport(tester).scale;
       await tester.tap(elementKey('box'));
@@ -255,8 +279,10 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testBothViewports('the left handle keeps the right edge',
-        (tester, size) async {
+    testBothViewports('the left handle keeps the right edge', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final scale = canvasViewport(tester).scale;
       await tester.tap(elementKey('box'));
@@ -268,23 +294,27 @@ void main() {
       expect(frame.height, 450);
     });
 
-    testBothViewports('the rotate handle turns the element toward the pointer',
-        (tester, size) async {
-      await pumpCanvas(tester, doc, size: size);
-      await tester.tap(elementKey('box'));
-      await tester.pump();
-      final gesture = await tester.startGesture(
-        tester.getCenter(handleKey(SlideHandle.rotate)),
-      );
-      await gesture.moveTo(slideToGlobal(tester, const Offset(1000, 625)));
-      await gesture.up();
-      await tester.pump();
-      expect(frameOf(doc, 'box').rotation, closeTo(90, 1e-6));
-      expect(undoAll(doc), 1);
-    });
+    testBothViewports(
+      'the rotate handle turns the element toward the pointer',
+      (tester, size) async {
+        await pumpCanvas(tester, doc, size: size);
+        await tester.tap(elementKey('box'));
+        await tester.pump();
+        final gesture = await tester.startGesture(
+          tester.getCenter(handleKey(SlideHandle.rotate)),
+        );
+        await gesture.moveTo(slideToGlobal(tester, const Offset(1000, 625)));
+        await gesture.up();
+        await tester.pump();
+        expect(frameOf(doc, 'box').rotation, closeTo(90, 1e-6));
+        expect(undoAll(doc), 1);
+      },
+    );
 
-    testBothViewports('a second finger turns a drag into a pinch',
-        (tester, size) async {
+    testBothViewports('a second finger turns a drag into a pinch', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final center = tester.getCenter(elementKey('box'));
       final first = await tester.startGesture(center);
@@ -304,8 +334,10 @@ void main() {
   });
 
   group('keyboard', () {
-    testBothViewports('arrows nudge, Shift by ten, each an undo step',
-        (tester, size) async {
+    testBothViewports('arrows nudge, Shift by ten, each an undo step', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       await tester.tap(elementKey('box'));
       await tester.pump();
@@ -329,8 +361,10 @@ void main() {
       expect(elementKey('box'), findsNothing);
     });
 
-    testBothViewports('Tab cycles through the elements, then lets go',
-        (tester, size) async {
+    testBothViewports('Tab cycles through the elements, then lets go', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       await tester.tapAt(slideToGlobal(tester, const Offset(100, 1000)));
       final seen = <Set<String>>[];
@@ -348,11 +382,14 @@ void main() {
       ]);
     });
 
-    testBothViewports('Ctrl+Shift+] brings to front, Ctrl+[ sends back',
-        (tester, size) async {
+    testBothViewports('Ctrl+Shift+] brings to front, Ctrl+[ sends back', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
-      List<String> order() =>
-          [for (final e in doc.presentation.slideById('s')!.elements) e.id];
+      List<String> order() => [
+        for (final e in doc.presentation.slideById('s')!.elements) e.id,
+      ];
       await tester.tap(elementKey('box'));
       await tester.pump();
       await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
@@ -367,8 +404,10 @@ void main() {
   });
 
   group('viewport', () {
-    testBothViewports('Ctrl-scroll zooms and scroll pans',
-        (tester, size) async {
+    testBothViewports('Ctrl-scroll zooms and scroll pans', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final pointer = TestPointer(1, PointerDeviceKind.mouse);
       final center = tester.getCenter(find.byType(SlideCanvas));
@@ -380,8 +419,9 @@ void main() {
       expect(harness(tester).zoom, SlideCanvas.maxZoom);
       // The slide pans along each axis it overflows, and only those.
       final overflow = canvasViewport(tester, zoom: 2).slideRect.size;
-      final room = const EdgeInsets.all(24)
-          .deflateSize(tester.getSize(find.byType(SlideCanvas)));
+      final room = const EdgeInsets.all(
+        24,
+      ).deflateSize(tester.getSize(find.byType(SlideCanvas)));
       final before = tester.getCenter(elementKey('box'));
       await tester.sendEventToBinding(pointer.scroll(const Offset(50, 50)));
       await tester.pump();

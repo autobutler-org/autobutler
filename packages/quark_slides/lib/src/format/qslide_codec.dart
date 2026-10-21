@@ -109,11 +109,8 @@ abstract final class QslideCodec {
   static JsonMap _fromVersion1(JsonMap json) {
     final theme = json['theme'];
     final builtIn = theme is String ? SlideThemes.byId(theme) : null;
-    return {
-      ...json,
-      'schemaVersion': 2,
-      'theme': builtIn?.toJson(),
-    }..removeWhere((key, value) => key == 'theme' && value == null);
+    return {...json, 'schemaVersion': 2, 'theme': builtIn?.toJson()}
+      ..removeWhere((key, value) => key == 'theme' && value == null);
   }
 
   /// Version 2 to 3: transitions are new, and a deck without any cuts from
@@ -142,9 +139,9 @@ abstract final class QslideCodec {
 
   /// The `.qslide` root object for [presentation].
   static JsonMap toJson(Presentation presentation) => {
-        'schemaVersion': schemaVersion,
-        ...presentation.toJson(),
-      };
+    'schemaVersion': schemaVersion,
+    ...presentation.toJson(),
+  };
 
   /// The text of a `.qslide` file for [presentation], indented two spaces
   /// so that saved files diff cleanly.

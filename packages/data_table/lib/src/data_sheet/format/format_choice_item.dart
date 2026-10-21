@@ -30,8 +30,9 @@ class FormatChoiceItem extends StatelessWidget {
               ),
             )
           : Icon(choice.icon, size: 18),
-      trailingIcon:
-          choice.checked ? const Icon(QuarkIcons.check, size: 18) : null,
+      trailingIcon: choice.checked
+          ? const Icon(QuarkIcons.check, size: 18)
+          : null,
       child: Text(choice.label),
     );
   }
