@@ -144,4 +144,6 @@ password. It refuses a second key with 409, so a vault's key is never replaced, 
 `PUT /auth/password`, `POST /auth/recover` and `PUT /auth/recovery-key`, in the same transaction as the credential
 (`POST /auth/recover/vault-key` hands a recovery the wrapped key first). Every write publishes `vault_changed`,
 which `accessutil.FilterEvent` delivers only to the account whose vault it is, so its other sessions read the
-vault again. `DELETE /vault` removes the key and every item, the way out for a vault nothing opens any more.
+vault again. `DELETE /vault` removes the key and every item, the way out for a vault nothing opens any more. It
+re-confirms the login password's auth key the same way, under the same rate limit, so a session alone cannot wipe
+a vault (#3615).

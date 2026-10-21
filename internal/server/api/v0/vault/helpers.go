@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
+	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
@@ -28,6 +29,29 @@ func callerContext(c *gin.Context) (deputil.Dependencies, int64, *serverutil.Res
 		return deps, 0, serverutil.Unauthorized(errors.New("not authenticated"))
 	}
 	return deps, principal.UserID, nil
+}
+
+// reconfirm checks that password is the auth key of the caller's login
+// password, so a session alone neither sets up nor wipes a vault. A wrong or
+// empty key is a 403 and a raw password a 426; nil means it matched.
+func reconfirm(c *gin.Context, deps deputil.Dependencies, password string) *serverutil.Response {
+	username, _ := ctxutil.Get[string](c, "username")
+	_, err := authutil.VerifyPassword(c.Request.Context(), authutil.VerifyPasswordParams{
+		Queries:  deps.Database().Queries,
+		Username: username,
+		Password: password,
+	})
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, authutil.ErrIncorrectPassword):
+		return serverutil.NewResponse().WithStatusCode(http.StatusForbidden).WithError(err)
+	case errors.Is(err, authutil.ErrUserNotFound):
+		return serverutil.Unauthorized(errors.New("not authenticated"))
+	default:
+		// ErrAppTooOld is a 426 HttpError, whatever status this names.
+		return serverutil.InternalServerError(err)
+	}
 }
 
 // itemID reads the :id path parameter. One that isn't a positive integer

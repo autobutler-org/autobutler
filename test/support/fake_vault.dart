@@ -64,8 +64,12 @@ class FakeVault {
     key = k;
   }
 
-  /// `DELETE /vault`.
-  Future<void> deleteVault() async {
+  /// `DELETE /vault`, which re-confirms [loginAuthKey] as `PUT /vault/key`
+  /// does (#3615). A wrong one is a 403 and nothing is deleted.
+  Future<void> deleteVault(String authKey) async {
+    if (loginAuthKey != null && authKey != loginAuthKey) {
+      throw const ApiException(403);
+    }
     key = null;
     items.clear();
   }
