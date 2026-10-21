@@ -13,7 +13,8 @@ import (
 // no complete hashes for (#1666). Run once at startup, like
 // backfillContentIndex: the thumbnail paths hash a photo only when they
 // render it, so without this pass a photo whose thumbnail was cached before
-// this build is never compared. Best-effort; everything is logged.
+// this build is never compared. Best-effort; everything is logged, and its
+// progress is GET /photos/index-status, which an admin can pause (#3556).
 func backfillPhotoHashes(deps deputil.Dependencies) {
 	dbConn := deps.Database()
 	if dbConn == nil || dbConn.Queries == nil {
@@ -24,10 +25,12 @@ func backfillPhotoHashes(deps deputil.Dependencies) {
 		Queries:     dbConn.Queries,
 		Registry:    deps.VFSRegistry(),
 		IOSemaphore: deps.IOSemaphore().For(iosemutil.Decode),
+		Control:     deps.PhotoIndex(),
+		EventBus:    deps.EventBus(),
 	})
 	if err != nil {
 		log.Printf("[photo-hashes] backfill: %v", err)
 		return
 	}
-	log.Printf("[photo-hashes] backfill: scanned %d, hashed %d, failed %d", res.Scanned, res.Hashed, res.Failed)
+	log.Printf("[photo-hashes] backfill: scanned %d, hashed %d, dated %d, failed %d", res.Scanned, res.Hashed, res.Dated, res.Failed)
 }

@@ -92,6 +92,7 @@ func setupRouters(engine *gin.Engine, systemCollector *healthutil.Collector, dep
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_devices.NewAdminRouter())
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_hostname.NewRouter())
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_music.NewAdminRouter())
+	serverutil.RegisterRouterWithGroup(adminGroup, v0_photos.NewAdminRouter())
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_settings.NewAdminRouter())
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_ssh.NewRouter())
 	serverutil.RegisterRouterWithGroup(adminGroup, v0_storage.NewAdminRouter())
