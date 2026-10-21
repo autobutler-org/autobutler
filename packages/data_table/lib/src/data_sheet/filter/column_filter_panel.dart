@@ -105,8 +105,8 @@ class _ColumnFilterPanelState extends State<ColumnFilterPanel> {
     final selectAll = shown == matching.length
         ? true
         : shown == 0
-        ? false
-        : null;
+            ? false
+            : null;
 
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -177,12 +177,12 @@ class _ColumnFilterPanelState extends State<ColumnFilterPanel> {
             onChanged: matching.isEmpty
                 ? null
                 : (_) => setState(() {
-                    if (selectAll == true) {
-                      _hidden.addAll(matching);
-                    } else {
-                      _hidden.removeAll(matching);
-                    }
-                  }),
+                      if (selectAll == true) {
+                        _hidden.addAll(matching);
+                      } else {
+                        _hidden.removeAll(matching);
+                      }
+                    }),
           ),
           const Divider(height: 1),
           Flexible(

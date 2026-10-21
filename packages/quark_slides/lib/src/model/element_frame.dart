@@ -59,13 +59,13 @@ class ElementFrame {
 
   /// The frame as its `.qslide` object; a zero rotation is omitted.
   JsonMap toJson() => {
-    ...extra,
-    'x': jsonNumber(x),
-    'y': jsonNumber(y),
-    'width': jsonNumber(width),
-    'height': jsonNumber(height),
-    if (rotation != 0) 'rotation': jsonNumber(rotation),
-  };
+        ...extra,
+        'x': jsonNumber(x),
+        'y': jsonNumber(y),
+        'width': jsonNumber(width),
+        'height': jsonNumber(height),
+        if (rotation != 0) 'rotation': jsonNumber(rotation),
+      };
 
   /// Returns a copy with the given fields replaced.
   ElementFrame copyWith({
@@ -74,14 +74,15 @@ class ElementFrame {
     double? width,
     double? height,
     double? rotation,
-  }) => ElementFrame(
-    x: x ?? this.x,
-    y: y ?? this.y,
-    width: width ?? this.width,
-    height: height ?? this.height,
-    rotation: rotation ?? this.rotation,
-    extra: extra,
-  );
+  }) =>
+      ElementFrame(
+        x: x ?? this.x,
+        y: y ?? this.y,
+        width: width ?? this.width,
+        height: height ?? this.height,
+        rotation: rotation ?? this.rotation,
+        extra: extra,
+      );
 
   /// Returns a copy moved by [dx], [dy].
   ElementFrame translate(double dx, double dy) =>
@@ -102,7 +103,6 @@ class ElementFrame {
       Object.hash(x, y, width, height, rotation, jsonHash(extra));
 
   @override
-  String toString() =>
-      'ElementFrame($x, $y, $width×$height'
+  String toString() => 'ElementFrame($x, $y, $width×$height'
       '${rotation == 0 ? '' : ', $rotation°'})';
 }

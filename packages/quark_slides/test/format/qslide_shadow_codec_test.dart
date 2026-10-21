@@ -13,15 +13,16 @@ Matcher throwsFormatAt(String path) =>
 Map<String, Object?> deckWith(
   Map<String, Object?> element, {
   int version = 6,
-}) => {
-  'schemaVersion': version,
-  'slides': [
+}) =>
     {
-      'id': 's',
-      'elements': [element],
-    },
-  ],
-};
+      'schemaVersion': version,
+      'slides': [
+        {
+          'id': 's',
+          'elements': [element],
+        },
+      ],
+    };
 
 const _frame = {'x': 10, 'y': 20, 'width': 30, 'height': 40};
 
@@ -52,9 +53,9 @@ void main() {
         ),
       );
       expect(saved, contains('"schemaVersion": 6'));
-      final json =
-          (jsonDecode(saved)['slides'] as List).single['elements'].single
-              as Map;
+      final json = (jsonDecode(saved)['slides'] as List)
+          .single['elements']
+          .single as Map;
       expect(json['shadow'], {
         'color': '#0000007F',
         'x': -4.24,
@@ -71,36 +72,32 @@ void main() {
     });
 
     test('reads with defaults, and a negative blur as 0', () {
-      final read =
-          only(
-                QslideCodec.fromJson(
-                  deckWith({
-                    'id': 'e',
-                    'type': 'shape',
-                    'kind': 'rectangle',
-                    'frame': _frame,
-                    'shadow': {'blur': -3},
-                  }),
-                ),
-              )
-              as ShapeElement;
+      final read = only(
+        QslideCodec.fromJson(
+          deckWith({
+            'id': 'e',
+            'type': 'shape',
+            'kind': 'rectangle',
+            'frame': _frame,
+            'shadow': {'blur': -3},
+          }),
+        ),
+      ) as ShapeElement;
       expect(read.shadow, ElementShadow(color: SlideColor.black));
     });
 
     test('keeps fields a newer writer added to it', () {
-      final read =
-          only(
-                QslideCodec.fromJson(
-                  deckWith({
-                    'id': 'e',
-                    'type': 'shape',
-                    'kind': 'rectangle',
-                    'frame': _frame,
-                    'shadow': {'color': '#FF0000', 'spread': 2},
-                  }),
-                ),
-              )
-              as ShapeElement;
+      final read = only(
+        QslideCodec.fromJson(
+          deckWith({
+            'id': 'e',
+            'type': 'shape',
+            'kind': 'rectangle',
+            'frame': _frame,
+            'shadow': {'color': '#FF0000', 'spread': 2},
+          }),
+        ),
+      ) as ShapeElement;
       expect(read.shadow!.color, const SlideColor(0xFFFF0000));
       expect(read.toJson()['shadow'], {'color': '#FF0000', 'spread': 2});
     });
@@ -181,24 +178,22 @@ void main() {
     test('a shadow a version 5 file carried reads as a shadow', () {
       // A PowerPoint import writes version 1 with the shapes' shadows.
       for (final version in [1, 5]) {
-        final read =
-            only(
-                  QslideCodec.fromJson(
-                    deckWith({
-                      'id': 'e',
-                      'type': 'shape',
-                      'kind': 'rectangle',
-                      'frame': _frame,
-                      'shadow': {
-                        'color': '#0000007F',
-                        'x': 3,
-                        'y': 4,
-                        'blur': 6,
-                      },
-                    }, version: version),
-                  ),
-                )
-                as ShapeElement;
+        final read = only(
+          QslideCodec.fromJson(
+            deckWith({
+              'id': 'e',
+              'type': 'shape',
+              'kind': 'rectangle',
+              'frame': _frame,
+              'shadow': {
+                'color': '#0000007F',
+                'x': 3,
+                'y': 4,
+                'blur': 6,
+              },
+            }, version: version),
+          ),
+        ) as ShapeElement;
         expect(
           read.shadow,
           ElementShadow(

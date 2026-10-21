@@ -54,8 +54,8 @@ class SlideChartPainter extends CustomPainter {
 /// One paint of one chart: the text it measured, disposed when done.
 class _ChartPaint {
   _ChartPaint(this.chart, this.theme, this.canvas, this.size)
-    : labelSize = ChartLayout.labelFontSize(size),
-      titleSize = ChartLayout.titleFontSize(size);
+      : labelSize = ChartLayout.labelFontSize(size),
+        titleSize = ChartLayout.titleFontSize(size);
 
   final ChartElement chart;
   final SlideTheme theme;
@@ -108,8 +108,8 @@ class _ChartPaint {
 
   /// The values drawn, `[series][category]`.
   List<List<double>> get _values => [
-    for (final s in chart.data.series) s.values,
-  ];
+        for (final s in chart.data.series) s.values,
+      ];
 
   void paint() {
     final options = chart.options;
@@ -303,9 +303,12 @@ class _ChartPaint {
             ? chartCategoryCenter(c, count, plot.top, plot.height)
             : chartCategoryCenter(c, count, plot.left, plot.width),
     ];
-    final shown = chartVisibleLabels(centers, [
-      for (final l in categoryLabels) horizontal ? l.height : l.width,
-    ], gap: labelSize * 0.3);
+    final shown = chartVisibleLabels(
+        centers,
+        [
+          for (final l in categoryLabels) horizontal ? l.height : l.width,
+        ],
+        gap: labelSize * 0.3);
     for (final c in shown) {
       final label = categoryLabels[c];
       label.paint(

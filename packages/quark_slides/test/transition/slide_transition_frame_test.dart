@@ -58,7 +58,8 @@ void main() {
     SlideTransitionSpec spec(
       SlideTransitionKind kind, [
       SlideTransitionDirection direction = SlideTransitionDirection.left,
-    ]) => SlideTransitionSpec(kind: kind, direction: direction);
+    ]) =>
+        SlideTransitionSpec(kind: kind, direction: direction);
 
     test('every kind ends with the new slide whole and in place', () {
       for (final kind in SlideTransitionKind.values) {
@@ -83,8 +84,7 @@ void main() {
           final start = SlideTransitionFrame.at(spec(kind, direction), 0);
           expect(start.outgoing, SlideTransitionLayer.still);
           final incoming = start.incoming;
-          final hidden =
-              incoming.opacity == 0 ||
+          final hidden = incoming.opacity == 0 ||
               incoming.offset.distance == 1 ||
               (incoming.clip != null && incoming.clip!.isEmpty);
           expect(hidden, isTrue, reason: '$kind $direction');
@@ -124,9 +124,9 @@ void main() {
 
     test('a wipe uncovers the new slide from the edge it travels from', () {
       Rect? clip(SlideTransitionDirection d) => SlideTransitionFrame.at(
-        spec(SlideTransitionKind.wipe, d),
-        0.25,
-      ).incoming.clip;
+            spec(SlideTransitionKind.wipe, d),
+            0.25,
+          ).incoming.clip;
       expect(
         clip(SlideTransitionDirection.left),
         const Rect.fromLTRB(0.75, 0, 1, 1),

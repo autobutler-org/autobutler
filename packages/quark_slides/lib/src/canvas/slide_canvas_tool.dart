@@ -61,20 +61,20 @@ final class SlideCanvasTool {
 
   /// Draws a [kind] of shape.
   const SlideCanvasTool.shape(ShapeKind kind)
-    : this._(SlideToolMode.shape, shapeKind: kind);
+      : this._(SlideToolMode.shape, shapeKind: kind);
 
   /// Draws a table of [rows] by [columns], in equal columns and rows: a
   /// click places it at its default size
   /// (`SlideDocumentController.defaultTableColumnWidth` per column by
   /// `defaultTableRowHeight` per row), a drag sizes it.
   const SlideCanvasTool.table(int rows, int columns)
-    : this._(SlideToolMode.table, rows: rows, columns: columns);
+      : this._(SlideToolMode.table, rows: rows, columns: columns);
 
   /// Draws a [kind] of chart holding
   /// `SlideDocumentController.sampleChartData`: a click places it at
   /// `SlideDocumentController.defaultChartSize`, a drag sizes it.
   const SlideCanvasTool.chart(ChartKind kind)
-    : this._(SlideToolMode.chart, chartKind: kind);
+      : this._(SlideToolMode.chart, chartKind: kind);
 
   /// Selects, moves, resizes and rotates elements.
   static const select = SlideCanvasTool._(SlideToolMode.select);
@@ -132,10 +132,10 @@ final class SlideCanvasTool {
 
   @override
   String toString() => switch (mode) {
-    SlideToolMode.shape => 'SlideCanvasTool.shape(${shapeKind!.name})',
-    SlideToolMode.line when arrow => 'SlideCanvasTool.arrowLine',
-    SlideToolMode.table => 'SlideCanvasTool.table($rows, $columns)',
-    SlideToolMode.chart => 'SlideCanvasTool.chart(${chartKind!.name})',
-    _ => 'SlideCanvasTool.${mode.name}',
-  };
+        SlideToolMode.shape => 'SlideCanvasTool.shape(${shapeKind!.name})',
+        SlideToolMode.line when arrow => 'SlideCanvasTool.arrowLine',
+        SlideToolMode.table => 'SlideCanvasTool.table($rows, $columns)',
+        SlideToolMode.chart => 'SlideCanvasTool.chart(${chartKind!.name})',
+        _ => 'SlideCanvasTool.${mode.name}',
+      };
 }

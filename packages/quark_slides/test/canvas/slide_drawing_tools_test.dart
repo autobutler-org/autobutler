@@ -12,8 +12,8 @@ void main() {
   tearDown(() => doc.dispose());
 
   List<String> ids() => [
-    for (final e in doc.presentation.slideById('s')!.elements) e.id,
-  ];
+        for (final e in doc.presentation.slideById('s')!.elements) e.id,
+      ];
 
   /// The element the last insertion added: the front one.
   SlideElement added() => doc.presentation.slideById('s')!.elements.last;
@@ -355,13 +355,13 @@ void main() {
         final semantics = tester.ensureSemantics();
         await pumpCanvas(tester, doc, size: size);
         Element inner() => tester.element(
-          find
-              .descendant(
-                of: find.byType(SlideCanvas),
-                matching: find.byType(LayoutBuilder),
-              )
-              .first,
-        );
+              find
+                  .descendant(
+                    of: find.byType(SlideCanvas),
+                    matching: find.byType(LayoutBuilder),
+                  )
+                  .first,
+            );
         final before = inner();
         for (final tool in [
           SlideCanvasTool.text,

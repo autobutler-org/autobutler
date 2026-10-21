@@ -41,9 +41,8 @@ void paintShadow(
         Color(shadow.color.resolve(theme)),
         BlendMode.srcIn,
       )
-      ..imageFilter = sigma > 0
-          ? ImageFilter.blur(sigmaX: sigma, sigmaY: sigma)
-          : null,
+      ..imageFilter =
+          sigma > 0 ? ImageFilter.blur(sigmaX: sigma, sigmaY: sigma) : null,
   );
   canvas.translate(offset.dx, offset.dy);
   silhouette(canvas);
@@ -68,12 +67,12 @@ class SlideShadowPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) => paintShadow(
-    canvas,
-    shadow,
-    rotation,
-    theme,
-    (canvas) => canvas.drawRect(Offset.zero & size, Paint()),
-  );
+        canvas,
+        shadow,
+        rotation,
+        theme,
+        (canvas) => canvas.drawRect(Offset.zero & size, Paint()),
+      );
 
   @override
   bool shouldRepaint(SlideShadowPainter oldDelegate) =>

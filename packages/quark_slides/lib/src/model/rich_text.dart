@@ -203,9 +203,8 @@ TextFormat textFormatOf(
     fontFamily: sameNullable((r) => r.fontFamily),
     color: sameNullable((r) => r.color),
     alignment: shared((p) => p.alignment),
-    lineSpacing: touched.every((p) => p.lineSpacing == spacing)
-        ? spacing
-        : unset,
+    lineSpacing:
+        touched.every((p) => p.lineSpacing == spacing) ? spacing : unset,
     list: shared((p) => p.list),
     anchor: box?.anchor,
     autoFit: box?.autoFit,

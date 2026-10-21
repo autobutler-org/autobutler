@@ -77,10 +77,10 @@ class SlideTheme {
 
   /// The text style of [role].
   ThemeTextStyle textStyle(ThemeTextRole role) => switch (role) {
-    ThemeTextRole.title => title,
-    ThemeTextRole.subtitle => subtitle,
-    ThemeTextRole.body => body,
-  };
+        ThemeTextRole.title => title,
+        ThemeTextRole.subtitle => subtitle,
+        ThemeTextRole.body => body,
+      };
 
   /// The font family [style] is set in: [headingFont] or [bodyFont].
   String? fontOf(ThemeTextStyle style) =>
@@ -126,17 +126,17 @@ class SlideTheme {
 
   /// The theme as its `.qslide` object.
   JsonMap toJson() => {
-    ...extra,
-    'id': id,
-    'name': name,
-    'colors': colors.toJson(),
-    if (headingFont != null) 'headingFont': headingFont,
-    if (bodyFont != null) 'bodyFont': bodyFont,
-    'title': title.toJson(),
-    'subtitle': subtitle.toJson(),
-    'body': body.toJson(),
-    'shapes': shapes.toJson(),
-  };
+        ...extra,
+        'id': id,
+        'name': name,
+        'colors': colors.toJson(),
+        if (headingFont != null) 'headingFont': headingFont,
+        if (bodyFont != null) 'bodyFont': bodyFont,
+        'title': title.toJson(),
+        'subtitle': subtitle.toJson(),
+        'body': body.toJson(),
+        'shapes': shapes.toJson(),
+      };
 
   /// Returns a copy with the given fields replaced; pass `null` as a font
   /// to use the platform's default.
@@ -150,20 +150,22 @@ class SlideTheme {
     ThemeTextStyle? subtitle,
     ThemeTextStyle? body,
     ThemeShapeStyle? shapes,
-  }) => SlideTheme(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    colors: colors ?? this.colors,
-    headingFont: identical(headingFont, unset)
-        ? this.headingFont
-        : headingFont as String?,
-    bodyFont: identical(bodyFont, unset) ? this.bodyFont : bodyFont as String?,
-    title: title ?? this.title,
-    subtitle: subtitle ?? this.subtitle,
-    body: body ?? this.body,
-    shapes: shapes ?? this.shapes,
-    extra: extra,
-  );
+  }) =>
+      SlideTheme(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        colors: colors ?? this.colors,
+        headingFont: identical(headingFont, unset)
+            ? this.headingFont
+            : headingFont as String?,
+        bodyFont:
+            identical(bodyFont, unset) ? this.bodyFont : bodyFont as String?,
+        title: title ?? this.title,
+        subtitle: subtitle ?? this.subtitle,
+        body: body ?? this.body,
+        shapes: shapes ?? this.shapes,
+        extra: extra,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -181,17 +183,17 @@ class SlideTheme {
 
   @override
   int get hashCode => Object.hash(
-    id,
-    name,
-    colors,
-    headingFont,
-    bodyFont,
-    title,
-    subtitle,
-    body,
-    shapes,
-    jsonHash(extra),
-  );
+        id,
+        name,
+        colors,
+        headingFont,
+        bodyFont,
+        title,
+        subtitle,
+        body,
+        shapes,
+        jsonHash(extra),
+      );
 
   @override
   String toString() => 'SlideTheme($id)';

@@ -50,14 +50,15 @@ class ChartOptions {
     bool? showGridlines,
     String? categoryAxisTitle,
     String? valueAxisTitle,
-  }) => ChartOptions(
-    title: title ?? this.title,
-    showLegend: showLegend ?? this.showLegend,
-    showDataLabels: showDataLabels ?? this.showDataLabels,
-    showGridlines: showGridlines ?? this.showGridlines,
-    categoryAxisTitle: categoryAxisTitle ?? this.categoryAxisTitle,
-    valueAxisTitle: valueAxisTitle ?? this.valueAxisTitle,
-  );
+  }) =>
+      ChartOptions(
+        title: title ?? this.title,
+        showLegend: showLegend ?? this.showLegend,
+        showDataLabels: showDataLabels ?? this.showDataLabels,
+        showGridlines: showGridlines ?? this.showGridlines,
+        categoryAxisTitle: categoryAxisTitle ?? this.categoryAxisTitle,
+        valueAxisTitle: valueAxisTitle ?? this.valueAxisTitle,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -71,11 +72,11 @@ class ChartOptions {
 
   @override
   int get hashCode => Object.hash(
-    title,
-    showLegend,
-    showDataLabels,
-    showGridlines,
-    categoryAxisTitle,
-    valueAxisTitle,
-  );
+        title,
+        showLegend,
+        showDataLabels,
+        showGridlines,
+        categoryAxisTitle,
+        valueAxisTitle,
+      );
 }

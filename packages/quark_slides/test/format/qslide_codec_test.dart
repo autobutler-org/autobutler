@@ -85,9 +85,8 @@ void main() {
       final json = jsonDecode(QslideCodec.encode(doc.presentation)) as Map;
       final saved =
           ((json['slides'] as List).single['elements'] as List).firstWhere(
-                (e) => e['id'] == 'e5',
-              )
-              as Map;
+        (e) => e['id'] == 'e5',
+      ) as Map;
       expect(saved['locked'], isTrue);
       final children = saved['children'] as List;
       expect(children[0]['series'], isNotEmpty);

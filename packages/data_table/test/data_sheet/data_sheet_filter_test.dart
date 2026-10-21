@@ -274,10 +274,10 @@ void main() {
 
   group('persistence', () {
     DataTable table() => DataTable([
-      DataRow([DataCell('h')]),
-      DataRow([DataCell('a')]),
-      DataRow([DataCell('b')]),
-    ]);
+          DataRow([DataCell('h')]),
+          DataRow([DataCell('a')]),
+          DataRow([DataCell('b')]),
+        ]);
 
     test('filters round-trip through the layout JSON', () {
       final c = DataSheetController.fromTable(table(), frozenRows: 1);

@@ -103,8 +103,8 @@ class DataSheetControlBar extends StatelessWidget {
                     hasCol ? 'Insert column before' : 'Insert column at left',
                     hasData
                         ? () => controller.insertColumnAt(
-                            hasCol ? sel.contextCol : 0,
-                          )
+                              hasCol ? sel.contextCol : 0,
+                            )
                         : null,
                   ),
                   _btn(
@@ -112,8 +112,8 @@ class DataSheetControlBar extends StatelessWidget {
                     hasCol ? 'Insert column after' : 'Add column at end',
                     hasData
                         ? () => controller.insertColumnAt(
-                            hasCol ? sel.contextCol + 1 : controller.colCount,
-                          )
+                              hasCol ? sel.contextCol + 1 : controller.colCount,
+                            )
                         : null,
                   ),
                   // Delete row / column
@@ -122,9 +122,9 @@ class DataSheetControlBar extends StatelessWidget {
                     'Delete row',
                     range != null
                         ? () => controller.deleteRowAt(
-                            range.top,
-                            count: range.rowCount,
-                          )
+                              range.top,
+                              count: range.rowCount,
+                            )
                         : null,
                   ),
                   _btn(
@@ -132,9 +132,9 @@ class DataSheetControlBar extends StatelessWidget {
                     'Delete column',
                     range != null
                         ? () => controller.deleteColumnAt(
-                            range.left,
-                            count: range.colCount,
-                          )
+                              range.left,
+                              count: range.colCount,
+                            )
                         : null,
                   ),
                   // Duplicate row / column
@@ -205,9 +205,9 @@ class DataSheetControlBar extends StatelessWidget {
                     'Clear row',
                     range != null
                         ? () => controller.clearRow(
-                            range.top,
-                            count: range.rowCount,
-                          )
+                              range.top,
+                              count: range.rowCount,
+                            )
                         : null,
                   ),
                   _btn(
@@ -215,9 +215,9 @@ class DataSheetControlBar extends StatelessWidget {
                     'Clear column',
                     range != null
                         ? () => controller.clearColumn(
-                            range.left,
-                            count: range.colCount,
-                          )
+                              range.left,
+                              count: range.colCount,
+                            )
                         : null,
                   ),
                   _btn(
@@ -243,10 +243,10 @@ class DataSheetControlBar extends StatelessWidget {
                     'Sort…',
                     hasData
                         ? () => _showSortDialog(
-                            context,
-                            controller,
-                            sel.contextCol >= 0 ? sel.contextCol : 0,
-                          )
+                              context,
+                              controller,
+                              sel.contextCol >= 0 ? sel.contextCol : 0,
+                            )
                         : null,
                   ),
                   _btn(
@@ -299,7 +299,7 @@ class DataSheetControlBar extends StatelessWidget {
                       QuarkIcons.clear_filters,
                       controller.hasFilters
                           ? 'Clear filters (${controller.visibleRows.length} '
-                                'of ${controller.rowCount} rows shown)'
+                              'of ${controller.rowCount} rows shown)'
                           : 'Clear filters',
                       controller.hasFilters ? controller.clearFilters : null,
                       key: 'data_sheet_clear_filters',

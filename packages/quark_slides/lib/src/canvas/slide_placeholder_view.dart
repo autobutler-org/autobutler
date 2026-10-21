@@ -15,9 +15,9 @@ class SlidePlaceholderView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => CustomPaint(
-    painter: _CrossedBoxPainter(style.placeholderColor),
-    child: const SizedBox.expand(),
-  );
+        painter: _CrossedBoxPainter(style.placeholderColor),
+        child: const SizedBox.expand(),
+      );
 }
 
 class _CrossedBoxPainter extends CustomPainter {

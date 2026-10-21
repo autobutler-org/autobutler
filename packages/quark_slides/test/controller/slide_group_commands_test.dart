@@ -7,25 +7,25 @@ ElementFrame f(double x, double y, double w, double h, [double r = 0]) =>
 /// A 1920×1080 deck with slide `s` holding shapes `a`, `b` and `c` and a
 /// text box `t`, back to front, and an empty slide `s2`.
 Presentation deck() => Presentation(
-  slides: [
-    Slide(
-      id: 's',
-      elements: [
-        ShapeElement(id: 'a', frame: f(100, 100, 200, 100)),
-        ShapeElement(id: 'b', frame: f(400, 300, 100, 100)),
-        ShapeElement(id: 'c', frame: f(1000, 600, 300, 200)),
-        TextBox(
-          id: 't',
-          frame: f(800, 100, 200, 50),
-          paragraphs: const [
-            TextParagraph([TextRun('Hi')]),
+      slides: [
+        Slide(
+          id: 's',
+          elements: [
+            ShapeElement(id: 'a', frame: f(100, 100, 200, 100)),
+            ShapeElement(id: 'b', frame: f(400, 300, 100, 100)),
+            ShapeElement(id: 'c', frame: f(1000, 600, 300, 200)),
+            TextBox(
+              id: 't',
+              frame: f(800, 100, 200, 50),
+              paragraphs: const [
+                TextParagraph([TextRun('Hi')]),
+              ],
+            ),
           ],
         ),
+        const Slide(id: 's2'),
       ],
-    ),
-    const Slide(id: 's2'),
-  ],
-);
+    );
 
 Matcher frameNear(ElementFrame expected) => isA<ElementFrame>()
     .having((e) => e.x, 'x', closeTo(expected.x, 1e-6))

@@ -62,12 +62,12 @@ class ElementShadow {
 
   /// The shadow as its `.qslide` object.
   JsonMap toJson() => {
-    ...extra,
-    'color': color.toHex(),
-    if (x != 0) 'x': jsonNumber(x),
-    if (y != 0) 'y': jsonNumber(y),
-    if (blur != 0) 'blur': jsonNumber(blur),
-  };
+        ...extra,
+        'color': color.toHex(),
+        if (x != 0) 'x': jsonNumber(x),
+        if (y != 0) 'y': jsonNumber(y),
+        if (blur != 0) 'blur': jsonNumber(blur),
+      };
 
   @override
   bool operator ==(Object other) =>

@@ -98,17 +98,19 @@ class SlideCanvasStyle {
     double? snapDistance,
     Color? highlightColor,
     Color? currentHighlightColor,
-  }) => SlideCanvasStyle(
-    selectionColor: selectionColor ?? this.selectionColor,
-    handleFillColor: handleFillColor ?? this.handleFillColor,
-    guideColor: guideColor ?? this.guideColor,
-    backdropColor: backdropColor ?? this.backdropColor,
-    placeholderColor: placeholderColor ?? this.placeholderColor,
-    handleSize: handleSize ?? this.handleSize,
-    handleHitSize: handleHitSize ?? this.handleHitSize,
-    rotateHandleOffset: rotateHandleOffset ?? this.rotateHandleOffset,
-    snapDistance: snapDistance ?? this.snapDistance,
-    highlightColor: highlightColor ?? this.highlightColor,
-    currentHighlightColor: currentHighlightColor ?? this.currentHighlightColor,
-  );
+  }) =>
+      SlideCanvasStyle(
+        selectionColor: selectionColor ?? this.selectionColor,
+        handleFillColor: handleFillColor ?? this.handleFillColor,
+        guideColor: guideColor ?? this.guideColor,
+        backdropColor: backdropColor ?? this.backdropColor,
+        placeholderColor: placeholderColor ?? this.placeholderColor,
+        handleSize: handleSize ?? this.handleSize,
+        handleHitSize: handleHitSize ?? this.handleHitSize,
+        rotateHandleOffset: rotateHandleOffset ?? this.rotateHandleOffset,
+        snapDistance: snapDistance ?? this.snapDistance,
+        highlightColor: highlightColor ?? this.highlightColor,
+        currentHighlightColor:
+            currentHighlightColor ?? this.currentHighlightColor,
+      );
 }
