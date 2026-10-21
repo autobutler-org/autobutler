@@ -74,10 +74,14 @@ class RemoteAccessController extends ChangeNotifier {
     };
   }
 
-  /// [status] as a [RemoteAccessState]. Switched on is the Quark's setting;
-  /// connected is a separate fact that can lag it or never arrive (#1815).
+  /// [status] as a [RemoteAccessState]. On requires enrollment, not only the
+  /// stored flag. [RemoteAccessStatus.needsSetup] is off, so the setup sheet
+  /// stays reachable (#3611). Connected is a separate fact that can lag a
+  /// real on or never arrive (#1815).
   static RemoteAccessState stateOf(RemoteAccessStatus? status) {
-    if (status == null || !status.enabled) return RemoteAccessState.off;
+    if (status == null || status.needsSetup || !status.enabled) {
+      return RemoteAccessState.off;
+    }
     if (status.error != null) return RemoteAccessState.failing;
     if (!status.connected) return RemoteAccessState.connecting;
     return RemoteAccessState.on;
@@ -150,7 +154,11 @@ class RemoteAccessController extends ChangeNotifier {
   /// otherwise.
   void _syncPoll() {
     final status = _status;
-    if (_disposed || status == null || !status.enabled || status.connected) {
+    if (_disposed ||
+        status == null ||
+        status.needsSetup ||
+        !status.enabled ||
+        status.connected) {
       _poll?.cancel();
       _poll = null;
       return;

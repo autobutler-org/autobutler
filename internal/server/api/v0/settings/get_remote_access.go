@@ -8,7 +8,7 @@ import (
 
 // getRemoteAccess godoc
 // @Summary Get remote access status
-// @Description Returns whether remote access is switched on, whether the Tailscale node has actually joined the tailnet, its remote URL once it has, and the last start failure
+// @Description Returns whether remote access is on, which requires that setup enrolled this Quark, whether setup is still required, whether the Tailscale node has actually joined the tailnet, its remote URL once it has, and the last start failure
 // @Tags settings
 // @Produce json
 // @Success 200 {object} RemoteAccessResponse

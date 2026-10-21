@@ -244,6 +244,10 @@ class _SettingsPageState extends State<SettingsPage> {
   /// Remote access on the Network tab (#2857).
   final RemoteAccessController _remoteAccess = RemoteAccessController();
 
+  /// Whether this visit already offered setup for a stored flag that never
+  /// enrolled. Once is enough: dismissing the sheet must not reopen it.
+  bool _offeredRemoteAccessSetup = false;
+
   // Connected devices state
   List<ConnectedDevice> _connectedDevices = [];
   bool _isLoadingDevices = false;
@@ -342,7 +346,21 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
     await _remoteAccess.load();
+    if (!mounted) return;
     _noteReachability(_remoteAccess.loadFailure);
+    _offerRemoteAccessSetup();
+  }
+
+  /// Opens the setup sheet when the stored flag is on but enrollment never
+  /// finished. The sheet waits for Turn on. This does not enable remote
+  /// access (#3611).
+  void _offerRemoteAccessSetup() {
+    if (_offeredRemoteAccessSetup || !mounted) return;
+    final status = _remoteAccess.status;
+    if (status == null || !status.needsSetup) return;
+    if (!AppSettings.instance.isAdmin.value) return;
+    _offeredRemoteAccessSetup = true;
+    _setUpRemoteAccess();
   }
 
   /// Opens the remote access setup sheet.
