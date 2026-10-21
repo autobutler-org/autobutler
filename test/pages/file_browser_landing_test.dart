@@ -15,6 +15,7 @@ import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/services/chat_crypto.dart';
 import 'package:quark/services/events_service.dart';
+import 'package:quark/utils/file_browser_landing_config.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -477,6 +478,143 @@ void main() {
         reason: 'the admin belongs at the root they would have landed on',
       );
     }, createHttpClient: overrides.createHttpClient);
+  });
+
+  // #3211: `isAdmin` is not saved between launches, so an admin's Files used
+  // to list their home, then the root once `/auth/status` answered, and fetch
+  // the recent strip twice. The first listing now waits for the answer.
+  group('the landing waits for /auth/status (#3211)', () {
+    late Completer<http.Response> status;
+
+    setUp(() async {
+      // An earlier page started the events socket; signing in here would
+      // connect it outside the test's zone.
+      EventsService.instance.stop();
+      await AppSettings.instance.setSessionToken('session-token');
+      authHttpClientFactory = () => MockClient((request) async {
+        if (request.url.path.endsWith('/api/v0/auth/status')) {
+          return status.future;
+        }
+        return http.Response('{}', 200);
+      });
+      // Signing in above built the shared client outside the test's zone.
+      resetSharedHttpClient();
+    });
+
+    tearDown(() async {
+      authHttpClientFactory = () => sharedHttpClient;
+      // Forgets the failure a test left behind.
+      AuthService.stopWatchingAccount();
+      await AppSettings.instance.setSessionToken(null);
+    });
+
+    http.Response answer({required bool isAdmin}) => http.Response(
+      jsonEncode({'setup': true, 'username': 'alice', 'isAdmin': isAdmin}),
+      200,
+    );
+
+    /// Mounts Files while `/auth/status` is still out, then lets [settle]
+    /// answer it and waits for the listing that follows.
+    Future<void> mountThenSettle(
+      WidgetTester tester,
+      FutureOr<void> Function() settle,
+    ) async {
+      // Made in the test body, so it answers on the test's fake clock.
+      status = Completer<http.Response>();
+      unawaited(AuthService.refreshAccount());
+      await pumpBrowser(tester);
+      expect(
+        listedPaths(overrides.requested),
+        isEmpty,
+        reason: 'nothing is listed before the Quark says who is signed in',
+      );
+      expect(
+        find.byType(QuarkLoader),
+        findsWidgets,
+        reason: 'the wait shows a loader, not a blank page',
+      );
+      await settle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+      // A session starts the events socket; stop its reconnect timer before
+      // the binding counts timers.
+      EventsService.instance.stop();
+    }
+
+    testWidgets('an admin lists the root once', (tester) async {
+      await HttpOverrides.runZoned(() async {
+        await mountThenSettle(
+          tester,
+          () => status.complete(answer(isAdmin: true)),
+        );
+
+        expect(listedPaths(overrides.requested), ['']);
+        expect(
+          overrides.requested.where(
+            (u) => u.path.endsWith('/api/v0/files/recent'),
+          ),
+          hasLength(1),
+          reason: 'the recent strip is fetched once, for the root',
+        );
+      }, createHttpClient: overrides.createHttpClient);
+    });
+
+    testWidgets('a member lists their home once', (tester) async {
+      await HttpOverrides.runZoned(() async {
+        await mountThenSettle(
+          tester,
+          () => status.complete(answer(isAdmin: false)),
+        );
+
+        expect(listedPaths(overrides.requested), ['users/alice']);
+      }, createHttpClient: overrides.createHttpClient);
+    });
+
+    testWidgets('a failed status lists the home and says so', (tester) async {
+      await HttpOverrides.runZoned(() async {
+        await mountThenSettle(
+          tester,
+          () => status.complete(http.Response('', 500)),
+        );
+
+        expect(listedPaths(overrides.requested), ['users/alice']);
+        expect(find.byType(SnackBar), findsOne);
+      }, createHttpClient: overrides.createHttpClient);
+    });
+
+    testWidgets('a status that never answers stops holding the listing', (
+      tester,
+    ) async {
+      await HttpOverrides.runZoned(() async {
+        await mountThenSettle(
+          tester,
+          () => tester.pump(FileBrowserLandingConfig.accountWait),
+        );
+
+        expect(listedPaths(overrides.requested), ['users/alice']);
+        expect(find.byType(SnackBar), findsOne);
+        // Let the abandoned request time out before the binding counts
+        // timers.
+        await tester.pump(kAuthRequestTimeout);
+      }, createHttpClient: overrides.createHttpClient);
+    });
+
+    testWidgets('a deep link does not wait', (tester) async {
+      await HttpOverrides.runZoned(() async {
+        // Made in the test body, so it answers on the test's fake clock.
+        status = Completer<http.Response>();
+        unawaited(AuthService.refreshAccount());
+        await pumpBrowser(tester, initialPath: '/users/bob/shared');
+
+        expect(listedPaths(overrides.requested), ['users/bob/shared']);
+        status.complete(answer(isAdmin: true));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(listedPaths(overrides.requested), ['users/bob/shared']);
+        EventsService.instance.stop();
+      }, createHttpClient: overrides.createHttpClient);
+    });
   });
 
   testWidgets('switching Quarks leaves the old one\'s folder behind', (
