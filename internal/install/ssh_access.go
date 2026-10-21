@@ -1,4 +1,4 @@
-// cspell:words smartctl
+// cspell:words smartctl findtime bantime maxretry journalmatch ignoreregex failregex
 
 package install
 
@@ -25,16 +25,58 @@ const (
 	// sshdDropInContent refuses root and everyone but quark, and points sshd
 	// at the key file the service manages (#2131). Password login is allowed
 	// for quark, and only works once an admin sets a password; keys always
-	// work. The closing `Match all` ends the Match block, so nothing sshd
-	// reads after this file lands inside it.
+	// work. MaxAuthTries and LoginGraceTime bound each connection, so a
+	// guesser has to reconnect after three tries (#3578); they lock nothing
+	// out, and a client with many keys can pick one with IdentitiesOnly. The
+	// closing `Match all` ends the Match block, so nothing sshd reads after
+	// this file lands inside it.
 	sshdDropInContent = `# Written by quark install. Changes are overwritten on the next install.
 PermitRootLogin no
 AllowUsers ` + sshutil.LoginUser + `
+MaxAuthTries 3
+LoginGraceTime 30
 
 Match User ` + sshutil.LoginUser + `
 	AuthorizedKeysFile ` + sshutil.AuthorizedKeysPath + `
 	PasswordAuthentication yes
 Match all
+`
+
+	// fail2banDir is where fail2ban keeps its config. Quark never installs
+	// fail2ban; when an admin has, install adds a jail for SSH passwords.
+	fail2banDir      = "/etc/fail2ban"
+	fail2banJailName = "quark-sshd"
+	fail2banJailPath = fail2banDir + "/jail.d/" + fail2banJailName + ".local"
+
+	// fail2banJailContent bans an address from port 22 only, for ten minutes,
+	// after five failed passwords in ten minutes. The web app is unaffected.
+	// Debian's sshd logs to the journal, not to a file.
+	fail2banJailContent = `# Written by quark install. Changes are overwritten on the next install.
+[` + fail2banJailName + `]
+enabled = true
+filter = ` + fail2banJailName + `
+port = ssh
+backend = systemd
+maxretry = 5
+findtime = 10m
+bantime = 10m
+`
+
+	// fail2banFilterContent matches failed passwords and nothing else. The
+	// stock sshd filter also counts offered keys, so a client trying the
+	// wrong key first could get its admin banned. OpenSSH 9.8 and later logs
+	// authentication from sshd-session rather than sshd.
+	fail2banFilterContent = `# Written by quark install. Changes are overwritten on the next install.
+[INCLUDES]
+before = common.conf
+
+[Definition]
+_daemon = sshd(?:-session)?
+failregex = ^%(__prefix_line)sFailed password for (?:invalid user )?\S+ from <HOST>(?: port \d+)?
+ignoreregex =
+
+[Init]
+journalmatch = _SYSTEMD_UNIT=ssh.service
 `
 
 	// sshAccessHelperContent is the root helper behind sshutil.HelperPath: the
@@ -142,25 +184,60 @@ func installRootHelper(path, content string) error {
 	return err
 }
 
-// installSSHDropIn writes the sshd drop-in when sshd is installed, and has a
-// running sshd pick it up. Without sshd there is nothing to configure; the
-// admin page says to install it.
+// installSSHDropIn writes the sshd drop-in when sshd is installed, and the
+// fail2ban jail when fail2ban is too, and has whichever is running pick up
+// what changed. Without sshd there is nothing to configure; the admin page
+// says to install it.
 func installSSHDropIn() error {
 	if _, err := os.Stat(sshdDropInDir); err != nil {
 		return nil
 	}
-	changed, err := writeRootFileIfChanged(sshdDropInPath, sshdDropInContent, 0o644)
-	if err != nil || !changed {
+	sshdChanged, err := writeRootFileIfChanged(sshdDropInPath, sshdDropInContent, 0o644)
+	if err != nil {
+		return err
+	}
+	jailChanged, err := installFail2banJail(fail2banDir)
+	if err != nil {
 		return err
 	}
 	if _, err := os.Stat("/run/systemd/system"); err != nil {
 		return nil
 	}
-	// A no-op when sshd is not running.
-	if err := exec.Command("systemctl", "try-reload-or-restart", "ssh.service").Run(); err != nil {
-		return fmt.Errorf("failed to reload sshd: %w", err)
+	// Each is a no-op when that service is not running.
+	for unit, changed := range map[string]bool{"ssh.service": sshdChanged, "fail2ban.service": jailChanged} {
+		if !changed {
+			continue
+		}
+		if err := exec.Command("systemctl", "try-reload-or-restart", unit).Run(); err != nil {
+			return fmt.Errorf("failed to reload %s: %w", unit, err)
+		}
 	}
 	return nil
+}
+
+// installFail2banJail writes the SSH password jail and its filter under
+// etcDir when fail2ban is installed there, and reports whether it wrote.
+// Without fail2ban it writes nothing. The filter goes first, so the jail
+// never names a filter that is not there.
+func installFail2banJail(etcDir string) (bool, error) {
+	files := []struct{ dir, name, content string }{
+		{"filter.d", fail2banJailName + ".conf", fail2banFilterContent},
+		{"jail.d", filepath.Base(fail2banJailPath), fail2banJailContent},
+	}
+	for _, file := range files {
+		if _, err := os.Stat(filepath.Join(etcDir, file.dir)); err != nil {
+			return false, nil
+		}
+	}
+	changed := false
+	for _, file := range files {
+		wrote, err := writeRootFileIfChanged(filepath.Join(etcDir, file.dir, file.name), file.content, 0o644)
+		if err != nil {
+			return changed, err
+		}
+		changed = changed || wrote
+	}
+	return changed, nil
 }
 
 // ensureLoginShell gives the service account a shell, which SSH needs to log
