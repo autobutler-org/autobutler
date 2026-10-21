@@ -3093,6 +3093,70 @@
                 }
             }
         },
+        "/calendar/events/{id}/move": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Moves one occurrence of a repeating event, that occurrence and every one after it, or the whole series. scope is one, following or all. occurrenceStart is the start of the occurrence that was moved, and start and end are where it was dropped, all RFC 3339. one records that start on the series and creates a one-off at the new time, owned by the series' owner. following ends the series the day before that occurrence and creates a new series at the new time, carrying later skipped starts shifted by the same amount; the first occurrence moves the whole series. all moves the series' own start and end as far as that occurrence moved. The series, and the created event when there is one, come back together.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "calendar"
+                ],
+                "summary": "Move a calendar event's occurrence",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Which occurrence moved, and where",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_calendar.moveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v0_calendar.MoveJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: a malformed id or body, or a move that breaks a rule",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/chat/channels": {
             "get": {
                 "security": [
@@ -13149,6 +13213,13 @@
                 "end": {
                     "type": "string"
                 },
+                "excludedStarts": {
+                    "description": "ExcludedStarts are occurrence starts a series skips, RFC 3339 UTC.\nEmpty when it skips nothing (#3215).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -13204,6 +13275,17 @@
                 }
             }
         },
+        "v0_calendar.MoveJSON": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "$ref": "#/definitions/v0_calendar.EventJSON"
+                },
+                "series": {
+                    "$ref": "#/definitions/v0_calendar.EventJSON"
+                }
+            }
+        },
         "v0_calendar.eventRequest": {
             "type": "object",
             "required": [
@@ -13219,6 +13301,13 @@
                 },
                 "end": {
                     "type": "string"
+                },
+                "excludedStarts": {
+                    "description": "ExcludedStarts are occurrence starts a series skips, RFC 3339 UTC.\nAbsent skips nothing. A one-off event ignores them (#3215).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "location": {
                     "type": "string"
@@ -13245,6 +13334,24 @@
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "v0_calendar.moveRequest": {
+            "type": "object",
+            "properties": {
+                "end": {
+                    "type": "string"
+                },
+                "occurrenceStart": {
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "Scope is one, following or all.",
+                    "type": "string"
+                },
+                "start": {
                     "type": "string"
                 }
             }

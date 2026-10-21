@@ -3,7 +3,9 @@ package calendarutil
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 	// The device image may not ship /usr/share/zoneinfo; embedding the IANA
@@ -45,6 +47,11 @@ func validate(input EventInput) (EventInput, error) {
 	if input.Repeat == RepeatNone {
 		input.RepeatUntil = nil
 	}
+	excluded, err := normalizeExclusions(input.Repeat, input.AllDay, input.ExcludedStarts)
+	if err != nil {
+		return input, err
+	}
+	input.ExcludedStarts = excluded
 
 	switch {
 	case input.Title == "":
@@ -301,6 +308,7 @@ func createParams(calendarID int64, input EventInput) db.CreateCalendarEventPara
 		RepeatUntil:     nullTime(input.RepeatUntil),
 		ReminderMinutes: nullMinutes(input.ReminderMinutes),
 		ColorIndex:      int64(input.ColorIndex),
+		ExcludedStarts:  nullExclusions(input.ExcludedStarts),
 	}
 }
 
@@ -319,6 +327,7 @@ func updateParams(id int64, input EventInput) db.UpdateCalendarEventParams {
 		RepeatUntil:     nullTime(input.RepeatUntil),
 		ReminderMinutes: nullMinutes(input.ReminderMinutes),
 		ColorIndex:      int64(input.ColorIndex),
+		ExcludedStarts:  nullExclusions(input.ExcludedStarts),
 	}
 }
 
@@ -345,6 +354,10 @@ func fromRow(row db.CalendarEvent, ownerName string) (Event, error) {
 		m := int(row.ReminderMinutes.Int64)
 		reminder = &m
 	}
+	excluded, err := parseExclusions(row.ExcludedStarts)
+	if err != nil {
+		return Event{}, fmt.Errorf("event %d: %w", row.ID, err)
+	}
 	return Event{
 		ID:              row.ID,
 		CalendarID:      row.CalendarID,
@@ -363,5 +376,74 @@ func fromRow(row db.CalendarEvent, ownerName string) (Event, error) {
 		OwnerName:       ownerName,
 		CreatedAt:       row.CreatedAt,
 		UpdatedAt:       row.UpdatedAt,
+		ExcludedStarts:  excluded,
 	}, nil
+}
+
+// normalizeExclusions returns starts canonicalized to UTC seconds, sorted and
+// without duplicates. A one-off event and an empty list store none.
+func normalizeExclusions(repeat Repeat, allDay bool, starts []time.Time) ([]time.Time, error) {
+	if repeat == RepeatNone || len(starts) == 0 {
+		return nil, nil
+	}
+	if len(starts) > MaxExcludedStarts {
+		return nil, invalid(fmt.Sprintf("a series can skip at most %d occurrences", MaxExcludedStarts))
+	}
+	out := make([]time.Time, 0, len(starts))
+	for _, start := range starts {
+		utc := start.UTC()
+		if utc.Nanosecond() != 0 {
+			return nil, invalid("an excluded start must be a UTC time to the second")
+		}
+		utc = utc.Truncate(time.Second)
+		if allDay && !isMidnight(utc) {
+			return nil, invalid("an all-day event's excluded start must be midnight UTC")
+		}
+		out = append(out, utc)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Before(out[j]) })
+	deduped := out[:0]
+	for _, start := range out {
+		if len(deduped) > 0 && deduped[len(deduped)-1].Equal(start) {
+			continue
+		}
+		deduped = append(deduped, start)
+	}
+	return deduped, nil
+}
+
+// nullExclusions is the column value for a series' skipped starts.
+func nullExclusions(starts []time.Time) sql.NullString {
+	if len(starts) == 0 {
+		return sql.NullString{}
+	}
+	texts := make([]string, len(starts))
+	for i, start := range starts {
+		texts[i] = formatTime(start)
+	}
+	raw, err := json.Marshal(texts)
+	if err != nil {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: string(raw), Valid: true}
+}
+
+// parseExclusions reads the column back. NULL is no skipped starts.
+func parseExclusions(raw sql.NullString) ([]time.Time, error) {
+	if !raw.Valid || raw.String == "" {
+		return nil, nil
+	}
+	var texts []string
+	if err := json.Unmarshal([]byte(raw.String), &texts); err != nil {
+		return nil, fmt.Errorf("excluded starts: %w", err)
+	}
+	out := make([]time.Time, 0, len(texts))
+	for _, text := range texts {
+		start, err := time.Parse(storedTimeLayout, text)
+		if err != nil {
+			return nil, fmt.Errorf("excluded start %q: %w", text, err)
+		}
+		out = append(out, start)
+	}
+	return out, nil
 }

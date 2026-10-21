@@ -23,7 +23,8 @@ INSERT INTO
         reminder_minutes,
         color_index,
         repeat_until,
-        created_by
+        created_by,
+        excluded_starts
     )
 VALUES
     (
@@ -39,7 +40,8 @@ VALUES
         sqlc.arg(reminder_minutes),
         sqlc.arg(color_index),
         sqlc.arg(repeat_until),
-        sqlc.arg(created_by)
+        sqlc.arg(created_by),
+        sqlc.arg(excluded_starts)
     )
 RETURNING *;
 
@@ -96,6 +98,7 @@ SET
     reminder_minutes = sqlc.arg(reminder_minutes),
     color_index = sqlc.arg(color_index),
     repeat_until = sqlc.arg(repeat_until),
+    excluded_starts = sqlc.arg(excluded_starts),
     updated_at = CURRENT_TIMESTAMP
 WHERE
     id = sqlc.arg(id)

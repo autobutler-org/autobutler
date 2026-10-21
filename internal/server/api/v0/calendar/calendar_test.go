@@ -318,3 +318,99 @@ func TestEventRepeatUntil(t *testing.T) {
 		t.Errorf("update to no end = %d %s, want 200 and no end", w.Code, w.Body.String())
 	}
 }
+
+// TestMoveOccurrence checks the three move scopes and that a skipped start
+// round-trips on the series (#3215).
+func TestMoveOccurrence(t *testing.T) {
+	engine, events := newCalendarEngine(t)
+	const practice = `{"title":"Practice","notes":"bring a ball","location":"Park","start":"2026-09-01T15:00:00Z","end":"2026-09-01T16:00:00Z","timeZone":"UTC","repeat":"weekly","repeatUntil":"2026-10-31T00:00:00Z","excludedStarts":["2026-09-15T15:00:00Z"],"reminderMinutes":15,"colorIndex":3}`
+
+	w := do(engine, http.MethodPost, "/api/v0/calendar/events", practice)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("create = %d %s, want 201", w.Code, w.Body.String())
+	}
+	series := decode[EventJSON](t, w)
+	if len(series.ExcludedStarts) != 1 || series.ExcludedStarts[0] != "2026-09-15T15:00:00Z" {
+		t.Fatalf("excludedStarts = %v, want the skipped September start", series.ExcludedStarts)
+	}
+	if !heard(events, series.ID) {
+		t.Fatal("create published no calendar change")
+	}
+
+	move := fmt.Sprintf("/api/v0/calendar/events/%d/move", series.ID)
+	w = do(engine, http.MethodPost, move, `{"scope":"one","occurrenceStart":"2026-10-13T15:00:00Z","start":"2026-10-14T16:00:00Z","end":"2026-10-14T17:30:00Z"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("move one = %d %s, want 200", w.Code, w.Body.String())
+	}
+	one := decode[MoveJSON](t, w)
+	if one.Series.Start != series.Start || one.Series.RepeatUntil == nil || *one.Series.RepeatUntil != "2026-10-31T00:00:00Z" {
+		t.Errorf("series after one = %+v, want the original times and end date", one.Series)
+	}
+	if got := one.Series.ExcludedStarts; len(got) != 2 || got[0] != "2026-09-15T15:00:00Z" || got[1] != "2026-10-13T15:00:00Z" {
+		t.Errorf("excludedStarts = %v, want September 15 and October 13", got)
+	}
+	if one.Created == nil || one.Created.Repeat != "none" || one.Created.Start != "2026-10-14T16:00:00Z" || one.Created.End != "2026-10-14T17:30:00Z" {
+		t.Fatalf("created = %+v, want a one-off on October 14", one.Created)
+	}
+	if one.Created.Title != "Practice" || one.Created.Notes != "bring a ball" || one.Created.Location != "Park" || one.Created.Owner != "member" || !one.Created.Mine || one.Created.ColorIndex != 3 {
+		t.Errorf("one-off = %+v, want the series' fields and its owner", one.Created)
+	}
+	if one.Created.ReminderMinutes == nil || *one.Created.ReminderMinutes != 15 {
+		t.Errorf("one-off reminder = %v, want 15", one.Created.ReminderMinutes)
+	}
+	if !heard(events, series.ID) {
+		t.Error("move one published no calendar change")
+	}
+
+	w = do(engine, http.MethodPost, "/api/v0/calendar/events", practice)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("second create = %d %s, want 201", w.Code, w.Body.String())
+	}
+	again := decode[EventJSON](t, w)
+	heard(events, again.ID)
+	follow := fmt.Sprintf("/api/v0/calendar/events/%d/move", again.ID)
+	w = do(engine, http.MethodPost, follow, `{"scope":"following","occurrenceStart":"2026-10-13T15:00:00Z","start":"2026-10-14T16:00:00Z","end":"2026-10-14T17:00:00Z"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("move following = %d %s, want 200", w.Code, w.Body.String())
+	}
+	split := decode[MoveJSON](t, w)
+	if split.Series.RepeatUntil == nil || *split.Series.RepeatUntil != "2026-10-12T00:00:00Z" {
+		t.Errorf("original until = %v, want the day before October 13", split.Series.RepeatUntil)
+	}
+	if len(split.Series.ExcludedStarts) != 1 || split.Series.ExcludedStarts[0] != "2026-09-15T15:00:00Z" {
+		t.Errorf("original exclusions = %v, want only September 15", split.Series.ExcludedStarts)
+	}
+	if split.Created == nil || split.Created.Repeat != "weekly" || split.Created.Start != "2026-10-14T16:00:00Z" || split.Created.Owner != "member" {
+		t.Fatalf("new series = %+v, want a weekly series owned by the original owner", split.Created)
+	}
+	if split.Created.RepeatUntil == nil || *split.Created.RepeatUntil != "2026-10-31T00:00:00Z" {
+		t.Errorf("new until = %v, want the original end date", split.Created.RepeatUntil)
+	}
+	if !heard(events, again.ID) {
+		t.Error("move following published no calendar change")
+	}
+
+	w = do(engine, http.MethodPost, follow, `{"scope":"all","occurrenceStart":"2026-09-01T15:00:00Z","start":"2026-09-02T16:00:00Z","end":"2026-09-02T17:00:00Z"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("move all = %d %s, want 200", w.Code, w.Body.String())
+	}
+	all := decode[MoveJSON](t, w)
+	if all.Created != nil || all.Series.Start != "2026-09-02T16:00:00Z" || all.Series.End != "2026-09-02T17:00:00Z" {
+		t.Errorf("move all = %+v, want the series shifted and nothing created", all)
+	}
+
+	solo := do(engine, http.MethodPost, "/api/v0/calendar/events", `{"title":"Dentist","start":"2026-10-02T15:00:00Z","end":"2026-10-02T16:00:00Z"}`)
+	if solo.Code != http.StatusCreated {
+		t.Fatalf("one-off create = %d %s, want 201", solo.Code, solo.Body.String())
+	}
+	dentist := decode[EventJSON](t, solo)
+	heard(events, dentist.ID)
+	w = do(engine, http.MethodPost, fmt.Sprintf("/api/v0/calendar/events/%d/move", dentist.ID), `{"scope":"one","occurrenceStart":"2026-10-02T15:00:00Z","start":"2026-10-03T15:00:00Z","end":"2026-10-03T16:00:00Z"}`)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("move one of a one-off = %d %s, want 400", w.Code, w.Body.String())
+	}
+	w = do(engine, http.MethodPost, "/api/v0/calendar/events/99999/move", `{"scope":"all","occurrenceStart":"2026-10-02T15:00:00Z","start":"2026-10-03T15:00:00Z","end":"2026-10-03T16:00:00Z"}`)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("missing event = %d %s, want 404", w.Code, w.Body.String())
+	}
+}

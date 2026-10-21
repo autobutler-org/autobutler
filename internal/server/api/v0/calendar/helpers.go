@@ -88,6 +88,14 @@ func toInput(req eventRequest) (calendarutil.EventInput, error) {
 		}
 		until = &t
 	}
+	excluded := make([]time.Time, 0, len(req.ExcludedStarts))
+	for _, raw := range req.ExcludedStarts {
+		start, err := parseInstant("excludedStarts", raw)
+		if err != nil {
+			return calendarutil.EventInput{}, err
+		}
+		excluded = append(excluded, start)
+	}
 	return calendarutil.EventInput{
 		Title:           req.Title,
 		Notes:           req.Notes,
@@ -100,6 +108,7 @@ func toInput(req eventRequest) (calendarutil.EventInput, error) {
 		RepeatUntil:     until,
 		ReminderMinutes: req.ReminderMinutes,
 		ColorIndex:      req.ColorIndex,
+		ExcludedStarts:  excluded,
 	}, nil
 }
 
@@ -116,6 +125,10 @@ func toEventJSON(e calendarutil.Event, caller int64) EventJSON {
 		s := e.RepeatUntil.UTC().Format(time.RFC3339)
 		until = &s
 	}
+	var excluded []string
+	for _, start := range e.ExcludedStarts {
+		excluded = append(excluded, start.UTC().Format(time.RFC3339))
+	}
 	return EventJSON{
 		ID:              e.ID,
 		CalendarID:      e.CalendarID,
@@ -130,6 +143,7 @@ func toEventJSON(e calendarutil.Event, caller int64) EventJSON {
 		RepeatUntil:     until,
 		ReminderMinutes: e.ReminderMinutes,
 		ColorIndex:      e.ColorIndex,
+		ExcludedStarts:  excluded,
 		Owner:           e.OwnerName,
 		Mine:            e.OwnerID != 0 && e.OwnerID == caller,
 		CreatedAt:       e.CreatedAt.UTC().Format(time.RFC3339),

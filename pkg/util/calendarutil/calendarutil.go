@@ -8,6 +8,10 @@
 // occurrences in the viewer's local time, so ListEvents returns series, not
 // occurrences. A series repeats forever unless it has a RepeatUntil date
 // (#2524), and ListEvents leaves out a series that ended before the range.
+// ExcludedStarts are occurrence starts the series skips (#3215). Moving one
+// occurrence records that start and stores the new time as its own event.
+// Moving that occurrence and every one after it ends the series the day
+// before and starts a new series.
 //
 // With no app open, ExpandEvent turns a series into occurrences in the
 // event's own time zone, and ListReminders finds the reminders that fall due
@@ -61,6 +65,8 @@ const (
 	MinAllDayReminderMinutes = -(24*60 - 1)
 	// MaxListRange bounds one ListEvents call.
 	MaxListRange = 400 * 24 * time.Hour
+	// MaxExcludedStarts is how many occurrence starts one series may skip.
+	MaxExcludedStarts = 100
 )
 
 // ErrInvalidEvent reports an event that breaks one of the rules above. It is
@@ -89,6 +95,9 @@ type EventInput struct {
 	// ReminderMinutes counts back from Start; nil is no reminder.
 	ReminderMinutes *int
 	ColorIndex      int
+	// ExcludedStarts are occurrence starts a series skips, UTC to the second.
+	// Nil on a one-off event and on a series that skips nothing.
+	ExcludedStarts []time.Time
 }
 
 // Event is a stored event, or the first occurrence of a repeating one.
@@ -114,6 +123,8 @@ type Event struct {
 	OwnerName string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	// ExcludedStarts are the occurrence starts this series skips (#3215).
+	ExcludedStarts []time.Time
 }
 
 // CreateEventParams adds an event to the default calendar.
@@ -200,8 +211,9 @@ func ListEvents(ctx context.Context, params ListEventsParams) (ListEventsResult,
 }
 
 // UpdateEventParams replaces an event's fields. For a repeating event that is
-// the whole series: the MVP has no per-occurrence edits. The owner stays the
-// account that created it, whoever edits it.
+// the whole series, exclusions included. One occurrence moves through
+// MoveEvent, which keeps this row and stores the new time beside it. The
+// owner stays the account that created it, whoever edits it.
 type UpdateEventParams struct {
 	Queries db.Querier
 	ID      int64
@@ -246,4 +258,49 @@ func DeleteEvent(ctx context.Context, params DeleteEventParams) (DeleteEventResu
 		return DeleteEventResult{}, sql.ErrNoRows
 	}
 	return DeleteEventResult{}, nil
+}
+
+// How much of a repeating event a drag moves (#3215).
+const (
+	// MoveThisEvent skips that occurrence and stores the new time as a one-off.
+	MoveThisEvent = "one"
+	// MoveFollowing ends the series the day before that occurrence and starts
+	// a new series at the new time. The first occurrence moves the whole series.
+	MoveFollowing = "following"
+	// MoveAllEvents moves every occurrence, the series' own start included.
+	MoveAllEvents = "all"
+)
+
+// MoveEventParams moves the occurrence of ID that starts at OccurrenceStart
+// so that it runs from Start to End. Scope is MoveThisEvent, MoveFollowing
+// or MoveAllEvents.
+type MoveEventParams struct {
+	Database        *db.DatabaseSqlc
+	ID              int64
+	Scope           string
+	OccurrenceStart time.Time
+	Start           time.Time
+	End             time.Time
+}
+
+// MoveEventResult carries the original series after the move. Created is the
+// one-off or the new series, and nil when the move only changed the original.
+type MoveEventResult struct {
+	Series  Event
+	Created *Event
+}
+
+// MoveEvent applies Scope to one repeating event. The series and anything it
+// creates commit together. A missing event is sql.ErrNoRows.
+func MoveEvent(ctx context.Context, params MoveEventParams) (MoveEventResult, error) {
+	if params.Database == nil || params.Database.Db == nil {
+		return MoveEventResult{}, errors.New("calendar move needs a database")
+	}
+	var result MoveEventResult
+	err := db.InTx(ctx, params.Database.Db, func(q db.Querier) error {
+		var err error
+		result, err = moveEvent(ctx, q, params)
+		return err
+	})
+	return result, err
 }
