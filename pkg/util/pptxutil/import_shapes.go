@@ -218,6 +218,7 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 		prst = sp.Props.Geometry.Preset
 	}
 	if bent, ok := linePresets[prst]; ok || (connector && prst == "") {
+		s.noteShadow(sp.Props, nv, template)
 		return s.convertLine(sp, frame, xfrm, bent)
 	}
 
@@ -243,6 +244,9 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 			return nil, err
 		}
 		out = append(out, s.textBox(sp, chain, ph, frame, t))
+	}
+	if len(out) > 0 {
+		s.noteShadow(sp.Props, nv, template)
 	}
 	return out, nil
 }
@@ -383,6 +387,7 @@ func (s *slideReader) convertPicture(p *xPicture, t transform, template bool) ([
 	if err := s.countElement(); err != nil {
 		return nil, err
 	}
+	s.noteShadow(p.Props, nv, template)
 	fit := "fill"
 	if c := p.Fill.Crop; c != nil && (c.L > 0 || c.T > 0 || c.R > 0 || c.B > 0) {
 		fit = "cover"

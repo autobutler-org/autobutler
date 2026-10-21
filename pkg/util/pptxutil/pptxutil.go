@@ -43,8 +43,9 @@
 // summarizing it over a table of the data PowerPoint cached for it, with a
 // warning; one whose data cannot be read is skipped. What the editor has no
 // model for — SmartArt, embedded objects, video and audio, ink, animations
-// and transitions — is skipped and named in the
-// slide's warnings; see [ImportPptx]. An import writes schema version 1, every
+// and transitions, shape shadows — is skipped and named in the slide's
+// warnings, and fonts the file embeds are named in the deck's; see
+// [ImportPptx]. An import writes schema version 1, every
 // color literal and no theme, which the editor migrates as it opens the file.
 //
 // # Units

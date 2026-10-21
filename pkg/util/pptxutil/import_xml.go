@@ -1,6 +1,6 @@
 package pptxutil
 
-// cspell:ignore autofit clr cust descr dgm fmla gd grp lum patt ph prst scrgb srgb xfrm
+// cspell:ignore autofit clr cust descr dgm fmla gd grp lum patt ph prst scrgb Shdw srgb xfrm
 
 import (
 	"encoding/xml"
@@ -54,6 +54,10 @@ type xPresentation struct {
 		RelID string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/relationships id,attr"`
 	} `xml:"sldIdLst>sldId"`
 	DefaultTextStyle *xListStyle `xml:"defaultTextStyle"`
+	// EmbeddedFonts names the typefaces the package carries in ppt/fonts.
+	EmbeddedFonts []struct {
+		Typeface string `xml:"typeface,attr"`
+	} `xml:"embeddedFontLst>embeddedFont>font"`
 }
 
 // xCore is docProps/core.xml.
@@ -226,6 +230,7 @@ func (g *xGroup) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 // xNonVisual is the non-visual properties every drawn element opens with.
 type xNonVisual struct {
 	Common struct {
+		ID     string `xml:"id,attr"`
 		Name   string `xml:"name,attr"`
 		Descr  string `xml:"descr,attr"`
 		Hidden xBool  `xml:"hidden,attr"`
@@ -282,7 +287,22 @@ type xShapeProps struct {
 	} `xml:"prstGeom"`
 	Custom *xCustomGeometry `xml:"custGeom"`
 	xFill
-	Line *xLine `xml:"ln"`
+	Line    *xLine    `xml:"ln"`
+	Effects *xEffects `xml:"effectLst"`
+}
+
+// xEffects is a shape's effect list; only its shadows are read, to report
+// that they were left out.
+type xEffects struct {
+	Outer  *struct{} `xml:"outerShdw"`
+	Inner  *struct{} `xml:"innerShdw"`
+	Preset *struct{} `xml:"prstShdw"`
+}
+
+// hasShadow reports whether the shape's own effect list casts a shadow.
+func (p xShapeProps) hasShadow() bool {
+	e := p.Effects
+	return e != nil && (e.Outer != nil || e.Inner != nil || e.Preset != nil)
 }
 
 // xCustomGeometry is a freeform's outline: its guides and its paths.
