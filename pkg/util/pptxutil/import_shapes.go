@@ -218,7 +218,7 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 		prst = sp.Props.Geometry.Preset
 	}
 	if bent, ok := linePresets[prst]; ok || (connector && prst == "") {
-		s.noteShadow(sp.Props, nv, template)
+		s.noteShadow(sp.Props, nv, template, false)
 		return s.convertLine(sp, frame, xfrm, bent)
 	}
 
@@ -229,8 +229,10 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 	textBox := bool(nv.ShapeProps.TextBox) || ph != nil
 	var out []outElement
 	// A shape with neither fill nor outline is still a shape the editor can
-	// select, unless it is only there to hold text.
-	if drawn || (!textBox && !hasText) {
+	// select, unless it is only there to hold text. Only that shape casts the
+	// drop shadow: a text box alone casts none.
+	shaped := drawn || (!textBox && !hasText)
+	if shaped {
 		shape, err := s.presetShape(sp, prst, xfrm, frame, fill, stroke)
 		if err != nil {
 			return nil, err
@@ -246,7 +248,7 @@ func (s *slideReader) convertShape(sp *xShape, t transform, connector, template 
 		out = append(out, s.textBox(sp, chain, ph, frame, t))
 	}
 	if len(out) > 0 {
-		s.noteShadow(sp.Props, nv, template)
+		s.noteShadow(sp.Props, nv, template, shaped)
 	}
 	return out, nil
 }
@@ -285,6 +287,7 @@ func (s *slideReader) presetShape(sp *xShape, prst string, xfrm *xXfrm, frame ou
 	shape := outShape{
 		ID: s.id(), Type: typeShape, Frame: frame, Kind: kind,
 		Preset: preset, Adjust: adjust, Contours: contours, Fill: fill, Stroke: stroke,
+		Shadow: s.shadow(sp.Props, frame.Rotation),
 	}
 	if kind == "roundedRectangle" {
 		adj := float64(defaultRoundRectAdj)
@@ -387,13 +390,15 @@ func (s *slideReader) convertPicture(p *xPicture, t transform, template bool) ([
 	if err := s.countElement(); err != nil {
 		return nil, err
 	}
-	s.noteShadow(p.Props, nv, template)
+	s.noteShadow(p.Props, nv, template, true)
+	frame := s.frame(xfrm, t)
 	fit := "fill"
 	if c := p.Fill.Crop; c != nil && (c.L > 0 || c.T > 0 || c.R > 0 || c.B > 0) {
 		fit = "cover"
 	}
 	return []outElement{outImage{
-		ID: s.id(), Type: typeImage, Frame: s.frame(xfrm, t), Source: ref, AltText: nv.Common.Descr, Fit: fit,
+		ID: s.id(), Type: typeImage, Frame: frame, Source: ref, AltText: nv.Common.Descr, Fit: fit,
+		Shadow: s.shadow(p.Props, frame.Rotation),
 	}}, nil
 }
 

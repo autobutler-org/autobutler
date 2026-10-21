@@ -43,16 +43,64 @@ type importer struct {
 	mediaBytes int64
 	elements   int
 	nextID     int
-	// shadows counts the shapes whose shadows were left out, a layout's or
-	// master's once however many slides show it; templateShadows is the
-	// template shapes counted, shadowed the slides a shadow was on, and
-	// slideShadowed whether the slide being read has one.
-	shadows         int
-	templateShadows map[string]bool
-	shadowed        []int
-	slideShadowed   bool
-	result          ImportPptxResult
+	// leftOut and approximated count the shapes whose shadows were left out
+	// or drawn without their scale or skew; templateShadows is the layout
+	// and master shapes already counted.
+	leftOut, approximated shadowTally
+	templateShadows       map[string]bool
+	result                ImportPptxResult
 }
+
+// shadowTally counts shapes whose shadows did not come across as drawn, a
+// layout's or master's once however many slides show it: slides is the
+// slides one was on, and onSlide whether the slide being read has one.
+type shadowTally struct {
+	shapes  int
+	slides  []int
+	onSlide bool
+}
+
+// startSlide starts counting a slide and returns the count to restore if
+// the slide cannot be read.
+func (t *shadowTally) startSlide() int {
+	t.onSlide = false
+	return t.shapes
+}
+
+// endSlide notes slide number when a shadow was counted on it.
+func (t *shadowTally) endSlide(number int) {
+	if t.onSlide {
+		t.slides = append(t.slides, number)
+	}
+	t.onSlide = false
+}
+
+// warnings is message, for the whole deck's count, on every slide counted.
+// The count is the whole deck's, so the summary lists every slide under one
+// line.
+func (t *shadowTally) warnings(message func(shapes int) string) []ImportWarning {
+	var out []ImportWarning
+	for _, number := range t.slides {
+		out = append(out, ImportWarning{Slide: number, Message: message(t.shapes)})
+	}
+	return out
+}
+
+// shadowFate is what became of a shape's own shadow.
+type shadowFate int
+
+const (
+	// shadowNone is a shape without a shadow.
+	shadowNone shadowFate = iota
+	// shadowDrawn is a shadow that came across as it is drawn.
+	shadowDrawn
+	// shadowApproximated is a drop shadow that came across without its
+	// scale or skew, or beside an inner or preset shadow that did not.
+	shadowApproximated
+	// shadowLeftOut is a shadow the editor does not draw: an inner or preset
+	// one, or one on an element that casts none.
+	shadowLeftOut
+)
 
 // templatePart is a layout or master, read once and drawn behind every slide
 // that uses it.
@@ -113,8 +161,7 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 		rel, ok := presRels[id.RelID]
 		var slide outSlide
 		var warnings []string
-		shadows := im.shadows
-		im.slideShadowed = false
+		leftOut, approximated := im.leftOut.startSlide(), im.approximated.startSlide()
 		if target, inside := resolveTarget(presPart, rel.Target); ok && inside && a.has(target) {
 			slide, warnings, err = im.readSlide(target)
 		} else {
@@ -128,11 +175,11 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 			// its place in the show as an empty slide.
 			slide = outSlide{Elements: []outElement{}}
 			warnings = []string{"This slide could not be read, so it was left empty."}
-			im.shadows, im.slideShadowed = shadows, false
+			im.leftOut.shapes, im.leftOut.onSlide = leftOut, false
+			im.approximated.shapes, im.approximated.onSlide = approximated, false
 		}
-		if im.slideShadowed {
-			im.shadowed = append(im.shadowed, number)
-		}
+		im.leftOut.endSlide(number)
+		im.approximated.endSlide(number)
 		slide.ID = fmt.Sprintf("s%d", number)
 		for _, w := range warnings {
 			im.result.Warnings = append(im.result.Warnings, ImportWarning{Slide: number, Message: w})
@@ -142,20 +189,26 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 		}
 		im.result.Slides++
 	}
-	// The count is the whole deck's, so the summary lists every slide with a
-	// shadow under one line.
-	for _, number := range im.shadowed {
-		im.result.Warnings = append(im.result.Warnings, ImportWarning{Slide: number, Message: shadowsWarning(im.shadows)})
-	}
+	im.result.Warnings = append(im.result.Warnings, im.leftOut.warnings(shadowsLeftOutWarning)...)
+	im.result.Warnings = append(im.result.Warnings, im.approximated.warnings(shadowsApproximatedWarning)...)
 	return im.result, out.close()
 }
 
-// shadowsWarning says how many shapes' shadows were left out.
-func shadowsWarning(shapes int) string {
+// shadowsLeftOutWarning says how many shapes' shadows were left out.
+func shadowsLeftOutWarning(shapes int) string {
 	if shapes == 1 {
 		return "The shadow on 1 shape was left out."
 	}
 	return fmt.Sprintf("Shadows on %d shapes were left out.", shapes)
+}
+
+// shadowsApproximatedWarning says how many shapes' shadows were drawn
+// without their scale or skew.
+func shadowsApproximatedWarning(shapes int) string {
+	if shapes == 1 {
+		return "The shadow on 1 shape may look slightly different."
+	}
+	return fmt.Sprintf("Shadows on %d shapes may look slightly different.", shapes)
 }
 
 // embeddedFontsWarning says the fonts a package embeds were not used,
@@ -427,13 +480,21 @@ func (s *slideReader) warn(message string) {
 	}
 }
 
-// noteShadow counts a converted shape or picture whose shadow is left out.
-// A layout's or master's shape counts once, however many slides show it.
-func (s *slideReader) noteShadow(props xShapeProps, nv xNonVisual, template bool) {
-	if !props.hasShadow() {
+// noteShadow counts a converted shape or picture whose shadow is left out or
+// drawn only approximately; carried is whether its element casts the drop
+// shadow. A layout's or master's shape counts once, however many slides
+// show it.
+func (s *slideReader) noteShadow(props xShapeProps, nv xNonVisual, template, carried bool) {
+	var tally *shadowTally
+	switch props.shadowFate(carried) {
+	case shadowLeftOut:
+		tally = &s.leftOut
+	case shadowApproximated:
+		tally = &s.approximated
+	default:
 		return
 	}
-	s.slideShadowed = true
+	tally.onSlide = true
 	if template {
 		key := s.source.part + "#" + nv.Common.ID
 		if s.templateShadows[key] {
@@ -441,7 +502,34 @@ func (s *slideReader) noteShadow(props xShapeProps, nv xNonVisual, template bool
 		}
 		s.templateShadows[key] = true
 	}
-	s.shadows++
+	tally.shapes++
+}
+
+// shadow is the shape's own drop shadow in slide units, scaled like a
+// stroke's width, or nil. Its offset is the slide's: one that turns with a
+// shape turned rotation degrees — rotWithShape, the default — is turned
+// with it. A color that cannot be read is black, PowerPoint's own.
+func (s *slideReader) shadow(props xShapeProps, rotation float64) *outShadow {
+	if props.Effects == nil || props.Effects.Outer == nil {
+		return nil
+	}
+	o := props.Effects.Outer
+	c := s.hex(&o.xColorChoice)
+	if c == "" {
+		c = "#000000"
+	}
+	degrees := float64(o.Dir) / 60_000
+	if o.RotWithShape == nil || bool(*o.RotWithShape) {
+		degrees += rotation
+	}
+	angle := degrees * math.Pi / 180
+	dist := float64(o.Dist) / s.scale
+	return &outShadow{
+		Color: c,
+		X:     round(dist * math.Cos(angle)),
+		Y:     round(dist * math.Sin(angle)),
+		Blur:  round(math.Max(float64(o.BlurRad), 0) / s.scale),
+	}
 }
 
 // id returns the next element id.
