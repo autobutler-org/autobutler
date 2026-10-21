@@ -96,21 +96,21 @@ class DataSheetFormatActions {
 
   /// The text colors, led by the theme's own.
   List<FormatChoice> get textColorChoices => _colors(
-    'format_text_color',
-    'Default',
-    textColors,
-    current.textColor,
-    (f, argb) => f.withTextColor(argb),
-  );
+        'format_text_color',
+        'Default',
+        textColors,
+        current.textColor,
+        (f, argb) => f.withTextColor(argb),
+      );
 
   /// The fill colors, led by none.
   List<FormatChoice> get fillChoices => _colors(
-    'format_fill',
-    'None',
-    fillColors,
-    current.fillColor,
-    (f, argb) => f.withFillColor(argb),
-  );
+        'format_fill',
+        'None',
+        fillColors,
+        current.fillColor,
+        (f, argb) => f.withFillColor(argb),
+      );
 
   List<FormatChoice> _colors(
     String prefix,
@@ -118,22 +118,23 @@ class DataSheetFormatActions {
     List<DataSheetSwatch> swatches,
     int? selected,
     CellFormat Function(CellFormat, int?) set,
-  ) => [
-    FormatChoice(
-      key: '${prefix}_none',
-      label: noneLabel,
-      checked: selected == null,
-      onSelected: _apply((f) => set(f, null)),
-    ),
-    for (final (i, swatch) in swatches.indexed)
-      FormatChoice(
-        key: '${prefix}_$i',
-        label: swatch.name,
-        swatch: swatch,
-        checked: selected == swatch.color.toARGB32(),
-        onSelected: _apply((f) => set(f, swatch.color.toARGB32())),
-      ),
-  ];
+  ) =>
+      [
+        FormatChoice(
+          key: '${prefix}_none',
+          label: noneLabel,
+          checked: selected == null,
+          onSelected: _apply((f) => set(f, null)),
+        ),
+        for (final (i, swatch) in swatches.indexed)
+          FormatChoice(
+            key: '${prefix}_$i',
+            label: swatch.name,
+            swatch: swatch,
+            checked: selected == swatch.color.toARGB32(),
+            onSelected: _apply((f) => set(f, swatch.color.toARGB32())),
+          ),
+      ];
 
   /// Left, center and right alignment. Choosing the alignment a cell already
   /// has puts it back to the default.
@@ -159,36 +160,36 @@ class DataSheetFormatActions {
 
   /// The number formats, each labeled with an example.
   List<FormatChoice> get numberFormatChoices => [
-    for (final format in CellNumberFormat.values)
-      FormatChoice(
-        key: 'format_number_${format.name}',
-        label: switch (format) {
-          CellNumberFormat.general => 'Automatic',
-          CellNumberFormat.number => 'Number  1,234.56',
-          CellNumberFormat.currency => r'Currency  $1,234.56',
-          CellNumberFormat.percent => 'Percent  12.34%',
-          CellNumberFormat.date => 'Date  2025-01-31',
-        },
-        checked: current.numberFormat == format,
-        onSelected: _apply((f) => f.withNumberFormat(format)),
-      ),
-  ];
+        for (final format in CellNumberFormat.values)
+          FormatChoice(
+            key: 'format_number_${format.name}',
+            label: switch (format) {
+              CellNumberFormat.general => 'Automatic',
+              CellNumberFormat.number => 'Number  1,234.56',
+              CellNumberFormat.currency => r'Currency  $1,234.56',
+              CellNumberFormat.percent => 'Percent  12.34%',
+              CellNumberFormat.date => 'Date  2025-01-31',
+            },
+            checked: current.numberFormat == format,
+            onSelected: _apply((f) => f.withNumberFormat(format)),
+          ),
+      ];
 
   /// One fewer decimal place, down to none.
   FormatChoice get decreaseDecimals => _decimals(
-    -1,
-    'format_decimals_decrease',
-    'Decrease decimal places',
-    QuarkIcons.decimal_decrease,
-  );
+        -1,
+        'format_decimals_decrease',
+        'Decrease decimal places',
+        QuarkIcons.decimal_decrease,
+      );
 
   /// One more decimal place, up to [CellFormat.maxDecimals].
   FormatChoice get increaseDecimals => _decimals(
-    1,
-    'format_decimals_increase',
-    'Increase decimal places',
-    QuarkIcons.decimal_increase,
-  );
+        1,
+        'format_decimals_increase',
+        'Increase decimal places',
+        QuarkIcons.decimal_increase,
+      );
 
   /// Sets every selected cell to the highlighted cell's decimals plus [by].
   /// Disabled unless that cell's number format has decimals, and at either
@@ -213,9 +214,9 @@ class DataSheetFormatActions {
 
   /// Every format removed, values kept.
   FormatChoice get clear => FormatChoice(
-    key: 'format_clear',
-    label: 'Clear formatting',
-    icon: QuarkIcons.format_clear,
-    onSelected: _apply((_) => CellFormat.plain),
-  );
+        key: 'format_clear',
+        label: 'Clear formatting',
+        icon: QuarkIcons.format_clear,
+        onSelected: _apply((_) => CellFormat.plain),
+      );
 }

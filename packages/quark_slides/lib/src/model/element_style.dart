@@ -81,9 +81,8 @@ class ElementStyle {
   SlideElement applyTo(SlideElement element) {
     switch (element) {
       case ShapeElement():
-        Stroke? outline = identical(stroke, unset)
-            ? element.stroke
-            : stroke as Stroke?;
+        Stroke? outline =
+            identical(stroke, unset) ? element.stroke : stroke as Stroke?;
         if (strokeColor != null || strokeWidth != null || dash != null) {
           outline = (outline ?? Stroke()).copyWith(
             color: strokeColor,
@@ -110,11 +109,11 @@ class ElementStyle {
           opacity: opacity,
         );
       case TextBox() ||
-          ImageElement() ||
-          TableElement() ||
-          ChartElement() ||
-          GroupElement() ||
-          UnknownElement():
+            ImageElement() ||
+            TableElement() ||
+            ChartElement() ||
+            GroupElement() ||
+            UnknownElement():
         return element;
     }
   }

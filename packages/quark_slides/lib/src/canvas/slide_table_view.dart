@@ -69,10 +69,10 @@ class SlideTableView extends StatelessWidget {
   /// leaves its color unset takes `TableElement.headerTextColor`.
   static SlideTheme cellTheme(TableElement table, int row, SlideTheme theme) =>
       table.isHeader(row)
-      ? theme.copyWith(
-          body: theme.body.copyWith(color: TableElement.headerTextColor),
-        )
-      : theme;
+          ? theme.copyWith(
+              body: theme.body.copyWith(color: TableElement.headerTextColor),
+            )
+          : theme;
 
   @override
   Widget build(BuildContext context) {

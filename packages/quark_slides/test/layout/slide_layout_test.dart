@@ -47,8 +47,8 @@ void main() {
 
     test('each layout has one title, and the right content slots', () {
       List<String> slots(SlideLayout l) => [
-        for (final p in l.placeholders) p.id,
-      ];
+            for (final p in l.placeholders) p.id,
+          ];
       expect(slots(SlideLayout.title), ['title', 'subtitle']);
       expect(slots(SlideLayout.titleAndContent), ['title', 'body']);
       expect(slots(SlideLayout.sectionHeader), ['title', 'subtitle']);
@@ -70,19 +70,19 @@ void main() {
 
   group('applyLayout', () {
     Slide built(SlideLayout layout) => Slide(
-      id: 's',
-      layoutId: layout.id,
-      elements: layoutBoxes(layout, size, counter()),
-    );
+          id: 's',
+          layoutId: layout.id,
+          elements: layoutBoxes(layout, size, counter()),
+        );
 
     Slide typed(Slide slide, String slot, String text) => slide.copyWith(
-      elements: [
-        for (final e in slide.elements)
-          e is TextBox && e.slot == slot
-              ? e.copyWith(paragraphs: [TextParagraph.plain(text)])
-              : e,
-      ],
-    );
+          elements: [
+            for (final e in slide.elements)
+              e is TextBox && e.slot == slot
+                  ? e.copyWith(paragraphs: [TextParagraph.plain(text)])
+                  : e,
+          ],
+        );
 
     test('an untouched placeholder re-flows into its new slot', () {
       final slide = typed(built(SlideLayout.title), 'title', 'Q3');
@@ -151,8 +151,8 @@ void main() {
       );
       expect(slotBox(next, 'body').plainText, 'Pros');
       final kept = next.elements.whereType<TextBox>().singleWhere(
-        (b) => b.plainText == 'Cons',
-      );
+            (b) => b.plainText == 'Cons',
+          );
       expect(kept.slot, isNull);
       expect(kept.placeholder, isEmpty);
       expect(kept.frame, slotBox(slide, 'right').frame);
@@ -188,30 +188,27 @@ void main() {
   group('resetToLayout', () {
     test('puts placeholders back and drops their own styles', () {
       final layout = SlideLayout.titleAndContent;
-      final title = layout
-          .placeholder('title')!
-          .emptyBox('t', size)
-          .copyWith(
-            frame: ElementFrame(
-              x: 1,
-              y: 2,
-              width: 300,
-              height: 40,
-              rotation: 5,
+      final title = layout.placeholder('title')!.emptyBox('t', size).copyWith(
+        frame: ElementFrame(
+          x: 1,
+          y: 2,
+          width: 300,
+          height: 40,
+          rotation: 5,
+        ),
+        anchor: TextAnchor.bottom,
+        paragraphs: const [
+          TextParagraph([
+            TextRun(
+              'Big',
+              bold: true,
+              fontSize: 99,
+              fontFamily: 'Comic',
+              color: SlideColor(0xFFFF0000),
             ),
-            anchor: TextAnchor.bottom,
-            paragraphs: const [
-              TextParagraph([
-                TextRun(
-                  'Big',
-                  bold: true,
-                  fontSize: 99,
-                  fontFamily: 'Comic',
-                  color: SlideColor(0xFFFF0000),
-                ),
-              ], alignment: TextAlignment.end),
-            ],
-          );
+          ], alignment: TextAlignment.end),
+        ],
+      );
       final slide = Slide(id: 's', layoutId: layout.id, elements: [title]);
       final reset = resetToLayout(slide, size, counter());
       final box = slotBox(reset, 'title');

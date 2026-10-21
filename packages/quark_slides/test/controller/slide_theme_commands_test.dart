@@ -20,8 +20,8 @@ void main() {
   Slide slide(String id) => doc.presentation.slideById(id)!;
   SlideElement element(String id) => slide('s').elementById(id)!;
   TextBox slotBox(String slideId, String slot) => slide(
-    slideId,
-  ).elements.whereType<TextBox>().singleWhere((b) => b.slot == slot);
+        slideId,
+      ).elements.whereType<TextBox>().singleWhere((b) => b.slot == slot);
 
   group('setTheme', () {
     test('sets the theme as one undo step', () {

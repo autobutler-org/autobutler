@@ -19,9 +19,9 @@ enum SlideTransitionDirection {
 
   /// The opposite direction, which stepping back through a show plays.
   SlideTransitionDirection get reversed => switch (this) {
-    left => right,
-    right => left,
-    up => down,
-    down => up,
-  };
+        left => right,
+        right => left,
+        up => down,
+        down => up,
+      };
 }

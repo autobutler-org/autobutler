@@ -16,10 +16,10 @@ void main() {
   );
 
   Presentation deckOf(ShapeElement shape) => Presentation(
-    slides: [
-      Slide(id: 's', elements: [shape]),
-    ],
-  );
+        slides: [
+          Slide(id: 's', elements: [shape]),
+        ],
+      );
 
   test('a preset and its adjust values round-trip with the keys sorted', () {
     final shape = ShapeElement(
@@ -50,11 +50,9 @@ void main() {
         ShapeContour(commands: [ShapeLine(1, 1)], fill: false, stroke: false),
       ],
     );
-    final read =
-        QslideCodec.decode(
-              QslideCodec.encode(deckOf(shape)),
-            ).slides.single.elements.single
-            as ShapeElement;
+    final read = QslideCodec.decode(
+      QslideCodec.encode(deckOf(shape)),
+    ).slides.single.elements.single as ShapeElement;
     expect(read, shape);
     expect(read.contours[1].fill, isFalse);
     expect(read.contours[1].stroke, isFalse);
@@ -66,11 +64,9 @@ void main() {
     expect(json.containsKey('preset'), isFalse);
     expect(json.containsKey('adjust'), isFalse);
     expect(json.containsKey('contours'), isFalse);
-    final read =
-        QslideCodec.decode(
-              QslideCodec.encode(deckOf(shape)),
-            ).slides.single.elements.single
-            as ShapeElement;
+    final read = QslideCodec.decode(
+      QslideCodec.encode(deckOf(shape)),
+    ).slides.single.elements.single as ShapeElement;
     expect(read.preset, isNull);
     expect(read.adjust, isEmpty);
     expect(read.contours, isEmpty);

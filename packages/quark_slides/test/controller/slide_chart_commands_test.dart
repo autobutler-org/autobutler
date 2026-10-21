@@ -6,19 +6,19 @@ import '../support/chart_sample.dart';
 /// A 1920×1080 deck with one slide `s` holding [sampleChart] (`chart`) and
 /// a shape `box`.
 Presentation deck() => Presentation(
-  slides: [
-    Slide(
-      id: 's',
-      elements: [
-        sampleChart(),
-        ShapeElement(
-          id: 'box',
-          frame: ElementFrame(x: 0, y: 0, width: 10, height: 10),
+      slides: [
+        Slide(
+          id: 's',
+          elements: [
+            sampleChart(),
+            ShapeElement(
+              id: 'box',
+              frame: ElementFrame(x: 0, y: 0, width: 10, height: 10),
+            ),
+          ],
         ),
       ],
-    ),
-  ],
-);
+    );
 
 void main() {
   late SlideDocumentController doc;

@@ -30,10 +30,10 @@ class ChartData {
   ChartData({
     List<String> categories = const [],
     List<ChartSeries> series = const [],
-  }) : categories = List.unmodifiable(categories),
-       series = List.unmodifiable([
-         for (final s in series) s.withLength(categories.length),
-       ]);
+  })  : categories = List.unmodifiable(categories),
+        series = List.unmodifiable([
+          for (final s in series) s.withLength(categories.length),
+        ]);
 
   /// The most series a chart may have.
   static const maxSeries = 50;
@@ -88,9 +88,9 @@ class ChartData {
             final num n => '$n',
             null => '',
             _ => throw QslideFormatException(
-              'expected a string',
-              path: '$path.categories[$i]',
-            ),
+                'expected a string',
+                path: '$path.categories[$i]',
+              ),
           },
       ],
       series: [
@@ -102,9 +102,9 @@ class ChartData {
 
   /// The `categories` and `series` fields of a chart's `.qslide` object.
   JsonMap toJson() => {
-    'categories': categories,
-    'series': [for (final s in series) s.toJson()],
-  };
+        'categories': categories,
+        'series': [for (final s in series) s.toJson()],
+      };
 
   /// Reads data from a grid of text, as a data sheet edits it: the first
   /// row holds the series names from its second cell on, the first column
@@ -147,10 +147,10 @@ class ChartData {
 
   /// The data as a grid of text; see [ChartData.fromGrid].
   List<List<String>> toGrid() => [
-    ['', for (final s in series) s.name],
-    for (final (c, category) in categories.indexed)
-      [category, for (final s in series) formatChartValue(s.values[c])],
-  ];
+        ['', for (final s in series) s.name],
+        for (final (c, category) in categories.indexed)
+          [category, for (final s in series) formatChartValue(s.values[c])],
+      ];
 
   /// Returns a copy with the given fields replaced.
   ChartData copyWith({List<String>? categories, List<ChartSeries>? series}) =>

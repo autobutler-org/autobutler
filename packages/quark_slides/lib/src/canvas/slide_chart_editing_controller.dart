@@ -133,25 +133,26 @@ class SlideChartEditingController extends ChangeNotifier {
     bool? showGridlines,
     String? categoryAxisTitle,
     String? valueAxisTitle,
-  }) => _onChart(
-    (doc, slide, id) => doc.setChartOptions(
-      slide,
-      id,
-      title: title,
-      showLegend: showLegend,
-      showDataLabels: showDataLabels,
-      showGridlines: showGridlines,
-      categoryAxisTitle: categoryAxisTitle,
-      valueAxisTitle: valueAxisTitle,
-    ),
-  );
+  }) =>
+      _onChart(
+        (doc, slide, id) => doc.setChartOptions(
+          slide,
+          id,
+          title: title,
+          showLegend: showLegend,
+          showDataLabels: showDataLabels,
+          showGridlines: showGridlines,
+          categoryAxisTitle: categoryAxisTitle,
+          valueAxisTitle: valueAxisTitle,
+        ),
+      );
 
   /// Adds a series after the last: [name] ("Series N" by default) with
   /// [values] (zeros by default).
   void addSeries({String? name, List<double>? values}) => _onChart(
-    (doc, slide, id) =>
-        doc.addChartSeries(slide, id, name: name, values: values),
-  );
+        (doc, slide, id) =>
+            doc.addChartSeries(slide, id, name: name, values: values),
+      );
 
   /// Removes series [index], unless it is the only one.
   void removeSeries(int index) {
@@ -167,7 +168,7 @@ class SlideChartEditingController extends ChangeNotifier {
   /// Runs [command] on the selected chart, when it may, and notifies.
   void _onChart(
     void Function(SlideDocumentController doc, String slideId, String chartId)
-    command,
+        command,
   ) {
     final doc = _doc;
     if (doc == null || !canEdit) return;

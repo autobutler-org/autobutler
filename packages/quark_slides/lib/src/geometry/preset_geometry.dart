@@ -54,13 +54,13 @@ Path contourPath(ShapeContour contour, Rect box) {
       case ShapeQuad(:final x1, :final y1, :final x, :final y):
         cursor.quad(_at(box, x1, y1), _at(box, x, y));
       case ShapeCubic(
-        :final x1,
-        :final y1,
-        :final x2,
-        :final y2,
-        :final x,
-        :final y,
-      ):
+          :final x1,
+          :final y1,
+          :final x2,
+          :final y2,
+          :final x,
+          :final y,
+        ):
         cursor.cubic(_at(box, x1, y1), _at(box, x2, y2), _at(box, x, y));
       case ShapeArc(:final wR, :final hR, :final start, :final swing):
         cursor.arc(wR * box.width, hR * box.height, start, swing);

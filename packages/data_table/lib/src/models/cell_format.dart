@@ -115,27 +115,28 @@ class CellFormat {
     CellAlign? Function()? align,
     CellNumberFormat? numberFormat,
     int? Function()? decimals,
-  }) => CellFormat(
-    bold: bold ?? this.bold,
-    italic: italic ?? this.italic,
-    textColor: textColor != null ? textColor() : this.textColor,
-    fillColor: fillColor != null ? fillColor() : this.fillColor,
-    align: align != null ? align() : this.align,
-    numberFormat: numberFormat ?? this.numberFormat,
-    decimals: decimals != null ? decimals() : this.decimals,
-  );
+  }) =>
+      CellFormat(
+        bold: bold ?? this.bold,
+        italic: italic ?? this.italic,
+        textColor: textColor != null ? textColor() : this.textColor,
+        fillColor: fillColor != null ? fillColor() : this.fillColor,
+        align: align != null ? align() : this.align,
+        numberFormat: numberFormat ?? this.numberFormat,
+        decimals: decimals != null ? decimals() : this.decimals,
+      );
 
   /// The fields that are set, by name; a plain format is an empty map.
   Map<String, Object> toJson() => {
-    if (bold) 'bold': true,
-    if (italic) 'italic': true,
-    if (textColor != null) 'textColor': textColor!,
-    if (fillColor != null) 'fillColor': fillColor!,
-    if (align != null) 'align': align!.name,
-    if (numberFormat != CellNumberFormat.general)
-      'numberFormat': numberFormat.name,
-    if (decimals != null) 'decimals': decimals!,
-  };
+        if (bold) 'bold': true,
+        if (italic) 'italic': true,
+        if (textColor != null) 'textColor': textColor!,
+        if (fillColor != null) 'fillColor': fillColor!,
+        if (align != null) 'align': align!.name,
+        if (numberFormat != CellNumberFormat.general)
+          'numberFormat': numberFormat.name,
+        if (decimals != null) 'decimals': decimals!,
+      };
 
   /// Reads what [toJson] wrote. A missing, mistyped or unknown value reads
   /// as the default for that field.
@@ -150,8 +151,7 @@ class CellFormat {
       textColor: argb(json['textColor']),
       fillColor: argb(json['fillColor']),
       align: named(CellAlign.values, json['align']),
-      numberFormat:
-          named(CellNumberFormat.values, json['numberFormat']) ??
+      numberFormat: named(CellNumberFormat.values, json['numberFormat']) ??
           CellNumberFormat.general,
       decimals: decimals is int && decimals >= 0
           ? decimals.clamp(0, maxDecimals)
@@ -172,14 +172,14 @@ class CellFormat {
 
   @override
   int get hashCode => Object.hash(
-    bold,
-    italic,
-    textColor,
-    fillColor,
-    align,
-    numberFormat,
-    decimals,
-  );
+        bold,
+        italic,
+        textColor,
+        fillColor,
+        align,
+        numberFormat,
+        decimals,
+      );
 
   @override
   String toString() => 'CellFormat(${toJson()})';

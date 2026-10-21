@@ -79,25 +79,25 @@ class SlideGroupView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Stack(
-    clipBehavior: Clip.none,
-    children: [
-      for (final child in group.children)
-        SlideElementView(
-          element: child,
-          style: style,
-          theme: theme,
-          label: elementLabel(child),
-          elementLabel: elementLabel,
-          imageBuilder: imageBuilder,
-          editingId: editingId,
-          editor: editor,
-          showPlaceholder: showPlaceholder,
-          excluded: excluded,
-          highlights: highlights,
-          cellLabel: cellLabel,
-          selectedCells: selectedCells,
-          chartDataLabel: chartDataLabel,
-        ),
-    ],
-  );
+        clipBehavior: Clip.none,
+        children: [
+          for (final child in group.children)
+            SlideElementView(
+              element: child,
+              style: style,
+              theme: theme,
+              label: elementLabel(child),
+              elementLabel: elementLabel,
+              imageBuilder: imageBuilder,
+              editingId: editingId,
+              editor: editor,
+              showPlaceholder: showPlaceholder,
+              excluded: excluded,
+              highlights: highlights,
+              cellLabel: cellLabel,
+              selectedCells: selectedCells,
+              chartDataLabel: chartDataLabel,
+            ),
+        ],
+      );
 }

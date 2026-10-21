@@ -104,13 +104,13 @@ class ColumnFilter {
 
   /// This filter in the form [ColumnFilter.fromJson] reads.
   Map<String, Object> toJson() => {
-    if (hiddenValues.isNotEmpty) 'hidden': [...hiddenValues],
-    if (condition != null)
-      'condition': {
-        'kind': condition!.kind.jsonName,
-        'value': condition!.value,
-      },
-  };
+        if (hiddenValues.isNotEmpty) 'hidden': [...hiddenValues],
+        if (condition != null)
+          'condition': {
+            'kind': condition!.kind.jsonName,
+            'value': condition!.value,
+          },
+      };
 
   /// The filter [toJson] saved, or null when [json] is not a map.
   ///

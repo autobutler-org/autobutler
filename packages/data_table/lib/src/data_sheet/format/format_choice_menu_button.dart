@@ -36,9 +36,8 @@ class FormatChoiceMenuButton extends StatelessWidget {
         child: IconButton(
           key: ValueKey(buttonKey),
           icon: Icon(icon),
-          onPressed: enabled
-              ? () => menu.isOpen ? menu.close() : menu.open()
-              : null,
+          onPressed:
+              enabled ? () => menu.isOpen ? menu.close() : menu.open() : null,
           iconSize: 20,
           visualDensity: VisualDensity.compact,
         ),

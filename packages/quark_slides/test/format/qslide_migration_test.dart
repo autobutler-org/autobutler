@@ -255,14 +255,12 @@ void main() {
     });
 
     test('a text role this version does not know reads as body', () {
-      final box =
-          SlideElement.fromJson({
-                'id': 't',
-                'type': 'text',
-                'frame': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
-                'textRole': 'caption',
-              }, r'$')
-              as TextBox;
+      final box = SlideElement.fromJson({
+        'id': 't',
+        'type': 'text',
+        'frame': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
+        'textRole': 'caption',
+      }, r'$') as TextBox;
       expect(box.textRole, ThemeTextRole.body);
     });
   });

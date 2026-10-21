@@ -21,7 +21,9 @@ import '../theme/theme_color.dart';
 /// ```
 class SlideColor {
   /// Creates a literal color from an `0xAARRGGBB` value.
-  const SlideColor(int argb) : _argb = argb, role = null;
+  const SlideColor(int argb)
+      : _argb = argb,
+        role = null;
 
   /// Creates a color that is [role] in whatever theme the deck uses.
   const SlideColor.theme(ThemeColor this.role) : _argb = 0;

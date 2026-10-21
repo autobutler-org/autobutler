@@ -32,7 +32,7 @@ class SlideToolController extends ChangeNotifier {
   /// Creates a controller holding [initial], [SlideCanvasTool.select] by
   /// default.
   SlideToolController([SlideCanvasTool initial = SlideCanvasTool.select])
-    : _tool = initial;
+      : _tool = initial;
 
   SlideCanvasTool _tool;
 

@@ -3,13 +3,13 @@ import 'package:quark_slides/quark_slides.dart';
 
 /// `Hello, world` with `world` bold, then a centered bullet `Second`.
 List<TextParagraph> sample() => const [
-  TextParagraph([TextRun('Hello, '), TextRun('world', bold: true)]),
-  TextParagraph(
-    [TextRun('Second', fontSize: 40)],
-    alignment: TextAlignment.center,
-    list: TextListStyle.bullet,
-  ),
-];
+      TextParagraph([TextRun('Hello, '), TextRun('world', bold: true)]),
+      TextParagraph(
+        [TextRun('Second', fontSize: 40)],
+        alignment: TextAlignment.center,
+        list: TextListStyle.bullet,
+      ),
+    ];
 
 String plain(List<TextParagraph> paragraphs) =>
     paragraphs.map((p) => p.plainText).join('\n');

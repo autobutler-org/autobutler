@@ -14,24 +14,25 @@ class CellRange {
     required this.left,
     required this.bottom,
     required this.right,
-  }) : assert(top >= 0 && left >= 0),
-       assert(bottom >= top && right >= left);
+  })  : assert(top >= 0 && left >= 0),
+        assert(bottom >= top && right >= left);
 
   /// The one cell at [row], [column].
   const CellRange.single(int row, int column)
-    : this(top: row, left: column, bottom: row, right: column);
+      : this(top: row, left: column, bottom: row, right: column);
 
   /// The smallest range holding both [a] and [b], in either order — what a
   /// drag from one cell to another selects.
   factory CellRange.spanning(
     ({int row, int column}) a,
     ({int row, int column}) b,
-  ) => CellRange(
-    top: math.min(a.row, b.row),
-    left: math.min(a.column, b.column),
-    bottom: math.max(a.row, b.row),
-    right: math.max(a.column, b.column),
-  );
+  ) =>
+      CellRange(
+        top: math.min(a.row, b.row),
+        left: math.min(a.column, b.column),
+        bottom: math.max(a.row, b.row),
+        right: math.max(a.column, b.column),
+      );
 
   /// The first row.
   final int top;
@@ -67,11 +68,11 @@ class CellRange {
 
   /// The smallest range holding this one and [other].
   CellRange union(CellRange other) => CellRange(
-    top: math.min(top, other.top),
-    left: math.min(left, other.left),
-    bottom: math.max(bottom, other.bottom),
-    right: math.max(right, other.right),
-  );
+        top: math.min(top, other.top),
+        left: math.min(left, other.left),
+        bottom: math.max(bottom, other.bottom),
+        right: math.max(right, other.right),
+      );
 
   /// The range with rows and columns swapped.
   CellRange get transposed =>

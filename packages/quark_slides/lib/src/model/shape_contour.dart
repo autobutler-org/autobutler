@@ -48,10 +48,10 @@ class ShapeContour {
 
   /// The outline as its `.qslide` object.
   JsonMap toJson() => {
-    'commands': [for (final command in commands) command.toJson()],
-    if (!fill) 'fill': false,
-    if (!stroke) 'stroke': false,
-  };
+        'commands': [for (final command in commands) command.toJson()],
+        if (!fill) 'fill': false,
+        if (!stroke) 'stroke': false,
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -79,16 +79,16 @@ sealed class ShapeCommand {
       'quad' => ShapeQuad(n('x1'), n('y1'), n('x'), n('y')),
       'cubic' => ShapeCubic(n('x1'), n('y1'), n('x2'), n('y2'), n('x'), n('y')),
       'arc' => ShapeArc(
-        wR: n('wR'),
-        hR: n('hR'),
-        start: n('start'),
-        swing: n('swing'),
-      ),
+          wR: n('wR'),
+          hR: n('hR'),
+          start: n('start'),
+          swing: n('swing'),
+        ),
       'close' => const ShapeClose(),
       _ => throw QslideFormatException(
-        'unknown path command',
-        path: '$path.op',
-      ),
+          'unknown path command',
+          path: '$path.op',
+        ),
     };
   }
 
@@ -159,12 +159,12 @@ final class ShapeQuad extends ShapeCommand {
 
   @override
   JsonMap toJson() => {
-    'op': 'quad',
-    'x1': jsonNumber(x1),
-    'y1': jsonNumber(y1),
-    'x': jsonNumber(x),
-    'y': jsonNumber(y),
-  };
+        'op': 'quad',
+        'x1': jsonNumber(x1),
+        'y1': jsonNumber(y1),
+        'x': jsonNumber(x),
+        'y': jsonNumber(y),
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -204,14 +204,14 @@ final class ShapeCubic extends ShapeCommand {
 
   @override
   JsonMap toJson() => {
-    'op': 'cubic',
-    'x1': jsonNumber(x1),
-    'y1': jsonNumber(y1),
-    'x2': jsonNumber(x2),
-    'y2': jsonNumber(y2),
-    'x': jsonNumber(x),
-    'y': jsonNumber(y),
-  };
+        'op': 'cubic',
+        'x1': jsonNumber(x1),
+        'y1': jsonNumber(y1),
+        'x2': jsonNumber(x2),
+        'y2': jsonNumber(y2),
+        'x': jsonNumber(x),
+        'y': jsonNumber(y),
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -253,12 +253,12 @@ final class ShapeArc extends ShapeCommand {
 
   @override
   JsonMap toJson() => {
-    'op': 'arc',
-    'wR': jsonNumber(wR),
-    'hR': jsonNumber(hR),
-    'start': jsonNumber(start),
-    'swing': jsonNumber(swing),
-  };
+        'op': 'arc',
+        'wR': jsonNumber(wR),
+        'hR': jsonNumber(hR),
+        'start': jsonNumber(start),
+        'swing': jsonNumber(swing),
+      };
 
   @override
   bool operator ==(Object other) =>
