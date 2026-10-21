@@ -35,7 +35,7 @@ var (
 // Like [ExportChat] it attaches the file to the live connection, and returns a
 // *db.UnsupportedError on a PostgreSQL-backed Quark (#2963).
 func ImportChat(ctx context.Context, liveDB *sql.DB, backupDir string) (ChatImportResult, error) {
-	rows, unmatched, err := chatBackup.restore(ctx, liveDB, backupDir)
+	rows, unmatched, _, err := chatBackup.restore(ctx, liveDB, backupDir)
 	if err != nil {
 		return ChatImportResult{}, err
 	}
