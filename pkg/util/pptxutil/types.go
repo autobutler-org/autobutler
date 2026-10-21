@@ -120,6 +120,8 @@ type qslideElement struct {
 	Stroke       *qslideStroke      `json:"stroke"`
 	CornerRadius *float64           `json:"cornerRadius"`
 	Opacity      *float64           `json:"opacity"`
+	// Shadow is a shape's or picture's drop shadow, or nil.
+	Shadow *qslideShadow `json:"shadow"`
 
 	// A picture.
 	Source  string `json:"source"`
@@ -184,6 +186,15 @@ type qslideStroke struct {
 	Color *string  `json:"color"`
 	Width *float64 `json:"width"`
 	Dash  any      `json:"dash"`
+}
+
+// qslideShadow is a drop shadow: its color, its offset on the slide and its
+// blur, in slide units.
+type qslideShadow struct {
+	Color string  `json:"color"`
+	X     float64 `json:"x"`
+	Y     float64 `json:"y"`
+	Blur  float64 `json:"blur"`
 }
 
 // qslideParagraph is one paragraph of a text box.

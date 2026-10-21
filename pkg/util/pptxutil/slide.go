@@ -1,6 +1,6 @@
 package pptxutil
 
-// cspell:ignore autofit Bez cust descr fmla Geom prst srgb xfrm
+// cspell:ignore autofit Bez cust descr fmla Geom prst Shdw srgb xfrm
 
 import (
 	"fmt"
@@ -186,7 +186,25 @@ func (s *slideWriter) writeShape(el qslideElement, geometry string) {
 	} else {
 		s.out.put(`<a:ln><a:noFill/></a:ln>`)
 	}
+	s.writeShadow(el.Shadow, opacity)
 	s.out.put(`</p:spPr></p:sp>`)
+}
+
+// writeShadow writes a drop shadow, at its color's alpha times opacity, as
+// the spPr's effect list. Its offset is the slide's, so it does not turn
+// with the shape. A color that cannot be resolved is black.
+func (s *slideWriter) writeShadow(shadow *qslideShadow, opacity float64) {
+	if shadow == nil {
+		return
+	}
+	c, ok := resolveColor(shadow.Color, s.theme)
+	if !ok {
+		c = color{rgb: "000000", alpha: 1}
+	}
+	s.out.printf(`<a:effectLst><a:outerShdw blurRad="%d" dist="%d" dir="%d" rotWithShape="0">`,
+		s.size(shadow.Blur), s.size(math.Hypot(shadow.X, shadow.Y)),
+		rotation(math.Atan2(shadow.Y, shadow.X)*180/math.Pi))
+	s.out.put(srgbColor(c, opacity) + `</a:outerShdw></a:effectLst>`)
 }
 
 // presetGeometry is the prstGeom markup for the preset prst.
@@ -358,7 +376,9 @@ func (s *slideWriter) writePicture(el qslideElement) {
 		s.out.put(`<p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>`)
 		s.xfrm(el.Frame, "", "")
 		s.out.put(`<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`)
-		s.out.put(solidFill(color{rgb: placeholderFill, alpha: 1}, 1) + `<a:ln><a:noFill/></a:ln></p:spPr></p:sp>`)
+		s.out.put(solidFill(color{rgb: placeholderFill, alpha: 1}, 1) + `<a:ln><a:noFill/></a:ln>`)
+		s.writeShadow(el.Shadow, 1)
+		s.out.put(`</p:spPr></p:sp>`)
 		return
 	}
 	rel, ok := s.rels[part.name]
@@ -375,7 +395,9 @@ func (s *slideWriter) writePicture(el qslideElement) {
 	s.out.put(`<p:blipFill><a:blip r:embed="` + rel + `"/>` + crop + `<a:stretch><a:fillRect/></a:stretch></p:blipFill>`)
 	s.out.put(`<p:spPr>`)
 	s.xfrm(frame, "", "")
-	s.out.put(`<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`)
+	s.out.put(`<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`)
+	s.writeShadow(el.Shadow, 1)
+	s.out.put(`</p:spPr></p:pic>`)
 }
 
 // fitPicture fits a picture iw by ih pixels to frame as fit says: "fill"
@@ -560,11 +582,16 @@ func (s *slideWriter) writeRunProps(tag string, run qslideRun, style runStyle) {
 
 // solidFill is c at its own alpha times opacity.
 func solidFill(c color, opacity float64) string {
+	return `<a:solidFill>` + srgbColor(c, opacity) + `</a:solidFill>`
+}
+
+// srgbColor is the srgbClr of c at its own alpha times opacity.
+func srgbColor(c color, opacity float64) string {
 	alpha := int64(math.Round(c.alpha * opacity * 100_000))
 	if alpha >= 100_000 {
-		return `<a:solidFill><a:srgbClr val="` + c.rgb + `"/></a:solidFill>`
+		return `<a:srgbClr val="` + c.rgb + `"/>`
 	}
-	return fmt.Sprintf(`<a:solidFill><a:srgbClr val="%s"><a:alpha val="%d"/></a:srgbClr></a:solidFill>`, c.rgb, max(alpha, 0))
+	return fmt.Sprintf(`<a:srgbClr val="%s"><a:alpha val="%d"/></a:srgbClr>`, c.rgb, max(alpha, 0))
 }
 
 // opacityOf is an element's opacity, 1 when unset, within 0 to 1.
