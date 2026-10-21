@@ -8,6 +8,7 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// with [end] exclusive. [localStart] and [localEnd] turn both into the local
 /// wall-clock times the calendar widgets draw. A series' [repeatUntil] is a
 /// date in the same way, and [localRepeatUntil] is it on the local calendar.
+/// [excludedStarts] are occurrence starts a series skips (#3215).
 class CalendarEvent {
   const CalendarEvent({
     required this.id,
@@ -20,6 +21,7 @@ class CalendarEvent {
     this.timeZone = '',
     this.repeat = CalendarRepeat.none,
     this.repeatUntil,
+    this.excludedStarts = const [],
     this.reminderMinutes,
     this.colorIndex = 0,
     this.owner = '',
@@ -42,6 +44,10 @@ class CalendarEvent {
       final String until => DateTime.parse(until).toUtc(),
       _ => null,
     },
+    excludedStarts: [
+      for (final raw in json['excludedStarts'] as List<dynamic>? ?? const [])
+        DateTime.parse(raw as String).toUtc(),
+    ],
     reminderMinutes: json['reminderMinutes'] as int?,
     colorIndex: json['colorIndex'] as int? ?? 0,
     owner: json['owner'] as String? ?? '',
@@ -69,6 +75,10 @@ class CalendarEvent {
   /// The last date the series repeats on, inclusive, as midnight UTC standing
   /// for that date; null repeats forever (#2524).
   final DateTime? repeatUntil;
+
+  /// Occurrence starts this series skips, in UTC. Empty when it skips none
+  /// (#3215).
+  final List<DateTime> excludedStarts;
 
   /// Minutes before the start its reminder is due, or null for none.
   final int? reminderMinutes;
@@ -112,6 +122,35 @@ class CalendarEvent {
     timeZone: timeZone,
     repeat: repeat,
     repeatUntil: repeatUntil,
+    excludedStarts: excludedStarts,
+    reminderMinutes: reminderMinutes,
+    colorIndex: colorIndex,
+    owner: owner,
+    mine: mine,
+  );
+
+  /// A copy with the given fields replaced. [clearRepeatUntil] drops the
+  /// last date; otherwise [repeatUntil] replaces it when set.
+  CalendarEvent copyWith({
+    int? id,
+    DateTime? start,
+    DateTime? end,
+    CalendarRepeat? repeat,
+    DateTime? repeatUntil,
+    bool clearRepeatUntil = false,
+    List<DateTime>? excludedStarts,
+  }) => CalendarEvent(
+    id: id ?? this.id,
+    title: title,
+    notes: notes,
+    location: location,
+    start: start ?? this.start,
+    end: end ?? this.end,
+    allDay: allDay,
+    timeZone: timeZone,
+    repeat: repeat ?? this.repeat,
+    repeatUntil: clearRepeatUntil ? null : (repeatUntil ?? this.repeatUntil),
+    excludedStarts: excludedStarts ?? this.excludedStarts,
     reminderMinutes: reminderMinutes,
     colorIndex: colorIndex,
     owner: owner,
@@ -141,6 +180,7 @@ class CalendarEvent {
   static Map<String, dynamic> requestBody(
     CalendarEventDraft draft, {
     String timeZone = '',
+    List<DateTime> excludedStarts = const [],
   }) {
     String date(DateTime local) =>
         DateTime.utc(local.year, local.month, local.day).toIso8601String();
@@ -157,6 +197,10 @@ class CalendarEvent {
       'timeZone': timeZone,
       'repeat': draft.repeat.name,
       'repeatUntil': until == null ? null : date(until),
+      if (draft.repeat != CalendarRepeat.none && excludedStarts.isNotEmpty)
+        'excludedStarts': [
+          for (final start in excludedStarts) start.toUtc().toIso8601String(),
+        ],
       'reminderMinutes': draft.reminderMinutes,
       'colorIndex': draft.colorIndex,
     };

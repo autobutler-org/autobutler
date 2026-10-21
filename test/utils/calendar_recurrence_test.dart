@@ -50,6 +50,23 @@ void main() {
     );
   });
 
+  test('a skipped start is left out (#3215)', () {
+    final practice = CalendarEvent(
+      id: 4,
+      title: 'Practice',
+      start: DateTime(2026, 9, 1, 15).toUtc(),
+      end: DateTime(2026, 9, 1, 16).toUtc(),
+      repeat: CalendarRepeat.weekly,
+      excludedStarts: [DateTime(2026, 9, 15, 15).toUtc()],
+    );
+    final items = expandOccurrences(
+      [practice],
+      DateTime(2026, 9, 1),
+      DateTime(2026, 9, 30),
+    );
+    expect(items.map((i) => i.start.day), [1, 8, 22, 29]);
+  });
+
   test('weekly lands on the same weekday every week', () {
     // A Monday in August: every Monday of the September grid, and not before
     // its first.

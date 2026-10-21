@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quark/controllers/calendar_controller.dart';
+import 'package:quark/models/calendar_move.dart';
 import 'package:quark/models/calendar_view.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/events_service.dart';
@@ -134,27 +136,35 @@ class _CalendarPageState extends State<CalendarPage>
   }
 
   /// Moves [item] to [start] and [end], a drag or a key press on the
-  /// timeline. A repeating event moves as a whole series, so that asks first.
-  /// The move then says where the event went, with an Undo (#3184).
+  /// timeline. A repeating event asks which occurrences move. The move then
+  /// says where it went, with an Undo that Ctrl+Z does too (#3184, #3215).
   Future<void> _reschedule(
     CalendarEventItem item,
     DateTime start,
     DateTime end,
   ) async {
     if (item.repeat != CalendarRepeat.none) {
-      final confirmed = await showDialog<bool>(
+      final scope = await showDialog<CalendarMoveScope>(
         context: context,
         builder: (ctx) => CalendarMoveSeriesDialog(
           title: item.title,
-          onConfirm: () => Navigator.of(ctx).pop(true),
-          onCancel: () => Navigator.of(ctx).pop(false),
+          onThisEvent: () => Navigator.of(ctx).pop(CalendarMoveScope.one),
+          onThisAndFollowing: () =>
+              Navigator.of(ctx).pop(CalendarMoveScope.following),
+          onAllEvents: () => Navigator.of(ctx).pop(CalendarMoveScope.all),
+          onCancel: () => Navigator.of(ctx).pop(),
         ),
       );
-      if (confirmed != true || !mounted) return;
+      if (scope == null || !mounted) return;
+      if (!await _move(() => _calendar.move(item, start, end, scope)) ||
+          !mounted) {
+        return;
+      }
+    } else if (!await _move(() => _calendar.reschedule(item, start, end)) ||
+        !mounted) {
+      return;
     }
-    if (!await _move(item, start, end) || !mounted) return;
     final use24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
-    final moved = item.rescheduled(start, end);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -168,21 +178,17 @@ class _CalendarPageState extends State<CalendarPage>
           action: SnackBarAction(
             key: const ValueKey('calendar_move_undo'),
             label: 'Undo',
-            onPressed: () => unawaited(_move(moved, item.start, item.end)),
+            onPressed: _undoKey,
           ),
         ),
       );
   }
 
-  /// Moves [item] to [start] and [end], and says so when the Quark would not
-  /// save it. Returns whether it saved.
-  Future<bool> _move(
-    CalendarEventItem item,
-    DateTime start,
-    DateTime end,
-  ) async {
+  /// Runs [action], and says so when the Quark would not save it. Returns
+  /// whether it saved.
+  Future<bool> _move(Future<void> Function() action) async {
     try {
-      await _calendar.reschedule(item, start, end);
+      await action();
       return true;
     } catch (e) {
       if (mounted) {
@@ -191,6 +197,23 @@ class _CalendarPageState extends State<CalendarPage>
         );
       }
       return false;
+    }
+  }
+
+  /// Puts the last move back. Ctrl+Z and the snackbar's Undo both call it.
+  void _undoKey() => unawaited(_undo());
+
+  Future<void> _undo() async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    try {
+      await _calendar.undo();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(Errors.message(e, 'undo the move'))),
+        );
+      }
     }
   }
 
@@ -215,86 +238,103 @@ class _CalendarPageState extends State<CalendarPage>
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _calendar,
-      builder: (context, _) {
-        final view = _calendar.view;
-        final error = _calendar.error;
-        return QuarkPageScaffold(
-          title: 'Calendar',
-          icon: QuarkIcons.calendar_month_outlined,
-          drawer: const AppDrawer(activeSection: QuarkDrawerSection.calendar),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: CalendarPersonFilter(
-                  mine: _calendar.mineOnly,
-                  person: _calendar.person,
-                  people: _calendar.people,
-                  onEveryone: () => _go(view, _calendar.anchor, everyone: true),
-                  onMine: () => _go(view, _calendar.anchor, mine: true),
-                  onPerson: (name) =>
-                      _go(view, _calendar.anchor, mine: false, person: name),
-                ),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true): _undoKey,
+        const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): _undoKey,
+      },
+      child: Focus(
+        autofocus: true,
+        child: ListenableBuilder(
+          listenable: _calendar,
+          builder: (context, _) {
+            final view = _calendar.view;
+            final error = _calendar.error;
+            return QuarkPageScaffold(
+              title: 'Calendar',
+              icon: QuarkIcons.calendar_month_outlined,
+              drawer: const AppDrawer(
+                activeSection: QuarkDrawerSection.calendar,
               ),
-              Expanded(
-                child: CalendarBody(
+              body: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: CalendarPersonFilter(
+                      mine: _calendar.mineOnly,
+                      person: _calendar.person,
+                      people: _calendar.people,
+                      onEveryone: () =>
+                          _go(view, _calendar.anchor, everyone: true),
+                      onMine: () => _go(view, _calendar.anchor, mine: true),
+                      onPerson: (name) => _go(
+                        view,
+                        _calendar.anchor,
+                        mine: false,
+                        person: name,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: CalendarBody(
+                      view: view,
+                      anchor: _calendar.anchor,
+                      days: _calendar.days,
+                      today: _calendar.today,
+                      now: _calendar.now,
+                      occurrences: _calendar.occurrences,
+                      upcoming: _calendar.upcoming,
+                      isInitialLoad: _calendar.isInitialLoad,
+                      isLoading: _calendar.isLoading,
+                      firstWeekday: _calendar.firstWeekday,
+                      dueReminder: _calendar.dueReminder,
+                      error: error == null
+                          ? null
+                          : Errors.message(error, 'load your calendar'),
+                      onPrevious: () => _go(view, _calendar.previousAnchor),
+                      onNext: () => _go(view, _calendar.nextAnchor),
+                      onRetry: manualRefresh,
+                      onDayTap: (day) => _go(CalendarView.day, day),
+                      onCreateOn: (day) =>
+                          _create(CalendarEventDraft.allDayOn(day)),
+                      onCreateAt: (start) =>
+                          _create(CalendarEventDraft.at(start)),
+                      onEventTap: _edit,
+                      onEventReschedule: _reschedule,
+                      onAddEvent: () => _create(_newDraft()),
+                      onDismissReminder: _calendar.dismissReminder,
+                    ),
+                  ),
+                ],
+              ),
+              appBar: QuarkAppBar(
+                label: 'Calendar',
+                icon: QuarkIcons.calendar_month_outlined,
+                onRefresh: manualRefresh,
+                isRefreshing: isRefreshing,
+                actions: [
+                  QuarkBarChip(
+                    key: const ValueKey('calendar_new_event'),
+                    icon: QuarkIcons.add_rounded,
+                    label: 'New event',
+                    onPressed: () => _create(_newDraft()),
+                  ),
+                ],
+                bottom: CalendarBarBottom(
                   view: view,
                   anchor: _calendar.anchor,
                   days: _calendar.days,
-                  today: _calendar.today,
-                  now: _calendar.now,
-                  occurrences: _calendar.occurrences,
-                  upcoming: _calendar.upcoming,
-                  isInitialLoad: _calendar.isInitialLoad,
-                  isLoading: _calendar.isLoading,
-                  firstWeekday: _calendar.firstWeekday,
-                  dueReminder: _calendar.dueReminder,
-                  error: error == null
-                      ? null
-                      : Errors.message(error, 'load your calendar'),
                   onPrevious: () => _go(view, _calendar.previousAnchor),
                   onNext: () => _go(view, _calendar.nextAnchor),
-                  onRetry: manualRefresh,
-                  onDayTap: (day) => _go(CalendarView.day, day),
-                  onCreateOn: (day) =>
-                      _create(CalendarEventDraft.allDayOn(day)),
-                  onCreateAt: (start) => _create(CalendarEventDraft.at(start)),
-                  onEventTap: _edit,
-                  onEventReschedule: _reschedule,
-                  onAddEvent: () => _create(_newDraft()),
-                  onDismissReminder: _calendar.dismissReminder,
+                  onToday: () => _go(view, _calendar.today),
+                  onViewSelected: widget.onViewSelected,
                 ),
               ),
-            ],
-          ),
-          appBar: QuarkAppBar(
-            label: 'Calendar',
-            icon: QuarkIcons.calendar_month_outlined,
-            onRefresh: manualRefresh,
-            isRefreshing: isRefreshing,
-            actions: [
-              QuarkBarChip(
-                key: const ValueKey('calendar_new_event'),
-                icon: QuarkIcons.add_rounded,
-                label: 'New event',
-                onPressed: () => _create(_newDraft()),
-              ),
-            ],
-            bottom: CalendarBarBottom(
-              view: view,
-              anchor: _calendar.anchor,
-              days: _calendar.days,
-              onPrevious: () => _go(view, _calendar.previousAnchor),
-              onNext: () => _go(view, _calendar.nextAnchor),
-              onToday: () => _go(view, _calendar.today),
-              onViewSelected: widget.onViewSelected,
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 }

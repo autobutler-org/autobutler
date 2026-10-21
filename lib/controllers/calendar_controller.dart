@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:quark/models/calendar_event.dart';
+import 'package:quark/models/calendar_move.dart';
 import 'package:quark/models/calendar_view.dart';
 import 'package:quark/models/user_account.dart';
 import 'package:quark/services/app_settings.dart';
@@ -15,7 +16,19 @@ import 'package:quark_widgets/quark_widgets.dart';
 typedef ListCalendarEventsFn =
     Future<List<CalendarEvent>> Function(DateTime from, DateTime to);
 typedef SaveCalendarEventFn =
-    Future<CalendarEvent> Function(CalendarEventDraft draft, {int? id});
+    Future<CalendarEvent> Function(
+      CalendarEventDraft draft, {
+      int? id,
+      List<DateTime> excludedStarts,
+    });
+typedef MoveCalendarEventFn =
+    Future<CalendarMoveResult> Function({
+      required int id,
+      required CalendarMoveScope scope,
+      required DateTime occurrenceStart,
+      required DateTime start,
+      required DateTime end,
+    });
 typedef DeleteCalendarEventFn = Future<void> Function(int id);
 typedef ListCalendarPeopleFn = Future<List<String>> Function();
 
@@ -57,9 +70,11 @@ int firstWeekdayForLocale(Locale locale) {
 /// both but never moves the view (#320): an event made in November leaves
 /// November on screen.
 ///
-/// A drag or a key press on the timeline goes through [reschedule] (#2526),
-/// which shows the event at its new times at once and saves behind that, so
-/// the event does not jump back while the save is on its way.
+/// A drag or a key press on the timeline goes through [reschedule] for a
+/// one-off event (#2526) and [move] for a repeating one (#3215). Both show
+/// the event at its new times at once and save behind that, so it does not
+/// jump back while the save is on its way. [undo] puts the last of those
+/// back, which is what Ctrl+Z and the snackbar share.
 ///
 /// It can narrow everything it shows to one person's events (#2544): the
 /// signed-in person's with [mineOnly], or a named person's with [person],
@@ -73,6 +88,7 @@ class CalendarController extends ChangeNotifier {
   CalendarController({
     this.listEvents = CalendarService.listEvents,
     this.saveEvent = CalendarService.saveEvent,
+    this.moveEvent = CalendarService.moveEvent,
     this.deleteEvent = CalendarService.deleteEvent,
     this.listPeople = listCalendarPeople,
     this.canListPeople = _isAdmin,
@@ -84,6 +100,7 @@ class CalendarController extends ChangeNotifier {
 
   final ListCalendarEventsFn listEvents;
   final SaveCalendarEventFn saveEvent;
+  final MoveCalendarEventFn moveEvent;
   final DeleteCalendarEventFn deleteEvent;
 
   /// Lists the people an admin can narrow the calendar to.
@@ -120,11 +137,23 @@ class CalendarController extends ChangeNotifier {
   String? _person;
   List<String> _people = const [];
 
-  // Events [reschedule] has moved whose save and reload have not come back,
+  // Events a move has changed whose save and reload have not come back,
   // by id: what the views show in place of the loaded event until they do.
   final Map<int, CalendarEvent> _moved = {};
 
-  // The last save [reschedule] queued, so the next one waits its turn.
+  // One-offs and new series a move is showing before the save comes back.
+  final List<CalendarEvent> _pending = [];
+
+  // Created events an undo is hiding until the reload drops them.
+  final Set<int> _hidden = {};
+
+  // Ids for [_pending] events. Negative, so they never match a stored id.
+  int _tempId = 0;
+
+  // The last completed move. The next move replaces it: undo is one step.
+  _UndoMove? _undo;
+
+  // The last save a move queued, so the next one waits its turn.
   Future<void> _saves = Future.value();
 
   /// Whether only the signed-in person's events are shown.
@@ -144,10 +173,25 @@ class CalendarController extends ChangeNotifier {
     return person == null || event.owner == person;
   }
 
-  /// The events of [events] to show: those passing the filter, each where
-  /// [reschedule] last moved it.
-  Iterable<CalendarEvent> _shown(List<CalendarEvent> events) =>
-      events.where(_shows).map((event) => _moved[event.id] ?? event);
+  /// The events of [events] to show: those passing the filter, each where a
+  /// move last put it, plus a move's one-off or new series that is not saved
+  /// yet.
+  Iterable<CalendarEvent> _shown(List<CalendarEvent> events) sync* {
+    final seen = <int>{};
+    for (final event in events) {
+      if (_hidden.contains(event.id) || !_shows(event)) continue;
+      seen.add(event.id);
+      yield _moved[event.id] ?? event;
+    }
+    for (final extra in _pending) {
+      if (_hidden.contains(extra.id) ||
+          !_shows(extra) ||
+          seen.contains(extra.id)) {
+        continue;
+      }
+      yield extra;
+    }
+  }
 
   /// The view on show.
   CalendarView get view => _view;
@@ -350,20 +394,27 @@ class CalendarController extends ChangeNotifier {
 
   /// Saves [draft] as a new event, or over event [id], then reloads without
   /// moving the view. Throws what the save threw, for the editor to word.
+  ///
+  /// A series keeps the starts it skips. A one-off has none. Editing the
+  /// series' first start in the form does not shift those skipped starts.
   Future<void> save(CalendarEventDraft draft, {int? id}) async {
-    await saveEvent(draft, id: id);
+    final kept = id == null || draft.repeat == CalendarRepeat.none
+        ? const <DateTime>[]
+        : eventById(id)?.excludedStarts ?? const [];
+    await saveEvent(draft, id: id, excludedStarts: kept);
     await refresh();
   }
 
   /// Moves the occurrence [item] to run from [start] to [end]: a drag or a
-  /// key press on the timeline (#2526).
+  /// key press on a one-off event (#2526).
   ///
   /// The stored event moves as far as the occurrence did, as many dates and
-  /// to the same times of day, so a repeating event moves as a whole series,
-  /// as it does from the editor. The views show the move at once. The save
+  /// to the same times of day. The views show the move at once. The save
   /// follows, after any move asked before it so the last one asked is the
   /// last one saved, and the reload after the save. Throws what the save
-  /// threw, with the event back where the Quark has it.
+  /// threw, with the event back where the Quark has it. A repeating event
+  /// goes through [move] instead, which asks the Quark to move one
+  /// occurrence, the ones after it, or the series.
   Future<void> reschedule(
     CalendarEventItem item,
     DateTime start,
@@ -376,13 +427,21 @@ class CalendarController extends ChangeNotifier {
       start: _carried(draft.start, item.start, start),
       end: _carried(draft.end, item.end, end),
     );
-    final shown = event.movedTo(moved.start, moved.end);
+    final shown = event
+        .movedTo(moved.start, moved.end)
+        .copyWith(
+          excludedStarts: _shift(event.excludedStarts, item.start, start),
+        );
     _moved[event.id] = shown;
     notifyListeners();
-    final save = _saves.then((_) => saveEvent(moved, id: event.id));
+    final save = _saves.then(
+      (_) =>
+          saveEvent(moved, id: event.id, excludedStarts: shown.excludedStarts),
+    );
     _saves = save.then((_) {}, onError: (_) {});
     try {
       await save;
+      _undo = _UndoMove(event, null);
     } finally {
       // A later move of the same event shows until its own save is back.
       if (identical(_moved[event.id], shown)) {
@@ -392,6 +451,194 @@ class CalendarController extends ChangeNotifier {
       }
     }
   }
+
+  /// Moves the occurrence [item] of a repeating event to run from [start] to
+  /// [end], for [scope] (#3215).
+  ///
+  /// The views show the move at once: one occurrence leaves a gap and a
+  /// one-off, the ones after it end the series the day before and start a
+  /// new one, and the whole series shifts. Moving the first occurrence and
+  /// the ones after it is the whole series, since a series cannot end before
+  /// it starts. The save follows, then the reload. Throws what the save
+  /// threw, with the event back where the Quark has it.
+  Future<void> move(
+    CalendarEventItem item,
+    DateTime start,
+    DateTime end,
+    CalendarMoveScope scope,
+  ) async {
+    final event = _moved[item.eventId] ?? eventById(item.eventId);
+    if (event == null) return;
+    final effective =
+        scope == CalendarMoveScope.following &&
+            _sameMinute(item.start, event.localStart)
+        ? CalendarMoveScope.all
+        : scope;
+    final preview = _preview(event, item, start, end, effective);
+    _moved[event.id] = preview.series;
+    final pending = preview.created;
+    if (pending != null) _pending.add(pending);
+    notifyListeners();
+    final save = _saves.then(
+      (_) => moveEvent(
+        id: event.id,
+        scope: scope,
+        occurrenceStart: item.start,
+        start: start,
+        end: end,
+      ),
+    );
+    _saves = save.then((_) {}, onError: (_) {});
+    try {
+      final result = await save;
+      _undo = _UndoMove(event, result.created?.id);
+    } on Object {
+      if (identical(_moved[event.id], preview.series)) _moved.remove(event.id);
+      if (pending != null) _pending.remove(pending);
+      notifyListeners();
+      rethrow;
+    } finally {
+      if (identical(_moved[event.id], preview.series)) {
+        await refresh();
+        if (identical(_moved[event.id], preview.series)) {
+          _moved.remove(event.id);
+        }
+        if (pending != null) _pending.remove(pending);
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Puts the last [reschedule] or [move] back: the series as it was, and
+  /// the created event deleted when there was one. Does nothing when there
+  /// is nothing to put back. Throws what the save or the delete threw.
+  Future<void> undo() async {
+    final step = _undo;
+    if (step == null) return;
+    _undo = null;
+    final created = step.createdId;
+    if (created != null) _hidden.add(created);
+    _moved[step.series.id] = step.series;
+    _pending.clear();
+    notifyListeners();
+    try {
+      await saveEvent(
+        step.series.toDraft(),
+        id: step.series.id,
+        excludedStarts: step.series.excludedStarts,
+      );
+      if (created != null) await deleteEvent(created);
+    } on Object {
+      _hidden.remove(created);
+      if (identical(_moved[step.series.id], step.series)) {
+        _moved.remove(step.series.id);
+      }
+      _undo = step;
+      rethrow;
+    } finally {
+      await refresh();
+      _hidden.clear();
+      if (identical(_moved[step.series.id], step.series)) {
+        _moved.remove(step.series.id);
+      }
+      notifyListeners();
+    }
+  }
+
+  /// What the views show for moving [event]'s [item] to [start] and [end].
+  ({CalendarEvent series, CalendarEvent? created}) _preview(
+    CalendarEvent event,
+    CalendarEventItem item,
+    DateTime start,
+    DateTime end,
+    CalendarMoveScope scope,
+  ) {
+    switch (scope) {
+      case CalendarMoveScope.all:
+        final draft = event.toDraft();
+        final moved = draft.copyWith(
+          start: _carried(draft.start, item.start, start),
+          end: _carried(draft.end, item.end, end),
+        );
+        return (
+          series: event
+              .movedTo(moved.start, moved.end)
+              .copyWith(
+                excludedStarts: _shift(event.excludedStarts, item.start, start),
+              ),
+          created: null,
+        );
+      case CalendarMoveScope.one:
+        return (
+          series: event.copyWith(
+            excludedStarts: [...event.excludedStarts, item.start.toUtc()],
+          ),
+          created: _standalone(event, start, end),
+        );
+      case CalendarMoveScope.following:
+        final day = DateTime(item.start.year, item.start.month, item.start.day);
+        final prev = DateTime(day.year, day.month, day.day - 1);
+        final at = item.start.toUtc();
+        return (
+          series: event.copyWith(
+            repeatUntil: DateTime.utc(prev.year, prev.month, prev.day),
+            excludedStarts: [
+              for (final skipped in event.excludedStarts)
+                if (skipped.toUtc().isBefore(at)) skipped,
+            ],
+          ),
+          created: _standalone(event, start, end).copyWith(
+            repeat: event.repeat,
+            repeatUntil: event.repeatUntil,
+            clearRepeatUntil: event.repeatUntil == null,
+            excludedStarts: _shift(
+              [
+                for (final skipped in event.excludedStarts)
+                  if (skipped.toUtc().isAfter(at)) skipped,
+              ],
+              item.start,
+              start,
+            ),
+          ),
+        );
+    }
+  }
+
+  /// [event]'s fields as a one-off running from [start] to [end].
+  CalendarEvent _standalone(
+    CalendarEvent event,
+    DateTime start,
+    DateTime end,
+  ) => CalendarEvent(
+    id: --_tempId,
+    title: event.title,
+    notes: event.notes,
+    location: event.location,
+    start: start.toUtc(),
+    end: end.toUtc(),
+    allDay: event.allDay,
+    timeZone: event.timeZone,
+    reminderMinutes: event.reminderMinutes,
+    colorIndex: event.colorIndex,
+    owner: event.owner,
+    mine: event.mine,
+  );
+
+  /// [starts] carried as far as an occurrence went from [from] to [to].
+  List<DateTime> _shift(List<DateTime> starts, DateTime from, DateTime to) {
+    if (starts.isEmpty) return const [];
+    return [
+      for (final start in starts) _carried(start.toLocal(), from, to).toUtc(),
+    ];
+  }
+
+  /// Whether [a] and [b] are the same minute on the local clock.
+  bool _sameMinute(DateTime a, DateTime b) =>
+      a.year == b.year &&
+      a.month == b.month &&
+      a.day == b.day &&
+      a.hour == b.hour &&
+      a.minute == b.minute;
 
   /// [time] carried as far as an occurrence went [from] one time [to]
   /// another: as many dates on, at [to]'s time of day. Dates are counted in
@@ -450,4 +697,16 @@ class CalendarController extends ChangeNotifier {
     _ticker?.cancel();
     super.dispose();
   }
+}
+
+/// The last completed move, so one undo can put the series back and delete
+/// the event the move created.
+class _UndoMove {
+  const _UndoMove(this.series, this.createdId);
+
+  /// The series as it was before the move.
+  final CalendarEvent series;
+
+  /// The one-off or new series the move created, or null.
+  final int? createdId;
 }
