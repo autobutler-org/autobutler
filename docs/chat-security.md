@@ -86,6 +86,12 @@ A mid-range phone's browser is several times slower than that, so 64 MiB keeps a
 budget with room to spare, and it doesn't ask a phone's browser for a large WebAssembly allocation. The cost is
 stored with each wrap, so it can go up later without breaking existing ones.
 
+The stored cost is bounded (#3648), because the Quark could lower it before a password change and get the next
+wrap at a cost far cheaper to guess offline. The app refuses a stored cost below `KdfParams.standard` or above
+`KdfParams.ceiling` (10 passes, 1 GiB) before deriving anything, and a re-wrap never copies a cost below the
+standard. `vaultutil.ValidateKey` holds a vault key to the same schemes and bounds, so an honest Quark never
+stores a weaker one.
+
 ### Lifecycle
 
 | When                          | What the app does                                                                     |
