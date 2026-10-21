@@ -43,7 +43,10 @@ abstract final class QslideCodec {
   /// tables (`TableElement`); it is a new version rather than an additive
   /// change so that a reader that would draw a table as an unknown
   /// placeholder asks to be updated instead. Version 5 added charts
-  /// (`ChartElement`), a new version for the same reason.
+  /// (`ChartElement`), a new version for the same reason. A path shape —
+  /// a preset name and its adjust values, or a list of contours — is
+  /// additive at version 5 and does not bump it: a reader that does not
+  /// know the kind keeps the element as an unknown element.
   static const schemaVersion = 5;
 
   /// The file extension, including the dot.

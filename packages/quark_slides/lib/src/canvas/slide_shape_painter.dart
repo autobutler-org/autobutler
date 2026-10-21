@@ -21,26 +21,26 @@ class SlideShapePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = shapePath(
-      shape.kind,
-      Offset.zero & size,
-      cornerRadius: shape.cornerRadius,
-    );
     final fill = shape.fill;
-    if (fill != null) {
-      canvas.drawPath(path, Paint()..color = Color(fill.resolve(theme)));
-    }
     final stroke = shape.stroke;
-    if (stroke != null && stroke.width > 0) {
-      final intervals = dashIntervals(stroke.dash, stroke.width);
-      canvas.drawPath(
-        intervals == null ? path : dashedPath(path, intervals),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = stroke.width
-          ..strokeJoin = StrokeJoin.miter
-          ..color = Color(stroke.color.resolve(theme)),
-      );
+    for (final piece in shapePieces(shape, Offset.zero & size)) {
+      if (piece.fill && fill != null) {
+        canvas.drawPath(
+          piece.path,
+          Paint()..color = Color(fill.resolve(theme)),
+        );
+      }
+      if (piece.stroke && stroke != null && stroke.width > 0) {
+        final intervals = dashIntervals(stroke.dash, stroke.width);
+        canvas.drawPath(
+          intervals == null ? piece.path : dashedPath(piece.path, intervals),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = stroke.width
+            ..strokeJoin = StrokeJoin.miter
+            ..color = Color(stroke.color.resolve(theme)),
+        );
+      }
     }
   }
 
