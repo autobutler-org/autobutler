@@ -20,25 +20,25 @@ typedef SlideToolLabel = String Function(SlideCanvasTool tool);
 /// // 'Insert ellipse'
 /// ```
 String defaultSlideToolLabel(SlideCanvasTool tool) => switch (tool.mode) {
-      SlideToolMode.select => 'Select',
-      SlideToolMode.text => 'Insert text box',
-      SlideToolMode.shape => 'Insert ${shapeKindName(tool.shapeKind!)}',
-      SlideToolMode.line => tool.arrow ? 'Insert arrow' : 'Insert line',
-      SlideToolMode.image => 'Insert image',
-      SlideToolMode.table => 'Insert ${tool.rows} by ${tool.columns} table',
-      SlideToolMode.chart =>
-        'Insert ${chartKindName(tool.chartKind!).toLowerCase()}',
-    };
+  SlideToolMode.select => 'Select',
+  SlideToolMode.text => 'Insert text box',
+  SlideToolMode.shape => 'Insert ${shapeKindName(tool.shapeKind!)}',
+  SlideToolMode.line => tool.arrow ? 'Insert arrow' : 'Insert line',
+  SlideToolMode.image => 'Insert image',
+  SlideToolMode.table => 'Insert ${tool.rows} by ${tool.columns} table',
+  SlideToolMode.chart =>
+    'Insert ${chartKindName(tool.chartKind!).toLowerCase()}',
+};
 
 /// The English name of a [kind] of shape, lowercase: "rounded rectangle",
 /// "right arrow".
 String shapeKindName(ShapeKind kind) => switch (kind) {
-      ShapeKind.rectangle => 'rectangle',
-      ShapeKind.roundedRectangle => 'rounded rectangle',
-      ShapeKind.ellipse => 'ellipse',
-      ShapeKind.triangle => 'triangle',
-      ShapeKind.diamond => 'diamond',
-      ShapeKind.arrow => 'right arrow',
-      ShapeKind.star => 'star',
-      ShapeKind.path => 'freeform',
-    };
+  ShapeKind.rectangle => 'rectangle',
+  ShapeKind.roundedRectangle => 'rounded rectangle',
+  ShapeKind.ellipse => 'ellipse',
+  ShapeKind.triangle => 'triangle',
+  ShapeKind.diamond => 'diamond',
+  ShapeKind.arrow => 'right arrow',
+  ShapeKind.star => 'star',
+  ShapeKind.path => 'freeform',
+};

@@ -41,8 +41,8 @@ Finder _key(String key) => find.byKey(ValueKey(key));
 
 /// The text widget inside cell [r],[c].
 Text _cellText(WidgetTester tester, int r, int c) => tester.widget<Text>(
-      find.descendant(of: _key('r${r}c$c'), matching: find.byType(Text)),
-    );
+  find.descendant(of: _key('r${r}c$c'), matching: find.byType(Text)),
+);
 
 /// Opens the format menu on a narrow screen; a no-op on a wide one.
 Future<void> _openMenuIfNarrow(WidgetTester tester, Size size) async {
@@ -68,8 +68,9 @@ void main() {
     group('DataSheetFormatBar ($name)', () {
       testWidgets('is disabled until a cell is selected', (tester) async {
         final c = await _pump(tester, size);
-        final control =
-            size == _narrow ? _key('format_menu') : _key('format_bold');
+        final control = size == _narrow
+            ? _key('format_menu')
+            : _key('format_bold');
         expect(control, findsOneWidget);
         await tester.tap(control, warnIfMissed: false);
         await tester.pumpAndSettle();
@@ -230,10 +231,7 @@ void main() {
     final box = tester.widget<Container>(
       find.descendant(of: _key('r1c1'), matching: find.byType(Container)),
     );
-    expect(
-      (box.decoration as BoxDecoration).color,
-      const Color(0xFF10B981),
-    );
+    expect((box.decoration as BoxDecoration).color, const Color(0xFF10B981));
   });
 
   testWidgets('a toggle shows the highlighted cell\'s state', (tester) async {
@@ -244,10 +242,7 @@ void main() {
     );
     c.selection.setHighlighted(0, 0);
     await tester.pump();
-    expect(
-      tester.widget<IconButton>(_key('format_italic')).isSelected,
-      isTrue,
-    );
+    expect(tester.widget<IconButton>(_key('format_italic')).isSelected, isTrue);
     c.selection.setHighlighted(0, 1);
     await tester.pump();
     expect(

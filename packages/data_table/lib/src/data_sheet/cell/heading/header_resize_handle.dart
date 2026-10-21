@@ -85,14 +85,18 @@ class _HeaderResizeHandleState extends State<HeaderResizeHandle> {
           // The edge follows the pointer from where it went down, so the
           // drag slop is not lost from the new size.
           dragStartBehavior: DragStartBehavior.down,
-          onHorizontalDragStart:
-              horizontal ? (_) => widget.onResizeStart() : null,
-          onHorizontalDragUpdate:
-              horizontal ? (d) => widget.onResizeDelta(d.delta.dx) : null,
-          onVerticalDragStart:
-              horizontal ? null : (_) => widget.onResizeStart(),
-          onVerticalDragUpdate:
-              horizontal ? null : (d) => widget.onResizeDelta(d.delta.dy),
+          onHorizontalDragStart: horizontal
+              ? (_) => widget.onResizeStart()
+              : null,
+          onHorizontalDragUpdate: horizontal
+              ? (d) => widget.onResizeDelta(d.delta.dx)
+              : null,
+          onVerticalDragStart: horizontal
+              ? null
+              : (_) => widget.onResizeStart(),
+          onVerticalDragUpdate: horizontal
+              ? null
+              : (d) => widget.onResizeDelta(d.delta.dy),
           onDoubleTap: widget.onAutoFit,
           child: Container(
             color: active

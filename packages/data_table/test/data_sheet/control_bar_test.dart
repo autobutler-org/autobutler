@@ -75,8 +75,11 @@ void main() {
 
     expect(controller.rowCount, 3);
     expect(controller.cellAt(2, 0).value, '');
-    expect(controller.cellAt(1, 0).value, 'b',
-        reason: 'appended, not inserted');
+    expect(
+      controller.cellAt(1, 0).value,
+      'b',
+      reason: 'appended, not inserted',
+    );
 
     await tester.tap(find.byTooltip('Insert row at top'));
     await tester.pump();
@@ -98,8 +101,11 @@ void main() {
     await tester.pump();
 
     expect(controller.colCount, 3);
-    expect(controller.cellAt(0, 1).value, 'b',
-        reason: 'appended, not inserted');
+    expect(
+      controller.cellAt(0, 1).value,
+      'b',
+      reason: 'appended, not inserted',
+    );
 
     await tester.tap(find.byTooltip('Insert column at left'));
     await tester.pump();

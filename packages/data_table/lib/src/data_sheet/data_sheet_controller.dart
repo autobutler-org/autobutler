@@ -231,8 +231,8 @@ class DataSheetController extends ChangeNotifier {
     final formula = selection.hasActiveCell
         ? activeCellEditingController.text
         : r >= 0 && c >= 0 && r < rowCount && c < colCount
-            ? cellAt(r, c).value.toString()
-            : '';
+        ? cellAt(r, c).value.toString()
+        : '';
     return formulaReferenceCellColors(
       formula,
       rowCount: rowCount,
@@ -255,13 +255,14 @@ class DataSheetController extends ChangeNotifier {
   }
 
   static String _formatFormulaValue(FormulaValue v) => switch (v) {
-        NumberValue(:final value) => value == value.truncateToDouble()
-            ? value.toInt().toString()
-            : value.toString(),
-        StringValue(:final value) => value,
-        BoolValue(:final value) => value ? 'TRUE' : 'FALSE',
-        ErrorValue(:final code) => code,
-      };
+    NumberValue(:final value) =>
+      value == value.truncateToDouble()
+          ? value.toInt().toString()
+          : value.toString(),
+    StringValue(:final value) => value,
+    BoolValue(:final value) => value ? 'TRUE' : 'FALSE',
+    ErrorValue(:final code) => code,
+  };
 
   /// A controller over [table].
   ///
@@ -290,7 +291,8 @@ class DataSheetController extends ChangeNotifier {
         .toList();
     final colCount = table.rows.isNotEmpty ? table.rows.first.cells.length : 0;
     final rowCount = table.rows.length;
-    final widths = columnWidths ??
+    final widths =
+        columnWidths ??
         columnFlex?.map((f) => f * kDefaultColumnWidth).toList();
     return DataSheetController._(
       table,
@@ -343,8 +345,9 @@ class DataSheetController extends ChangeNotifier {
         if (formats is List)
           for (final entry in formats)
             if (entry is Map && entry['row'] is int && entry['col'] is int)
-              (entry['row'] as int, entry['col'] as int):
-                  CellFormat.fromJson(entry),
+              (entry['row'] as int, entry['col'] as int): CellFormat.fromJson(
+                entry,
+              ),
       },
     );
   }
@@ -353,30 +356,29 @@ class DataSheetController extends ChangeNotifier {
   /// reads: pixel sizes, the frozen counts, the column filters, and the cell
   /// formats (a list of `{row, col, ...format}`, one per formatted cell).
   Map<String, Object> layoutToJson() => {
-        'columnWidths': List<double>.from(columnWidths),
-        'rowHeights': List<double>.from(rowHeights),
-        'frozenRows': _frozenRows,
-        'frozenColumns': _frozenColumns,
-        'filters': [
-          for (final MapEntry(key: col, value: filter) in _filters.entries)
-            {'column': col, ...filter.toJson()},
-        ],
-        'formats': [
-          for (final MapEntry(key: (r, c), value: format) in _formats.entries)
-            {'row': r, 'col': c, ...format.toJson()},
-        ],
-      };
+    'columnWidths': List<double>.from(columnWidths),
+    'rowHeights': List<double>.from(rowHeights),
+    'frozenRows': _frozenRows,
+    'frozenColumns': _frozenColumns,
+    'filters': [
+      for (final MapEntry(key: col, value: filter) in _filters.entries)
+        {'column': col, ...filter.toJson()},
+    ],
+    'formats': [
+      for (final MapEntry(key: (r, c), value: format) in _formats.entries)
+        {'row': r, 'col': c, ...format.toJson()},
+    ],
+  };
 
   static List<double> _fitSizes(
     List<double>? sizes,
     int count,
     double fallback,
     double min,
-  ) =>
-      List<double>.generate(count, (i) {
-        final size = sizes != null && i < sizes.length ? sizes[i] : fallback;
-        return size.isFinite ? size.clamp(min, double.infinity) : fallback;
-      }, growable: true);
+  ) => List<double>.generate(count, (i) {
+    final size = sizes != null && i < sizes.length ? sizes[i] : fallback;
+    return size.isFinite ? size.clamp(min, double.infinity) : fallback;
+  }, growable: true);
 
   // -------------------------------------------------------------------------
   // Read-only accessors
@@ -435,20 +437,18 @@ class DataSheetController extends ChangeNotifier {
 
   /// The rows of [range] the filters leave visible, clamped to the sheet.
   List<int> _visibleIn(CellRange range) => [
-        for (var r = max(range.top, 0);
-            r <= min(range.bottom, rowCount - 1);
-            r++)
-          if (!isRowHidden(r)) r,
-      ];
+    for (var r = max(range.top, 0); r <= min(range.bottom, rowCount - 1); r++)
+      if (!isRowHidden(r)) r,
+  ];
 
   /// The raw values inside [range], row by row, skipping hidden rows.
   List<List<String>> valuesIn(CellRange range) => [
-        for (final r in _visibleIn(range))
-          [
-            for (var c = range.left; c <= range.right; c++)
-              cellAt(r, c).value.toString(),
-          ],
-      ];
+    for (final r in _visibleIn(range))
+      [
+        for (var c = range.left; c <= range.right; c++)
+          cellAt(r, c).value.toString(),
+      ],
+  ];
 
   /// Writes [values] into [rows], one value row per sheet row, starting at
   /// column [left], as one undo step, or as part of the caller's when
@@ -526,7 +526,8 @@ class DataSheetController extends ChangeNotifier {
     final blockRows = values.length;
     final blockCols = values.first.length;
     final targetRows = _visibleIn(target).length;
-    final tiles = targetRows > 0 &&
+    final tiles =
+        targetRows > 0 &&
         targetRows % blockRows == 0 &&
         target.colCount % blockCols == 0;
     final rows = tiles ? targetRows : blockRows;
@@ -684,15 +685,17 @@ class DataSheetController extends ChangeNotifier {
   void duplicateRow(int index) {
     if (index < 0 || index >= rowCount) return;
     _pushSnapshot();
-    final sourceCells =
-        _rows[index].value.map((c) => DataCell(c.value.toString())).toList();
+    final sourceCells = _rows[index].value
+        .map((c) => DataCell(c.value.toString()))
+        .toList();
     table.rows.insert(index + 1, DataRow(List<DataCell>.from(sourceCells)));
     _rows.insert(
       index + 1,
       ValueNotifier<List<DataCell>>(List<DataCell>.from(sourceCells)),
     );
-    final srcH =
-        index < rowHeights.length ? rowHeights[index] : kDefaultRowHeight;
+    final srcH = index < rowHeights.length
+        ? rowHeights[index]
+        : kDefaultRowHeight;
     rowHeights.insert(index + 1, srcH);
     if (index < _hidden.length) _hidden.insert(index + 1, false);
     _remapFormats(row: (r) => r > index ? r + 1 : r);
@@ -791,8 +794,9 @@ class DataSheetController extends ChangeNotifier {
         ..insert(index + 1, DataCell(_rows[i].value[index].value.toString()));
       _rows[i].value = updated;
     }
-    final srcWidth =
-        index < columnWidths.length ? columnWidths[index] : kDefaultColumnWidth;
+    final srcWidth = index < columnWidths.length
+        ? columnWidths[index]
+        : kDefaultColumnWidth;
     if (index < columnWidths.length) {
       columnWidths.insert(index + 1, srcWidth);
     } else {
@@ -901,7 +905,7 @@ class DataSheetController extends ChangeNotifier {
       if (text.isEmpty) continue;
       final colW =
           (c < columnWidths.length ? columnWidths[c] : kDefaultColumnWidth) -
-              horizontalOverhead;
+          horizontalOverhead;
       final tp = TextPainter(
         text: TextSpan(text: text, style: style),
         textDirection: ui.TextDirection.ltr,
@@ -953,9 +957,9 @@ class DataSheetController extends ChangeNotifier {
   /// The indexes of the rows the filters leave visible, top to bottom. Frozen
   /// rows are always among them.
   List<int> get visibleRows => _visibleRows ??= List.unmodifiable([
-        for (var r = 0; r < rowCount; r++)
-          if (!isRowHidden(r)) r,
-      ]);
+    for (var r = 0; r < rowCount; r++)
+      if (!isRowHidden(r)) r,
+  ]);
 
   /// True when the filters hide row [row].
   bool isRowHidden(int row) => row >= 0 && row < _hidden.length && _hidden[row];
@@ -1040,14 +1044,14 @@ class DataSheetController extends ChangeNotifier {
   /// Copy the value of cell `(fromRow, col)` to all rows below it in the same
   /// column.
   void fillDown(int fromRow, int col) => fillDownRange(
-        CellRange(top: fromRow, left: col, bottom: fromRow, right: col),
-      );
+    CellRange(top: fromRow, left: col, bottom: fromRow, right: col),
+  );
 
   /// Copy the value of cell `(row, fromCol)` to all columns to the right of it
   /// in the same row.
   void fillRight(int row, int fromCol) => fillRightRange(
-        CellRange(top: row, left: fromCol, bottom: row, right: fromCol),
-      );
+    CellRange(top: row, left: fromCol, bottom: row, right: fromCol),
+  );
 
   /// Copy [range]'s top visible row down through the rest of the range's
   /// visible rows, as one undo step. A range one row tall fills its columns
@@ -1262,9 +1266,11 @@ class DataSheetController extends ChangeNotifier {
   ) {
     final updates = <(int, int), CellFormat>{
       for (final r in _visibleIn(range))
-        for (var c = max(range.left, 0);
-            c <= min(range.right, colCount - 1);
-            c++)
+        for (
+          var c = max(range.left, 0);
+          c <= min(range.right, colCount - 1);
+          c++
+        )
           (r, c): change(formatAt(r, c)),
     }..removeWhere((cell, format) => format == formatAt(cell.$1, cell.$2));
     if (updates.isEmpty) return;
@@ -1319,8 +1325,9 @@ class DataSheetController extends ChangeNotifier {
       final bv = table.rows[b].cells[col].value.toString();
       final n1 = num.tryParse(av);
       final n2 = num.tryParse(bv);
-      final cmp =
-          (n1 != null && n2 != null) ? n1.compareTo(n2) : av.compareTo(bv);
+      final cmp = (n1 != null && n2 != null)
+          ? n1.compareTo(n2)
+          : av.compareTo(bv);
       return ascending ? cmp : -cmp;
     });
     final sortedTableRows = indices.map((i) => table.rows[i]).toList();
@@ -1426,15 +1433,19 @@ class DataSheetController extends ChangeNotifier {
 
   /// Return the table as a RFC-4180-compliant CSV string.
   String exportCsv() {
-    return _rows.map((row) {
-      return row.value.map((cell) {
-        final v = cell.value.toString();
-        if (v.contains(',') || v.contains('"') || v.contains('\n')) {
-          return '"${v.replaceAll('"', '""')}"';
-        }
-        return v;
-      }).join(',');
-    }).join('\n');
+    return _rows
+        .map((row) {
+          return row.value
+              .map((cell) {
+                final v = cell.value.toString();
+                if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+                  return '"${v.replaceAll('"', '""')}"';
+                }
+                return v;
+              })
+              .join(',');
+        })
+        .join('\n');
   }
 
   /// Replace the entire table with rows parsed from [csv].

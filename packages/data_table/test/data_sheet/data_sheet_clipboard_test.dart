@@ -19,9 +19,9 @@ class _FakeClipboard {
   String? text;
 
   DataSheetClipboard get clipboard => DataSheetClipboard(
-        read: () async => text,
-        write: (value) async => text = value,
-      );
+    read: () async => text,
+    write: (value) async => text = value,
+  );
 }
 
 Future<(DataSheetController, _FakeClipboard)> _pump(

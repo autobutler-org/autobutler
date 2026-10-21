@@ -37,13 +37,12 @@ class DataSheetFreezeMenuButton extends StatelessWidget {
       String label,
       bool checked,
       VoidCallback action,
-    ) =>
-        CheckedPopupMenuItem<VoidCallback>(
-          key: ValueKey(key),
-          value: action,
-          checked: checked,
-          child: Text(label),
-        );
+    ) => CheckedPopupMenuItem<VoidCallback>(
+      key: ValueKey(key),
+      value: action,
+      checked: checked,
+      child: Text(label),
+    );
 
     return PopupMenuButton<VoidCallback>(
       key: const ValueKey('data_sheet_freeze'),
@@ -55,7 +54,11 @@ class DataSheetFreezeMenuButton extends StatelessWidget {
         for (final n in [0, 1, 2])
           item(
             'freeze_rows_$n',
-            switch (n) { 0 => 'No rows', 1 => '1 row', _ => '$n rows' },
+            switch (n) {
+              0 => 'No rows',
+              1 => '1 row',
+              _ => '$n rows',
+            },
             rows == n,
             () => controller.setFrozenRows(n),
           ),

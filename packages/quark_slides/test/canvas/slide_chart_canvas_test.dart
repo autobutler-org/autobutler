@@ -36,26 +36,25 @@ void main() {
       doc.presentation.slideById('s')!.findElement(id)! as ChartElement;
 
   Finder chartPaint() => find.descendant(
-        of: elementKey('chart'),
-        matching: find.byWidgetPredicate(
-          (w) => w is CustomPaint && w.painter is SlideChartPainter,
-        ),
-      );
+    of: elementKey('chart'),
+    matching: find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.painter is SlideChartPainter,
+    ),
+  );
 
   Future<void> pump(
     WidgetTester tester,
     Size size, {
     double textScale = 1,
     SlideCanvasInteraction interaction = SlideCanvasInteraction.editable,
-  }) =>
-      pumpCanvas(
-        tester,
-        doc,
-        size: size,
-        textScale: textScale,
-        chartEditing: charts,
-        interaction: interaction,
-      );
+  }) => pumpCanvas(
+    tester,
+    doc,
+    size: size,
+    textScale: textScale,
+    chartEditing: charts,
+    interaction: interaction,
+  );
 
   group('drawing', () {
     testBothViewports('paints the chart in its frame', (tester, size) async {
@@ -75,8 +74,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testBothViewports('a 200% text scale changes nothing',
-        (tester, size) async {
+    testBothViewports('a 200% text scale changes nothing', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size, textScale: 2);
       expect(tester.takeException(), isNull);
       expect(chartPaint(), findsOne);
@@ -102,8 +103,10 @@ void main() {
       );
     });
 
-    testBothViewports('every kind paints, with odd data and tiny frames',
-        (tester, size) async {
+    testBothViewports('every kind paints, with odd data and tiny frames', (
+      tester,
+      size,
+    ) async {
       for (final kind in ChartKind.values) {
         for (final data in [
           sampleChart().data,
@@ -125,23 +128,33 @@ void main() {
             sampleChart().frame,
             ElementFrame(x: 10, y: 10, width: 30, height: 20),
           ]) {
-            doc.controller.load(chartDeck(
-              chart:
-                  sampleChart().copyWith(kind: kind, data: data, frame: frame),
-            ));
+            doc.controller.load(
+              chartDeck(
+                chart: sampleChart().copyWith(
+                  kind: kind,
+                  data: data,
+                  frame: frame,
+                ),
+              ),
+            );
             await pump(tester, size);
-            expect(tester.takeException(), isNull,
-                reason: '$kind ${data.categories.length} $frame');
+            expect(
+              tester.takeException(),
+              isNull,
+              reason: '$kind ${data.categories.length} $frame',
+            );
           }
         }
       }
     });
 
     testWidgets('a pie paints a slice per positive value', (tester) async {
-      doc.controller.load(chartDeck(
-        theme: SlideThemes.light,
-        chart: sampleChart().copyWith(kind: ChartKind.pie),
-      ));
+      doc.controller.load(
+        chartDeck(
+          theme: SlideThemes.light,
+          chart: sampleChart().copyWith(kind: ChartKind.pie),
+        ),
+      );
       await pump(tester, wideViewport);
       expect(
         tester.renderObject(chartPaint()),
@@ -154,8 +167,10 @@ void main() {
   });
 
   group('editing as an element', () {
-    testBothViewports('selects, moves and resizes with the handles',
-        (tester, size) async {
+    testBothViewports('selects, moves and resizes with the handles', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await tester.tap(elementKey('chart'));
       await tester.pump();
@@ -166,7 +181,9 @@ void main() {
       expect(chart().frame.x, greaterThan(360));
       final moved = chart().frame;
       await tester.drag(
-          handleKey(SlideHandle.bottomRight), const Offset(-30, -30));
+        handleKey(SlideHandle.bottomRight),
+        const Offset(-30, -30),
+      );
       await tester.pump();
       expect(chart().frame.width, lessThan(moved.width));
       expect(chart().data, sampleChart().data);
@@ -190,13 +207,15 @@ void main() {
     testWidgets('reads a summary, and the data as its value', (tester) async {
       final handle = tester.ensureSemantics();
       await pump(tester, wideViewport);
-      const summary = 'Bar chart titled Sales, 2 series, 3 categories; '
+      const summary =
+          'Bar chart titled Sales, 2 series, 3 categories; '
           'highest value 42 in Q3';
       expect(find.bySemanticsLabel(summary), findsOne);
       expect(
         tester.getSemantics(find.bySemanticsLabel(summary)),
         isSemantics(
-          value: 'Q1: Revenue 12, Costs 8. Q2: Revenue 30, Costs 12.5. '
+          value:
+              'Q1: Revenue 12, Costs 8. Q2: Revenue 30, Costs 12.5. '
               'Q3: Revenue 42, Costs 20.',
           hasTapAction: true,
         ),
@@ -209,8 +228,10 @@ void main() {
   });
 
   group('the chart tool', () {
-    testBothViewports('a click places a sample chart and selects it',
-        (tester, size) async {
+    testBothViewports('a click places a sample chart and selects it', (
+      tester,
+      size,
+    ) async {
       doc.controller.load(Presentation(slides: [Slide(id: 's')]));
       await pump(tester, size);
       harness(tester).useTool(const SlideCanvasTool.chart(ChartKind.line));
@@ -246,8 +267,9 @@ void main() {
   });
 
   group('SlideChartEditingController', () {
-    testWidgets('follows the selected chart and sends one-step commands',
-        (tester) async {
+    testWidgets('follows the selected chart and sends one-step commands', (
+      tester,
+    ) async {
       var notified = 0;
       charts.addListener(() => notified++);
       await pump(tester, wideViewport);
@@ -287,16 +309,19 @@ void main() {
     });
 
     testWidgets('cannot remove the only series', (tester) async {
-      doc.controller.load(chartDeck(
-        chart: sampleChart().copyWith(
+      doc.controller.load(
+        chartDeck(
+          chart: sampleChart().copyWith(
             kind: ChartKind.pie,
             data: ChartData(
               categories: const ['a'],
               series: [
-                ChartSeries(values: const [1])
+                ChartSeries(values: const [1]),
               ],
-            )),
-      ));
+            ),
+          ),
+        ),
+      );
       await pump(tester, wideViewport);
       harness(tester).select({'chart'});
       await tester.pump();
@@ -305,8 +330,9 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testWidgets('selectOnly reports the chart but edits nothing',
-        (tester) async {
+    testWidgets('selectOnly reports the chart but edits nothing', (
+      tester,
+    ) async {
       await pump(
         tester,
         wideViewport,

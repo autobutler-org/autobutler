@@ -4,32 +4,32 @@ import 'package:quark_slides/quark_slides.dart';
 /// A 1920×1080 deck with one slide `s` holding a text box `t`, a shape
 /// `box`, a line `l` and an image `pic`.
 Presentation deck() => Presentation(
-      slides: [
-        Slide(
-          id: 's',
-          elements: [
-            TextBox(
-              id: 't',
-              frame: ElementFrame(x: 0, y: 0, width: 200, height: 50),
-            ),
-            ShapeElement(
-              id: 'box',
-              frame: ElementFrame(x: 0, y: 100, width: 200, height: 100),
-              fill: SlideColor.black,
-            ),
-            LineElement(
-              id: 'l',
-              frame: ElementFrame(x: 0, y: 300, width: 200, height: 0),
-            ),
-            ImageElement(
-              id: 'pic',
-              frame: ElementFrame(x: 0, y: 400, width: 200, height: 100),
-              source: 'photos/a.jpg',
-            ),
-          ],
+  slides: [
+    Slide(
+      id: 's',
+      elements: [
+        TextBox(
+          id: 't',
+          frame: ElementFrame(x: 0, y: 0, width: 200, height: 50),
+        ),
+        ShapeElement(
+          id: 'box',
+          frame: ElementFrame(x: 0, y: 100, width: 200, height: 100),
+          fill: SlideColor.black,
+        ),
+        LineElement(
+          id: 'l',
+          frame: ElementFrame(x: 0, y: 300, width: 200, height: 0),
+        ),
+        ImageElement(
+          id: 'pic',
+          frame: ElementFrame(x: 0, y: 400, width: 200, height: 100),
+          source: 'photos/a.jpg',
         ),
       ],
-    );
+    ),
+  ],
+);
 
 void main() {
   late SlideDocumentController doc;
@@ -110,12 +110,10 @@ void main() {
 
   group('insertImage', () {
     test('a large picture is centered and fitted within 60% of the slide', () {
-      final id = doc.insertImage(
-        's',
-        const QuarkFileImage('photos/dog.jpg'),
-        (width: 4000, height: 3000),
-        altText: 'A dog',
-      );
+      final id = doc.insertImage('s', const QuarkFileImage('photos/dog.jpg'), (
+        width: 4000,
+        height: 3000,
+      ), altText: 'A dog');
       final image = element(id) as ImageElement;
       // 60% of 1080 is 648 tall, so 864 wide at 4:3.
       expect(image.frame.height, closeTo(648, 1e-9));
@@ -129,37 +127,30 @@ void main() {
     });
 
     test('a wide picture is held by the slide width', () {
-      final id = doc.insertImage(
-        's',
-        const QuarkFileImage('pano.jpg'),
-        (width: 10000, height: 1000),
-      );
+      final id = doc.insertImage('s', const QuarkFileImage('pano.jpg'), (
+        width: 10000,
+        height: 1000,
+      ));
       final frame = element(id).frame;
       expect(frame.width, closeTo(1152, 1e-9));
       expect(frame.height, closeTo(115.2, 1e-9));
     });
 
     test('a small picture keeps its own size', () {
-      final id = doc.insertImage(
-        's',
-        const UploadedAssetImage('icon7'),
-        (width: 64, height: 32),
-      );
+      final id = doc.insertImage('s', const UploadedAssetImage('icon7'), (
+        width: 64,
+        height: 32,
+      ));
       final image = element(id) as ImageElement;
-      expect(
-        image.frame,
-        ElementFrame(x: 928, y: 524, width: 64, height: 32),
-      );
+      expect(image.frame, ElementFrame(x: 928, y: 524, width: 64, height: 32));
       expect(image.source, 'asset:icon7');
     });
 
     test('a drawn box is filled as far as the aspect ratio allows', () {
-      final id = doc.insertImage(
-        's',
-        const QuarkFileImage('a.jpg'),
-        (width: 64, height: 32),
-        within: ElementFrame(x: 100, y: 100, width: 400, height: 400),
-      );
+      final id = doc.insertImage('s', const QuarkFileImage('a.jpg'), (
+        width: 64,
+        height: 32,
+      ), within: ElementFrame(x: 100, y: 100, width: 400, height: 400));
       expect(
         element(id).frame,
         ElementFrame(x: 100, y: 200, width: 400, height: 200),
@@ -168,11 +159,10 @@ void main() {
 
     test('a size without area is refused', () {
       expect(
-        () => doc.insertImage(
-          's',
-          const QuarkFileImage('a.jpg'),
-          (width: 0, height: 10),
-        ),
+        () => doc.insertImage('s', const QuarkFileImage('a.jpg'), (
+          width: 0,
+          height: 10,
+        )),
         throwsArgumentError,
       );
       expect(doc.canUndo, isFalse);
@@ -209,31 +199,26 @@ void main() {
 
     test('a field left out is left alone; null clears what can be cleared', () {
       doc.styleElements('s', ['box'], const ElementStyle(cornerRadius: 12.0));
-      doc.styleElements(
-        's',
-        ['box'],
-        const ElementStyle(kind: ShapeKind.roundedRectangle),
-      );
+      doc.styleElements('s', [
+        'box',
+      ], const ElementStyle(kind: ShapeKind.roundedRectangle));
       var shape = element('box') as ShapeElement;
       expect(shape.cornerRadius, 12);
       expect(shape.kind, ShapeKind.roundedRectangle);
       expect(shape.fill, SlideColor.black);
-      doc.styleElements(
-        's',
-        ['box'],
-        const ElementStyle(cornerRadius: null, stroke: null),
-      );
+      doc.styleElements('s', [
+        'box',
+      ], const ElementStyle(cornerRadius: null, stroke: null));
       shape = element('box') as ShapeElement;
       expect(shape.cornerRadius, isNull);
       expect(shape.stroke, isNull);
     });
 
     test('caps apply to lines only', () {
-      doc.styleElements(
-        's',
-        ['box', 'l'],
-        const ElementStyle(startCap: LineCap.arrow, endCap: LineCap.arrow),
-      );
+      doc.styleElements('s', [
+        'box',
+        'l',
+      ], const ElementStyle(startCap: LineCap.arrow, endCap: LineCap.arrow));
       final line = element('l') as LineElement;
       expect((line.startCap, line.endCap), (LineCap.arrow, LineCap.arrow));
     });

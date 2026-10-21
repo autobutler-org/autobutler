@@ -32,21 +32,30 @@ void main() {
         isFalse,
       );
       expect(
-        shapePath(ShapeKind.roundedRectangle, box, cornerRadius: 0)
-            .contains(nearCorner),
+        shapePath(
+          ShapeKind.roundedRectangle,
+          box,
+          cornerRadius: 0,
+        ).contains(nearCorner),
         isTrue,
       );
       expect(
-        shapePath(ShapeKind.roundedRectangle, box, cornerRadius: 2)
-            .contains(nearCorner),
+        shapePath(
+          ShapeKind.roundedRectangle,
+          box,
+          cornerRadius: 2,
+        ).contains(nearCorner),
         isTrue,
       );
     });
 
     test('a corner radius never passes half the shorter side', () {
       // 1000 would turn the box inside out; it is held to 50, a stadium.
-      final stadium =
-          shapePath(ShapeKind.roundedRectangle, box, cornerRadius: 1000);
+      final stadium = shapePath(
+        ShapeKind.roundedRectangle,
+        box,
+        cornerRadius: 1000,
+      );
       expect(stadium.getBounds(), box);
       expect(stadium.contains(box.center), isTrue);
       expect(stadium.contains(Offset(box.left + 60, box.top + 1)), isTrue);
@@ -95,10 +104,10 @@ void main() {
   test('lineEnds runs corner to corner, or across when flipped', () {
     const size = Size(40, 30);
     expect(lineEnds(size), (Offset.zero, const Offset(40, 30)));
-    expect(
-      lineEnds(size, flipped: true),
-      (const Offset(0, 30), const Offset(40, 0)),
-    );
+    expect(lineEnds(size, flipped: true), (
+      const Offset(0, 30),
+      const Offset(40, 0),
+    ));
   });
 
   group('arrowheadPath', () {
@@ -118,9 +127,11 @@ void main() {
 
     test('is empty when the line has no length', () {
       expect(
-        arrowheadPath(const Offset(5, 5), const Offset(5, 5), 2)
-            .computeMetrics()
-            .isEmpty,
+        arrowheadPath(
+          const Offset(5, 5),
+          const Offset(5, 5),
+          2,
+        ).computeMetrics().isEmpty,
         isTrue,
       );
     });

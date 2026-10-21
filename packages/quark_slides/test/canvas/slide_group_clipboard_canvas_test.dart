@@ -62,8 +62,10 @@ void main() {
   }
 
   group('grouping', () {
-    testBothViewports('Ctrl+G groups, Ctrl+Shift+G ungroups, a step each',
-        (tester, size) async {
+    testBothViewports('Ctrl+G groups, Ctrl+Shift+G ungroups, a step each', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final id = await groupBoxAndBall(tester);
       expect(slide().elementById(id), isA<GroupElement>());
@@ -78,8 +80,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testBothViewports('a group drags as one, in one undo step',
-        (tester, size) async {
+    testBothViewports('a group drags as one, in one undo step', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final id = await groupBoxAndBall(tester);
       await drag(tester, const Offset(500, 625), const Offset(100, 50));
@@ -90,8 +94,10 @@ void main() {
       expect(undoAll(doc), 2);
     });
 
-    testBothViewports('a group resizes as one, scaling its children',
-        (tester, size) async {
+    testBothViewports('a group resizes as one, scaling its children', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final id = await groupBoxAndBall(tester);
       final before = frameOf(doc, id);
@@ -110,16 +116,20 @@ void main() {
       expect(undoAll(doc), 2);
     });
 
-    testBothViewports('double tap enters, Escape leaves, a child drags alone',
-        (tester, size) async {
+    testBothViewports('double tap enters, Escape leaves, a child drags alone', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final id = await groupBoxAndBall(tester);
       await doubleTap(tester, slideToGlobal(tester, const Offset(1500, 650)));
       expect(harness(tester).selection, {'ball'});
       // Handles follow the child, not the group.
       final handle = tester.getCenter(handleKey(SlideHandle.bottomRight));
-      expect(handle.dx,
-          closeTo(slideToGlobal(tester, const Offset(1700, 850)).dx, 1));
+      expect(
+        handle.dx,
+        closeTo(slideToGlobal(tester, const Offset(1700, 850)).dx, 1),
+      );
       // Far enough to pass touch slop on a phone.
       await drag(tester, const Offset(1500, 650), const Offset(-300, 0));
       expect(slide().frameOnSlide('ball')!.x, closeTo(1000, 1));
@@ -138,8 +148,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testBothViewports('Enter enters a selected group from the keyboard',
-        (tester, size) async {
+    testBothViewports('Enter enters a selected group from the keyboard', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size);
       final id = await groupBoxAndBall(tester);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -155,8 +167,10 @@ void main() {
       expect(harness(tester).selection, {id});
     });
 
-    testBothViewports('a group reads to a screen reader with its children',
-        (tester, size) async {
+    testBothViewports('a group reads to a screen reader with its children', (
+      tester,
+      size,
+    ) async {
       final semantics = tester.ensureSemantics();
       await pumpCanvas(tester, doc, size: size);
       await groupBoxAndBall(tester);
@@ -167,8 +181,10 @@ void main() {
   });
 
   group('clipboard', () {
-    testBothViewports('Ctrl+C then Ctrl+V pastes 16 past, then 32',
-        (tester, size) async {
+    testBothViewports('Ctrl+C then Ctrl+V pastes 16 past, then 32', (
+      tester,
+      size,
+    ) async {
       final clipboard = scratch();
       await pumpCanvas(tester, doc, size: size, clipboard: clipboard);
       await tester.tap(elementKey('box'));
@@ -185,8 +201,10 @@ void main() {
       expect(undoAll(doc), 2);
     });
 
-    testBothViewports('Ctrl+X cuts in one step and Ctrl+V puts it back',
-        (tester, size) async {
+    testBothViewports('Ctrl+X cuts in one step and Ctrl+V puts it back', (
+      tester,
+      size,
+    ) async {
       final clipboard = scratch();
       await pumpCanvas(tester, doc, size: size, clipboard: clipboard);
       await tester.tap(elementKey('pic'));
@@ -200,12 +218,16 @@ void main() {
       expect((pasted! as ImageElement).source, 'photos/dog.jpg');
       // Nothing is left where it was, so it lands in its old place.
       expect(
-          pasted.frame, ElementFrame(x: 900, y: 900, width: 200, height: 150));
+        pasted.frame,
+        ElementFrame(x: 900, y: 900, width: 200, height: 150),
+      );
       expect(undoAll(doc), 2);
     });
 
-    testBothViewports('Ctrl+D duplicates a group, one step',
-        (tester, size) async {
+    testBothViewports('Ctrl+D duplicates a group, one step', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(tester, doc, size: size, clipboard: scratch());
       final id = await groupBoxAndBall(tester);
       await press(tester, LogicalKeyboardKey.keyD);
@@ -215,10 +237,16 @@ void main() {
       expect(undoAll(doc), 2);
     });
 
-    testBothViewports('text from another app pastes as a text box',
-        (tester, size) async {
-      await pumpCanvas(tester, doc,
-          size: size, clipboard: scratch('From the web'));
+    testBothViewports('text from another app pastes as a text box', (
+      tester,
+      size,
+    ) async {
+      await pumpCanvas(
+        tester,
+        doc,
+        size: size,
+        clipboard: scratch('From the web'),
+      );
       await tester.tapAt(slideToGlobal(tester, const Offset(100, 1000)));
       await tester.pump();
       await press(tester, LogicalKeyboardKey.keyV);

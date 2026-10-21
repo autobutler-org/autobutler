@@ -166,12 +166,15 @@ class _SlideParagraphFieldState extends State<SlideParagraphField>
       LogicalKeyboardKey.keyZ when command =>
         keys.isShiftPressed ? session.redo : session.undo,
       LogicalKeyboardKey.keyY when command => session.redo,
-      LogicalKeyboardKey.keyB when command => () =>
-          session.toggle(TextToggle.bold),
-      LogicalKeyboardKey.keyI when command => () =>
-          session.toggle(TextToggle.italic),
-      LogicalKeyboardKey.keyU when command => () =>
-          session.toggle(TextToggle.underline),
+      LogicalKeyboardKey.keyB when command => () => session.toggle(
+        TextToggle.bold,
+      ),
+      LogicalKeyboardKey.keyI when command => () => session.toggle(
+        TextToggle.italic,
+      ),
+      LogicalKeyboardKey.keyU when command => () => session.toggle(
+        TextToggle.underline,
+      ),
       LogicalKeyboardKey.keyA when command => session.selectAll,
       LogicalKeyboardKey.arrowUp
           when !keys.isShiftPressed &&
@@ -191,8 +194,8 @@ class _SlideParagraphFieldState extends State<SlideParagraphField>
       LogicalKeyboardKey.arrowLeft
           when !keys.isShiftPressed && i > 0 && caret == _controller.lead =>
         () => session.moveToParagraph(i - 1, atEnd: true),
-      LogicalKeyboardKey.delete when i < last && caret == length => () =>
-          session.joinNext(i),
+      LogicalKeyboardKey.delete when i < last && caret == length =>
+        () => session.joinNext(i),
       _ => null,
     };
     if (action == null) return KeyEventResult.ignored;
@@ -205,18 +208,17 @@ class _SlideParagraphFieldState extends State<SlideParagraphField>
         TargetPlatform.iOS => cupertinoTextSelectionHandleControls,
         TargetPlatform.macOS => cupertinoDesktopTextSelectionHandleControls,
         TargetPlatform.android ||
-        TargetPlatform.fuchsia =>
-          materialTextSelectionHandleControls,
+        TargetPlatform.fuchsia => materialTextSelectionHandleControls,
         TargetPlatform.linux ||
-        TargetPlatform.windows =>
-          desktopTextSelectionHandleControls,
+        TargetPlatform.windows => desktopTextSelectionHandleControls,
       };
 
   void _onSelectionChanged(
     TextSelection selection,
     SelectionChangedCause? cause,
   ) {
-    final show = _gestures.shouldShowSelectionHandles &&
+    final show =
+        _gestures.shouldShowSelectionHandles &&
         cause != SelectionChangedCause.keyboard &&
         (cause == SelectionChangedCause.longPress ||
             _controller.text.isNotEmpty);
@@ -259,12 +261,13 @@ class _SlideParagraphFieldState extends State<SlideParagraphField>
             showSelectionHandles: _showHandles,
             onSelectionChanged: _onSelectionChanged,
             rendererIgnoresPointer: true,
-            paintCursorAboveText: platform == TargetPlatform.iOS ||
+            paintCursorAboveText:
+                platform == TargetPlatform.iOS ||
                 platform == TargetPlatform.macOS,
             contextMenuBuilder: (context, state) =>
                 AdaptiveTextSelectionToolbar.editableText(
-              editableTextState: state,
-            ),
+                  editableTextState: state,
+                ),
           ),
         ),
       ),

@@ -70,7 +70,11 @@ class DataSheetSelectionModel extends ChangeNotifier {
       range ??
       (hasActiveCell
           ? CellRange.fromCorners(
-              _activeRow, _activeCol, _activeRow, _activeCol)
+              _activeRow,
+              _activeCol,
+              _activeRow,
+              _activeCol,
+            )
           : null);
 
   /// Mark [row]/[col] as the active editing cell and clear any highlight.

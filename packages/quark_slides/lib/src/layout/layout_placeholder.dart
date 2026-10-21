@@ -55,21 +55,21 @@ class LayoutPlaceholder {
 
   /// The slot's frame on a slide of [size].
   ElementFrame frameOn(SlideSize size) => ElementFrame(
-        x: left * size.width,
-        y: top * size.height,
-        width: width * size.width,
-        height: height * size.height,
-      );
+    x: left * size.width,
+    y: top * size.height,
+    width: width * size.width,
+    height: height * size.height,
+  );
 
   /// An empty text box filling the slot on a slide of [size], with [id].
   TextBox emptyBox(String id, SlideSize size) => TextBox(
-        id: id,
-        frame: frameOn(size),
-        paragraphs: [TextParagraph(const [], alignment: alignment)],
-        anchor: anchor,
-        autoFit: TextAutoFit.shrink,
-        placeholder: prompt,
-        slot: this.id,
-        textRole: role,
-      );
+    id: id,
+    frame: frameOn(size),
+    paragraphs: [TextParagraph(const [], alignment: alignment)],
+    anchor: anchor,
+    autoFit: TextAutoFit.shrink,
+    placeholder: prompt,
+    slot: this.id,
+    textRole: role,
+  );
 }

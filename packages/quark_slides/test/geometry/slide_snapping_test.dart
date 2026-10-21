@@ -5,26 +5,29 @@ import 'package:quark_slides/quark_slides.dart';
 
 void main() {
   final size = SlideSize.widescreen;
-  final slide = Slide(id: 's', elements: [
-    ShapeElement(
-      id: 'other',
-      frame: ElementFrame(x: 1500, y: 700, width: 200, height: 100),
-    ),
-    ShapeElement(
-      id: 'moving',
-      frame: ElementFrame(x: 100, y: 100, width: 200, height: 100),
-    ),
-  ]);
+  final slide = Slide(
+    id: 's',
+    elements: [
+      ShapeElement(
+        id: 'other',
+        frame: ElementFrame(x: 1500, y: 700, width: 200, height: 100),
+      ),
+      ShapeElement(
+        id: 'moving',
+        frame: ElementFrame(x: 100, y: 100, width: 200, height: 100),
+      ),
+    ],
+  );
   const moving = Rect.fromLTRB(100, 100, 300, 200);
 
   SnapResult snap(Offset delta) => snapMove(
-        moving: moving,
-        delta: delta,
-        slide: slide,
-        size: size,
-        exclude: {'moving'},
-        threshold: 10,
-      );
+    moving: moving,
+    delta: delta,
+    slide: slide,
+    size: size,
+    exclude: {'moving'},
+    threshold: 10,
+  );
 
   test('a box near the slide center snaps onto it with two guides', () {
     // Center would land at (956, 537): 4 and 3 units off (960, 540).

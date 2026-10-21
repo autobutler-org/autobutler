@@ -81,8 +81,9 @@ class ElementStyle {
   SlideElement applyTo(SlideElement element) {
     switch (element) {
       case ShapeElement():
-        Stroke? outline =
-            identical(stroke, unset) ? element.stroke : stroke as Stroke?;
+        Stroke? outline = identical(stroke, unset)
+            ? element.stroke
+            : stroke as Stroke?;
         if (strokeColor != null || strokeWidth != null || dash != null) {
           outline = (outline ?? Stroke()).copyWith(
             color: strokeColor,
@@ -109,11 +110,11 @@ class ElementStyle {
           opacity: opacity,
         );
       case TextBox() ||
-            ImageElement() ||
-            TableElement() ||
-            ChartElement() ||
-            GroupElement() ||
-            UnknownElement():
+          ImageElement() ||
+          TableElement() ||
+          ChartElement() ||
+          GroupElement() ||
+          UnknownElement():
         return element;
     }
   }
@@ -152,8 +153,10 @@ ElementStyle elementStyleOf(Iterable<SlideElement> elements) {
           .where((s) => s.kind == ShapeKind.roundedRectangle)
           .map((s) => s.cornerRadius),
     ),
-    opacity: shared(
-        [...shapes.map((s) => s.opacity), ...lines.map((l) => l.opacity)]),
+    opacity: shared([
+      ...shapes.map((s) => s.opacity),
+      ...lines.map((l) => l.opacity),
+    ]),
     kind: shared(shapes.map((s) => s.kind)),
     startCap: shared(lines.map((l) => l.startCap)),
     endCap: shared(lines.map((l) => l.endCap)),

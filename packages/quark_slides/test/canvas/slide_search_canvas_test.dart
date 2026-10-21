@@ -44,18 +44,16 @@ Presentation searchDeck() {
 }
 
 List<SlideMatch> search(Presentation deck, String text) => SlideSearch.find(
-      deck,
-      SlideSearchQuery(text),
-      scope: const SlideSearchScope(includeNotes: true),
-    ).matches;
+  deck,
+  SlideSearchQuery(text),
+  scope: const SlideSearchScope(includeNotes: true),
+).matches;
 
 /// The highlight painters on screen.
 List<SlideTextHighlightPainter> painters(WidgetTester tester) => [
-      for (final paint in tester.widgetList<CustomPaint>(
-        find.byType(CustomPaint),
-      ))
-        if (paint.painter case final SlideTextHighlightPainter p) p,
-    ];
+  for (final paint in tester.widgetList<CustomPaint>(find.byType(CustomPaint)))
+    if (paint.painter case final SlideTextHighlightPainter p) p,
+];
 
 void main() {
   testBothViewports('highlights paint behind matches on this slide only', (
@@ -99,18 +97,12 @@ void main() {
     );
   });
 
-  testWidgets('a highlight sits on the text as it is laid out', (
-    tester,
-  ) async {
+  testWidgets('a highlight sits on the text as it is laid out', (tester) async {
     // The whole centered line highlighted: its box is centered in the
     // 1600-wide title, which it is only when laid out at the box's width.
     final deck = canvasDeck();
     final whole = search(deck, 'Quarterly review').single;
-    await pumpCanvas(
-      tester,
-      SlideDocumentNotifier(deck),
-      highlights: [whole],
-    );
+    await pumpCanvas(tester, SlideDocumentNotifier(deck), highlights: [whole]);
     final painter = painters(tester).single;
     final text = TextPainter(
       text: painter.span,

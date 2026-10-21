@@ -65,35 +65,35 @@ class SlideTransitionFrame {
     };
     return switch (transition.kind) {
       SlideTransitionKind.none => const SlideTransitionFrame(
-          outgoing: SlideTransitionLayer(opacity: 0),
-          incoming: SlideTransitionLayer.still,
-        ),
+        outgoing: SlideTransitionLayer(opacity: 0),
+        incoming: SlideTransitionLayer.still,
+      ),
       SlideTransitionKind.fade => SlideTransitionFrame(
-          outgoing: SlideTransitionLayer.still,
-          incoming: SlideTransitionLayer(opacity: t),
-        ),
+        outgoing: SlideTransitionLayer.still,
+        incoming: SlideTransitionLayer(opacity: t),
+      ),
       SlideTransitionKind.push => SlideTransitionFrame(
-          outgoing: SlideTransitionLayer(offset: travel * t),
-          incoming: SlideTransitionLayer(offset: travel * (t - 1)),
-        ),
+        outgoing: SlideTransitionLayer(offset: travel * t),
+        incoming: SlideTransitionLayer(offset: travel * (t - 1)),
+      ),
       SlideTransitionKind.wipe => SlideTransitionFrame(
-          outgoing: SlideTransitionLayer.still,
-          incoming: SlideTransitionLayer(
-            clip: switch (transition.direction) {
-              SlideTransitionDirection.left => Rect.fromLTRB(1 - t, 0, 1, 1),
-              SlideTransitionDirection.right => Rect.fromLTRB(0, 0, t, 1),
-              SlideTransitionDirection.up => Rect.fromLTRB(0, 1 - t, 1, 1),
-              SlideTransitionDirection.down => Rect.fromLTRB(0, 0, 1, t),
-            },
-          ),
+        outgoing: SlideTransitionLayer.still,
+        incoming: SlideTransitionLayer(
+          clip: switch (transition.direction) {
+            SlideTransitionDirection.left => Rect.fromLTRB(1 - t, 0, 1, 1),
+            SlideTransitionDirection.right => Rect.fromLTRB(0, 0, t, 1),
+            SlideTransitionDirection.up => Rect.fromLTRB(0, 1 - t, 1, 1),
+            SlideTransitionDirection.down => Rect.fromLTRB(0, 0, 1, t),
+          },
         ),
+      ),
       SlideTransitionKind.zoom => SlideTransitionFrame(
-          outgoing: SlideTransitionLayer.still,
-          incoming: SlideTransitionLayer(
-            opacity: t,
-            scale: zoomStartScale + (1 - zoomStartScale) * t,
-          ),
+        outgoing: SlideTransitionLayer.still,
+        incoming: SlideTransitionLayer(
+          opacity: t,
+          scale: zoomStartScale + (1 - zoomStartScale) * t,
         ),
+      ),
     };
   }
 

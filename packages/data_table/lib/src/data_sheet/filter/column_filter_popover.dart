@@ -29,9 +29,7 @@ Future<void> showColumnFilterPopover({
     barrierColor: Colors.transparent,
     transitionDuration: Duration.zero,
     pageBuilder: (context, _, __) => Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: CustomSingleChildLayout(
         delegate: _PopoverLayout(anchor),
         child: Material(

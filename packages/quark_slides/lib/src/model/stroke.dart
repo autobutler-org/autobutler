@@ -68,11 +68,11 @@ class Stroke {
 
   /// The stroke as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        'color': color.toHex(),
-        'width': jsonNumber(width),
-        if (dash != StrokeDash.solid) 'dash': dash.name,
-      };
+    ...extra,
+    'color': color.toHex(),
+    'width': jsonNumber(width),
+    if (dash != StrokeDash.solid) 'dash': dash.name,
+  };
 
   /// Returns a copy with the given fields replaced.
   Stroke copyWith({SlideColor? color, double? width, StrokeDash? dash}) =>
@@ -81,8 +81,9 @@ class Stroke {
         width: width ?? this.width,
         dash: dash ?? this.dash,
         // A chosen dash replaces whatever unreadable one was kept.
-        extra:
-            dash == null ? extra : Map.unmodifiable({...extra}..remove('dash')),
+        extra: dash == null
+            ? extra
+            : Map.unmodifiable({...extra}..remove('dash')),
       );
 
   @override

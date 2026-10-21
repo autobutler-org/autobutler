@@ -47,13 +47,13 @@ class TableElement extends SlideElement {
     this.bandedRows = false,
     this.accent = defaultAccent,
     super.extra,
-  })  : assert(cells.length == rowHeights.length),
-        assert(cells.every((row) => row.length == columnWidths.length)),
-        columnWidths = List.unmodifiable(columnWidths),
-        rowHeights = List.unmodifiable(rowHeights),
-        cells = List.unmodifiable([
-          for (final row in cells) List<SlideTableCell>.unmodifiable(row),
-        ]);
+  }) : assert(cells.length == rowHeights.length),
+       assert(cells.every((row) => row.length == columnWidths.length)),
+       columnWidths = List.unmodifiable(columnWidths),
+       rowHeights = List.unmodifiable(rowHeights),
+       cells = List.unmodifiable([
+         for (final row in cells) List<SlideTableCell>.unmodifiable(row),
+       ]);
 
   /// The `type` discriminator, `table`.
   static const typeName = 'table';
@@ -316,27 +316,27 @@ class TableElement extends SlideElement {
   /// Every cell's text, a line per row with cells separated by tabs;
   /// covered cells are left out.
   String get plainText => [
-        for (var r = 0; r < rowCount; r++)
-          [
-            for (var c = 0; c < columnCount; c++)
-              if (!isCovered(r, c)) cells[r][c].plainText.replaceAll('\n', ' '),
-          ].join('\t'),
-      ].join('\n');
+    for (var r = 0; r < rowCount; r++)
+      [
+        for (var c = 0; c < columnCount; c++)
+          if (!isCovered(r, c)) cells[r][c].plainText.replaceAll('\n', ' '),
+      ].join('\t'),
+  ].join('\n');
 
   @override
   String get type => typeName;
 
   @override
   JsonMap _fieldsToJson() => {
-        'columns': [for (final w in columnWidths) jsonNumber(w)],
-        'rows': [for (final h in rowHeights) jsonNumber(h)],
-        if (headerRow) 'headerRow': true,
-        if (bandedRows) 'bandedRows': true,
-        if (accent != defaultAccent) 'accent': accent.toHex(),
-        'cells': [
-          for (final row in cells) [for (final cell in row) cell.toJson()],
-        ],
-      };
+    'columns': [for (final w in columnWidths) jsonNumber(w)],
+    'rows': [for (final h in rowHeights) jsonNumber(h)],
+    if (headerRow) 'headerRow': true,
+    if (bandedRows) 'bandedRows': true,
+    if (accent != defaultAccent) 'accent': accent.toHex(),
+    'cells': [
+      for (final row in cells) [for (final cell in row) cell.toJson()],
+    ],
+  };
 
   static TableElement _fromJson(
     JsonMap json,
@@ -351,9 +351,9 @@ class TableElement extends SlideElement {
           switch (list[i]) {
             final num n when n.isFinite && n > 0 => n.toDouble(),
             _ => throw QslideFormatException(
-                'expected a positive number',
-                path: '$path.$key[$i]',
-              ),
+              'expected a positive number',
+              path: '$path.$key[$i]',
+            ),
           },
       ];
     }
@@ -415,12 +415,13 @@ class TableElement extends SlideElement {
   /// overlap an earlier one (in reading order) undone, so the areas are
   /// rectangles that never overlap.
   static List<List<SlideTableCell>> normalizedSpans(
-      List<List<SlideTableCell>> cells) {
+    List<List<SlideTableCell>> cells,
+  ) {
     final rows = cells.length;
     final columns = rows == 0 ? 0 : cells.first.length;
     final taken = List.generate(rows, (_) => List.filled(columns, false));
     final result = [
-      for (final row in cells) [...row]
+      for (final row in cells) [...row],
     ];
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < columns; c++) {
@@ -441,8 +442,10 @@ class TableElement extends SlideElement {
         }
         if (!free) rowSpan = colSpan = 1;
         if (rowSpan != cell.rowSpan || colSpan != cell.colSpan) {
-          cell =
-              result[r][c] = cell.copyWith(rowSpan: rowSpan, colSpan: colSpan);
+          cell = result[r][c] = cell.copyWith(
+            rowSpan: rowSpan,
+            colSpan: colSpan,
+          );
         }
         for (var i = r; i < r + rowSpan; i++) {
           for (var j = c; j < c + colSpan; j++) {
@@ -485,18 +488,17 @@ class TableElement extends SlideElement {
     bool? headerRow,
     bool? bandedRows,
     SlideColor? accent,
-  }) =>
-      TableElement(
-        id: id ?? this.id,
-        frame: frame ?? this.frame,
-        columnWidths: columnWidths ?? this.columnWidths,
-        rowHeights: rowHeights ?? this.rowHeights,
-        cells: cells ?? this.cells,
-        headerRow: headerRow ?? this.headerRow,
-        bandedRows: bandedRows ?? this.bandedRows,
-        accent: accent ?? this.accent,
-        extra: extra,
-      );
+  }) => TableElement(
+    id: id ?? this.id,
+    frame: frame ?? this.frame,
+    columnWidths: columnWidths ?? this.columnWidths,
+    rowHeights: rowHeights ?? this.rowHeights,
+    cells: cells ?? this.cells,
+    headerRow: headerRow ?? this.headerRow,
+    bandedRows: bandedRows ?? this.bandedRows,
+    accent: accent ?? this.accent,
+    extra: extra,
+  );
 
   /// Returns a copy with [frame] replaced, every column and row scaled in
   /// proportion to the new width and height.
@@ -526,14 +528,14 @@ class TableElement extends SlideElement {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        frame,
-        Object.hashAll(columnWidths),
-        Object.hashAll(rowHeights),
-        Object.hashAll(cells.map(Object.hashAll)),
-        headerRow,
-        bandedRows,
-        accent,
-        jsonHash(extra),
-      );
+    id,
+    frame,
+    Object.hashAll(columnWidths),
+    Object.hashAll(rowHeights),
+    Object.hashAll(cells.map(Object.hashAll)),
+    headerRow,
+    bandedRows,
+    accent,
+    jsonHash(extra),
+  );
 }

@@ -8,44 +8,45 @@ import '../support/table_sample.dart';
 
 String fixture(String name) => File('test/fixtures/$name').readAsStringSync();
 
-Matcher throwsFormatAt(String path) => throwsA(
-      isA<QslideFormatException>().having((e) => e.path, 'path', path),
-    );
+Matcher throwsFormatAt(String path) =>
+    throwsA(isA<QslideFormatException>().having((e) => e.path, 'path', path));
 
 /// A one-slide deck holding [table], a table object.
 Map<String, Object?> deckWith(Map<String, Object?> table) => {
-      'schemaVersion': 5,
-      'slides': [
-        {
-          'id': 's',
-          'elements': [table],
-        },
-      ],
-    };
+  'schemaVersion': 5,
+  'slides': [
+    {
+      'id': 's',
+      'elements': [table],
+    },
+  ],
+};
 
 Map<String, Object?> tableJson({
   List<Object?> columns = const [100, 100],
   List<Object?> rows = const [50],
   List<Object?>? cells,
-}) =>
-    {
-      'id': 't',
-      'type': 'table',
-      'frame': {'x': 0, 'y': 0, 'width': 200, 'height': 50},
-      'columns': columns,
-      'rows': rows,
-      'cells': cells ??
-          [
-            for (var r = 0; r < rows.length; r++)
-              [for (var c = 0; c < columns.length; c++) <String, Object?>{}],
-          ],
-    };
+}) => {
+  'id': 't',
+  'type': 'table',
+  'frame': {'x': 0, 'y': 0, 'width': 200, 'height': 50},
+  'columns': columns,
+  'rows': rows,
+  'cells':
+      cells ??
+      [
+        for (var r = 0; r < rows.length; r++)
+          [for (var c = 0; c < columns.length; c++) <String, Object?>{}],
+      ],
+};
 
 void main() {
   group('golden table_sample.qslide', () {
     test('encoding the table deck matches the fixture byte for byte', () {
-      expect(QslideCodec.encode(tableSamplePresentation()),
-          fixture('table_sample.qslide'));
+      expect(
+        QslideCodec.encode(tableSamplePresentation()),
+        fixture('table_sample.qslide'),
+      );
     });
 
     test('decoding the fixture gives the table deck', () {
@@ -110,12 +111,18 @@ void main() {
     });
 
     test('overlapping or oversized merges are normalized', () {
-      final deck = QslideCodec.fromJson(deckWith(tableJson(cells: [
-        [
-          {'colSpan': 9},
-          {'rowSpan': 4},
-        ],
-      ])));
+      final deck = QslideCodec.fromJson(
+        deckWith(
+          tableJson(
+            cells: [
+              [
+                {'colSpan': 9},
+                {'rowSpan': 4},
+              ],
+            ],
+          ),
+        ),
+      );
       final table = deck.slides.single.elements.single as TableElement;
       expect(table.cell(0, 0).colSpan, 2);
       expect(table.cell(0, 1).isMerged, isFalse);
@@ -127,9 +134,15 @@ void main() {
         throwsFormatAt(r'$.slides[0].elements[0].cells'),
       );
       expect(
-        () => QslideCodec.fromJson(deckWith(tableJson(cells: [
-          [<String, Object?>{}],
-        ]))),
+        () => QslideCodec.fromJson(
+          deckWith(
+            tableJson(
+              cells: [
+                [<String, Object?>{}],
+              ],
+            ),
+          ),
+        ),
         throwsFormatAt(r'$.slides[0].elements[0].cells[0]'),
       );
     });
@@ -147,12 +160,18 @@ void main() {
 
     test('a span that is not a positive integer is refused', () {
       expect(
-        () => QslideCodec.fromJson(deckWith(tableJson(cells: [
-          [
-            {'rowSpan': 0},
-            <String, Object?>{},
-          ],
-        ]))),
+        () => QslideCodec.fromJson(
+          deckWith(
+            tableJson(
+              cells: [
+                [
+                  {'rowSpan': 0},
+                  <String, Object?>{},
+                ],
+              ],
+            ),
+          ),
+        ),
         throwsFormatAt(r'$.slides[0].elements[0].cells[0][0].rowSpan'),
       );
     });
@@ -161,7 +180,9 @@ void main() {
       final huge = tableJson(
         columns: List.filled(TableElement.maxColumns, 1),
         rows: List.filled(
-            TableElement.maxCells ~/ TableElement.maxColumns + 1, 1),
+          TableElement.maxCells ~/ TableElement.maxColumns + 1,
+          1,
+        ),
         cells: const [],
       );
       expect(

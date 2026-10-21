@@ -34,8 +34,8 @@ class ChartElement extends SlideElement {
     this.options = const ChartOptions(),
     List<SlideColor> colors = const [],
     super.extra,
-  })  : data = data ?? ChartData(),
-        colors = List.unmodifiable(colors);
+  }) : data = data ?? ChartData(),
+       colors = List.unmodifiable(colors);
 
   /// The `type` discriminator, `chart`.
   static const typeName = 'chart';
@@ -88,31 +88,30 @@ class ChartElement extends SlideElement {
   /// What is drawn, one entry per series or (in a pie) per slice: its name
   /// and color, as the legend lists them.
   List<({String name, SlideColor color})> get legendEntries => [
-        if (kind == ChartKind.pie)
-          for (final (i, c) in data.categories.indexed)
-            (name: c, color: colorOf(i))
-        else
-          for (final (i, s) in data.series.indexed)
-            (name: s.name, color: colorOf(i)),
-      ];
+    if (kind == ChartKind.pie)
+      for (final (i, c) in data.categories.indexed) (name: c, color: colorOf(i))
+    else
+      for (final (i, s) in data.series.indexed)
+        (name: s.name, color: colorOf(i)),
+  ];
 
   @override
   String get type => typeName;
 
   @override
   JsonMap _fieldsToJson() => {
-        'kind': kind.name,
-        ...data.toJson(),
-        if (colors.isNotEmpty) 'colors': [for (final c in colors) c.toHex()],
-        if (options.title.isNotEmpty) 'title': options.title,
-        if (!options.showLegend) 'legend': false,
-        if (options.showDataLabels) 'dataLabels': true,
-        if (!options.showGridlines) 'gridlines': false,
-        if (options.categoryAxisTitle.isNotEmpty)
-          'categoryAxisTitle': options.categoryAxisTitle,
-        if (options.valueAxisTitle.isNotEmpty)
-          'valueAxisTitle': options.valueAxisTitle,
-      };
+    'kind': kind.name,
+    ...data.toJson(),
+    if (colors.isNotEmpty) 'colors': [for (final c in colors) c.toHex()],
+    if (options.title.isNotEmpty) 'title': options.title,
+    if (!options.showLegend) 'legend': false,
+    if (options.showDataLabels) 'dataLabels': true,
+    if (!options.showGridlines) 'gridlines': false,
+    if (options.categoryAxisTitle.isNotEmpty)
+      'categoryAxisTitle': options.categoryAxisTitle,
+    if (options.valueAxisTitle.isNotEmpty)
+      'valueAxisTitle': options.valueAxisTitle,
+  };
 
   /// Reads a chart whose `kind` is [kind] from its `.qslide` object.
   static ChartElement _fromJson(
@@ -140,9 +139,9 @@ class ChartElement extends SlideElement {
           switch (colors[i]) {
             final String hex => SlideColor.parse(hex, path: '$path.colors[$i]'),
             _ => throw QslideFormatException(
-                'expected a color',
-                path: '$path.colors[$i]',
-              ),
+              'expected a color',
+              path: '$path.colors[$i]',
+            ),
           },
       ],
       options: ChartOptions(
@@ -166,16 +165,15 @@ class ChartElement extends SlideElement {
     ChartData? data,
     ChartOptions? options,
     List<SlideColor>? colors,
-  }) =>
-      ChartElement(
-        id: id ?? this.id,
-        frame: frame ?? this.frame,
-        kind: kind ?? this.kind,
-        data: data ?? this.data,
-        options: options ?? this.options,
-        colors: colors ?? this.colors,
-        extra: extra,
-      );
+  }) => ChartElement(
+    id: id ?? this.id,
+    frame: frame ?? this.frame,
+    kind: kind ?? this.kind,
+    data: data ?? this.data,
+    options: options ?? this.options,
+    colors: colors ?? this.colors,
+    extra: extra,
+  );
 
   @override
   ChartElement withFrame(ElementFrame frame) => copyWith(frame: frame);
@@ -196,12 +194,12 @@ class ChartElement extends SlideElement {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        frame,
-        kind,
-        data,
-        options,
-        Object.hashAll(colors),
-        jsonHash(extra),
-      );
+    id,
+    frame,
+    kind,
+    data,
+    options,
+    Object.hashAll(colors),
+    jsonHash(extra),
+  );
 }
