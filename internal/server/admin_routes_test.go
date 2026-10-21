@@ -125,6 +125,11 @@ func TestAdminGate_ApplianceRoutes(t *testing.T) {
 		{http.MethodPut, "/api/v0/hostname"},
 		// The graph has no job queue, so the admin's scan is never queued.
 		{http.MethodPost, "/api/v0/music/rescan"},
+		// The photo index status names failed files on every device, and
+		// pausing the pass is a device-wide setting (#3556).
+		{http.MethodGet, "/api/v0/photos/index-status"},
+		{http.MethodPost, "/api/v0/photos/index/pause"},
+		{http.MethodPost, "/api/v0/photos/index/resume"},
 	}
 	for _, r := range gated {
 		if got := do(r.method, r.path, member.SessionToken); got != http.StatusForbidden {

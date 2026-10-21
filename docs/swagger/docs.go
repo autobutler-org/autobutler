@@ -7441,6 +7441,117 @@ const docTemplate = `{
                 }
             }
         },
+        "/photos/index-status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin only. Reports the background pass that hashes and dates every library photo on this device: how many photos the library holds, how many have both hashes (which duplicate detection needs), how many have had their capture date read, how many failed and the first 500 of those with a reason (undecodable, missing_converter, too_large or unreadable), when a pass last finished, and whether one is running or paused. The state is in memory: a restart forgets a pause and starts a fresh pass that skips what is already indexed. photo_index_changed events say when to fetch it again.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Get the photo library index status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/photoutil.IndexStatusResult"
+                        }
+                    },
+                    "403": {
+                        "description": "Not an admin",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/photos/index/pause": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin only. Holds the background pass that hashes and dates library photos before its next photo, leaving every IO slot to requests; the photo being read finishes first. A pass that has not started holds before its first photo. Pausing a paused pass changes nothing. The pause lasts until resumed or the server restarts, and publishes photo_index_changed.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Pause the photo library index pass",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/photoutil.IndexStatusResult"
+                        }
+                    },
+                    "403": {
+                        "description": "Not an admin",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/photos/index/resume": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin only. Lets a paused photo library index pass carry on from the photo it stopped before. Resuming a pass that is not paused changes nothing. Publishes photo_index_changed.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Resume the photo library index pass",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/photoutil.IndexStatusResult"
+                        }
+                    },
+                    "403": {
+                        "description": "Not an admin",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/photos/metadata": {
             "get": {
                 "security": [
@@ -12140,6 +12251,61 @@ const docTemplate = `{
                 },
                 "shutterSpeed": {
                     "type": "string"
+                }
+            }
+        },
+        "photoutil.IndexFailure": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "description": "Reason is one of the IndexFailure* constants.",
+                    "type": "string"
+                },
+                "relPath": {
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                }
+            }
+        },
+        "photoutil.IndexStatusResult": {
+            "type": "object",
+            "properties": {
+                "datesRead": {
+                    "description": "DatesRead is the photos whose capture date has been read.",
+                    "type": "integer"
+                },
+                "failed": {
+                    "description": "Failed is the photos the current or last pass could not fully read.",
+                    "type": "integer"
+                },
+                "failures": {
+                    "description": "Failures lists the first [MaxIndexFailures] of them.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/photoutil.IndexFailure"
+                    }
+                },
+                "hashed": {
+                    "description": "Hashed is the photos with both a perceptual and a content hash, which\nduplicate detection needs.",
+                    "type": "integer"
+                },
+                "lastRunAt": {
+                    "description": "LastRunAt is when a pass last finished, nil if none has since start.",
+                    "type": "string"
+                },
+                "paused": {
+                    "description": "Paused is whether the pass is held, or will hold when it starts.",
+                    "type": "boolean"
+                },
+                "running": {
+                    "description": "Running is whether a pass is under way, paused or not.",
+                    "type": "boolean"
+                },
+                "total": {
+                    "description": "Total is the photos in the library when the pass last listed it.",
+                    "type": "integer"
                 }
             }
         },
