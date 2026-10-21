@@ -124,7 +124,7 @@ func occurrences(e Event, from, to time.Time) []Occurrence {
 			(e.RepeatUntil != nil && time.Date(year, month, day, 0, 0, 0, 0, time.UTC).After(*e.RepeatUntil)) {
 			break
 		}
-		if exists && !start.Before(from) {
+		if exists && !start.Before(from) && !isExcluded(e.ExcludedStarts, start) {
 			end := start.Add(length)
 			if e.AllDay {
 				// The same number of dates, whatever their length in hours.
