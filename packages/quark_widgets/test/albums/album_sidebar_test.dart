@@ -521,5 +521,45 @@ void main() {
         await expectTapTargetGuidelines(tester);
       },
     );
+
+    testBothViewports('names only the toggle, never a page-sized ancestor '
+        '(#3642)', (tester, size) async {
+      final handle = tester.ensureSemantics();
+      for (final expanded in [true, false]) {
+        await pumpAt(
+          tester,
+          bounded(
+            sidebar(withSectionToggle: true, isSectionExpanded: expanded),
+          ),
+          size: size,
+        );
+        final message = expanded ? 'Collapse albums' : 'Expand albums';
+        final carriers = find.semantics
+            .byPredicate((node) {
+              final data = node.getSemanticsData();
+              return data.label.contains(message) ||
+                  data.tooltip.contains(message);
+            })
+            .evaluate()
+            .toList();
+
+        expect(carriers, hasLength(1));
+        final node = carriers.single;
+        expect(node, same(tester.getSemantics(find.byKey(toggle))));
+        expect(
+          node,
+          isSemantics(
+            isButton: true,
+            hasExpandedState: true,
+            isExpanded: expanded,
+            tooltip: message,
+          ),
+        );
+        final toggleSize = tester.getSize(find.byKey(toggle));
+        expect(node.rect.width, lessThanOrEqualTo(toggleSize.width));
+        expect(node.rect.height, lessThanOrEqualTo(toggleSize.height));
+      }
+      handle.dispose();
+    });
   });
 }

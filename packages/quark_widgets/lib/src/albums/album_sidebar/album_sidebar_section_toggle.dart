@@ -56,12 +56,15 @@ class AlbumSidebarSectionToggle extends StatelessWidget {
 
     // A Material button, like the sort and create buttons beside it, so its
     // tap target follows the theme's density the way theirs do and the
-    // header stays one height.
-    return Tooltip(
-      message: isExpanded ? 'Collapse albums' : 'Expand albums',
-      child: MergeSemantics(
-        child: Semantics(
-          expanded: isExpanded,
+    // header stays one height. The tooltip sits inside the MergeSemantics so
+    // its text joins the button's node; above it, the tooltip's semantics have
+    // no node of their own and land on whatever ancestor has one, which on the
+    // Photos page is the page itself (#3642).
+    return MergeSemantics(
+      child: Semantics(
+        expanded: isExpanded,
+        child: Tooltip(
+          message: isExpanded ? 'Collapse albums' : 'Expand albums',
           child: TextButton(
             key: const ValueKey('album_section_toggle'),
             style: TextButton.styleFrom(
