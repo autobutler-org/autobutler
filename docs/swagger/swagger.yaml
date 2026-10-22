@@ -199,6 +199,13 @@ definitions:
       kind:
         description: Kind is channel; dm is reserved for direct messages (#2423).
         type: string
+      lastReadMessageId:
+        description: |-
+          LastReadMessageID is the caller's read marker there, as PUT
+          /chat/channels/{id}/read leaves it, so a session that missed
+          chat_read_marker_changed can restore it (#3543). It is 0 before the
+          first read and without read_messages.
+        type: integer
       name:
         type: string
       permissions:
@@ -908,6 +915,50 @@ definitions:
       shutterSpeed:
         type: string
     type: object
+  photoutil.IndexFailure:
+    properties:
+      reason:
+        description: Reason is one of the IndexFailure* constants.
+        type: string
+      relPath:
+        type: string
+      serial:
+        type: string
+    type: object
+  photoutil.IndexStatusResult:
+    properties:
+      datesRead:
+        description: DatesRead is the photos whose capture date has been read.
+        type: integer
+      failed:
+        description: Failed is the photos the current or last pass could not fully
+          read.
+        type: integer
+      failures:
+        description: Failures lists the first [MaxIndexFailures] of them.
+        items:
+          $ref: '#/definitions/photoutil.IndexFailure'
+        type: array
+      hashed:
+        description: |-
+          Hashed is the photos with both a perceptual and a content hash, which
+          duplicate detection needs.
+        type: integer
+      lastRunAt:
+        description: LastRunAt is when a pass last finished, nil if none has since
+          start.
+        type: string
+      paused:
+        description: Paused is whether the pass is held, or will hold when it starts.
+        type: boolean
+      running:
+        description: Running is whether a pass is under way, paused or not.
+        type: boolean
+      total:
+        description: Total is the photos in the library when the pass last listed
+          it.
+        type: integer
+    type: object
   photoutil.PhotoSummary:
     properties:
       fileName:
@@ -1565,6 +1616,8 @@ definitions:
         items:
           type: integer
         type: array
+      clientMessageId:
+        type: string
       keyVersion:
         type: integer
     type: object
@@ -2084,14 +2137,22 @@ definitions:
         description: Connected is true only once the node has joined the tailnet.
         type: boolean
       enabled:
-        description: 'Enabled is the persisted setting: the user asked for remote
-          access.'
+        description: |-
+          Enabled is true only when an admin turned remote access on and setup
+          enrolled this Quark. A stored flag from before that enrollment is not
+          enough (#3611).
         type: boolean
       error:
         description: |-
           Error is the last start failure, a diagnostic for the log reader rather
           than copy for a user.
         type: string
+      needsSetup:
+        description: |-
+          NeedsSetup is true when that stored flag is on but enrollment never
+          finished. The client offers the setup sheet and does not show remote
+          access as on. Nothing here turns it on.
+        type: boolean
       remoteUrl:
         description: RemoteURL is set only when Connected.
         type: string
@@ -2309,6 +2370,14 @@ definitions:
         items:
           type: integer
         type: array
+    type: object
+  v0_vault.deleteVaultBody:
+    properties:
+      password:
+        description: |-
+          Password is the standard base64 auth key of the caller's login
+          password, as PUT /vault/key takes it.
+        type: string
     type: object
   v0_version.SbomDependencyJSON:
     properties:
@@ -4862,9 +4931,12 @@ paths:
         caller''s effective permissions there: the union of every row that reaches
         them, and unreadCount: the messages after the caller''s read marker (PUT /chat/channels/{id}/read)
         that someone else wrote and nobody deleted, 0 on a channel the caller lacks
-        read_messages on. A channel on which that set is empty is left out. Admins
-        get only their own channels too, unless they pass all=1: then the channels
-        they are not in follow, in the same order, with an empty set.'
+        read_messages on, and lastReadMessageId: the caller''s read marker there,
+        so a session that missed chat_read_marker_changed can restore it, 0 before
+        the first read and without read_messages. A channel on which that set is empty
+        is left out. Admins get only their own channels too, unless they pass all=1:
+        then the channels they are not in follow, in the same order, with an empty
+        set.'
       parameters:
       - description: 1 adds the channels an admin is not in; refused for anyone else
         in: query
@@ -5593,9 +5665,12 @@ paths:
         readers as chat_message_created. The Quark never sees the text. A ciphertext''s
         24-byte nonce is taken once per channel and key version: repeating your own
         live post byte for byte returns it with 200 and stores nothing, and any other
-        reuse is 409. Ciphertext is at most 16 KiB. Needs send_messages; a reader
-        without it gets 403, and anyone without read_messages 404, delegated managers
-        and admins included.'
+        reuse is 409. clientMessageId, up to 64 bytes, names the send: a retry encrypts
+        again under a fresh nonce, so it carries the same clientMessageId, and one
+        the caller already sent to this channel returns that message with 200 and
+        stores nothing, whatever the ciphertext. Ciphertext is at most 16 KiB. Needs
+        send_messages; a reader without it gets 403, and anyone without read_messages
+        404, delegated managers and admins included.'
       parameters:
       - description: Channel id
         in: path
@@ -5612,8 +5687,8 @@ paths:
       - application/json
       responses:
         "200":
-          description: the caller already posted exactly this ciphertext; nothing
-            new was stored
+          description: the caller already posted this clientMessageId or exactly this
+            ciphertext; nothing new was stored
           schema:
             $ref: '#/definitions/chatutil.Message'
         "201":
@@ -5621,8 +5696,8 @@ paths:
           schema:
             $ref: '#/definitions/chatutil.Message'
         "400":
-          description: ciphertext too short, or a key version the channel doesn't
-            have
+          description: ciphertext too short, a key version the channel doesn't have,
+            or a clientMessageId over 64 bytes
           schema:
             $ref: '#/definitions/serverutil.Response'
         "401":
@@ -6937,7 +7012,7 @@ paths:
         path each file landed at, after any keepBoth rename. A photo or video's client-rendered
         thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail
         whose filename is the file's; one that names no earlier file, or is not a
-        valid JPEG, is skipped.
+        valid JPEG, is skipped. A request with no part named files is a 400.
       parameters:
       - description: Device serial number to upload to
         in: query
@@ -6952,11 +7027,14 @@ paths:
         in: query
         name: keepBoth
         type: boolean
-      - description: File to upload
+      - collectionFormat: multi
+        description: One file per part; repeat the part to upload more than one
         in: formData
-        name: file
+        items:
+          type: file
+        name: files
         required: true
-        type: file
+        type: array
       - description: Thumbnail JPEG for the file of the same filename sent before
           it
         in: formData
@@ -7148,7 +7226,7 @@ paths:
         file landed at, after any keepBoth rename. A photo or video's client-rendered
         thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail
         whose filename is the file's; one that names no earlier file, or is not a
-        valid JPEG, is skipped.
+        valid JPEG, is skipped. A request with no part named files is a 400.
       parameters:
       - description: Directory to upload into
         in: path
@@ -7168,11 +7246,14 @@ paths:
         in: query
         name: keepBoth
         type: boolean
-      - description: File to upload
+      - collectionFormat: multi
+        description: One file per part; repeat the part to upload more than one
         in: formData
-        name: file
+        items:
+          type: file
+        name: files
         required: true
-        type: file
+        type: array
       - description: Thumbnail JPEG for the file of the same filename sent before
           it
         in: formData
@@ -7969,6 +8050,88 @@ paths:
       summary: List all favorited photos
       tags:
       - favorites
+  /photos/index-status:
+    get:
+      description: 'Admin only. Reports the background pass that hashes and dates
+        every library photo on this device: how many photos the library holds, how
+        many have both hashes (which duplicate detection needs), how many have had
+        their capture date read, how many failed and the first 500 of those with a
+        reason (undecodable, missing_converter, too_large or unreadable), when a pass
+        last finished, and whether one is running or paused. The state is in memory:
+        a restart forgets a pause and starts a fresh pass that skips what is already
+        indexed. photo_index_changed events say when to fetch it again.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/photoutil.IndexStatusResult'
+        "403":
+          description: Not an admin
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Get the photo library index status
+      tags:
+      - photos
+  /photos/index/pause:
+    post:
+      description: Admin only. Holds the background pass that hashes and dates library
+        photos before its next photo, leaving every IO slot to requests; the photo
+        being read finishes first. A pass that has not started holds before its first
+        photo. Pausing a paused pass changes nothing. The pause lasts until resumed
+        or the server restarts, and publishes photo_index_changed.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/photoutil.IndexStatusResult'
+        "403":
+          description: Not an admin
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Pause the photo library index pass
+      tags:
+      - photos
+  /photos/index/resume:
+    post:
+      description: Admin only. Lets a paused photo library index pass carry on from
+        the photo it stopped before. Resuming a pass that is not paused changes nothing.
+        Publishes photo_index_changed.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/photoutil.IndexStatusResult'
+        "403":
+          description: Not an admin
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: Resume the photo library index pass
+      tags:
+      - photos
   /photos/metadata:
     get:
       description: Returns EXIF, file info, and the caller's own favorite state and
@@ -8515,7 +8678,8 @@ paths:
       tags:
       - settings
     get:
-      description: Returns whether remote access is switched on, whether the Tailscale
+      description: Returns whether remote access is on, which requires that setup
+        enrolled this Quark, whether setup is still required, whether the Tailscale
         node has actually joined the tailnet, its remote URL once it has, and the
         last start failure
       produces:
@@ -9614,15 +9778,49 @@ paths:
       - users
   /vault:
     delete:
-      description: Deletes every item of the caller's vault and its vault key in one
-        transaction, so an account locked out of its vault, having lost both its password
-        and its recovery phrase, can start over with PUT /vault/key. An account with
-        no vault gets 204 too. Publishes vault_changed to the caller's sessions.
+      consumes:
+      - application/json
+      description: Re-confirms the caller with password, which carries the auth key
+        of the login password, exactly as PUT /vault/key takes it; a wrong or missing
+        key is a 403, a raw password is a 426, and nothing is deleted, so a session
+        alone cannot wipe a vault (#3615). The body is at most 1 KiB. Then deletes
+        every item of the caller's vault and its vault key in one transaction, so
+        an account locked out of its vault, having lost both its password and its
+        recovery phrase, can start over with PUT /vault/key. An account with no vault
+        gets 204 too. Publishes vault_changed to the caller's sessions. Shares the
+        sign-in rate limit.
+      parameters:
+      - description: The caller's auth key
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/v0_vault.deleteVaultBody'
       responses:
         "204":
           description: No Content
+        "400":
+          description: a body that is not JSON
+          schema:
+            $ref: '#/definitions/serverutil.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "403":
+          description: password is not the caller's auth key
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "413":
+          description: a body over 1 KiB
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "426":
+          description: 'password is a raw password: the app is too old'
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "429":
+          description: Too Many Requests
           schema:
             $ref: '#/definitions/serverutil.Response'
         "500":

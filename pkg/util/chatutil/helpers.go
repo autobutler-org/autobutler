@@ -637,16 +637,25 @@ func unreadCounts(ctx context.Context, queries db.Querier, userID int64) (map[in
 	return counts, err
 }
 
-// attachUnread sets UnreadCount on each channel the account reads.
-func attachUnread(ctx context.Context, queries db.Querier, userID int64, channels []Channel) error {
+// attachReadState sets UnreadCount and LastReadMessageID on each channel the
+// account reads.
+// ponytail: one marker query per readable channel. Fold the markers into
+// CountChatUnreadForUser if a long channel list ever makes this slow.
+func attachReadState(ctx context.Context, queries db.Querier, userID int64, channels []Channel) error {
 	unread, err := unreadCounts(ctx, queries, userID)
 	if err != nil {
 		return err
 	}
 	for i := range channels {
-		if channels[i].Permissions.Has(PermReadMessages) {
-			channels[i].UnreadCount = unread[channels[i].ID]
+		if !channels[i].Permissions.Has(PermReadMessages) {
+			continue
 		}
+		channels[i].UnreadCount = unread[channels[i].ID]
+		marker, err := queries.GetChatReadMarker(ctx, db.GetChatReadMarkerParams{UserID: userID, ChannelID: channels[i].ID})
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		channels[i].LastReadMessageID = marker
 	}
 	return nil
 }
@@ -719,10 +728,25 @@ func publishReaction(ctx context.Context, queries db.Querier, bus *eventbus.Bus,
 	return nil
 }
 
-// repeatedPost answers a post whose nonce the channel already holds under its
-// key version. The caller's own live message with the same ciphertext is a
-// retry and comes back as it is; anything else is a replay.
+// repeatedPost answers a post that collided with a stored message. The
+// caller's own message under the same client message id is a retry and comes
+// back as it is. Otherwise the nonce is what collided: the caller's own live
+// message with the same ciphertext is a retry too, and anything else is a
+// replay.
 func repeatedPost(params PostMessageParams) (PostMessageResult, error) {
+	if params.ClientMessageID != "" {
+		row, err := params.Database.Queries.GetChatMessageByClientID(params.Ctx, db.GetChatMessageByClientIDParams{
+			ChannelID:       params.ChannelID,
+			AuthorID:        sql.NullInt64{Int64: params.Principal.UserID, Valid: true},
+			ClientMessageID: sql.NullString{String: params.ClientMessageID, Valid: true},
+		})
+		if err == nil {
+			return PostMessageResult{Message: messageFromRow(row), Repeated: true}, nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return PostMessageResult{}, err
+		}
+	}
 	row, err := params.Database.Queries.GetChatMessageByNonce(params.Ctx, db.GetChatMessageByNonceParams{
 		ChannelID: params.ChannelID, KeyVersion: params.KeyVersion, Nonce: params.Ciphertext[:NonceBytes],
 	})

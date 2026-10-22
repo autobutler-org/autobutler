@@ -36,6 +36,24 @@ const (
 	MaxItemRequestBytes = 1 << 20
 )
 
+// The Argon2id cost a stored vault key's kdfParams may record (#3648). The
+// floor is the app's KdfParams.standard, which every wrap it has made uses,
+// so a weaker cost is never stored for the next password change to copy. The
+// ceiling keeps an unlock from asking for more than a phone can give.
+const (
+	minKdfOpsLimit = 3
+	maxKdfOpsLimit = 10
+	minKdfMemLimit = 64 << 20
+	maxKdfMemLimit = 1 << 30
+)
+
+// kdfAlgorithms are the app's KdfParams schemes; anything else is refused.
+var kdfAlgorithms = map[string]bool{
+	"argon2id13":                      true,
+	"argon2id13+hkdf-sha256":          true,
+	"argon2id13+hkdf-sha256+recovery": true,
+}
+
 // Sentinel errors the caller maps onto a status code. Their text is written
 // for the app to show.
 var (
@@ -89,15 +107,25 @@ type Item struct {
 }
 
 // ValidateKey checks the sizes and shape of a vault key a client sent, so a
-// malformed one is refused before anything is stored.
+// malformed one is refused before anything is stored. Its kdfParams must name
+// one of the app's schemes at a cost between the bounds above.
 func ValidateKey(key Key) error {
 	wrapped := func(b []byte) bool { return len(b) > 0 && len(b) <= MaxWrappedKeyBytes }
-	var params map[string]any
+	within := func(n *int64, low, high int64) bool { return n != nil && *n >= low && *n <= high }
+	// The pointers tell a missing cost from a zero one.
+	var params struct {
+		Alg      string `json:"alg"`
+		OpsLimit *int64 `json:"opsLimit"`
+		MemLimit *int64 `json:"memLimit"`
+	}
 	switch {
 	case !wrapped(key.WrappedByPassword), len(key.SaltPw) != SaltBytes,
 		(key.WrappedByPhrase == nil) != (key.SaltRp == nil),
 		key.WrappedByPhrase != nil && (!wrapped(key.WrappedByPhrase) || len(key.SaltRp) != SaltBytes),
-		len(key.KdfParams) > MaxKdfParamsBytes, json.Unmarshal(key.KdfParams, &params) != nil, params == nil:
+		len(key.KdfParams) > MaxKdfParamsBytes, json.Unmarshal(key.KdfParams, &params) != nil,
+		!kdfAlgorithms[params.Alg],
+		!within(params.OpsLimit, minKdfOpsLimit, maxKdfOpsLimit),
+		!within(params.MemLimit, minKdfMemLimit, maxKdfMemLimit):
 		return ErrInvalidKey
 	}
 	return nil
@@ -295,11 +323,11 @@ func CreateItem(params CreateItemParams) (CreateItemResult, error) {
 	}
 	var row db.VaultItem
 	// One transaction, so a vault deleted alongside cannot leave this item
-	// behind with no key.
+	// behind with no key. The insert comes first: on SQLite it takes the write
+	// lock before anything is read, so a concurrent write waits under
+	// busy_timeout, where a transaction that read first fails with
+	// SQLITE_BUSY as soon as it tries to write. No key rolls the insert back.
 	err := db.InTx(params.Ctx, params.Database.Db, func(q db.Querier) error {
-		if _, err := q.GetVaultKey(params.Ctx, params.UserID); err != nil {
-			return notFound(err, ErrKeyNotFound)
-		}
 		var err error
 		row, err = q.CreateVaultItem(params.Ctx, db.CreateVaultItemParams{
 			UserID:        params.UserID,
@@ -307,7 +335,13 @@ func CreateItem(params CreateItemParams) (CreateItemResult, error) {
 			Nonce:         params.Fields.Nonce,
 			FormatVersion: params.Fields.FormatVersion,
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		if _, err := q.GetVaultKey(params.Ctx, params.UserID); err != nil {
+			return notFound(err, ErrKeyNotFound)
+		}
+		return nil
 	})
 	if err != nil {
 		return CreateItemResult{}, err

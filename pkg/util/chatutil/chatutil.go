@@ -286,6 +286,11 @@ type Channel struct {
 	// else wrote and nobody deleted (#2424). It is 0 without read_messages,
 	// so 0 on every channel an admin lists without being in it.
 	UnreadCount int64 `json:"unreadCount"`
+	// LastReadMessageID is the caller's read marker there, as PUT
+	// /chat/channels/{id}/read leaves it, so a session that missed
+	// chat_read_marker_changed can restore it (#3543). It is 0 before the
+	// first read and without read_messages.
+	LastReadMessageID int64 `json:"lastReadMessageId"`
 }
 
 // Member is one row on a channel: an account or a group.
@@ -403,7 +408,7 @@ func ListChannels(params ListChannelsParams) (ListChannelsResult, error) {
 			CreatedAt:   row.CreatedAt,
 		})
 	}
-	if err := attachUnread(params.Ctx, params.Database.Queries, params.Principal.UserID, channels); err != nil {
+	if err := attachReadState(params.Ctx, params.Database.Queries, params.Principal.UserID, channels); err != nil {
 		return ListChannelsResult{}, err
 	}
 	if !params.All {
@@ -1630,6 +1635,9 @@ const (
 	// MaxMessageRequestBytes caps a post's body: the ciphertext in base64
 	// plus room for the JSON around it.
 	MaxMessageRequestBytes = 24 << 10
+	// MaxClientMessageIDBytes caps the id a client names a send with: a
+	// UUID is 36.
+	MaxClientMessageIDBytes = 64
 	// DefaultMessagesPage and MaxMessagesPage bound one ListMessages page.
 	DefaultMessagesPage = 50
 	MaxMessagesPage     = 200
@@ -1641,6 +1649,9 @@ var (
 	// ErrInvalidMessage reports ciphertext too short to be one, or a key
 	// version the channel doesn't have.
 	ErrInvalidMessage = errors.New("a message needs ciphertext under one of the channel's key versions")
+	// ErrInvalidClientMessageID reports a client message id over
+	// MaxClientMessageIDBytes.
+	ErrInvalidClientMessageID = errors.New("a client message id can be at most 64 bytes")
 	// ErrReadOnly reports a post from a member without send_messages.
 	ErrReadOnly = errors.New("you can read this channel but not send messages in it")
 	// ErrMessageNotFound reports a message that doesn't exist or is in a
@@ -1686,14 +1697,19 @@ type PostMessageParams struct {
 	ChannelID  int64
 	KeyVersion int64
 	Ciphertext []byte
+	// ClientMessageID, when set, is the client's own name for this send
+	// (#3531). A retry encrypts the text again under a fresh nonce, so this,
+	// not the ciphertext, is what tells the Quark it already has the message.
+	ClientMessageID string
 }
 
 // PostMessageResult is the message as stored.
 type PostMessageResult struct {
 	Message Message
-	// Repeated is true when the caller had already posted exactly this
-	// ciphertext, so nothing new was stored or announced and Message is the
-	// first post: a retried request, not a second message.
+	// Repeated is true when the caller had already posted this message,
+	// under the same ClientMessageID or as exactly this ciphertext, so
+	// nothing new was stored or announced and Message is the first post: a
+	// retried request, not a second message.
 	Repeated bool
 }
 
@@ -1703,13 +1719,18 @@ type PostMessageResult struct {
 // anyone without read_messages, delegated managers and admins included,
 // ErrChannelNotFound. A nonce the channel already holds under KeyVersion is
 // ErrDuplicateMessage, unless the caller is repeating its own live post byte
-// for byte, which returns that post as Repeated.
+// for byte, which returns that post as Repeated. So does a ClientMessageID the
+// caller already sent to the channel, whatever the ciphertext, deleted posts
+// included: the retry of a send the user deleted stays deleted.
 func PostMessage(params PostMessageParams) (PostMessageResult, error) {
 	if len(params.Ciphertext) > MaxCiphertextBytes {
 		return PostMessageResult{}, ErrMessageTooLarge
 	}
 	if len(params.Ciphertext) < MinCiphertextBytes {
 		return PostMessageResult{}, ErrInvalidMessage
+	}
+	if len(params.ClientMessageID) > MaxClientMessageIDBytes {
+		return PostMessageResult{}, ErrInvalidClientMessageID
 	}
 	if params.Database == nil {
 		return PostMessageResult{}, accessutil.ErrNoDatabase
@@ -1735,6 +1756,9 @@ func PostMessage(params PostMessageParams) (PostMessageResult, error) {
 		KeyVersion: params.KeyVersion,
 		Ciphertext: params.Ciphertext,
 		Nonce:      params.Ciphertext[:NonceBytes],
+		ClientMessageID: sql.NullString{
+			String: params.ClientMessageID, Valid: params.ClientMessageID != "",
+		},
 	})
 	if sqlutil.IsUniqueConstraintErr(err) {
 		return repeatedPost(params)

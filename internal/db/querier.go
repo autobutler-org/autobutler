@@ -67,7 +67,8 @@ type Querier interface {
 	CreateChatChannelKey(ctx context.Context, arg CreateChatChannelKeyParams) (ChatChannelKey, error)
 	// Chat messages (#2418). The Quark stores ciphertext and never opens it.
 	// CreateChatMessage stores a message. nonce is the ciphertext's first 24
-	// bytes, unique per channel and key version (#2487).
+	// bytes, unique per channel and key version (#2487). client_message_id, when
+	// the client sent one, is unique per channel and author (#3531).
 	CreateChatMessage(ctx context.Context, arg CreateChatMessageParams) (ChatMessage, error)
 	// Chat reactions (#2426). The Quark stores ciphertext and never opens it.
 	// CreateChatReaction stores a reaction on a message that isn't deleted, and
@@ -195,6 +196,9 @@ type Querier interface {
 	GetChatChannelEvent(ctx context.Context, arg GetChatChannelEventParams) (ChatChannelEvent, error)
 	GetChatKeyGrant(ctx context.Context, arg GetChatKeyGrantParams) (ChatKeyGrant, error)
 	GetChatMessage(ctx context.Context, id int64) (ChatMessage, error)
+	// GetChatMessageByClientID finds the message an author already sent to a
+	// channel under a client message id.
+	GetChatMessageByClientID(ctx context.Context, arg GetChatMessageByClientIDParams) (ChatMessage, error)
 	// GetChatMessageByNonce finds the message a post's nonce already names.
 	GetChatMessageByNonce(ctx context.Context, arg GetChatMessageByNonceParams) (ChatMessage, error)
 	GetChatReaction(ctx context.Context, id int64) (ChatReaction, error)
@@ -343,9 +347,11 @@ type Querier interface {
 	// cannot read the whole tree aggregates in Go from ListMusicTracksAfter
 	// instead.
 	//
-	// Displayed casing is MIN() of the stored tag, so "Rock" and "rock" are one
-	// genre and the name does not flicker. SQLite's MIN is byte order;
-	// PostgreSQL's follows the database collation. filter_artist is 0 or 1. 0 returns
+	// "Rock" and "rock" are one genre. The name shown is the spelling on the
+	// group's lowest id, the first one indexed, so it does not flicker and is the
+	// same on both engines: MIN() of the text is byte order on SQLite and the
+	// database collation on PostgreSQL (#3306). The Go aggregation keeps the first
+	// spelling it streams in id order, which is the same row. filter_artist is 0 or 1. 0 returns
 	// every album; 1 keeps LOWER(album_artist) = LOWER(artist), and artist may
 	// be empty.
 	//
@@ -431,6 +437,15 @@ type Querier interface {
 	// soon as it tries to write. name is not a key column, so on PostgreSQL the
 	// lock does not hold up an insert that references the channel.
 	LockChatChannel(ctx context.Context, id int64) error
+	// LockInstall changes nothing: it is a no-op UPDATE run for the row lock it
+	// takes on the install's one row, which every database has from its first
+	// migration, as the first statement of first-boot setup (#3647). Before setup
+	// there is no user row to lock, so two setups at READ COMMITTED on PostgreSQL
+	// would each count no users and both create a founding admin; with the lock
+	// the second waits here until the first commits and its count sees the first's
+	// user. On SQLite the transaction already holds the write lock (BEGIN
+	// IMMEDIATE), and this changes nothing.
+	LockInstall(ctx context.Context) error
 	MoveAlbum(ctx context.Context, arg MoveAlbumParams) (PhotoAlbum, error)
 	// MoveAlbumItems points album rows at a moved file, or at everything under a
 	// moved folder. The count guard skips a row whose destination the album already

@@ -86,6 +86,12 @@ A mid-range phone's browser is several times slower than that, so 64 MiB keeps a
 budget with room to spare, and it doesn't ask a phone's browser for a large WebAssembly allocation. The cost is
 stored with each wrap, so it can go up later without breaking existing ones.
 
+The stored cost is bounded (#3648), because the Quark could lower it before a password change and get the next
+wrap at a cost far cheaper to guess offline. The app refuses a stored cost below `KdfParams.standard` or above
+`KdfParams.ceiling` (10 passes, 1 GiB) before deriving anything, and a re-wrap never copies a cost below the
+standard. `vaultutil.ValidateKey` holds a vault key to the same schemes and bounds, so an honest Quark never
+stores a weaker one.
+
 ### Lifecycle
 
 | When                          | What the app does                                                                     |
@@ -412,7 +418,9 @@ ciphertext, the nonce and `formatVersion`, and nothing else about an item.
   never opens the vault. A vault set up without the phrase has no phrase wrap until the account is given a new
   phrase (`PUT /api/v0/auth/recovery-key`); until then a recovery cannot open it.
 - **No admin recovery.** Nobody holds a copy of the vault key. An account that loses both its password and its
-  phrase wrap loses the vault, and `DELETE /api/v0/vault` lets it start a new one.
+  phrase wrap loses the vault, and `DELETE /api/v0/vault` lets it start a new one. That delete re-confirms the
+  login password's auth key, which the user always knows (after a recovery it is the new one), so a signed-in
+  device alone cannot erase the vault (#3615).
 - **Isolation.** Every vault route acts on the caller's own rows, and `vault_changed` reaches only the owner's
   sessions. An admin reads another account's vault as not found.
 

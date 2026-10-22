@@ -16,6 +16,17 @@ func (r *router) Routes() []*serverutil.Route {
 	}
 }
 
+// adminRouter holds the photo library index routes.
+type adminRouter struct{}
+
+func (r *adminRouter) Routes() []*serverutil.Route {
+	return []*serverutil.Route{
+		getIndexStatusRoute,
+		pauseIndexRoute,
+		resumeIndexRoute,
+	}
+}
+
 type copyPhotoRequest struct {
 	RelPath string `json:"relPath" binding:"required"`
 	Serial  string `json:"serial"`

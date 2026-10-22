@@ -57,6 +57,14 @@ class _FakeQuark {
   final live = StreamController<FileEvent>.broadcast();
   final reconnects = StreamController<void>.broadcast();
   bool drop = false;
+
+  /// Stores the next post and then throws, as a response lost on the way
+  /// back does.
+  bool loseResponse = false;
+
+  /// What each client message id was stored as, the way the Quark answers a
+  /// repeated one (#3531).
+  final Map<String, ChatMessage> byClientId = {};
   int _nextId = 1;
 
   ChatMessagesController client(
@@ -85,8 +93,17 @@ class _FakeQuark {
           .toList();
       return older.sublist(older.length > n ? older.length - n : 0);
     },
-    postMessage: (channelId, keyVersion, ciphertext) async =>
-        post(channelId, keyVersion, ciphertext),
+    postMessage: (channelId, keyVersion, ciphertext, {clientMessageId}) async {
+      final stored = byClientId[clientMessageId];
+      if (stored != null) return stored;
+      final message = post(channelId, keyVersion, ciphertext);
+      if (clientMessageId != null) byClientId[clientMessageId] = message;
+      if (loseResponse) {
+        loseResponse = false;
+        throw Exception('timed out');
+      }
+      return message;
+    },
     deleteMessage: (id) async {
       final i = messages.indexWhere((m) => m.id == id);
       messages[i] = messages[i].tombstone(_epoch);
@@ -205,6 +222,34 @@ void main() {
     for (final e in c.entries)
       if (e is ChatTimelineMessage) e.text,
   ];
+
+  // #3531: the Quark stored the first attempt but its response, and its
+  // event, never arrived. The retry encrypts again under a fresh nonce, and
+  // the client message id is what makes it one row on every device.
+  test('a retry after a lost response is one message', () async {
+    final key = crypto.newChannelKey();
+    final alice = _FakeKeys()..grant(1, key);
+    final sender = quark.client(alice, crypto);
+    await sender.open();
+
+    quark
+      ..drop = true
+      ..loseResponse = true;
+    await expectLater(
+      sender.send('hi', clientMessageId: 'send-1'),
+      throwsException,
+    );
+    expect(texts(sender), isEmpty);
+    await sender.send('hi', clientMessageId: 'send-1');
+
+    expect(texts(sender), ['hi']);
+    expect(quark.messages, hasLength(1));
+    final reader = quark.client(_FakeKeys()..grant(1, key), crypto);
+    await reader.open();
+    expect(texts(reader), ['hi']);
+    sender.dispose();
+    reader.dispose();
+  });
 
   test('send encrypts, and another member decrypts on open', () async {
     final key = crypto.newChannelKey();

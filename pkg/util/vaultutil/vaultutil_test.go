@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
@@ -21,6 +23,11 @@ func keyOf(fill byte) vaultutil.Key {
 		WrappedByPhrase: b(72), SaltRp: b(16),
 		KdfParams: json.RawMessage(`{"alg":"argon2id13","opsLimit":3,"memLimit":67108864}`),
 	}
+}
+
+// kdf is a kdfParams object: alg as raw JSON, and the Argon2id cost.
+func kdf(alg string, opsLimit, memLimit int64) json.RawMessage {
+	return json.RawMessage(fmt.Sprintf(`{"alg":%s,"opsLimit":%d,"memLimit":%d}`, alg, opsLimit, memLimit))
 }
 
 func itemOf(fill byte) vaultutil.ItemFields {
@@ -70,6 +77,16 @@ func TestValidateKey(t *testing.T) {
 		"empty phrase wrap":     func(k *vaultutil.Key) { k.WrappedByPhrase = []byte{} },
 		"kdf params not object": func(k *vaultutil.Key) { k.KdfParams = json.RawMessage(`[1]`) },
 		"no kdf params":         func(k *vaultutil.Key) { k.KdfParams = nil },
+		"unknown kdf":           func(k *vaultutil.Key) { k.KdfParams = kdf(`"scrypt"`, 3, 64<<20) },
+		"no kdf alg":            func(k *vaultutil.Key) { k.KdfParams = json.RawMessage(`{"opsLimit":3,"memLimit":67108864}`) },
+		"no kdf cost":           func(k *vaultutil.Key) { k.KdfParams = json.RawMessage(`{"alg":"argon2id13"}`) },
+		"fractional kdf passes": func(k *vaultutil.Key) {
+			k.KdfParams = json.RawMessage(`{"alg":"argon2id13","opsLimit":3.5,"memLimit":67108864}`)
+		},
+		"too few kdf passes":    func(k *vaultutil.Key) { k.KdfParams = kdf(`"argon2id13"`, 2, 64<<20) },
+		"too little kdf memory": func(k *vaultutil.Key) { k.KdfParams = kdf(`"argon2id13"`, 3, 64<<20-1) },
+		"too many kdf passes":   func(k *vaultutil.Key) { k.KdfParams = kdf(`"argon2id13"`, 11, 64<<20) },
+		"too much kdf memory":   func(k *vaultutil.Key) { k.KdfParams = kdf(`"argon2id13"`, 3, 1<<30+1) },
 	} {
 		key := keyOf(1)
 		edit(&key)
@@ -79,7 +96,11 @@ func TestValidateKey(t *testing.T) {
 	}
 	withoutPhrase := keyOf(1)
 	withoutPhrase.WrappedByPhrase, withoutPhrase.SaltRp = nil, nil
-	for _, key := range []vaultutil.Key{keyOf(1), withoutPhrase} {
+	ceiling := keyOf(1)
+	ceiling.KdfParams = kdf(`"argon2id13+hkdf-sha256+recovery"`, 10, 1<<30)
+	split := keyOf(1)
+	split.KdfParams = kdf(`"argon2id13+hkdf-sha256"`, 3, 64<<20)
+	for _, key := range []vaultutil.Key{keyOf(1), withoutPhrase, ceiling, split} {
 		if err := vaultutil.ValidateKey(key); err != nil {
 			t.Errorf("ValidateKey(%v) = %v, want nil", key, err)
 		}
@@ -259,5 +280,46 @@ func TestPublishChanged(t *testing.T) {
 	evt := <-events
 	if data, ok := evt.Data.(eventbus.VaultChanged); evt.Kind != eventbus.EventVaultChanged || !ok || data != (eventbus.VaultChanged{ItemID: 9, UserID: 4}) {
 		t.Errorf("published %+v, want vault_changed for item 9 of user 4", evt)
+	}
+}
+
+func TestCreateItemConcurrent(t *testing.T) {
+	onEachBackend(t, testCreateItemConcurrent)
+}
+
+// testCreateItemConcurrent creates items from many goroutines at once. On
+// SQLite a transaction that reads before it writes fails with SQLITE_BUSY the
+// moment another writer commits in between, which was a 500 on a vault item
+// create that happened to land beside any other write.
+func testCreateItemConcurrent(t *testing.T, database *db.DatabaseSqlc, bob, carol int64) {
+	ctx := context.Background()
+	for _, user := range []int64{bob, carol} {
+		if _, err := vaultutil.CreateKey(vaultutil.CreateKeyParams{Ctx: ctx, Queries: database.Queries, UserID: user, Key: keyOf(1)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	const writers = 16
+	errs := make(chan error, writers*5)
+	var wg sync.WaitGroup
+	for w := 0; w < writers; w++ {
+		user := bob
+		if w%2 == 1 {
+			user = carol
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 5 {
+				_, err := vaultutil.CreateItem(vaultutil.CreateItemParams{Ctx: ctx, Database: database, UserID: user, Fields: itemOf(1)})
+				errs <- err
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Errorf("CreateItem beside other writers: %v", err)
+		}
 	}
 }

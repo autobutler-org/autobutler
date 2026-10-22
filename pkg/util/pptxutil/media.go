@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"strconv"
+	"strings"
 
 	// The formats PowerPoint shows, registered for image.DecodeConfig.
 	_ "image/gif"
@@ -23,6 +25,19 @@ const maxImageHeaderBytes = 1 << 20 // 1 MiB
 // imageExtensions maps the format image.DecodeConfig names to the media
 // extension, which is also its image/ content subtype.
 var imageExtensions = map[string]string{"png": "png", "jpeg": "jpeg", "gif": "gif", "bmp": "bmp"}
+
+// trimNumber strips the _(n) a taken name is numbered with, as
+// storageutil.NumberedName adds it, reporting whether there was one.
+func trimNumber(stem string) (string, bool) {
+	open := strings.LastIndex(stem, "_(")
+	if open <= 0 || !strings.HasSuffix(stem, ")") {
+		return stem, false
+	}
+	if n, err := strconv.Atoi(stem[open+2 : len(stem)-1]); err != nil || n <= 0 {
+		return stem, false
+	}
+	return stem[:open], true
+}
 
 // embedAll embeds every picture slide shows that is not in the package yet:
 // its background image, then its pictures, grouped ones included.

@@ -41,10 +41,14 @@
 // table past quark_slides' limits — 500 rows, 100 columns, 5,000 cells — is
 // skipped. A chart comes in the way export writes one: a text box
 // summarizing it over a table of the data PowerPoint cached for it, with a
-// warning; one whose data cannot be read is skipped. What the editor has no
-// model for — SmartArt, embedded objects, video and audio, ink, animations
-// and transitions — is skipped and named in the
-// slide's warnings; see [ImportPptx]. An import writes schema version 1, every
+// warning; one whose data cannot be read is skipped. A shape's or picture's
+// own drop shadow comes across, and exports back, as an outer shadow; one
+// scaled or skewed is drawn without its scale or skew, with a warning. What
+// the editor has no model for — SmartArt, embedded objects, video and audio,
+// ink, animations and transitions, inner and preset shadows and a line's or
+// a text box's shadow — is skipped and named in the slide's warnings, and
+// fonts the file embeds are named in the deck's; see
+// [ImportPptx]. An import writes schema version 1, every
 // color literal and no theme, which the editor migrates as it opens the file.
 //
 // # Units
@@ -75,6 +79,8 @@ package pptxutil
 import (
 	"errors"
 	"io"
+	"path"
+	"strings"
 )
 
 // Export limits. A presentation is user-supplied, so each is checked against
@@ -249,4 +255,32 @@ func ImportPptx(params ImportPptxParams) (ImportPptxResult, error) {
 		return ImportPptxResult{}, err
 	}
 	return readPptx(archive, params)
+}
+
+// MediaDir is the folder an import of the presentation named stem, written
+// into rootDir, copies its pictures into: Talk.pptx brings Talk_media in
+// beside Talk.qslide. Its pictures belong to the presentation, not to the
+// photo library.
+func MediaDir(rootDir, stem string) string {
+	return path.Join(rootDir, stem+"_media")
+}
+
+// MediaDirsOf names the folders that may hold the pictures of the .qslide at
+// slidePath, or nothing for another kind of file. An import that finds its
+// name taken writes Talk_(1).qslide but keeps adding to Talk_media, so a
+// numbered presentation names the folder of its unnumbered stem as well as
+// its own.
+func MediaDirsOf(slidePath string) []string {
+	name := path.Base(slidePath)
+	ext := path.Ext(name)
+	if !strings.EqualFold(ext, ".qslide") {
+		return nil
+	}
+	dir := path.Dir(slidePath)
+	stem := strings.TrimSuffix(name, ext)
+	dirs := []string{MediaDir(dir, stem)}
+	if unnumbered, ok := trimNumber(stem); ok {
+		dirs = append(dirs, MediaDir(dir, unnumbered))
+	}
+	return dirs
 }

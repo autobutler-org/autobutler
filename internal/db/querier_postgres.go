@@ -417,6 +417,11 @@ func (a *postgresQueries) GetChatMessage(ctx context.Context, id int64) (ChatMes
 	return ChatMessage(row), err
 }
 
+func (a *postgresQueries) GetChatMessageByClientID(ctx context.Context, arg GetChatMessageByClientIDParams) (ChatMessage, error) {
+	row, err := a.q.GetChatMessageByClientID(ctx, pgdb.GetChatMessageByClientIDParams(arg))
+	return ChatMessage(row), err
+}
+
 func (a *postgresQueries) GetChatMessageByNonce(ctx context.Context, arg GetChatMessageByNonceParams) (ChatMessage, error) {
 	row, err := a.q.GetChatMessageByNonce(ctx, pgdb.GetChatMessageByNonceParams(arg))
 	return ChatMessage(row), err
@@ -1179,6 +1184,10 @@ func (a *postgresQueries) LockActiveAdmins(ctx context.Context) error {
 
 func (a *postgresQueries) LockChatChannel(ctx context.Context, id int64) error {
 	return a.q.LockChatChannel(ctx, id)
+}
+
+func (a *postgresQueries) LockInstall(ctx context.Context) error {
+	return a.q.LockInstall(ctx)
 }
 
 func (a *postgresQueries) MoveAlbum(ctx context.Context, arg MoveAlbumParams) (PhotoAlbum, error) {

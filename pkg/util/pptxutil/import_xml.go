@@ -1,6 +1,6 @@
 package pptxutil
 
-// cspell:ignore autofit clr cust descr dgm fmla gd grp lum patt ph prst scrgb srgb xfrm
+// cspell:ignore autofit clr cust descr dgm fmla gd grp lum patt ph prst scrgb Shdw srgb xfrm
 
 import (
 	"encoding/xml"
@@ -54,6 +54,10 @@ type xPresentation struct {
 		RelID string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/relationships id,attr"`
 	} `xml:"sldIdLst>sldId"`
 	DefaultTextStyle *xListStyle `xml:"defaultTextStyle"`
+	// EmbeddedFonts names the typefaces the package carries in ppt/fonts.
+	EmbeddedFonts []struct {
+		Typeface string `xml:"typeface,attr"`
+	} `xml:"embeddedFontLst>embeddedFont>font"`
 }
 
 // xCore is docProps/core.xml.
@@ -226,6 +230,7 @@ func (g *xGroup) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 // xNonVisual is the non-visual properties every drawn element opens with.
 type xNonVisual struct {
 	Common struct {
+		ID     string `xml:"id,attr"`
 		Name   string `xml:"name,attr"`
 		Descr  string `xml:"descr,attr"`
 		Hidden xBool  `xml:"hidden,attr"`
@@ -280,9 +285,94 @@ type xShapeProps struct {
 			Formula string `xml:"fmla,attr"`
 		} `xml:"avLst>gd"`
 	} `xml:"prstGeom"`
-	Custom *struct{} `xml:"custGeom"`
+	Custom *xCustomGeometry `xml:"custGeom"`
 	xFill
-	Line *xLine `xml:"ln"`
+	Line    *xLine    `xml:"ln"`
+	Effects *xEffects `xml:"effectLst"`
+}
+
+// xEffects is a shape's effect list; only its shadows are read. An outer
+// shadow is drawn; an inner or preset one is only reported.
+type xEffects struct {
+	Outer  *xOuterShadow `xml:"outerShdw"`
+	Inner  *struct{}     `xml:"innerShdw"`
+	Preset *struct{}     `xml:"prstShdw"`
+}
+
+// xOuterShadow is a drop shadow: its blur, how far it falls (dist) and which
+// way (dir, 60,000ths of a degree clockwise from +x), whether it turns with
+// the shape, its scale and skew, and its color.
+type xOuterShadow struct {
+	BlurRad      xInt   `xml:"blurRad,attr"`
+	Dist         xInt   `xml:"dist,attr"`
+	Dir          xInt   `xml:"dir,attr"`
+	RotWithShape *xBool `xml:"rotWithShape,attr"`
+	SX           *xInt  `xml:"sx,attr"`
+	SY           *xInt  `xml:"sy,attr"`
+	KX           xInt   `xml:"kx,attr"`
+	KY           xInt   `xml:"ky,attr"`
+	xColorChoice
+}
+
+// scaled reports whether the shadow is scaled or skewed, which the editor
+// does not draw. Its alignment only anchors a scale or skew, so on its own
+// it changes nothing.
+func (o xOuterShadow) scaled() bool {
+	unscaled := func(v *xInt) bool { return v == nil || *v == 100_000 }
+	return !unscaled(o.SX) || !unscaled(o.SY) || o.KX != 0 || o.KY != 0
+}
+
+// shadowFate says what became of the shape's own shadow when the element it
+// converted to does or does not carry one.
+func (p xShapeProps) shadowFate(carried bool) shadowFate {
+	e := p.Effects
+	switch {
+	case e == nil || (e.Outer == nil && e.Inner == nil && e.Preset == nil):
+		return shadowNone
+	case e.Outer == nil || !carried:
+		return shadowLeftOut
+	case e.Inner != nil || e.Preset != nil || e.Outer.scaled():
+		return shadowApproximated
+	}
+	return shadowDrawn
+}
+
+// xCustomGeometry is a freeform's outline: its guides and its paths.
+type xCustomGeometry struct {
+	Adjust []xGuide `xml:"avLst>gd"`
+	Guides []xGuide `xml:"gdLst>gd"`
+	Paths  []xPath  `xml:"pathLst>path"`
+}
+
+// xGuide is a named formula.
+type xGuide struct {
+	Name    string `xml:"name,attr"`
+	Formula string `xml:"fmla,attr"`
+}
+
+// xPath is one freeform path in its own w by h coordinate space; a zero
+// size is the shape's extent in EMU. Fill "none" leaves it unfilled, and
+// stroke "0" draws no outline along it.
+type xPath struct {
+	W        xInt           `xml:"w,attr"`
+	H        xInt           `xml:"h,attr"`
+	Fill     string         `xml:"fill,attr"`
+	Stroke   *xBool         `xml:"stroke,attr"`
+	Commands []xPathCommand `xml:",any"`
+}
+
+// xPathCommand is moveTo, lnTo, quadBezTo, cubicBezTo, arcTo or close.
+// Coordinates and arc values are numbers or guide names.
+type xPathCommand struct {
+	XMLName xml.Name
+	Points  []struct {
+		X string `xml:"x,attr"`
+		Y string `xml:"y,attr"`
+	} `xml:"pt"`
+	WR    string `xml:"wR,attr"`
+	HR    string `xml:"hR,attr"`
+	StAng string `xml:"stAng,attr"`
+	SwAng string `xml:"swAng,attr"`
 }
 
 // xXfrm is a transform in EMU, rotated clockwise in 60,000ths of a degree.

@@ -244,7 +244,8 @@ WrappedVaultKey _wrapVaultKey(
 /// The vault key re-wrapped for `PUT /auth/password` (#3461): opened with
 /// [currentPassword] and wrapped under [newPassword] over [authSalt], the
 /// phrase wrap kept as stored, since the phrase has not changed, and with it
-/// the Argon2id cost it records. Null for an account with no vault, and for
+/// the Argon2id cost it records, raised to [KdfParams.standard] where it is
+/// below it (#3648). Null for an account with no vault, and for
 /// one whose key [currentPassword] does not open, which then stays wrapped
 /// under the password it was made with.
 Future<WrappedVaultKey?> _vaultKeyForPasswordChange({
@@ -263,12 +264,13 @@ Future<WrappedVaultKey?> _vaultKeyForPasswordChange({
   );
   if (vaultKey == null) return null;
   try {
-    final keys = crypto.deriveAuthKeys(newPassword, authSalt, params);
+    final next = params.atLeast(KdfParams.standard);
+    final keys = crypto.deriveAuthKeys(newPassword, authSalt, next);
     try {
       return WrappedVaultKey(
         byPassword: crypto.wrapVaultKey(vaultKey, keys.vaultWrapKey, authSalt),
         byPhrase: stored.byPhrase,
-        kdfParams: params,
+        kdfParams: next,
       );
     } finally {
       keys.dispose();
@@ -483,11 +485,25 @@ class AuthService {
   /// the refresh failed before trying again (#3465).
   static Future<void>? _accountRefresh;
 
-  /// True when the last [refreshAccount] for a signed-in session threw.
+  /// What the last [refreshAccount] for a signed-in session threw, null when
+  /// it succeeded.
   ///
   /// A failed call keeps the previous [AppSettings.isAdmin], which is false
   /// on launch. The first socket open retries once when this is set.
-  static bool _accountRefreshFailed = false;
+  static Object? _accountRefreshError;
+
+  /// Waits out the [refreshAccount] in flight, if there is one, and answers
+  /// what the last one threw, or null when [AppSettings.isAdmin] is the
+  /// Quark's answer.
+  ///
+  /// Files waits on this before its first listing, so an admin is not listed
+  /// their home and then the root (#3211). Never waits when nothing is in
+  /// flight; the caller bounds the wait.
+  static Future<Object?> accountSettled() async {
+    final inFlight = _accountRefresh;
+    if (inFlight != null) await inFlight;
+    return _accountRefreshError;
+  }
 
   /// Whether the events socket has opened once since [watchAccount].
   ///
@@ -525,7 +541,7 @@ class AuthService {
       settings.userId.value = null;
       settings.avatarUpdatedAt.value = null;
       settings.featureFlags.value = const [];
-      _accountRefreshFailed = false;
+      _accountRefreshError = null;
       return;
     }
     unawaited(FeatureFlagsService.refresh());
@@ -537,9 +553,9 @@ class AuthService {
       if (status.username != null) {
         await settings.setUsername(status.username);
       }
-      _accountRefreshFailed = false;
+      _accountRefreshError = null;
     } catch (e) {
-      _accountRefreshFailed = true;
+      _accountRefreshError = e;
       debugPrint('[auth_service.dart] refreshAccount failed: $e');
     }
   }
@@ -595,7 +611,7 @@ class AuthService {
     }
     _accountWatchSubscriptions.clear();
     _accountRefresh = null;
-    _accountRefreshFailed = false;
+    _accountRefreshError = null;
     _openedAccountSocket = false;
   }
 
@@ -624,8 +640,8 @@ class AuthService {
   static Future<void> _retryAccountRefreshIfFailed() async {
     final inFlight = _accountRefresh;
     if (inFlight != null) await inFlight;
-    if (!_accountRefreshFailed) return;
-    _accountRefreshFailed = false;
+    if (_accountRefreshError == null) return;
+    _accountRefreshError = null;
     await refreshAccount();
   }
 

@@ -17,6 +17,9 @@ Covers the Photos page (`/photos`), including Quark photos, mobile device photos
 
 - Thumbnail grid of images stored on the quark is displayed.
 - Images load with correct thumbnails.
+- The pictures a PowerPoint import copied out of a presentation (JN-SL-028), in the `Talk_media` folder beside
+  `Talk.qslide` or a numbered `Talk_(1).qslide`, are not listed: they stay in Files and in the presentation. Moving or
+  renaming the `.qslide` away from that folder lists them again.
 
 ---
 
@@ -469,6 +472,16 @@ added outside Quark shows up once its thumbnail loads or after the next restart.
 - Confirming moves the marked copies to the trash and reloads the groups. A copy that could not be deleted is named
   in a snack bar by count.
 - A photo appears in one group at most, and a photo that was deleted, moved or trashed stops appearing.
+- An admin sees the library index above the groups (#3556). While the background pass is running, paused, or has
+  not reached every photo, it reads **Still indexing, so results may be incomplete** (or **Indexing paused, ...**),
+  with how many photos have been checked for duplicates out of the library and how many dates have been read. Once
+  every photo is indexed it reads **All N photos indexed** with when the last pass finished. **Pause indexing** holds
+  the pass after the photo it is reading, and **Resume indexing** carries on from there; a restart of the Quark
+  forgets a pause. When photos could not be read, **N photos couldn't be read** lists each by name and folder with a
+  plain reason: it can't be read as a photo, it is a camera RAW photo and this Quark can't convert RAW files, it is
+  too large to check, or it couldn't be opened. The status updates as the pass moves, without a refresh.
+- Anyone who is not an admin sees no index status: the Quark tells only admins whether indexing is done, so an empty
+  page for them may still mean "not indexed yet".
 
 ---
 

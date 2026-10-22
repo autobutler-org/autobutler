@@ -56,6 +56,38 @@ var (
 	ErrNotConnected = errors.New("remote access is still connecting; try again in a moment")
 )
 
+// AccessState is what Settings should treat remote access as. It is derived
+// from the stored flag and whether setup enrolled this Quark, so a flag left
+// over from before setup is not on (#3611).
+type AccessState struct {
+	// On is the switch: an admin turned remote access on and enrollment
+	// finished. A stored flag alone is not on.
+	On bool
+	// NeedsSetup is a stored flag whose enrollment never finished. The client
+	// offers the setup sheet. Nothing in this state turns remote access on.
+	NeedsSetup bool
+}
+
+// DeriveAccessState maps the stored flag and enrollment to AccessState. It
+// reads nothing, so every combination can be pinned without a Quark.
+func DeriveAccessState(enabled, enrolled bool) AccessState {
+	if !enabled {
+		return AccessState{}
+	}
+	if !enrolled {
+		return AccessState{NeedsSetup: true}
+	}
+	return AccessState{On: true}
+}
+
+// Enrolled reports whether setup stored a household credential. That
+// credential is what enrollment writes, and what a Quark enabled before
+// households, or with a key an admin supplied, does not have.
+func Enrolled() bool {
+	household, token := settingsutil.GetHousehold()
+	return household != "" && token != ""
+}
+
 // PairDeviceResult is what a device needs to join the Quark's household and
 // reach it.
 type PairDeviceResult struct {
@@ -261,6 +293,13 @@ func StartProxy(localPort int, localTLS bool) error {
 // asks for an interactive login, the node re-enrolls once with a fresh key; if
 // it still needs a login, it is stopped and Status reports why (#2466).
 func EnsureStarted(localPort int, localTLS bool, provisionFn func() (string, error)) error {
+	// A stored flag from before setup is not consent to connect. Enrollment
+	// is what an admin's setup writes; without it, do not provision a key
+	// and do not start the node (#3611).
+	if !Enrolled() {
+		log.Printf("[remote] remote access is not set up; not starting the node")
+		return nil
+	}
 	return ensureStarted(false, localPort, localTLS, provisionFn)
 }
 

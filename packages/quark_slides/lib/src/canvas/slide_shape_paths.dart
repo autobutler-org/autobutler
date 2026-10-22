@@ -6,24 +6,88 @@ library;
 import 'dart:math' as math;
 import 'dart:ui';
 
+import '../geometry/preset_geometry.dart';
+import '../model/shape_contour.dart';
 import '../model/slide_element.dart';
 import '../model/stroke.dart';
+
+/// One filled or stroked piece of a shape.
+class ShapePiece {
+  /// Creates a piece. [fill] and [stroke] say whether it takes the shape's
+  /// fill and its outline.
+  const ShapePiece(this.path, {required this.fill, required this.stroke});
+
+  /// The outline, in the same coordinates as the box it was fitted to.
+  final Path path;
+
+  /// Whether the shape's fill is drawn inside [path].
+  final bool fill;
+
+  /// Whether the shape's stroke is drawn along [path].
+  final bool stroke;
+}
+
+/// The pieces of [shape] fitted to [box].
+///
+/// A path shape draws its contours, each with its own fill and stroke, or
+/// its preset outline as one piece. A path with neither, and every other
+/// kind, is one piece that both fills and strokes.
+List<ShapePiece> shapePieces(ShapeElement shape, Rect box) {
+  if (shape.kind == ShapeKind.path) {
+    final outlines = _pathOutlines(
+      box,
+      preset: shape.preset,
+      adjust: shape.adjust,
+      contours: shape.contours,
+    );
+    if (outlines.isNotEmpty) return outlines;
+  }
+  return [
+    ShapePiece(
+      shapePath(shape.kind, box, cornerRadius: shape.cornerRadius),
+      fill: true,
+      stroke: true,
+    ),
+  ];
+}
 
 /// The outline of a [kind] of shape fitted to [box].
 ///
 /// A [ShapeKind.roundedRectangle] rounds its corners by [cornerRadius], or
 /// by 15% of the shorter side when that is `null`, never past half the
-/// shorter side; other kinds ignore it.
+/// shorter side; other kinds ignore it. A [ShapeKind.path] draws
+/// [contours] when given, otherwise the preset [preset] at [adjust], and
+/// a rectangle when it has neither.
 ///
 /// ```dart
 /// shapePath(ShapeKind.star, Offset.zero & const Size(100, 100));
 /// ```
-Path shapePath(ShapeKind kind, Rect box, {double? cornerRadius}) {
+Path shapePath(
+  ShapeKind kind,
+  Rect box, {
+  double? cornerRadius,
+  String? preset,
+  Map<String, double> adjust = const {},
+  List<ShapeContour> contours = const [],
+}) {
   final w = box.width;
   final h = box.height;
   Offset at(double fx, double fy) => box.topLeft + Offset(w * fx, h * fy);
   Path polygon(List<Offset> points) => Path()..addPolygon(points, true);
   switch (kind) {
+    case ShapeKind.path:
+      final outlines = _pathOutlines(
+        box,
+        preset: preset,
+        adjust: adjust,
+        contours: contours,
+      );
+      if (outlines.isEmpty) return Path()..addRect(box);
+      final combined = Path();
+      for (final piece in outlines) {
+        combined.addPath(piece.path, Offset.zero);
+      }
+      return combined;
     case ShapeKind.rectangle:
       return Path()..addRect(box);
     case ShapeKind.roundedRectangle:
@@ -50,6 +114,28 @@ Path shapePath(ShapeKind kind, Rect box, {double? cornerRadius}) {
     case ShapeKind.star:
       return polygon(starPoints(box));
   }
+}
+
+/// Contours, or one preset outline. Empty when a path has neither.
+List<ShapePiece> _pathOutlines(
+  Rect box, {
+  required String? preset,
+  required Map<String, double> adjust,
+  required List<ShapeContour> contours,
+}) {
+  if (contours.isNotEmpty) {
+    return [
+      for (final contour in contours)
+        ShapePiece(
+          contourPath(contour, box),
+          fill: contour.fill,
+          stroke: contour.stroke,
+        ),
+    ];
+  }
+  final presetPath = presetShapePath(preset, box, adjust);
+  if (presetPath == null) return const [];
+  return [ShapePiece(presetPath, fill: true, stroke: true)];
 }
 
 /// The ten corners of a five-pointed star stretched to fill [box],

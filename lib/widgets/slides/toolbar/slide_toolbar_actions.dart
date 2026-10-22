@@ -1,3 +1,4 @@
+// cspell:words insertable
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
@@ -96,9 +97,10 @@ class SlideToolbarActions {
     QuarkIcons.arrow_line,
   );
 
-  /// Draw each kind of shape.
+  /// Draw each insertable kind of shape. A path shape is an imported
+  /// outline, not a tool.
   List<SlideToolbarChoice> get shapes => [
-    for (final kind in ShapeKind.values)
+    for (final kind in ShapeKind.insertable)
       SlideToolbarChoice(
         key: 'slide_tool_shape_${kind.name}',
         label: _capitalized(shapeKindName(kind)),

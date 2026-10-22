@@ -1,5 +1,7 @@
+import 'package:quark/models/account_keys.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/services/photo_index_service.dart';
 import 'package:quark/utils/connection_error.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
@@ -26,6 +28,7 @@ abstract final class Errors {
   static String message(Object? error, String action) {
     if (error == null) return couldNot(action);
     if (error is UnauthorizedException) return sessionExpired;
+    if (error is KdfParamsOutOfRange) return keyCostOutOfRange;
     if (error is MessageException) return _sentence(error.message);
     if (error is ApiException) return _forStatus(error.statusCode, action);
     // Everything above is an answer from the Quark, which a refused
@@ -204,6 +207,18 @@ abstract final class Errors {
   static String notPhotos(int count) => count == 1
       ? "1 file isn't a photo, so it wasn't uploaded."
       : "$count files aren't photos, so they weren't uploaded.";
+
+  /// Why the photo library index could not read a photo (#3556), one plain
+  /// reason per class the Quark reports, for the list of failed files.
+  static String photoIndexFailure(PhotoIndexFailureReason reason) =>
+      switch (reason) {
+        PhotoIndexFailureReason.undecodable => "Can't be read as a photo",
+        PhotoIndexFailureReason.missingConverter =>
+          "A camera RAW photo, and this Quark can't convert RAW files",
+        PhotoIndexFailureReason.tooLarge => 'Too large to check',
+        PhotoIndexFailureReason.unreadable => "Couldn't be opened",
+        PhotoIndexFailureReason.unknown => "Couldn't be checked",
+      };
 
   /// An album name a sibling already has, ignoring case — what the Quark's
   /// 409 means for creating, renaming or moving an album.
@@ -444,8 +459,9 @@ abstract final class Errors {
   static const String accountDisabled =
       'This account is turned off. Ask an admin of this Quark.';
 
-  /// Deleting an account or resetting the Quark with a password that isn't
-  /// the account's: a 403 whose error is `incorrect password` (#2346).
+  /// Deleting an account, resetting the Quark or starting the vault over with
+  /// a password that isn't the account's: a 403 whose error is `incorrect
+  /// password` (#2346, #3615).
   static const String incorrectPassword =
       "That password isn't right. Nothing was deleted.";
 
@@ -492,6 +508,15 @@ abstract final class Errors {
   /// Recovering an account whose chat keys the recovery phrase doesn't open.
   static const String chatKeysWrongPhrase =
       "That recovery phrase doesn't unlock your messages.";
+
+  /// The Quark sent the account's encrypted keys, chat's or the vault's,
+  /// with an Argon2id cost below the app's standard or above its ceiling
+  /// (#3648). The app refuses to open them: a weaker cost is one only a
+  /// changed Quark would send.
+  static const String keyCostOutOfRange =
+      "Your Quark sent your encryption keys with security settings the app "
+      "doesn't accept, so it won't open them. Someone may have changed your "
+      "Quark's data.";
 
   /// Unlocking the vault, or setting it up, with a password that doesn't open
   /// the account's vault key (#3461). Nothing is sent to the Quark to check

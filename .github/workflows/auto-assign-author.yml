@@ -13,4 +13,4 @@ jobs:
   auto-assign-author:
     runs-on: ubuntu-latest
     steps:
-      - uses: autobutler-org/auto-assign-author@main
+      - uses: autobutler-org/auto-assign-author@25423cd556c9478331904e1db61c304b3bf67432 # main

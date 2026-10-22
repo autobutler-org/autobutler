@@ -119,6 +119,11 @@ func keyBody(as string, fill byte) string {
 		`","kdfParams":{"alg":"argon2id13","opsLimit":3,"memLimit":67108864}}`
 }
 
+// passwordBody re-confirms as with the auth key of its login password.
+func passwordBody(as string) string {
+	return `{"password":"` + dbtest.AuthKey(as+"-password") + `"}`
+}
+
 func itemBody(fill byte) string {
 	return `{"ciphertext":"` + b64(fill, 48) + `","nonce":"` + b64(fill, 24) + `","formatVersion":1}`
 }
@@ -218,7 +223,7 @@ func TestVault_DeleteVault(t *testing.T) {
 	}
 	h.heard()
 
-	h.expect(t, http.StatusNoContent, http.MethodDelete, "/vault", "bob", "", nil)
+	h.expect(t, http.StatusNoContent, http.MethodDelete, "/vault", "bob", passwordBody("bob"), nil)
 	if heard := h.heard(); len(heard) != 1 || heard[0] != (eventbus.VaultChanged{UserID: h.users["bob"]}) {
 		t.Errorf("events = %+v, want one vault-level change for bob", heard)
 	}
@@ -234,6 +239,42 @@ func TestVault_DeleteVault(t *testing.T) {
 	}
 	h.expect(t, http.StatusOK, http.MethodGet, "/vault/key", "carol", "", nil)
 
-	h.expect(t, http.StatusNoContent, http.MethodDelete, "/vault", "bob", "", nil)
+	h.expect(t, http.StatusNoContent, http.MethodDelete, "/vault", "bob", passwordBody("bob"), nil)
 	h.expect(t, http.StatusCreated, http.MethodPut, "/vault/key", "bob", keyBody("bob", 2), nil)
+}
+
+// TestVault_DeleteVaultReconfirmsThePassword checks that a session alone does
+// not wipe a vault (#3615): without the caller's own auth key nothing is
+// deleted and nothing is published.
+func TestVault_DeleteVaultReconfirmsThePassword(t *testing.T) {
+	h := newHarness(t)
+	h.expect(t, http.StatusCreated, http.MethodPut, "/vault/key", "bob", keyBody("bob", 1), nil)
+	h.expect(t, http.StatusCreated, http.MethodPost, "/vault/items", "bob", itemBody(1), nil)
+	h.heard()
+
+	for _, tc := range []struct {
+		name string
+		want int
+		body string
+	}{
+		{"no body", http.StatusBadRequest, ""},
+		{"no password", http.StatusForbidden, `{}`},
+		{"empty password", http.StatusForbidden, `{"password":""}`},
+		{"another account's key", http.StatusForbidden, passwordBody("carol")},
+		{"a wrong key", http.StatusForbidden, `{"password":"` + dbtest.AuthKey("not-bob") + `"}`},
+		{"a raw password", http.StatusUpgradeRequired, `{"password":"bob-password"}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h.expect(t, tc.want, http.MethodDelete, "/vault", "bob", tc.body, nil)
+		})
+	}
+	if heard := h.heard(); len(heard) != 0 {
+		t.Errorf("refused deletes published %v", heard)
+	}
+	h.expect(t, http.StatusOK, http.MethodGet, "/vault/key", "bob", "", nil)
+	var listed []vaultutil.Item
+	h.expect(t, http.StatusOK, http.MethodGet, "/vault/items", "bob", "", &listed)
+	if len(listed) != 1 {
+		t.Errorf("bob has %d items after refused deletes, want 1", len(listed))
+	}
 }

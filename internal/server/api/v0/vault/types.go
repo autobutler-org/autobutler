@@ -29,3 +29,11 @@ type createVaultKeyBody struct {
 	// password, as DELETE /auth/account and PUT /auth/recovery-key take it.
 	Password string `json:"password"`
 }
+
+// deleteVaultBody is what DELETE /vault reads: password, the caller's auth
+// key, which re-confirms that the account's own user is wiping its vault.
+type deleteVaultBody struct {
+	// Password is the standard base64 auth key of the caller's login
+	// password, as PUT /vault/key takes it.
+	Password string `json:"password"`
+}

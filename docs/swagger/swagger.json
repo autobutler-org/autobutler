@@ -3100,7 +3100,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns the channels the caller is a member of, directly, through a group, or through everyone, general first and then by name, each with the caller's effective permissions there: the union of every row that reaches them, and unreadCount: the messages after the caller's read marker (PUT /chat/channels/{id}/read) that someone else wrote and nobody deleted, 0 on a channel the caller lacks read_messages on. A channel on which that set is empty is left out. Admins get only their own channels too, unless they pass all=1: then the channels they are not in follow, in the same order, with an empty set.",
+                "description": "Returns the channels the caller is a member of, directly, through a group, or through everyone, general first and then by name, each with the caller's effective permissions there: the union of every row that reaches them, and unreadCount: the messages after the caller's read marker (PUT /chat/channels/{id}/read) that someone else wrote and nobody deleted, 0 on a channel the caller lacks read_messages on, and lastReadMessageId: the caller's read marker there, so a session that missed chat_read_marker_changed can restore it, 0 before the first read and without read_messages. A channel on which that set is empty is left out. Admins get only their own channels too, unless they pass all=1: then the channels they are not in follow, in the same order, with an empty set.",
                 "produces": [
                     "application/json"
                 ],
@@ -4096,7 +4096,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Stores ciphertext, base64, that the caller's client encrypted under the channel key of keyVersion, and sends the stored row to the channel's readers as chat_message_created. The Quark never sees the text. A ciphertext's 24-byte nonce is taken once per channel and key version: repeating your own live post byte for byte returns it with 200 and stores nothing, and any other reuse is 409. Ciphertext is at most 16 KiB. Needs send_messages; a reader without it gets 403, and anyone without read_messages 404, delegated managers and admins included.",
+                "description": "Stores ciphertext, base64, that the caller's client encrypted under the channel key of keyVersion, and sends the stored row to the channel's readers as chat_message_created. The Quark never sees the text. A ciphertext's 24-byte nonce is taken once per channel and key version: repeating your own live post byte for byte returns it with 200 and stores nothing, and any other reuse is 409. clientMessageId, up to 64 bytes, names the send: a retry encrypts again under a fresh nonce, so it carries the same clientMessageId, and one the caller already sent to this channel returns that message with 200 and stores nothing, whatever the ciphertext. Ciphertext is at most 16 KiB. Needs send_messages; a reader without it gets 403, and anyone without read_messages 404, delegated managers and admins included.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4127,7 +4127,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "the caller already posted exactly this ciphertext; nothing new was stored",
+                        "description": "the caller already posted this clientMessageId or exactly this ciphertext; nothing new was stored",
                         "schema": {
                             "$ref": "#/definitions/chatutil.Message"
                         }
@@ -4139,7 +4139,7 @@
                         }
                     },
                     "400": {
-                        "description": "ciphertext too short, or a key version the channel doesn't have",
+                        "description": "ciphertext too short, a key version the channel doesn't have, or a clientMessageId over 64 bytes",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -5965,7 +5965,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload one or more files via multipart/form-data. Needs write access on the top-level directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped.",
+                "description": "Upload one or more files via multipart/form-data. Needs write access on the top-level directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped. A request with no part named files is a 400.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -5996,9 +5996,13 @@
                         "in": "query"
                     },
                     {
-                        "type": "file",
-                        "description": "File to upload",
-                        "name": "file",
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "One file per part; repeat the part to upload more than one",
+                        "name": "files",
                         "in": "formData",
                         "required": true
                     },
@@ -6263,7 +6267,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload one or more files via multipart/form-data. Needs write access on the directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped.",
+                "description": "Upload one or more files via multipart/form-data. Needs write access on the directory; the caller owns each file the upload creates. A name already in use is a 409 unless overwrite or keepBoth says what to do about it. Overwriting a .qslide, .qsheet or .qdoc on the internal device first snapshots its old content into its version history. Answers with the files-relative path each file landed at, after any keepBoth rename. A photo or video's client-rendered thumbnail (JPEG, long edge 400) may follow its file as a part named thumbnail whose filename is the file's; one that names no earlier file, or is not a valid JPEG, is skipped. A request with no part named files is a 400.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -6301,9 +6305,13 @@
                         "in": "query"
                     },
                     {
-                        "type": "file",
-                        "description": "File to upload",
-                        "name": "file",
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "One file per part; repeat the part to upload more than one",
+                        "name": "files",
                         "in": "formData",
                         "required": true
                     },
@@ -7434,6 +7442,117 @@
                 }
             }
         },
+        "/photos/index-status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin only. Reports the background pass that hashes and dates every library photo on this device: how many photos the library holds, how many have both hashes (which duplicate detection needs), how many have had their capture date read, how many failed and the first 500 of those with a reason (undecodable, missing_converter, too_large or unreadable), when a pass last finished, and whether one is running or paused. The state is in memory: a restart forgets a pause and starts a fresh pass that skips what is already indexed. photo_index_changed events say when to fetch it again.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Get the photo library index status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/photoutil.IndexStatusResult"
+                        }
+                    },
+                    "403": {
+                        "description": "Not an admin",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/photos/index/pause": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin only. Holds the background pass that hashes and dates library photos before its next photo, leaving every IO slot to requests; the photo being read finishes first. A pass that has not started holds before its first photo. Pausing a paused pass changes nothing. The pause lasts until resumed or the server restarts, and publishes photo_index_changed.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Pause the photo library index pass",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/photoutil.IndexStatusResult"
+                        }
+                    },
+                    "403": {
+                        "description": "Not an admin",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/photos/index/resume": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin only. Lets a paused photo library index pass carry on from the photo it stopped before. Resuming a pass that is not paused changes nothing. Publishes photo_index_changed.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Resume the photo library index pass",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/photoutil.IndexStatusResult"
+                        }
+                    },
+                    "403": {
+                        "description": "Not an admin",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/photos/metadata": {
             "get": {
                 "security": [
@@ -8189,7 +8308,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns whether remote access is switched on, whether the Tailscale node has actually joined the tailnet, its remote URL once it has, and the last start failure",
+                "description": "Returns whether remote access is on, which requires that setup enrolled this Quark, whether setup is still required, whether the Tailscale node has actually joined the tailnet, its remote URL once it has, and the last start failure",
                 "produces": [
                     "application/json"
                 ],
@@ -9790,17 +9909,61 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Deletes every item of the caller's vault and its vault key in one transaction, so an account locked out of its vault, having lost both its password and its recovery phrase, can start over with PUT /vault/key. An account with no vault gets 204 too. Publishes vault_changed to the caller's sessions.",
+                "description": "Re-confirms the caller with password, which carries the auth key of the login password, exactly as PUT /vault/key takes it; a wrong or missing key is a 403, a raw password is a 426, and nothing is deleted, so a session alone cannot wipe a vault (#3615). The body is at most 1 KiB. Then deletes every item of the caller's vault and its vault key in one transaction, so an account locked out of its vault, having lost both its password and its recovery phrase, can start over with PUT /vault/key. An account with no vault gets 204 too. Publishes vault_changed to the caller's sessions. Shares the sign-in rate limit.",
+                "consumes": [
+                    "application/json"
+                ],
                 "tags": [
                     "vault"
                 ],
                 "summary": "Delete the caller's vault",
+                "parameters": [
+                    {
+                        "description": "The caller's auth key",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v0_vault.deleteVaultBody"
+                        }
+                    }
+                ],
                 "responses": {
                     "204": {
                         "description": "No Content"
                     },
+                    "400": {
+                        "description": "a body that is not JSON",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "password is not the caller's auth key",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "413": {
+                        "description": "a body over 1 KiB",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "426": {
+                        "description": "password is a raw password: the app is too old",
+                        "schema": {
+                            "$ref": "#/definitions/serverutil.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/serverutil.Response"
                         }
@@ -11193,6 +11356,10 @@
                     "description": "Kind is channel; dm is reserved for direct messages (#2423).",
                     "type": "string"
                 },
+                "lastReadMessageId": {
+                    "description": "LastReadMessageID is the caller's read marker there, as PUT\n/chat/channels/{id}/read leaves it, so a session that missed\nchat_read_marker_changed can restore it (#3543). It is 0 before the\nfirst read and without read_messages.",
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -12132,6 +12299,61 @@
                 }
             }
         },
+        "photoutil.IndexFailure": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "description": "Reason is one of the IndexFailure* constants.",
+                    "type": "string"
+                },
+                "relPath": {
+                    "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                }
+            }
+        },
+        "photoutil.IndexStatusResult": {
+            "type": "object",
+            "properties": {
+                "datesRead": {
+                    "description": "DatesRead is the photos whose capture date has been read.",
+                    "type": "integer"
+                },
+                "failed": {
+                    "description": "Failed is the photos the current or last pass could not fully read.",
+                    "type": "integer"
+                },
+                "failures": {
+                    "description": "Failures lists the first [MaxIndexFailures] of them.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/photoutil.IndexFailure"
+                    }
+                },
+                "hashed": {
+                    "description": "Hashed is the photos with both a perceptual and a content hash, which\nduplicate detection needs.",
+                    "type": "integer"
+                },
+                "lastRunAt": {
+                    "description": "LastRunAt is when a pass last finished, nil if none has since start.",
+                    "type": "string"
+                },
+                "paused": {
+                    "description": "Paused is whether the pass is held, or will hold when it starts.",
+                    "type": "boolean"
+                },
+                "running": {
+                    "description": "Running is whether a pass is under way, paused or not.",
+                    "type": "boolean"
+                },
+                "total": {
+                    "description": "Total is the photos in the library when the pass last listed it.",
+                    "type": "integer"
+                }
+            }
+        },
         "photoutil.PhotoSummary": {
             "type": "object",
             "properties": {
@@ -12974,6 +13196,9 @@
                         "type": "integer"
                     }
                 },
+                "clientMessageId": {
+                    "type": "string"
+                },
                 "keyVersion": {
                     "type": "integer"
                 }
@@ -13718,12 +13943,16 @@
                     "type": "boolean"
                 },
                 "enabled": {
-                    "description": "Enabled is the persisted setting: the user asked for remote access.",
+                    "description": "Enabled is true only when an admin turned remote access on and setup\nenrolled this Quark. A stored flag from before that enrollment is not\nenough (#3611).",
                     "type": "boolean"
                 },
                 "error": {
                     "description": "Error is the last start failure, a diagnostic for the log reader rather\nthan copy for a user.",
                     "type": "string"
+                },
+                "needsSetup": {
+                    "description": "NeedsSetup is true when that stored flag is on but enrollment never\nfinished. The client offers the setup sheet and does not show remote\naccess as on. Nothing here turns it on.",
+                    "type": "boolean"
                 },
                 "remoteUrl": {
                     "description": "RemoteURL is set only when Connected.",
@@ -14022,6 +14251,15 @@
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "v0_vault.deleteVaultBody": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "description": "Password is the standard base64 auth key of the caller's login\npassword, as PUT /vault/key takes it.",
+                    "type": "string"
                 }
             }
         },

@@ -313,8 +313,10 @@ void main() {
       );
     });
 
-    test('goes in the same request, re-wrapped under the new password, the '
-        'phrase wrap kept', () async {
+    // #3648: the stored key is at [cheap], a cost a tampered Quark could
+    // have lowered it to; the new wrap is at the standard cost regardless.
+    test('goes in the same request, re-wrapped under the new password at '
+        'the standard cost, the phrase wrap kept', () async {
       final client = _RecordingClient();
       authHttpClientFactory = () => AuthSaltClient(client);
 
@@ -324,7 +326,7 @@ void main() {
       final sent = WrappedVaultKey.fromJson(
         body['vaultKey'] as Map<String, dynamic>,
       );
-      expect(sent.kdfParams.toJson(), cheap.toJson());
+      expect(sent.kdfParams.toJson(), KdfParams.standard.split.toJson());
       expect(sent.byPhrase!.wrapped, phraseWrap.wrapped);
       final next = crypto.deriveAuthKeys(
         'brand-new-password',

@@ -13,6 +13,7 @@ import (
 
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
+	"github.com/autobutler-org/quark/pkg/util/pptxutil"
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
@@ -203,7 +204,8 @@ func sortPhotos(photos []PhotoSummary, sortBy, order string) {
 }
 
 // ListPhotos returns one page of the photo library, sorted by Sort and Order.
-// Query narrows the page to photos whose file name contains that text, and
+// The pictures a PowerPoint import copied into the folder beside its .qslide
+// are the presentation's, and are left out. Query narrows the page to photos whose file name contains that text, and
 // Total counts those matches.
 //
 // TODO: For very large collections, an index/cache would be needed instead
@@ -214,7 +216,9 @@ func ListPhotos(params ListPhotosParams) (ListPhotosResult, error) {
 	if params.Serial != "" {
 		serialFilter = []string{params.Serial}
 	}
-	// Videos are listed too, only to mark the photos that are Live Photos.
+	// Videos are listed too, only to mark the photos that are Live Photos, and
+	// presentations, only to leave out the pictures an import copied out of
+	// them: a slide's diagrams and icons are not photos.
 	infos, err := vfs.ListDevices(vfs.ListDevicesParams{
 		Ctx:      params.Ctx,
 		Registry: params.Registry,
@@ -224,15 +228,24 @@ func ListPhotos(params ListPhotosParams) (ListPhotosResult, error) {
 		return ListPhotosResult{}, err
 	}
 	liveVideos := map[DuplicatePhoto]bool{}
+	slideMedia := map[DuplicatePhoto]bool{}
 	for _, fi := range infos {
-		if !fi.IsDir && strings.HasPrefix(fi.MimeType, "video/") {
-			liveVideos[liveVideoKey(deviceSerial(fi), fi.Path)] = true
+		if fi.IsDir {
+			continue
+		}
+		serial := deviceSerial(fi)
+		if strings.HasPrefix(fi.MimeType, "video/") {
+			liveVideos[liveVideoKey(serial, fi.Path)] = true
+		}
+		for _, dir := range pptxutil.MediaDirsOf(fi.Path) {
+			slideMedia[DuplicatePhoto{DeviceSerial: serial, RelPath: dir}] = true
 		}
 	}
 	var allPhotos []PhotoSummary
 	for _, fi := range infos {
 		serial := deviceSerial(fi)
 		if fi.IsDir || !strings.HasPrefix(fi.MimeType, "image/") ||
+			slideMedia[DuplicatePhoto{DeviceSerial: serial, RelPath: path.Dir(fi.Path)}] ||
 			!params.Access.Check(serial, fi.Path, accessutil.Read).Readable ||
 			!nameMatches(fi.Name, params.Query) {
 			continue
