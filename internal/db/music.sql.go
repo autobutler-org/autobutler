@@ -163,25 +163,25 @@ func (q *Queries) GetMusicTrackScanState(ctx context.Context, arg GetMusicTrackS
 const listMusicAlbums = `-- name: ListMusicAlbums :many
 
 SELECT
-    album_key,
-    CAST(MIN(album) AS TEXT) AS title,
-    CAST(MIN(album_artist) AS TEXT) AS album_artist,
+    grouped.album_key,
+    CAST(first_row.album AS TEXT) AS title,
+    CAST(first_row.album_artist AS TEXT) AS album_artist,
     -- A scalar subquery, not MIN(), so sqlc keeps year nullable. The smallest
     -- tagged year; no row when every track is untagged.
     (
         SELECT t.year
         FROM music_tracks AS t
-        WHERE t.album_key = music_tracks.album_key AND t.year IS NOT NULL
+        WHERE t.album_key = grouped.album_key AND t.year IS NOT NULL
         ORDER BY t.year
         LIMIT 1
     ) AS year,
-    CAST(COUNT(*) AS BIGINT) AS track_count,
-    CAST(COALESCE(SUM(duration_ms), 0) AS BIGINT) AS duration_ms,
+    grouped.track_count,
+    grouped.duration_ms,
     (
         SELECT t.serial
         FROM music_tracks AS t
         WHERE
-            t.album_key = music_tracks.album_key
+            t.album_key = grouped.album_key
             AND (
                 CAST(?1 AS BIGINT) = 0
                 OR LOWER(t.album_artist) = LOWER(CAST(?2 AS TEXT))
@@ -193,7 +193,7 @@ SELECT
         SELECT t.rel_path
         FROM music_tracks AS t
         WHERE
-            t.album_key = music_tracks.album_key
+            t.album_key = grouped.album_key
             AND (
                 CAST(?1 AS BIGINT) = 0
                 OR LOWER(t.album_artist) = LOWER(CAST(?2 AS TEXT))
@@ -201,12 +201,20 @@ SELECT
         ORDER BY CASE WHEN t.cover_source != '' THEN 0 ELSE 1 END, t.rel_path, t.serial
         LIMIT 1
     ) AS cover_path
-FROM music_tracks
-WHERE
-    CAST(?1 AS BIGINT) = 0
-    OR LOWER(album_artist) = LOWER(CAST(?2 AS TEXT))
-GROUP BY album_key
-ORDER BY LOWER(MIN(album_artist)), LOWER(MIN(album)), album_key
+FROM (
+    SELECT
+        album_key,
+        MIN(id) AS first_id,
+        CAST(COUNT(*) AS BIGINT) AS track_count,
+        CAST(COALESCE(SUM(duration_ms), 0) AS BIGINT) AS duration_ms
+    FROM music_tracks
+    WHERE
+        CAST(?1 AS BIGINT) = 0
+        OR LOWER(album_artist) = LOWER(CAST(?2 AS TEXT))
+    GROUP BY album_key
+) AS grouped
+JOIN music_tracks AS first_row ON first_row.id = grouped.first_id
+ORDER BY LOWER(first_row.album_artist), LOWER(first_row.album), grouped.album_key
 `
 
 type ListMusicAlbumsParams struct {
@@ -229,9 +237,11 @@ type ListMusicAlbumsRow struct {
 // cannot read the whole tree aggregates in Go from ListMusicTracksAfter
 // instead.
 //
-// Displayed casing is MIN() of the stored tag, so "Rock" and "rock" are one
-// genre and the name does not flicker. SQLite's MIN is byte order;
-// PostgreSQL's follows the database collation. filter_artist is 0 or 1. 0 returns
+// "Rock" and "rock" are one genre. The name shown is the spelling on the
+// group's lowest id, the first one indexed, so it does not flicker and is the
+// same on both engines: MIN() of the text is byte order on SQLite and the
+// database collation on PostgreSQL (#3306). The Go aggregation keeps the first
+// spelling it streams in id order, which is the same row. filter_artist is 0 or 1. 0 returns
 // every album; 1 keeps LOWER(album_artist) = LOWER(artist), and artist may
 // be empty.
 //
@@ -272,7 +282,7 @@ func (q *Queries) ListMusicAlbums(ctx context.Context, arg ListMusicAlbumsParams
 
 const listMusicArtists = `-- name: ListMusicArtists :many
 SELECT
-    CAST(grouped.name AS TEXT) AS name,
+    CAST(first_row.album_artist AS TEXT) AS name,
     grouped.album_count,
     grouped.track_count,
     (
@@ -292,12 +302,13 @@ SELECT
 FROM (
     SELECT
         LOWER(album_artist) AS artist_key,
-        MIN(album_artist) AS name,
+        MIN(id) AS first_id,
         CAST(COUNT(DISTINCT album_key) AS BIGINT) AS album_count,
         CAST(COUNT(*) AS BIGINT) AS track_count
     FROM music_tracks
     GROUP BY LOWER(album_artist)
 ) AS grouped
+JOIN music_tracks AS first_row ON first_row.id = grouped.first_id
 ORDER BY grouped.artist_key
 `
 
@@ -340,11 +351,18 @@ func (q *Queries) ListMusicArtists(ctx context.Context) ([]ListMusicArtistsRow, 
 
 const listMusicGenres = `-- name: ListMusicGenres :many
 SELECT
-    CAST(MIN(genre) AS TEXT) AS name,
-    CAST(COUNT(*) AS BIGINT) AS track_count
-FROM music_tracks
-GROUP BY LOWER(genre)
-ORDER BY LOWER(genre)
+    CAST(first_row.genre AS TEXT) AS name,
+    grouped.track_count
+FROM (
+    SELECT
+        LOWER(genre) AS genre_key,
+        MIN(id) AS first_id,
+        CAST(COUNT(*) AS BIGINT) AS track_count
+    FROM music_tracks
+    GROUP BY LOWER(genre)
+) AS grouped
+JOIN music_tracks AS first_row ON first_row.id = grouped.first_id
+ORDER BY grouped.genre_key
 `
 
 type ListMusicGenresRow struct {

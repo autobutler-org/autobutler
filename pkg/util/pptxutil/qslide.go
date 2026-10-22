@@ -16,17 +16,18 @@ const (
 	// quark_slides' QslideCodec writes: version 2 added the stored theme,
 	// role colors, slide layouts and placeholder text boxes, version 3
 	// slide transitions, a slide's own and the deck's default, version 4
-	// tables, and version 5 charts. Older files read too, as the codec
-	// migrates them.
-	exportSchemaVersion = 5
+	// tables, version 5 charts, and version 6 shape and picture shadows.
+	// Older files read too, as the codec migrates them.
+	exportSchemaVersion = 6
 	// importSchemaVersion is the schema an import writes. A PowerPoint theme
 	// does not map onto a .qslide theme without loss — its fonts per script,
 	// its color transforms, its master's own text styles — so an import keeps
 	// to version 1: every color literal, every run styled as it is drawn, and
 	// no theme. The editor opens it as a deck with none and saves it at its
 	// own version. A slide's transition is written as version 3 has it, and
-	// a table as version 4 has it: the codec's migrations up from 1 carry a
-	// slide's fields and elements through unchanged.
+	// a table as version 4 has it, and a shadow as version 6 has it: the
+	// codec's migrations up from 1 carry a slide's fields and elements
+	// through unchanged.
 	importSchemaVersion = 1
 )
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 )
 
@@ -42,8 +43,64 @@ type importer struct {
 	mediaBytes int64
 	elements   int
 	nextID     int
-	result     ImportPptxResult
+	// leftOut and approximated count the shapes whose shadows were left out
+	// or drawn without their scale or skew; templateShadows is the layout
+	// and master shapes already counted.
+	leftOut, approximated shadowTally
+	templateShadows       map[string]bool
+	result                ImportPptxResult
 }
+
+// shadowTally counts shapes whose shadows did not come across as drawn, a
+// layout's or master's once however many slides show it: slides is the
+// slides one was on, and onSlide whether the slide being read has one.
+type shadowTally struct {
+	shapes  int
+	slides  []int
+	onSlide bool
+}
+
+// startSlide starts counting a slide and returns the count to restore if
+// the slide cannot be read.
+func (t *shadowTally) startSlide() int {
+	t.onSlide = false
+	return t.shapes
+}
+
+// endSlide notes slide number when a shadow was counted on it.
+func (t *shadowTally) endSlide(number int) {
+	if t.onSlide {
+		t.slides = append(t.slides, number)
+	}
+	t.onSlide = false
+}
+
+// warnings is message, for the whole deck's count, on every slide counted.
+// The count is the whole deck's, so the summary lists every slide under one
+// line.
+func (t *shadowTally) warnings(message func(shapes int) string) []ImportWarning {
+	var out []ImportWarning
+	for _, number := range t.slides {
+		out = append(out, ImportWarning{Slide: number, Message: message(t.shapes)})
+	}
+	return out
+}
+
+// shadowFate is what became of a shape's own shadow.
+type shadowFate int
+
+const (
+	// shadowNone is a shape without a shadow.
+	shadowNone shadowFate = iota
+	// shadowDrawn is a shadow that came across as it is drawn.
+	shadowDrawn
+	// shadowApproximated is a drop shadow that came across without its
+	// scale or skew, or beside an inner or preset shadow that did not.
+	shadowApproximated
+	// shadowLeftOut is a shadow the editor does not draw: an inner or preset
+	// one, or one on an element that casts none.
+	shadowLeftOut
+)
 
 // templatePart is a layout or master, read once and drawn behind every slide
 // that uses it.
@@ -61,11 +118,12 @@ type templatePart struct {
 // readPptx converts every slide in show order, writing each as it goes.
 func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error) {
 	im := &importer{
-		a:         a,
-		params:    params,
-		templates: map[string]*templatePart{},
-		media:     map[string]string{},
-		skipped:   map[string]string{},
+		a:               a,
+		params:          params,
+		templates:       map[string]*templatePart{},
+		media:           map[string]string{},
+		skipped:         map[string]string{},
+		templateShadows: map[string]bool{},
 	}
 	presPart, err := im.mainPart()
 	if err != nil {
@@ -80,6 +138,15 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 		return im.result, err
 	}
 	im.defaultText = pres.DefaultTextStyle
+	if len(pres.EmbeddedFonts) > 0 {
+		var typefaces []string
+		for _, f := range pres.EmbeddedFonts {
+			if f.Typeface != "" && !slices.Contains(typefaces, f.Typeface) {
+				typefaces = append(typefaces, f.Typeface)
+			}
+		}
+		im.result.Warnings = append(im.result.Warnings, ImportWarning{Message: embeddedFontsWarning(typefaces)})
+	}
 	size := im.setSize(int64(pres.SlideSize.CX), int64(pres.SlideSize.CY))
 
 	out := &qslideWriter{w: params.Out}
@@ -94,6 +161,7 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 		rel, ok := presRels[id.RelID]
 		var slide outSlide
 		var warnings []string
+		leftOut, approximated := im.leftOut.startSlide(), im.approximated.startSlide()
 		if target, inside := resolveTarget(presPart, rel.Target); ok && inside && a.has(target) {
 			slide, warnings, err = im.readSlide(target)
 		} else {
@@ -107,7 +175,11 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 			// its place in the show as an empty slide.
 			slide = outSlide{Elements: []outElement{}}
 			warnings = []string{"This slide could not be read, so it was left empty."}
+			im.leftOut.shapes, im.leftOut.onSlide = leftOut, false
+			im.approximated.shapes, im.approximated.onSlide = approximated, false
 		}
+		im.leftOut.endSlide(number)
+		im.approximated.endSlide(number)
 		slide.ID = fmt.Sprintf("s%d", number)
 		for _, w := range warnings {
 			im.result.Warnings = append(im.result.Warnings, ImportWarning{Slide: number, Message: w})
@@ -117,7 +189,39 @@ func readPptx(a *pptxArchive, params ImportPptxParams) (ImportPptxResult, error)
 		}
 		im.result.Slides++
 	}
+	im.result.Warnings = append(im.result.Warnings, im.leftOut.warnings(shadowsLeftOutWarning)...)
+	im.result.Warnings = append(im.result.Warnings, im.approximated.warnings(shadowsApproximatedWarning)...)
 	return im.result, out.close()
+}
+
+// shadowsLeftOutWarning says how many shapes' shadows were left out.
+func shadowsLeftOutWarning(shapes int) string {
+	if shapes == 1 {
+		return "The shadow on 1 shape was left out."
+	}
+	return fmt.Sprintf("Shadows on %d shapes were left out.", shapes)
+}
+
+// shadowsApproximatedWarning says how many shapes' shadows were drawn
+// without their scale or skew.
+func shadowsApproximatedWarning(shapes int) string {
+	if shapes == 1 {
+		return "The shadow on 1 shape may look slightly different."
+	}
+	return fmt.Sprintf("Shadows on %d shapes may look slightly different.", shapes)
+}
+
+// embeddedFontsWarning says the fonts a package embeds were not used,
+// naming their typefaces when it can.
+func embeddedFontsWarning(typefaces []string) string {
+	names := ""
+	switch n := len(typefaces); {
+	case n == 1:
+		names = " (" + typefaces[0] + ")"
+	case n > 1:
+		names = " (" + strings.Join(typefaces[:n-1], ", ") + " and " + typefaces[n-1] + ")"
+	}
+	return "Embedded fonts" + names + " were not carried over, so text may look different."
 }
 
 // isFileFault reports whether err is the package's fault rather than the
@@ -373,6 +477,58 @@ func (s *slideReader) warn(message string) {
 	if !s.warned[message] {
 		s.warned[message] = true
 		s.warnings = append(s.warnings, message)
+	}
+}
+
+// noteShadow counts a converted shape or picture whose shadow is left out or
+// drawn only approximately; carried is whether its element casts the drop
+// shadow. A layout's or master's shape counts once, however many slides
+// show it.
+func (s *slideReader) noteShadow(props xShapeProps, nv xNonVisual, template, carried bool) {
+	var tally *shadowTally
+	switch props.shadowFate(carried) {
+	case shadowLeftOut:
+		tally = &s.leftOut
+	case shadowApproximated:
+		tally = &s.approximated
+	default:
+		return
+	}
+	tally.onSlide = true
+	if template {
+		key := s.source.part + "#" + nv.Common.ID
+		if s.templateShadows[key] {
+			return
+		}
+		s.templateShadows[key] = true
+	}
+	tally.shapes++
+}
+
+// shadow is the shape's own drop shadow in slide units, scaled like a
+// stroke's width, or nil. Its offset is the slide's: one that turns with a
+// shape turned rotation degrees — rotWithShape, the default — is turned
+// with it. A color that cannot be read is black, PowerPoint's own.
+func (s *slideReader) shadow(props xShapeProps, rotation float64) *outShadow {
+	if props.Effects == nil || props.Effects.Outer == nil {
+		return nil
+	}
+	o := props.Effects.Outer
+	c := s.hex(&o.xColorChoice)
+	if c == "" {
+		c = "#000000"
+	}
+	degrees := float64(o.Dir) / 60_000
+	if o.RotWithShape == nil || bool(*o.RotWithShape) {
+		degrees += rotation
+	}
+	angle := degrees * math.Pi / 180
+	dist := float64(o.Dist) / s.scale
+	return &outShadow{
+		Color: c,
+		X:     round(dist * math.Cos(angle)),
+		Y:     round(dist * math.Sin(angle)),
+		Blur:  round(math.Max(float64(o.BlurRad), 0) / s.scale),
 	}
 }
 

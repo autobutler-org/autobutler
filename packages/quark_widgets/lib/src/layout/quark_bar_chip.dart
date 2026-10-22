@@ -124,11 +124,18 @@ class QuarkBarChip extends StatelessWidget {
           ),
     );
     final message = tooltip;
+    // The tooltip sits inside the MergeSemantics so its text joins the button's
+    // node; above it, the tooltip's semantics have no node of their own and
+    // land on whatever ancestor has one, which can be the page (#3645).
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: QuarkBarIconButton.tapTargetMargin,
       ),
-      child: message == null ? chip : Tooltip(message: message, child: chip),
+      child: message == null
+          ? chip
+          : MergeSemantics(
+              child: Tooltip(message: message, child: chip),
+            ),
     );
   }
 }

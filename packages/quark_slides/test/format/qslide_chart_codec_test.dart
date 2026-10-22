@@ -188,8 +188,8 @@ void main() {
   });
 
   group('migration', () {
-    test('this version writes schema 5', () {
-      expect(QslideCodec.schemaVersion, 5);
+    test('this version writes schema 6', () {
+      expect(QslideCodec.schemaVersion, 6);
     });
 
     test('the golden v4 file reads as the sample deck', () {
@@ -199,7 +199,7 @@ void main() {
           samplePresentation());
     });
 
-    test('it saves as version 5 and otherwise byte for byte as before', () {
+    test('it saves as version 6 and otherwise byte for byte as before', () {
       final saved =
           QslideCodec.encode(QslideCodec.decode(fixture('v4_sample.qslide')));
       expect(saved, fixture('sample.qslide'));
@@ -207,12 +207,12 @@ void main() {
         saved,
         fixture('v4_sample.qslide').replaceFirst(
           '"schemaVersion": 4',
-          '"schemaVersion": 5',
+          '"schemaVersion": 6',
         ),
       );
     });
 
-    test('every older version migrates to 5', () {
+    test('every older version migrates to 6', () {
       for (final name in [
         'v1_sample.qslide',
         'v2_sample.qslide',
@@ -220,7 +220,7 @@ void main() {
         'v4_sample.qslide',
       ]) {
         final json = QslideCodec.toJson(QslideCodec.decode(fixture(name)));
-        expect(json['schemaVersion'], 5, reason: name);
+        expect(json['schemaVersion'], 6, reason: name);
       }
     });
 

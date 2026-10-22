@@ -2,8 +2,10 @@ package musicutil_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/autobutler-org/quark/internal/db"
@@ -22,13 +24,8 @@ func TestMusicOnPostgres(t *testing.T) {
 	t.Cleanup(func() { _ = database.Db.Close() })
 	sqlite := library(t)
 	ctx := context.Background()
-	seed(t, database.Db,
-		track{path: "shared/mixed/1.flac", title: "Alpha", artist: "Ann", album: "Mixed", genre: "Rock", trackNo: 1, year: 2001},
-		track{path: "shared/mixed/2.flac", title: "beta", artist: "Ann", album: "Mixed", genre: "rock", trackNo: 2},
-		track{path: "shared/solo/1.flac", title: "Gamma", artist: "Bo", album: "Solo", genre: "Jazz", trackNo: 1, year: 1990},
-		track{path: "private/mixed/3.flac", title: "Delta", artist: "Ann", album: "Mixed", genre: "Rock", trackNo: 3, year: 1980, cover: true},
-		track{path: "private/secret/1.flac", title: "Epsilon", artist: "Cy", album: "Secret", genre: "Metal", trackNo: 1, cover: true},
-	)
+	seed(t, database.Db, append(slices.Clone(libraryTracks), mixedCaseTracks...)...)
+	seed(t, sqlite.Db, mixedCaseTracks...)
 	admin := adminAccess(t)
 
 	for _, sort := range []musicutil.TrackSort{musicutil.SortAlbumOrder, musicutil.SortTitle, musicutil.SortYear, musicutil.SortAdded} {
@@ -49,18 +46,31 @@ func TestMusicOnPostgres(t *testing.T) {
 			}
 		}
 	}
-	albums, err := musicutil.ListAlbums(musicutil.ListAlbumsParams{Ctx: ctx, DB: database.Db, Access: admin})
-	// "Mixed" sits in two folders, and the album key includes the folder.
-	if err != nil || albums.Total != 4 {
-		t.Errorf("ListAlbums = %+v, %v; want 4 albums", albums, err)
-	}
-	artists, err := musicutil.ListArtists(musicutil.ListArtistsParams{Ctx: ctx, DB: database.Db, Access: admin})
-	if err != nil || artists.Total != 3 {
-		t.Errorf("ListArtists = %+v, %v; want 3 artists", artists, err)
-	}
-	genres, err := musicutil.ListGenres(musicutil.ListGenresParams{Ctx: ctx, DB: database.Db, Access: admin})
-	if err != nil || len(genres.Genres) != 3 {
-		t.Errorf("ListGenres = %+v, %v; want 3 genres", genres, err)
+	// Displayed names are compared too: a group's spelling must not follow
+	// the engine's collation (#3306).
+	for name, list := range map[string]func(*sql.DB) (any, error){
+		"albums": func(conn *sql.DB) (any, error) {
+			return musicutil.ListAlbums(musicutil.ListAlbumsParams{Ctx: ctx, DB: conn, Access: admin})
+		},
+		"artists": func(conn *sql.DB) (any, error) {
+			return musicutil.ListArtists(musicutil.ListArtistsParams{Ctx: ctx, DB: conn, Access: admin})
+		},
+		"genres": func(conn *sql.DB) (any, error) {
+			return musicutil.ListGenres(musicutil.ListGenresParams{Ctx: ctx, DB: conn, Access: admin})
+		},
+	} {
+		want, err := list(sqlite.Db)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := list(database.Db)
+		if err != nil {
+			t.Errorf("%s on PostgreSQL: %v", name, err)
+			continue
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s: PostgreSQL %+v\nSQLite     %+v", name, got, want)
+		}
 	}
 	if _, err := musicutil.MovePath(musicutil.MovePathParams{Ctx: ctx, DB: database.Db, Serial: usbSerial, OldPath: "shared", NewPath: "moved"}); err != nil {
 		t.Errorf("MovePath: %v", err)

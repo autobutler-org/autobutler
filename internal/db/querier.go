@@ -347,9 +347,11 @@ type Querier interface {
 	// cannot read the whole tree aggregates in Go from ListMusicTracksAfter
 	// instead.
 	//
-	// Displayed casing is MIN() of the stored tag, so "Rock" and "rock" are one
-	// genre and the name does not flicker. SQLite's MIN is byte order;
-	// PostgreSQL's follows the database collation. filter_artist is 0 or 1. 0 returns
+	// "Rock" and "rock" are one genre. The name shown is the spelling on the
+	// group's lowest id, the first one indexed, so it does not flicker and is the
+	// same on both engines: MIN() of the text is byte order on SQLite and the
+	// database collation on PostgreSQL (#3306). The Go aggregation keeps the first
+	// spelling it streams in id order, which is the same row. filter_artist is 0 or 1. 0 returns
 	// every album; 1 keeps LOWER(album_artist) = LOWER(artist), and artist may
 	// be empty.
 	//
