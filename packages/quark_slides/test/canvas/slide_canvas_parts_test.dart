@@ -8,11 +8,16 @@ void main() {
 
   test('defaultSlideElementLabel names each kind of element', () {
     expect(
-      defaultSlideElementLabel(TextBox(
-        id: 't',
-        frame: frame,
-        paragraphs: [TextParagraph.plain(' Hello '), TextParagraph.plain('x')],
-      )),
+      defaultSlideElementLabel(
+        TextBox(
+          id: 't',
+          frame: frame,
+          paragraphs: [
+            TextParagraph.plain(' Hello '),
+            TextParagraph.plain('x'),
+          ],
+        ),
+      ),
       'Hello\nx',
     );
     expect(
@@ -44,7 +49,9 @@ void main() {
       'Arrow',
     );
     expect(
-        defaultSlideElementLabel(LineElement(id: 'l', frame: frame)), 'Line');
+      defaultSlideElementLabel(LineElement(id: 'l', frame: frame)),
+      'Line',
+    );
     expect(
       defaultSlideElementLabel(
         UnknownElement(id: 'u', frame: frame, extra: const {'type': 'chart'}),

@@ -264,9 +264,7 @@ class SlideTextEditingController extends ChangeNotifier {
     final cell = _cell;
     _end();
     final slideId = _slideId!;
-    final current = doc.presentation.slideById(slideId)?.findElement(
-          draft.id,
-        );
+    final current = doc.presentation.slideById(slideId)?.findElement(draft.id);
     if (cell != null) return _commitCell(doc, slideId, current, cell, draft);
     if (current is! TextBox) return;
     if (removeIfEmpty &&
@@ -283,10 +281,11 @@ class SlideTextEditingController extends ChangeNotifier {
       if (draft.anchor != original.anchor ||
           draft.autoFit != original.autoFit) {
         doc.formatText(
-          slideId,
-          {draft.id},
-          TextFormat(anchor: draft.anchor, autoFit: draft.autoFit),
-        );
+            slideId,
+            {
+              draft.id,
+            },
+            TextFormat(anchor: draft.anchor, autoFit: draft.autoFit));
       }
     });
   }
@@ -310,7 +309,12 @@ class SlideTextEditingController extends ChangeNotifier {
     doc.batch(() {
       if (!blank && !listEquals(draft.paragraphs, before.paragraphs)) {
         doc.setCellText(
-            slideId, draft.id, cell.row, cell.column, draft.paragraphs);
+          slideId,
+          draft.id,
+          cell.row,
+          cell.column,
+          draft.paragraphs,
+        );
       }
       if (draft.anchor != before.anchor) {
         doc.formatCells(

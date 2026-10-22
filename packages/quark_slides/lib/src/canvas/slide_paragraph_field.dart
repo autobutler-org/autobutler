@@ -166,12 +166,15 @@ class _SlideParagraphFieldState extends State<SlideParagraphField>
       LogicalKeyboardKey.keyZ when command =>
         keys.isShiftPressed ? session.redo : session.undo,
       LogicalKeyboardKey.keyY when command => session.redo,
-      LogicalKeyboardKey.keyB when command => () =>
-          session.toggle(TextToggle.bold),
-      LogicalKeyboardKey.keyI when command => () =>
-          session.toggle(TextToggle.italic),
-      LogicalKeyboardKey.keyU when command => () =>
-          session.toggle(TextToggle.underline),
+      LogicalKeyboardKey.keyB when command => () => session.toggle(
+            TextToggle.bold,
+          ),
+      LogicalKeyboardKey.keyI when command => () => session.toggle(
+            TextToggle.italic,
+          ),
+      LogicalKeyboardKey.keyU when command => () => session.toggle(
+            TextToggle.underline,
+          ),
       LogicalKeyboardKey.keyA when command => session.selectAll,
       LogicalKeyboardKey.arrowUp
           when !keys.isShiftPressed &&

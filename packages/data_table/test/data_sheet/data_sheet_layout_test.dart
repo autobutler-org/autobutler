@@ -174,21 +174,23 @@ void main() {
       expect(c.frozenRows, 3, reason: 'deleted below the band');
     });
 
-    test('columns inserted or deleted inside the frozen band move its edge',
-        () {
-      final c = DataSheetController.fromTable(_table(2, 4))
-        ..setFrozenColumns(1);
-      addTearDown(c.dispose);
+    test(
+      'columns inserted or deleted inside the frozen band move its edge',
+      () {
+        final c = DataSheetController.fromTable(_table(2, 4))
+          ..setFrozenColumns(1);
+        addTearDown(c.dispose);
 
-      c.insertColumnAt(0);
-      expect(c.frozenColumns, 2);
-      c.duplicateColumn(1);
-      expect(c.frozenColumns, 3);
-      c.deleteColumnAt(2);
-      expect(c.frozenColumns, 2);
-      c.insertColumnAt(3);
-      expect(c.frozenColumns, 2, reason: 'inserted right of the band');
-    });
+        c.insertColumnAt(0);
+        expect(c.frozenColumns, 2);
+        c.duplicateColumn(1);
+        expect(c.frozenColumns, 3);
+        c.deleteColumnAt(2);
+        expect(c.frozenColumns, 2);
+        c.insertColumnAt(3);
+        expect(c.frozenColumns, 2, reason: 'inserted right of the band');
+      },
+    );
 
     test('a CSV import keeps the freeze inside the new sheet', () {
       final c = DataSheetController.fromTable(_table(5, 5))

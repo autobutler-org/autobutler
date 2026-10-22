@@ -6,13 +6,14 @@ import 'package:quark_slides/quark_slides.dart';
 
 String fixture(String name) => File('test/fixtures/$name').readAsStringSync();
 
-Matcher throwsFormatAt(String path) => throwsA(
-      isA<QslideFormatException>().having((e) => e.path, 'path', path),
-    );
+Matcher throwsFormatAt(String path) =>
+    throwsA(isA<QslideFormatException>().having((e) => e.path, 'path', path));
 
 /// A one-slide deck at [version] holding [element].
-Map<String, Object?> deckWith(Map<String, Object?> element,
-        {int version = 6}) =>
+Map<String, Object?> deckWith(
+  Map<String, Object?> element, {
+  int version = 6,
+}) =>
     {
       'schemaVersion': version,
       'slides': [
@@ -45,9 +46,11 @@ void main() {
         shadow: shadow,
       );
       final saved = QslideCodec.encode(
-        Presentation(slides: [
-          Slide(id: 's', elements: [shape]),
-        ]),
+        Presentation(
+          slides: [
+            Slide(id: 's', elements: [shape]),
+          ],
+        ),
       );
       expect(saved, contains('"schemaVersion": 6'));
       final json = (jsonDecode(saved)['slides'] as List)
@@ -63,42 +66,53 @@ void main() {
     });
 
     test('leaves a zero offset and blur out', () {
-      expect(ElementShadow(color: SlideColor.black).toJson(),
-          {'color': '#000000'});
+      expect(ElementShadow(color: SlideColor.black).toJson(), {
+        'color': '#000000',
+      });
     });
 
     test('reads with defaults, and a negative blur as 0', () {
-      final read = only(QslideCodec.fromJson(deckWith({
-        'id': 'e',
-        'type': 'shape',
-        'kind': 'rectangle',
-        'frame': _frame,
-        'shadow': {'blur': -3},
-      }))) as ShapeElement;
+      final read = only(
+        QslideCodec.fromJson(
+          deckWith({
+            'id': 'e',
+            'type': 'shape',
+            'kind': 'rectangle',
+            'frame': _frame,
+            'shadow': {'blur': -3},
+          }),
+        ),
+      ) as ShapeElement;
       expect(read.shadow, ElementShadow(color: SlideColor.black));
     });
 
     test('keeps fields a newer writer added to it', () {
-      final read = only(QslideCodec.fromJson(deckWith({
-        'id': 'e',
-        'type': 'shape',
-        'kind': 'rectangle',
-        'frame': _frame,
-        'shadow': {'color': '#FF0000', 'spread': 2},
-      }))) as ShapeElement;
+      final read = only(
+        QslideCodec.fromJson(
+          deckWith({
+            'id': 'e',
+            'type': 'shape',
+            'kind': 'rectangle',
+            'frame': _frame,
+            'shadow': {'color': '#FF0000', 'spread': 2},
+          }),
+        ),
+      ) as ShapeElement;
       expect(read.shadow!.color, const SlideColor(0xFFFF0000));
       expect(read.toJson()['shadow'], {'color': '#FF0000', 'spread': 2});
     });
 
     test('a mistyped shadow is refused at its path', () {
       expect(
-        () => QslideCodec.fromJson(deckWith({
-          'id': 'e',
-          'type': 'shape',
-          'kind': 'rectangle',
-          'frame': _frame,
-          'shadow': {'x': 'far'},
-        })),
+        () => QslideCodec.fromJson(
+          deckWith({
+            'id': 'e',
+            'type': 'shape',
+            'kind': 'rectangle',
+            'frame': _frame,
+            'shadow': {'x': 'far'},
+          }),
+        ),
         throwsFormatAt(r'$.slides[0].elements[0].shadow.x'),
       );
     });
@@ -114,8 +128,10 @@ void main() {
     });
 
     test('a shape without one writes no shadow', () {
-      expect(ShapeElement(id: 'e', frame: frame).toJson(),
-          isNot(contains('shadow')));
+      expect(
+        ShapeElement(id: 'e', frame: frame).toJson(),
+        isNot(contains('shadow')),
+      );
     });
   });
 
@@ -127,9 +143,11 @@ void main() {
         source: 'pics/a.png',
         shadow: shadow,
       );
-      final deck = Presentation(slides: [
-        Slide(id: 's', elements: [image]),
-      ]);
+      final deck = Presentation(
+        slides: [
+          Slide(id: 's', elements: [image]),
+        ],
+      );
       final read = only(QslideCodec.decode(QslideCodec.encode(deck)));
       expect(read, image);
       expect((read as ImageElement).copyWith(altText: 'x').shadow, shadow);
@@ -145,28 +163,37 @@ void main() {
     test('the golden v5 file reads as the sample deck', () {
       final json = jsonDecode(fixture('v5_sample.qslide')) as Map;
       expect(json['schemaVersion'], 5);
-      final saved =
-          QslideCodec.encode(QslideCodec.decode(fixture('v5_sample.qslide')));
+      final saved = QslideCodec.encode(
+        QslideCodec.decode(fixture('v5_sample.qslide')),
+      );
       expect(saved, fixture('sample.qslide'));
       expect(
         saved,
-        fixture('v5_sample.qslide').replaceFirst(
-          '"schemaVersion": 5',
-          '"schemaVersion": 6',
-        ),
+        fixture(
+          'v5_sample.qslide',
+        ).replaceFirst('"schemaVersion": 5', '"schemaVersion": 6'),
       );
     });
 
     test('a shadow a version 5 file carried reads as a shadow', () {
       // A PowerPoint import writes version 1 with the shapes' shadows.
       for (final version in [1, 5]) {
-        final read = only(QslideCodec.fromJson(deckWith({
-          'id': 'e',
-          'type': 'shape',
-          'kind': 'rectangle',
-          'frame': _frame,
-          'shadow': {'color': '#0000007F', 'x': 3, 'y': 4, 'blur': 6},
-        }, version: version))) as ShapeElement;
+        final read = only(
+          QslideCodec.fromJson(
+            deckWith({
+              'id': 'e',
+              'type': 'shape',
+              'kind': 'rectangle',
+              'frame': _frame,
+              'shadow': {
+                'color': '#0000007F',
+                'x': 3,
+                'y': 4,
+                'blur': 6,
+              },
+            }, version: version),
+          ),
+        ) as ShapeElement;
         expect(
           read.shadow,
           ElementShadow(

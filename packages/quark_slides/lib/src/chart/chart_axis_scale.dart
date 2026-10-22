@@ -39,8 +39,9 @@ class ChartAxisScale {
     final magnitude =
         math.pow(10, (math.log(rough) / math.ln10).floor()).toDouble();
     final step = _niceSteps.map((s) => s * magnitude).firstWhere(
-        (s) => _ticksFor(low, high, s) <= maxTicks,
-        orElse: () => 10 * magnitude);
+          (s) => _ticksFor(low, high, s) <= maxTicks,
+          orElse: () => 10 * magnitude,
+        );
     return ChartAxisScale(
       min: _snap((low / step).floor() * step, step),
       max: _snap((high / step).ceil() * step, step),

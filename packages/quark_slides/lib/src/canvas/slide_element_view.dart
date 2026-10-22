@@ -142,9 +142,13 @@ class SlideElementView extends StatelessWidget {
           highlights: highlights[box.id] ?? const [],
         ),
       final ShapeElement shape => CustomPaint(
-          painter: SlideShapePainter(shape, theme), size: Size.infinite),
+          painter: SlideShapePainter(shape, theme),
+          size: Size.infinite,
+        ),
       final LineElement line => CustomPaint(
-          painter: SlideLinePainter(line, theme), size: Size.infinite),
+          painter: SlideLinePainter(line, theme),
+          size: Size.infinite,
+        ),
       ImageElement(:final source, :final fit) when imageBuilder != null =>
         ClipRect(
           child: imageBuilder!(
@@ -167,7 +171,9 @@ class SlideElementView extends StatelessWidget {
           editor: editor,
         ),
       final ChartElement chart => CustomPaint(
-          painter: SlideChartPainter(chart, theme), size: Size.infinite),
+          painter: SlideChartPainter(chart, theme),
+          size: Size.infinite,
+        ),
       final GroupElement group => SlideGroupView(
           group: group,
           style: style,

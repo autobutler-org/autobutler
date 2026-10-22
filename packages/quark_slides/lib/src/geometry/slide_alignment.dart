@@ -145,7 +145,11 @@ Map<String, ElementFrame> matchFrameSizes(
           (a, b) => b.width * b.height > a.width * a.height ? b : a,
         )
       : frames[reference] ??
-          (throw ArgumentError.value(reference, 'reference', 'not in frames'));
+          (throw ArgumentError.value(
+            reference,
+            'reference',
+            'not in frames',
+          ));
   final width = match == SizeMatch.height ? null : model.width;
   final height = match == SizeMatch.width ? null : model.height;
   return {

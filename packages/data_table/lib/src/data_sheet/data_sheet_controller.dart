@@ -343,8 +343,9 @@ class DataSheetController extends ChangeNotifier {
         if (formats is List)
           for (final entry in formats)
             if (entry is Map && entry['row'] is int && entry['col'] is int)
-              (entry['row'] as int, entry['col'] as int):
-                  CellFormat.fromJson(entry),
+              (entry['row'] as int, entry['col'] as int): CellFormat.fromJson(
+                entry,
+              ),
       },
     );
   }

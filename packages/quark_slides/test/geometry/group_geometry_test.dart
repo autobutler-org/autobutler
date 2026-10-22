@@ -13,14 +13,21 @@ Matcher frameNear(ElementFrame expected) => isA<ElementFrame>()
     .having((e) => e.y, 'y', closeTo(expected.y, 1e-6))
     .having((e) => e.width, 'width', closeTo(expected.width, 1e-6))
     .having((e) => e.height, 'height', closeTo(expected.height, 1e-6))
-    .having((e) => e.rotation % 360, 'rotation',
-        closeTo(expected.rotation % 360, 1e-6));
+    .having(
+      (e) => e.rotation % 360,
+      'rotation',
+      closeTo(expected.rotation % 360, 1e-6),
+    );
 
 void main() {
   group('frameBox', () {
     test('an unrotated frame is its own box', () {
-      expect(frameBox(f(10, 20, 30, 40)),
-          (left: 10.0, top: 20.0, right: 40.0, bottom: 60.0));
+      expect(frameBox(f(10, 20, 30, 40)), (
+        left: 10.0,
+        top: 20.0,
+        right: 40.0,
+        bottom: 60.0,
+      ));
     });
 
     test('a quarter turn swaps width and height about the center', () {
@@ -42,10 +49,14 @@ void main() {
 
   group('frameInParent and frameInGroup', () {
     test('an unrotated group only offsets', () {
-      expect(frameInParent(f(100, 200, 500, 500), f(10, 20, 30, 40)),
-          f(110, 220, 30, 40));
-      expect(frameInGroup(f(100, 200, 500, 500), f(110, 220, 30, 40)),
-          f(10, 20, 30, 40));
+      expect(
+        frameInParent(f(100, 200, 500, 500), f(10, 20, 30, 40)),
+        f(110, 220, 30, 40),
+      );
+      expect(
+        frameInGroup(f(100, 200, 500, 500), f(110, 220, 30, 40)),
+        f(10, 20, 30, 40),
+      );
     });
 
     test('a rotated group turns its child about the group center', () {
@@ -59,7 +70,9 @@ void main() {
       final group = f(140, 60, 400, 250, 37);
       final child = f(30, 50, 120, 80, 12);
       expect(
-          frameInGroup(group, frameInParent(group, child)), frameNear(child));
+        frameInGroup(group, frameInParent(group, child)),
+        frameNear(child),
+      );
     });
   });
 
@@ -70,8 +83,10 @@ void main() {
     test('the group frames its members’ rotated bounds, unrotated', () {
       final group = groupOf('g', [a, b]);
       final bBox = frameBox(b.frame);
-      expect(group.frame,
-          frameNear(f(100, 100, bBox.right - 100, bBox.bottom - 100)));
+      expect(
+        group.frame,
+        frameNear(f(100, 100, bBox.right - 100, bBox.bottom - 100)),
+      );
       expect(group.children.map((e) => e.id), ['a', 'b']);
       expect(group.children.first.frame, f(0, 0, 200, 100));
     });
@@ -145,10 +160,12 @@ void main() {
       final before = [
         for (final c in group.children) frameInParent(group.frame, c.frame),
       ];
-      final stretched = group.copyWith(children: [
-        group.children.first.withFrame(f(-50, -20, 100, 100)),
-        group.children.last,
-      ]);
+      final stretched = group.copyWith(
+        children: [
+          group.children.first.withFrame(f(-50, -20, 100, 100)),
+          group.children.last,
+        ],
+      );
       final fitted = fitGroup(stretched);
       expect(fitted.frame.width, closeTo(350, 1e-9));
       expect(fitted.frame.height, closeTo(320, 1e-9));
@@ -163,19 +180,33 @@ void main() {
   });
 
   group('SlideTree', () {
-    final slide = Slide(id: 's', elements: [
-      shape('top', f(0, 0, 10, 10)),
-      GroupElement(id: 'g', frame: f(100, 100, 200, 200, 90), children: [
-        shape('a', f(0, 0, 50, 50)),
-        GroupElement(id: 'inner', frame: f(100, 100, 100, 100), children: [
-          shape('deep', f(0, 0, 100, 100)),
-        ]),
-      ]),
-    ]);
+    final slide = Slide(
+      id: 's',
+      elements: [
+        shape('top', f(0, 0, 10, 10)),
+        GroupElement(
+          id: 'g',
+          frame: f(100, 100, 200, 200, 90),
+          children: [
+            shape('a', f(0, 0, 50, 50)),
+            GroupElement(
+              id: 'inner',
+              frame: f(100, 100, 100, 100),
+              children: [shape('deep', f(0, 0, 100, 100))],
+            ),
+          ],
+        ),
+      ],
+    );
 
     test('walks every element depth first', () {
-      expect(slide.allElements.map((e) => e.id),
-          ['top', 'g', 'a', 'inner', 'deep']);
+      expect(slide.allElements.map((e) => e.id), [
+        'top',
+        'g',
+        'a',
+        'inner',
+        'deep',
+      ]);
     });
 
     test('finds and places nested elements', () {
@@ -192,10 +223,14 @@ void main() {
     });
 
     test('hit tests a group by its children, not its gaps', () {
-      final gappy = GroupElement(id: 'g', frame: f(0, 0, 300, 100), children: [
-        shape('l', f(0, 0, 100, 100)),
-        shape('r', f(200, 0, 100, 100)),
-      ]);
+      final gappy = GroupElement(
+        id: 'g',
+        frame: f(0, 0, 300, 100),
+        children: [
+          shape('l', f(0, 0, 100, 100)),
+          shape('r', f(200, 0, 100, 100)),
+        ],
+      );
       expect(gappy.hitTest(const Offset(50, 50)), isTrue);
       expect(gappy.hitTest(const Offset(150, 50)), isFalse);
       expect(gappy.hitTest(const Offset(250, 50)), isTrue);
