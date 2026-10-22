@@ -1,3 +1,4 @@
+// cspell:words freeform
 import '../model/slide_element.dart';
 import 'slide_canvas_tool.dart';
 import 'slide_element_label.dart';
@@ -39,4 +40,5 @@ String shapeKindName(ShapeKind kind) => switch (kind) {
       ShapeKind.diamond => 'diamond',
       ShapeKind.arrow => 'right arrow',
       ShapeKind.star => 'star',
+      ShapeKind.path => 'freeform',
     };
