@@ -23,6 +23,9 @@ type EventJSON struct {
 	// RepeatUntil is a repeating event's last date, inclusive, as midnight
 	// UTC standing for that calendar date; null repeats forever (#2524).
 	RepeatUntil *string `json:"repeatUntil"`
+	// ExcludedStarts are occurrence starts a series skips, RFC 3339 UTC.
+	// Empty when it skips nothing (#3215).
+	ExcludedStarts []string `json:"excludedStarts,omitempty"`
 	// ReminderMinutes counts back from Start; null is no reminder.
 	ReminderMinutes *int `json:"reminderMinutes"`
 	ColorIndex      int  `json:"colorIndex"`
@@ -55,9 +58,28 @@ type eventRequest struct {
 	// RepeatUntil is the last date a repeating event occurs on, inclusive,
 	// as midnight UTC. Null or absent repeats forever; a one-off event
 	// ignores it.
-	RepeatUntil     *string `json:"repeatUntil"`
-	ReminderMinutes *int    `json:"reminderMinutes"`
-	ColorIndex      int     `json:"colorIndex"`
+	RepeatUntil *string `json:"repeatUntil"`
+	// ExcludedStarts are occurrence starts a series skips, RFC 3339 UTC.
+	// Absent skips nothing. A one-off event ignores them (#3215).
+	ExcludedStarts  []string `json:"excludedStarts,omitempty"`
+	ReminderMinutes *int     `json:"reminderMinutes"`
+	ColorIndex      int      `json:"colorIndex"`
+}
+
+// moveRequest is the body of a move of one occurrence, or of the series.
+type moveRequest struct {
+	// Scope is one, following or all.
+	Scope           string `json:"scope"`
+	OccurrenceStart string `json:"occurrenceStart"`
+	Start           string `json:"start"`
+	End             string `json:"end"`
+}
+
+// MoveJSON is the series after a move, plus the one-off or new series when
+// the move created one.
+type MoveJSON struct {
+	Series  EventJSON  `json:"series"`
+	Created *EventJSON `json:"created,omitempty"`
 }
 
 type router struct{}
@@ -68,6 +90,7 @@ func (r *router) Routes() []*serverutil.Route {
 		getEventRoute,
 		createEventRoute,
 		updateEventRoute,
+		moveEventRoute,
 		deleteEventRoute,
 	}
 }

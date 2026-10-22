@@ -4,7 +4,7 @@ import 'package:quark_widgets/quark_widgets.dart';
 
 import '../support/pump.dart';
 
-/// The question in front of moving a repeating event's whole series (#3184).
+/// Which occurrences of a repeating event a move changes (#3215).
 void main() {
   testBothViewports('names the event and answers through its keys', (
     tester,
@@ -15,19 +15,25 @@ void main() {
       tester,
       CalendarMoveSeriesDialog(
         title: 'Soccer practice',
-        onConfirm: () => events.add('confirm'),
+        onThisEvent: () => events.add('one'),
+        onThisAndFollowing: () => events.add('following'),
+        onAllEvents: () => events.add('all'),
         onCancel: () => events.add('cancel'),
       ),
       size: size,
     );
-    expect(find.text('Move all of Soccer practice?'), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('calendar_move_series_cancel')));
-    await tester.tap(
-      find.byKey(const ValueKey('calendar_move_series_confirm')),
+    expect(find.text('Move Soccer practice?'), findsOneWidget);
+    expect(
+      find.text('This event repeats. Choose which ones move.'),
+      findsOneWidget,
     );
+
+    await tester.tap(find.byKey(const ValueKey('calendar_move_cancel')));
+    await tester.tap(find.byKey(const ValueKey('calendar_move_this')));
+    await tester.tap(find.byKey(const ValueKey('calendar_move_following')));
+    await tester.tap(find.byKey(const ValueKey('calendar_move_all')));
     await tester.pump();
-    expect(events, ['cancel', 'confirm']);
+    expect(events, ['cancel', 'one', 'following', 'all']);
     expect(tester.takeException(), isNull);
   });
 
@@ -39,10 +45,17 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pumpAt(
       tester,
-      CalendarMoveSeriesDialog(title: '', onConfirm: () {}, onCancel: () {}),
+      CalendarMoveSeriesDialog(
+        title: '',
+        onThisEvent: () {},
+        onThisAndFollowing: () {},
+        onAllEvents: () {},
+        onCancel: () {},
+      ),
       size: size,
     );
-    expect(find.text('Move every time it repeats?'), findsOneWidget);
+    expect(find.text('Move this repeating event?'), findsOneWidget);
+    expect(find.text('This and following'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

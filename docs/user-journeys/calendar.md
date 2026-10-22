@@ -257,9 +257,38 @@ repeats forever.
   **Alt+Shift+Up** and **Alt+Shift+Down** move its end. The focus stays on the event.
 - The event shows at its new time at once and stays there once saved. If the save fails, a message says so and the
   event goes back.
-- A repeating event moves as a whole series: every repeat shifts by as much, as it does from the form (JN-CA-006).
+- A repeating event asks which occurrences move first (JN-CA-013).
 
 **Notes:** A move stays on the dates on show and keeps the start on its own day; the form reaches anywhere else
 (#2526). On a phone a swipe over an event still scrolls the timeline, which is why a drag starts with a hold. The
 timeline does not scroll under a drag. All-day events, and events in Week that overlap into lanes too narrow for a
 finger, are not dragged: the form moves the first, and the Day view has room for the second.
+
+---
+
+### JN-CA-013: Move one occurrence of a repeating event
+
+**Preconditions:** A repeating timed event exists, and Day or Week is on show.
+
+**Steps:**
+
+1. Drag one occurrence to another time, or focus it and press **Alt** with an arrow.
+2. Choose **This event**, **This and following**, or **All events**. Cancel is the other choice.
+3. Press **Ctrl+Z** (**Cmd+Z** on a Mac), or tap **Undo** on the message that says where it went.
+
+**Expected result:**
+
+- The question names the event. **This and following** is the choice the keyboard starts on.
+- **This event** leaves a gap in the series and puts that one occurrence at the new time. The series' other
+  times stay.
+- **This and following** ends the series the day before that occurrence and starts a new series at the new
+  time. The ones before it stay. Doing this to the first occurrence moves the whole series.
+- **All events** shifts every time the event repeats by as much as that occurrence moved.
+- A one-off event does not ask: it just moves.
+- The occurrence shows at its new time at once. **Undo** and **Ctrl+Z** put that one move back. The next move
+  replaces what Undo can put back.
+- If the save fails, a message says so and the event goes back.
+
+**Notes:** Keyboard resize still changes only the end time (JN-CA-012). Editing the series in the form still
+changes every remaining repeat, and does not shift starts the series already skips. All-day events are not
+dragged.

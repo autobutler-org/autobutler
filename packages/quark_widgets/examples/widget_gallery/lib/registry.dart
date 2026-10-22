@@ -3339,7 +3339,10 @@ final List<GalleryEntry> registry = [
     group: 'Calendar',
     build: (context, log) => CalendarMoveSeriesDialog(
       title: 'Soccer practice',
-      onConfirm: () => log('CalendarMoveSeriesDialog.onConfirm'),
+      onThisEvent: () => log('CalendarMoveSeriesDialog.onThisEvent'),
+      onThisAndFollowing: () =>
+          log('CalendarMoveSeriesDialog.onThisAndFollowing'),
+      onAllEvents: () => log('CalendarMoveSeriesDialog.onAllEvents'),
       onCancel: () => log('CalendarMoveSeriesDialog.onCancel'),
     ),
   ),

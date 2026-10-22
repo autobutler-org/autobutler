@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
 
-/// Asks before a drag or a key press moves a repeating event, which moves
-/// every time it repeats, not the one occurrence moved (#3184).
+import '../theme/quark_tokens.dart';
+
+/// Asks which occurrences move when a drag or a key press lands on a
+/// repeating event (#3215).
 ///
-/// It does not close itself: [onConfirm] and [onCancel] fire, and the caller
-/// that pushed the dialog pops it. The copy scrolls when the window is too
-/// short for it, so the buttons stay reachable.
+/// "This event" moves only the occurrence that was dragged. "This and
+/// following" moves that one and every one after it. "All events" moves the
+/// whole series. Cancel leaves it where it was.
 ///
-/// Key prefixes: `calendar_move_series_confirm` and
-/// `calendar_move_series_cancel`.
+/// It does not close itself: the callbacks fire, and the caller that pushed
+/// the dialog pops it. The copy and the buttons scroll when the window is
+/// too short for them, so the choices stay reachable on a phone and at large
+/// text.
+///
+/// Key prefixes: `calendar_move_this`, `calendar_move_following`,
+/// `calendar_move_all`, and `calendar_move_cancel`.
 ///
 /// ```dart
-/// showDialog<bool>(
+/// showDialog<void>(
 ///   context: context,
 ///   builder: (ctx) => CalendarMoveSeriesDialog(
 ///     title: 'Soccer practice',
-///     onConfirm: () => Navigator.of(ctx).pop(true),
-///     onCancel: () => Navigator.of(ctx).pop(false),
+///     onThisEvent: () => Navigator.of(ctx).pop(),
+///     onThisAndFollowing: () => Navigator.of(ctx).pop(),
+///     onAllEvents: () => Navigator.of(ctx).pop(),
+///     onCancel: () => Navigator.of(ctx).pop(),
 ///   ),
 /// );
 /// ```
@@ -24,7 +33,9 @@ class CalendarMoveSeriesDialog extends StatelessWidget {
   /// Creates the question for the event titled [title].
   const CalendarMoveSeriesDialog({
     required this.title,
-    required this.onConfirm,
+    required this.onThisEvent,
+    required this.onThisAndFollowing,
+    required this.onAllEvents,
     required this.onCancel,
     super.key,
   });
@@ -32,33 +43,58 @@ class CalendarMoveSeriesDialog extends StatelessWidget {
   /// The repeating event's title.
   final String title;
 
-  /// Called when "Move all" is tapped.
-  final VoidCallback onConfirm;
+  /// Called when "This event" is tapped.
+  final VoidCallback onThisEvent;
+
+  /// Called when "This and following" is tapped.
+  final VoidCallback onThisAndFollowing;
+
+  /// Called when "All events" is tapped.
+  final VoidCallback onAllEvents;
 
   /// Called when "Cancel" is tapped.
   final VoidCallback onCancel;
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    scrollable: true,
-    title: Text(
-      title.isEmpty ? 'Move every time it repeats?' : 'Move all of $title?',
-    ),
-    content: const Text(
-      'This event repeats, and every time it repeats moves with it.',
-    ),
-    actions: [
-      TextButton(
-        key: const ValueKey('calendar_move_series_cancel'),
-        onPressed: onCancel,
-        child: const Text('Cancel'),
+  Widget build(BuildContext context) {
+    final tokens = QuarkTokens.of(context);
+    return AlertDialog(
+      scrollable: true,
+      title: Text(
+        title.isEmpty ? 'Move this repeating event?' : 'Move $title?',
       ),
-      FilledButton(
-        key: const ValueKey('calendar_move_series_confirm'),
-        autofocus: true,
-        onPressed: onConfirm,
-        child: const Text('Move all'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('This event repeats. Choose which ones move.'),
+          SizedBox(height: tokens.spacingMd),
+          FilledButton(
+            key: const ValueKey('calendar_move_this'),
+            onPressed: onThisEvent,
+            child: const Text('This event'),
+          ),
+          SizedBox(height: tokens.spacingSm),
+          FilledButton(
+            key: const ValueKey('calendar_move_following'),
+            autofocus: true,
+            onPressed: onThisAndFollowing,
+            child: const Text('This and following'),
+          ),
+          SizedBox(height: tokens.spacingSm),
+          FilledButton(
+            key: const ValueKey('calendar_move_all'),
+            onPressed: onAllEvents,
+            child: const Text('All events'),
+          ),
+          SizedBox(height: tokens.spacingSm),
+          TextButton(
+            key: const ValueKey('calendar_move_cancel'),
+            onPressed: onCancel,
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
-    ],
-  );
+    );
+  }
 }

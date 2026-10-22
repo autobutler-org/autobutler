@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quark/models/calendar_event.dart';
+import 'package:quark/models/calendar_move.dart';
 import 'package:quark/services/authenticated_service.dart';
 import 'package:quark/services/calendar_service.dart';
 import 'package:quark/utils/error_text.dart';
@@ -174,6 +175,58 @@ void main() {
     expect(body['start'], '2026-10-01T00:00:00.000Z');
     expect(body['end'], '2026-10-02T00:00:00.000Z');
     expect(body['reminderMinutes'], isNull);
+  });
+
+  test('sends the starts a series skips', () async {
+    answer(200, vet);
+    final start = DateTime(2026, 9, 29, 16);
+    final skipped = DateTime(2026, 10, 6, 16);
+
+    await CalendarService.saveEvent(
+      CalendarEventDraft(
+        title: 'Vet',
+        start: start,
+        end: start.add(const Duration(minutes: 45)),
+        repeat: CalendarRepeat.weekly,
+      ),
+      id: 14,
+      excludedStarts: [skipped],
+    );
+
+    final body = jsonDecode(requests.single.body) as Map<String, dynamic>;
+    expect(body['excludedStarts'], [skipped.toUtc().toIso8601String()]);
+  });
+
+  test('moves an occurrence with POST', () async {
+    answer(200, {'series': vet, 'created': vet});
+    final from = DateTime(2026, 10, 6, 16);
+    final to = DateTime(2026, 10, 7, 17);
+
+    final moved = await CalendarService.moveEvent(
+      id: 14,
+      scope: CalendarMoveScope.following,
+      occurrenceStart: from,
+      start: to,
+      end: to.add(const Duration(minutes: 45)),
+    );
+
+    final request = requests.single;
+    expect(request.method, 'POST');
+    expect(request.url.path, '/api/v0/calendar/events/14/move');
+    final body = jsonDecode(request.body) as Map<String, dynamic>;
+    expect(body['scope'], 'following');
+    expect(body['occurrenceStart'], from.toUtc().toIso8601String());
+    expect(body['start'], to.toUtc().toIso8601String());
+    expect(moved.series.id, 14);
+    expect(moved.created?.id, 14);
+  });
+
+  test('reads the starts a series skips', () {
+    final event = CalendarEvent.fromJson({
+      ...vet,
+      'excludedStarts': ['2026-10-06T23:00:00Z'],
+    });
+    expect(event.excludedStarts, [DateTime.utc(2026, 10, 6, 23)]);
   });
 
   test('deletes by id', () async {

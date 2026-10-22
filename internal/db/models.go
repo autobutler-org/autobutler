@@ -41,6 +41,7 @@ type CalendarEvent struct {
 	UpdatedAt       time.Time
 	CreatedBy       sql.NullInt64
 	RepeatUntil     sql.NullString
+	ExcludedStarts  sql.NullString
 }
 
 type ChatChannel struct {
