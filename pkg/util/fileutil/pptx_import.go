@@ -80,7 +80,7 @@ func ImportPptxToQslide(params ImportPptxParams) (ImportPptxResult, error) {
 	}
 	base := path.Base(cleanRelPath(params.FilePath))
 	stem := strings.TrimSuffix(base, filepath.Ext(base))
-	mediaDir := path.Join(rootDir, stem+"_media")
+	mediaDir := pptxutil.MediaDir(rootDir, stem)
 	fsys, err := FilesVFS(params.Registry, params.Serial)
 	if err != nil {
 		return ImportPptxResult{}, err

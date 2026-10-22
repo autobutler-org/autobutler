@@ -38,10 +38,13 @@ AppDir:
       - sourceline: 'deb [arch={{LINUX_DEB_ARCH}}] {{APPIMAGE_APT_MIRROR}} jammy-security main universe'
     # Each with its dependencies. GTK 3 is what the Flutter runner links; libsecret is
     # flutter_secure_storage; libmpv is media_kit (video and audio playback); the FFmpeg
-    # libraries and libjpeg are fc_native_video_thumbnail. CI's build-linux job prints
-    # what the bundle links, so a new plugin's library shows up in its log.
+    # libraries and libjpeg are fc_native_video_thumbnail. librsvg2-common is the SVG
+    # gdk-pixbuf loader: the system icon theme is SVG, and GTK aborts at startup when it
+    # cannot decode one (#3451). CI's build-linux job prints what the bundle links, so a
+    # new plugin's library shows up in its log.
     include:
       - libgtk-3-0
+      - librsvg2-common
       - libsecret-1-0
       - libmpv1
       - libavformat58
@@ -54,6 +57,19 @@ AppDir:
       - humanity-icon-theme
       - hicolor-icon-theme
       - ubuntu-mono
+
+  # appimage-builder writes XDG_DATA_DIRS as the AppDir's directories then
+  # $XDG_DATA_DIRS. A session that sets none leaves out /usr/share, so GIO finds no
+  # MIME database and GTK cannot tell what an image is (#3451). AppRun has no
+  # ${VAR:-default}, so the XDG default always goes last; when the session did set
+  # it, the repeat is harmless.
+  runtime:
+    env:
+      XDG_DATA_DIRS: '$APPDIR/usr/local/share:$APPDIR/usr/share:$XDG_DATA_DIRS:/usr/local/share:/usr/share'
+
+  # Runs once the runtime is set up, which is when loaders.cache and AppRun.env exist.
+  after_runtime:
+    - bash "$SOURCE_DIR/../scripts/appimage-check-appdir.bash" "$TARGET_APPDIR"
 
   files:
     exclude:

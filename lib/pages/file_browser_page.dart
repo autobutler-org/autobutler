@@ -110,6 +110,13 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   /// (#2139). A path in the URL always wins over it.
   String _landingPath = '';
 
+  /// True from mount until `/auth/status` settles when the URL names no
+  /// path. Who is signed in decides [_landingPath], and the admin flag is not
+  /// saved between launches, so listing before the answer listed an admin's
+  /// home and then the root (#3211). Nothing is listed meanwhile; the loader
+  /// shows instead.
+  bool _awaitingAccount = false;
+
   /// If the deep-link URL pointed directly to a file, open its editor once
   /// the page has mounted. Only consumed once.
   String? _pendingFileOpen;
@@ -277,26 +284,30 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     }
   }
 
-  /// The admin flag is not persisted — it arrives from `/auth/status` after
-  /// the page is already built — so a reload can land an admin in their own
-  /// home before the answer comes. Move them to the root they should have
-  /// landed on, as long as they have not navigated since.
-  void _onAdminFlagChanged() {
-    if (!mounted) {
-      return;
-    }
+  /// Points [_landingPath] at whoever is signed in now, taking the open
+  /// folder along when it was the landing. Answers whether the folder moved.
+  bool _followLanding() {
     final landing = _landingFor();
-    if (landing == _landingPath) {
+    if (landing == _landingPath) return false;
+    final wasAtLanding = _currentPath == _landingPath;
+    _landingPath = landing;
+    if (!wasAtLanding) return false;
+    _currentPath = landing;
+    _cachedFiles = FileBrowserCache.instance.get(landing);
+    return true;
+  }
+
+  /// The admin flag can still change after the first listing: a sign-in on
+  /// another device promotes this account, or `/auth/status` failed at mount
+  /// and a retry answers. Move to the landing the account should have, as
+  /// long as the user has not navigated since. The first answer is
+  /// [refresh]'s to apply, so the folder is listed once (#3211).
+  void _onAdminFlagChanged() {
+    if (!mounted || _awaitingAccount) {
       return;
     }
-    final wasAtLanding = _currentPath == _landingPath;
     setState(() {
-      _landingPath = landing;
-      if (wasAtLanding) {
-        _currentPath = landing;
-        _cachedFiles = FileBrowserCache.instance.get(landing);
-        _reloadFiles();
-      }
+      if (_followLanding()) _reloadFiles();
     });
   }
 
@@ -319,6 +330,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
   void initState() {
     // Apply deep-link initial path before AutoRefreshMixin triggers the first load.
     _applyIncomingRoutePath(widget.initialPath);
+    // Only a bare /files opens at the landing; a path in the URL needs no
+    // answer to be listed.
+    _awaitingAccount = _pendingFileOpen == null;
     super
         .initState(); // AutoRefreshMixin.initState handles timer + initial load
     // A cold launch may still be reading the last listing off disk; show it
@@ -502,6 +516,9 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     _noHostSelected = AppSettings.instance.activeHost == null;
     if (_noHostSelected) {
       setState(() {
+        // No Quark, no account to wait for: the connect form lists the
+        // landing once there is one.
+        _awaitingAccount = false;
         _filesFuture = Future.value(const <FileNode>[]);
       });
       return;
@@ -512,13 +529,26 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     // own too.
     unawaited(_loadHealth());
     unawaited(_loadSharedRoots());
-    await _loadDevices();
+    // The account is settled alongside the devices, so holding the first
+    // listing for it costs nothing the devices were not costing already.
+    final (_, accountError) = await (
+      _loadDevices(),
+      _awaitingAccount ? _controller.settleAccount() : Future.value(),
+    ).wait;
     if (!mounted) return;
     setState(() {
+      if (_awaitingAccount) {
+        _awaitingAccount = false;
+        _followLanding();
+      }
       // Refetch the strip in place so it doesn't blink (#2080, #2446).
       _recentFilesRefreshToken++;
       _reloadFiles();
     });
+    // The member landing stands in, and the flag is retried on its own.
+    if (accountError != null) {
+      _showMessage(Errors.message(accountError, 'check your account'));
+    }
     // `_reloadFiles` may issue nothing while a deep link is still resolving.
     // Awaiting the sentinel would hang the refresh, and with it the mixin's
     // in-flight flag, for the rest of the session.
@@ -611,6 +641,8 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _filesFuture = Future.value(const <FileNode>[]);
       return;
     }
+    // [refresh] lists the landing once the account settles.
+    if (_awaitingAccount) return;
 
     // Deep-linking to a file used to list the file itself as a directory —
     // `GET /files?rootDir=sheet.qsheet` — which 404s. Not once, either: this
@@ -2345,6 +2377,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
           // Hide Recent Files on mobile — show only on tablet/desktop (#959).
           if (!searchActive &&
               _currentPath == _landingPath &&
+              !_awaitingAccount &&
               !_noHostSelected &&
               MediaQuery.sizeOf(context).width >= 600)
             RecentFilesSection(

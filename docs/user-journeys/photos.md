@@ -17,6 +17,9 @@ Covers the Photos page (`/photos`), including Quark photos, mobile device photos
 
 - Thumbnail grid of images stored on the quark is displayed.
 - Images load with correct thumbnails.
+- The pictures a PowerPoint import copied out of a presentation (JN-SL-028), in the `Talk_media` folder beside
+  `Talk.qslide` or a numbered `Talk_(1).qslide`, are not listed: they stay in Files and in the presentation. Moving or
+  renaming the `.qslide` away from that folder lists them again.
 
 ---
 

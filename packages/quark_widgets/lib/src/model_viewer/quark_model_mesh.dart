@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'quark_model_mesh/cluster_vertices.dart';
+
 /// The 3D file formats `parseQuarkModel` reads.
 enum QuarkModelFormat {
   /// STereoLithography, ASCII or binary. Its files are Z-up by convention,
@@ -37,6 +39,11 @@ enum QuarkModelFormat {
 /// [isZUp] says which axis the viewer should treat as up. Every field is a
 /// typed list, so a mesh crosses an isolate boundary as plain data.
 ///
+/// A mesh too detailed to turn smoothly can carry a [preview], a coarser
+/// copy `QuarkModelViewer` draws while the model is moving (#3231);
+/// [withPreview] makes one, and is worth running on the isolate that parsed
+/// the mesh.
+///
 /// ```dart
 /// final mesh = QuarkModelMesh.fromTriangles(
 ///   positions: Float32List.fromList([0, 0, 0, 1, 0, 0, 0, 1, 0]),
@@ -53,6 +60,7 @@ class QuarkModelMesh {
     required this.min,
     required this.max,
     this.isZUp = false,
+    this.preview,
   });
 
   /// Builds a mesh from [positions] (x, y, z per vertex) and [indices]
@@ -122,6 +130,30 @@ class QuarkModelMesh {
 
   /// Whether Z is up (STL, 3MF) rather than Y (OBJ, PLY, glTF).
   final bool isZUp;
+
+  /// A coarser copy of this mesh, with the same bounds, drawn in its place
+  /// while the model moves; null draws this mesh all the time.
+  final QuarkModelMesh? preview;
+
+  /// This mesh carrying a [preview] of at most [maxTriangles] triangles, or
+  /// carrying none when it already has no more than that.
+  ///
+  /// The preview merges every vertex inside one cell of a cubic grid over
+  /// the bounds into their average and drops the triangles that collapse,
+  /// with the grid coarsened until few enough are left. It costs a pass
+  /// over the vertices and triangles per grid tried, and the memory of the
+  /// preview plus a word per vertex.
+  QuarkModelMesh withPreview(int maxTriangles) => QuarkModelMesh(
+    positions: positions,
+    indices: indices,
+    normals: normals,
+    min: min,
+    max: max,
+    isZUp: isZUp,
+    preview: triangleCount > maxTriangles
+        ? clusterVertices(this, maxTriangles)
+        : null,
+  );
 
   /// How many vertices the mesh has, after identical ones are merged.
   int get vertexCount => positions.length ~/ 3;

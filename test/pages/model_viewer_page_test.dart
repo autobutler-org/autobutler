@@ -10,6 +10,7 @@ import 'package:quark/pages/generic_file_viewer_page.dart';
 import 'package:quark/pages/model_viewer_page.dart';
 import 'package:quark/router.dart';
 import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/model_viewer_config.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,6 +46,7 @@ void main() {
     ReadCodeRangeFn? readRange,
     String filePath = 'prints/part.stl',
     int maxBytes = 1024,
+    QuarkModelLimits? limits,
     Size size = const Size(1280, 800),
   }) async {
     tester.view.physicalSize = size;
@@ -58,7 +60,7 @@ void main() {
           parseQuarkModel(bytes, format, limits: limits, resources: resources),
       listResources: (bytes, format) async =>
           quarkModelResources(bytes, format),
-      limits: QuarkModelLimits(maxBytes: maxBytes),
+      limits: limits ?? QuarkModelLimits(maxBytes: maxBytes),
     );
     addTearDown(controller.dispose);
     final router = GoRouter(
@@ -169,6 +171,31 @@ void main() {
     expect(find.byType(GenericFileViewerPage), findsOneWidget);
     expect(
       find.text(Errors.modelPreview(QuarkModelParseIssue.tooLarge)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a model over the triangle cap says it is too detailed', (
+    tester,
+  ) async {
+    const faces = ModelViewerConfig.maxTriangles + 1;
+    final header = ascii.encode(
+      'ply\nformat binary_little_endian 1.0\n'
+      'element vertex 3\n'
+      'property float x\nproperty float y\nproperty float z\n'
+      'element face $faces\n'
+      'property list uchar int vertex_indices\nend_header\n',
+    );
+    await pumpViewer(
+      tester,
+      filePath: 'scans/statue.ply',
+      readRange: serving(Uint8List(header.length + faces)..setAll(0, header)),
+      limits: ModelViewerConfig.limits,
+    );
+    expect(find.byType(QuarkModelViewer), findsNothing);
+    expect(find.byType(GenericFileViewerPage), findsOneWidget);
+    expect(
+      find.text(Errors.modelPreview(QuarkModelParseIssue.tooManyTriangles)),
       findsOneWidget,
     );
   });

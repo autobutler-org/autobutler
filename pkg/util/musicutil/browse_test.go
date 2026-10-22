@@ -51,14 +51,26 @@ func seed(t *testing.T, sqlDB *sql.DB, tracks ...track) {
 func library(t *testing.T) *db.DatabaseSqlc {
 	t.Helper()
 	database := newDB(t)
-	seed(t, database.Db,
-		track{path: "shared/mixed/1.flac", title: "Alpha", artist: "Ann", album: "Mixed", genre: "Rock", trackNo: 1, year: 2001},
-		track{path: "shared/mixed/2.flac", title: "beta", artist: "Ann", album: "Mixed", genre: "rock", trackNo: 2},
-		track{path: "shared/solo/1.flac", title: "Gamma", artist: "Bo", album: "Solo", genre: "Jazz", trackNo: 1, year: 1990},
-		track{path: "private/mixed/3.flac", title: "Delta", artist: "Ann", album: "Mixed", genre: "Rock", trackNo: 3, year: 1980, cover: true},
-		track{path: "private/secret/1.flac", title: "Epsilon", artist: "Cy", album: "Secret", genre: "Metal", trackNo: 1, cover: true},
-	)
+	seed(t, database.Db, libraryTracks...)
 	return database
+}
+
+// libraryTracks is what library seeds.
+var libraryTracks = []track{
+	{path: "shared/mixed/1.flac", title: "Alpha", artist: "Ann", album: "Mixed", genre: "Rock", trackNo: 1, year: 2001},
+	{path: "shared/mixed/2.flac", title: "beta", artist: "Ann", album: "Mixed", genre: "rock", trackNo: 2},
+	{path: "shared/solo/1.flac", title: "Gamma", artist: "Bo", album: "Solo", genre: "Jazz", trackNo: 1, year: 1990},
+	{path: "private/mixed/3.flac", title: "Delta", artist: "Ann", album: "Mixed", genre: "Rock", trackNo: 3, year: 1980, cover: true},
+	{path: "private/secret/1.flac", title: "Epsilon", artist: "Cy", album: "Secret", genre: "Metal", trackNo: 1, cover: true},
+}
+
+// mixedCaseTracks spell one album, artist and genre two ways. The lowercase
+// spelling is indexed first, so it is the one shown, though "Rock" sorts
+// before "rock" by byte and after it in a locale collation (#3306).
+var mixedCaseTracks = []track{
+	{path: "case/1.flac", title: "One", artist: "ann", album: "mixed", genre: "rock", trackNo: 1},
+	{path: "case/2.flac", title: "Two", artist: "Ann", album: "Mixed", genre: "Rock", trackNo: 2},
+	{path: "case/3.flac", title: "Three", artist: "ANN", album: "MIXED", genre: "ROCK", trackNo: 3},
 }
 
 func titles(tracks []musicutil.Track) []string {
@@ -196,6 +208,40 @@ func TestBrowse_FullAccessMatchesAdmin(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, want) {
 				t.Errorf("member sees %+v\nadmin sees  %+v", got, want)
+			}
+		})
+	}
+}
+
+// TestBrowse_ShowsFirstIndexedSpelling checks a group's displayed name is
+// the spelling on its lowest id, for an admin's SQL and a member's Go
+// aggregation alike, so it does not depend on an engine's collation (#3306).
+func TestBrowse_ShowsFirstIndexedSpelling(t *testing.T) {
+	database := newDB(t)
+	seed(t, database.Db, mixedCaseTracks...)
+	ctx := context.Background()
+	for name, access := range map[string]accessutil.Access{"admin": adminAccess(t), "member": memberAccess(t, database, "")} {
+		t.Run(name, func(t *testing.T) {
+			albums, err := musicutil.ListAlbums(musicutil.ListAlbumsParams{Ctx: ctx, DB: database.Db, Access: access})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(albums.Albums) != 1 || albums.Albums[0].Title != "mixed" || albums.Albums[0].AlbumArtist != "ann" {
+				t.Errorf("albums = %+v, want one album \"mixed\" by \"ann\"", albums.Albums)
+			}
+			artists, err := musicutil.ListArtists(musicutil.ListArtistsParams{Ctx: ctx, DB: database.Db, Access: access})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(artists.Artists) != 1 || artists.Artists[0].Name != "ann" {
+				t.Errorf("artists = %+v, want one artist \"ann\"", artists.Artists)
+			}
+			genres, err := musicutil.ListGenres(musicutil.ListGenresParams{Ctx: ctx, DB: database.Db, Access: access})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := []musicutil.Genre{{Name: "rock", TrackCount: 3}}; !reflect.DeepEqual(genres.Genres, want) {
+				t.Errorf("genres = %+v, want %+v", genres.Genres, want)
 			}
 		})
 	}

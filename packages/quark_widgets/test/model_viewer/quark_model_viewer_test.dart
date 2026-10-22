@@ -237,6 +237,97 @@ void main() {
     expect(camera(tester).yaw, QuarkModelCamera.initial.yaw);
   });
 
+  /// The mesh the canvas is painting.
+  QuarkModelMesh painted(WidgetTester tester) {
+    final paint = tester.widget<CustomPaint>(
+      find.descendant(
+        of: find.byKey(canvas),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is CustomPaint && widget.painter is ModelViewerPainter,
+        ),
+      ),
+    );
+    return (paint.painter! as ModelViewerPainter).renderer.mesh;
+  }
+
+  /// [box] carrying a one-triangle preview.
+  QuarkModelMesh previewed() {
+    final full = box();
+    return QuarkModelMesh(
+      positions: full.positions,
+      indices: full.indices,
+      normals: full.normals,
+      min: full.min,
+      max: full.max,
+      isZUp: full.isZUp,
+      preview: QuarkModelMesh(
+        positions: Float32List.fromList([0, 0, 0, 2, 0, 0, 0, 3, 4]),
+        indices: Uint32List.fromList([0, 1, 2]),
+        normals: Float32List(3),
+        min: full.min,
+        max: full.max,
+        isZUp: full.isZUp,
+      ),
+    );
+  }
+
+  testBothViewports('a drag draws the preview until it ends', (
+    tester,
+    size,
+  ) async {
+    final mesh = previewed();
+    await pumpAt(tester, QuarkModelViewer(mesh: mesh), size: size);
+    expect(painted(tester), same(mesh));
+
+    final center = tester.getCenter(find.byKey(canvas));
+    final drag = await tester.startGesture(center);
+    for (var step = 0; step < 5; step++) {
+      await drag.moveBy(const Offset(20, 8));
+      await tester.pump();
+    }
+    expect(painted(tester), same(mesh.preview));
+    expect(camera(tester).yaw, isNot(QuarkModelCamera.initial.yaw));
+    // The counts are still the full model's.
+    expect(find.text('12 triangles'), findsOneWidget);
+
+    await drag.up();
+    await tester.pump();
+    expect(painted(tester), same(mesh));
+    expect(tester.takeException(), isNull);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('the wheel draws the preview until it rests', (tester) async {
+    final mesh = previewed();
+    await pumpAt(tester, QuarkModelViewer(mesh: mesh));
+    final center = tester.getCenter(find.byKey(canvas));
+    final mouse = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(mouse.hover(center));
+    await tester.sendEventToBinding(mouse.scroll(const Offset(0, -200)));
+    await tester.pump();
+    expect(painted(tester), same(mesh.preview));
+    expect(camera(tester).zoom, greaterThan(1));
+
+    await tester.pump(QuarkModelViewer.settleDelay);
+    expect(painted(tester), same(mesh));
+  });
+
+  testWidgets('a model without a preview is always drawn in full', (
+    tester,
+  ) async {
+    final mesh = box();
+    await pumpAt(tester, QuarkModelViewer(mesh: mesh));
+    final drag = await tester.startGesture(
+      tester.getCenter(find.byKey(canvas)),
+    );
+    await drag.moveBy(const Offset(40, 0));
+    await tester.pump();
+    expect(painted(tester), same(mesh));
+    await drag.up();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('arrows turn, Shift+arrows move, +/- zoom, 0 resets', (
     tester,
   ) async {
