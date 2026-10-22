@@ -26,8 +26,13 @@ class SlideShapePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final pieces = shapePieces(shape, Offset.zero & size);
     if (shape.shadow case final shadow?) {
-      paintShadow(canvas, shadow, shape.frame.rotation, theme,
-          (canvas) => _paintPieces(canvas, pieces));
+      paintShadow(
+        canvas,
+        shadow,
+        shape.frame.rotation,
+        theme,
+        (canvas) => _paintPieces(canvas, pieces),
+      );
     }
     _paintPieces(canvas, pieces);
   }

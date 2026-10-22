@@ -13,8 +13,9 @@ const _narrow = Size(360, 640);
 const _wide = Size(1280, 800);
 
 /// A 6x4 sheet of numbers, with [cells] overriding some by (row, col).
-DataSheetController _makeController(
-    [Map<(int, int), String> cells = const {}]) {
+DataSheetController _makeController([
+  Map<(int, int), String> cells = const {},
+]) {
   return DataSheetController.fromTable(
     DataTable(
       List.generate(
@@ -41,9 +42,9 @@ Future<DataSheetController> _pumpSheet(
   await tester.pumpWidget(
     MaterialApp(
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(textScale),
-        ),
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
         child: child!,
       ),
       home: Scaffold(
@@ -69,12 +70,7 @@ Finder _suggestion(String name) =>
 Finder get _suggestions => find.byKey(const ValueKey('formula_suggestions'));
 
 /// Opens the cell at ([r], [c]) for editing and types [text] into it.
-Future<void> _editCell(
-  WidgetTester tester,
-  int r,
-  int c,
-  String text,
-) async {
+Future<void> _editCell(WidgetTester tester, int r, int c, String text) async {
   await tester.tap(_cell(r, c));
   await tester.pump();
   await tester.tap(_cell(r, c));
@@ -115,10 +111,7 @@ void main() {
         expect(_suggestion('SUBSTITUTE'), findsOneWidget);
         expect(_suggestion('SUM'), findsOneWidget);
         expect(_suggestion('AVERAGE'), findsNothing);
-        expect(
-          find.bySemanticsLabel(RegExp(r'^SUM\(value1')),
-          findsOneWidget,
-        );
+        expect(find.bySemanticsLabel(RegExp(r'^SUM\(value1')), findsOneWidget);
       });
 
       testWidgets('rows are at least 48 pixels tall and fit the screen', (
@@ -128,8 +121,10 @@ void main() {
         await _editCell(tester, 1, 2, '=CO');
 
         for (final name in ['CONCAT', 'COUNT', 'COUNTA', 'COUNTIF']) {
-          expect(tester.getSize(_suggestion(name)).height,
-              greaterThanOrEqualTo(48));
+          expect(
+            tester.getSize(_suggestion(name)).height,
+            greaterThanOrEqualTo(48),
+          );
         }
         final list = tester.getRect(_suggestions);
         expect(list.left, greaterThanOrEqualTo(0));
@@ -335,8 +330,10 @@ void main() {
         tester,
       ) async {
         await _pumpSheet(tester, size, cells: cells);
-        expect(find.byKey(const ValueKey('data_sheet_formula_error')),
-            findsNothing);
+        expect(
+          find.byKey(const ValueKey('data_sheet_formula_error')),
+          findsNothing,
+        );
 
         await tester.tap(_cell(1, 1));
         await tester.pump();
@@ -346,16 +343,19 @@ void main() {
         expect(
           find.descendant(
             of: note,
-            matching:
-                find.text("Couldn't read the formula: Unexpected character: !"),
+            matching: find.text(
+              "Couldn't read the formula: Unexpected character: !",
+            ),
           ),
           findsOneWidget,
         );
 
         await tester.tap(_cell(1, 0));
         await tester.pump();
-        expect(find.byKey(const ValueKey('data_sheet_formula_error')),
-            findsNothing);
+        expect(
+          find.byKey(const ValueKey('data_sheet_formula_error')),
+          findsNothing,
+        );
       });
     });
   }
@@ -364,12 +364,7 @@ void main() {
     testWidgets('suggestions and error chips survive 2x text on a phone', (
       tester,
     ) async {
-      await _pumpSheet(
-        tester,
-        _narrow,
-        cells: {(0, 0): '=1/0'},
-        textScale: 2,
-      );
+      await _pumpSheet(tester, _narrow, cells: {(0, 0): '=1/0'}, textScale: 2);
       expect(find.byKey(const ValueKey('r0c0_error')), findsOneWidget);
 
       await _editCell(tester, 0, 1, '=CO');

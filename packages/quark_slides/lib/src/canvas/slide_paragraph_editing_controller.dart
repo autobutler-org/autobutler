@@ -7,11 +7,7 @@ import 'slide_text_layout.dart';
 /// characters from [start] to [end] became [inserted], and [value] is what
 /// the field asked to hold afterward.
 typedef SlideParagraphEdit = void Function(
-  int start,
-  int end,
-  String inserted,
-  TextEditingValue value,
-);
+    int start, int end, String inserted, TextEditingValue value);
 
 /// The [TextEditingController] of one paragraph in the in-place text
 /// editor: it maps between the field's plain text and the paragraph's

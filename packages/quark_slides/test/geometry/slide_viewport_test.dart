@@ -6,25 +6,29 @@ void main() {
   final wide = SlideSize.widescreen;
 
   test('a 16:9 slide in a tall box gets letterbox bars top and bottom', () {
-    final v =
-        SlideViewport(viewportSize: const Size(360, 640), slideSize: wide);
+    final v = SlideViewport(
+      viewportSize: const Size(360, 640),
+      slideSize: wide,
+    );
     expect(v.scale, closeTo(360 / 1920, 1e-9));
     expect(v.slideRect.width, closeTo(360, 1e-9));
     expect(v.slideRect.height, closeTo(202.5, 1e-9));
     expect(v.origin, Offset(0, (640 - 202.5) / 2));
   });
 
-  test('a 4:3 slide in a wide box gets bars at the sides, inside the padding',
-      () {
-    final v = SlideViewport(
-      viewportSize: const Size(1280, 800),
-      slideSize: SlideSize.standard,
-      padding: const EdgeInsets.all(20),
-    );
-    expect(v.scale, closeTo(760 / 768, 1e-9));
-    expect(v.origin.dy, closeTo(20, 1e-9));
-    expect(v.origin.dx, closeTo((1280 - 1024 * 760 / 768) / 2, 1e-9));
-  });
+  test(
+    'a 4:3 slide in a wide box gets bars at the sides, inside the padding',
+    () {
+      final v = SlideViewport(
+        viewportSize: const Size(1280, 800),
+        slideSize: SlideSize.standard,
+        padding: const EdgeInsets.all(20),
+      );
+      expect(v.scale, closeTo(760 / 768, 1e-9));
+      expect(v.origin.dy, closeTo(20, 1e-9));
+      expect(v.origin.dx, closeTo((1280 - 1024 * 760 / 768) / 2, 1e-9));
+    },
+  );
 
   test('toSlide and toView invert each other', () {
     final v = SlideViewport(
@@ -40,8 +44,10 @@ void main() {
   });
 
   test('zoom multiplies the fitted scale', () {
-    final fit =
-        SlideViewport(viewportSize: const Size(1280, 800), slideSize: wide);
+    final fit = SlideViewport(
+      viewportSize: const Size(1280, 800),
+      slideSize: wide,
+    );
     final half = SlideViewport(
       viewportSize: const Size(1280, 800),
       slideSize: wide,
@@ -70,8 +76,10 @@ void main() {
   });
 
   test('panForZoom keeps the focal point over the same slide point', () {
-    final v =
-        SlideViewport(viewportSize: const Size(1280, 720), slideSize: wide);
+    final v = SlideViewport(
+      viewportSize: const Size(1280, 720),
+      slideSize: wide,
+    );
     const focal = Offset(1000, 200);
     final under = v.toSlide(focal);
     final zoomed = SlideViewport(

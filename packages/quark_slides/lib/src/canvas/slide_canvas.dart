@@ -762,8 +762,9 @@ class _SlideCanvasState extends State<SlideCanvas> {
       }
     }
     final position = fields[best].getPositionForPoint(point);
-    _editing.paragraphControllers[best].selection =
-        TextSelection.collapsed(offset: position.offset);
+    _editing.paragraphControllers[best].selection = TextSelection.collapsed(
+      offset: position.offset,
+    );
   }
 
   /// The frame on the slide of the box being edited, grown to its draft
@@ -1101,11 +1102,7 @@ class _SlideCanvasState extends State<SlideCanvas> {
     final extend = keys.isShiftPressed && active != null;
     if (_additive && !extend) return null;
     final from = extend ? active : cell;
-    _cells.select(
-      table.id,
-      CellRange.spanning(from, cell),
-      active: from,
-    );
+    _cells.select(table.id, CellRange.spanning(from, cell), active: from);
     return _Gesture(
       _GestureKind.cells,
       pointer: event.pointer,
@@ -1932,12 +1929,7 @@ class _SlideCanvasState extends State<SlideCanvas> {
               final selected = _validSelection(slide);
               _editing.attach(_doc, widget.slideId!, selected);
               _cells.attach(_doc, widget.slideId!);
-              _charts.attach(
-                _doc,
-                widget.slideId!,
-                selected,
-                editable: _edits,
-              );
+              _charts.attach(_doc, widget.slideId!, selected, editable: _edits);
               final editingId = _editing.elementId;
               final editingFrame = _editingFrame;
               final theme = _theme;

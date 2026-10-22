@@ -24,10 +24,8 @@ Presentation samplePresentation() => Presentation(
               frame: ElementFrame(x: 115.2, y: 54, width: 1689.6, height: 162),
               paragraphs: const [
                 TextParagraph([
-                  TextRun(
-                    'Agenda',
-                    color: SlideColor.theme(ThemeColor.accent2),
-                  ),
+                  TextRun('Agenda',
+                      color: SlideColor.theme(ThemeColor.accent2)),
                 ]),
               ],
               anchor: TextAnchor.middle,

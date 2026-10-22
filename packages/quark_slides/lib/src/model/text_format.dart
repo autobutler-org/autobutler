@@ -184,7 +184,7 @@ class TextFormat {
         if (!identical(lineSpacing, unset)) 'lineSpacing: $lineSpacing',
         if (list != null) 'list: ${list!.name}',
         if (anchor != null) 'anchor: ${anchor!.name}',
-        if (autoFit != null) 'autoFit: ${autoFit!.name}',
+        if (autoFit != null) 'autoFit: ${autoFit!.name}'
       ].join(', ')})';
 }
 

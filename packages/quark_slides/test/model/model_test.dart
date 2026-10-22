@@ -68,8 +68,10 @@ void main() {
     expect(ordinary.textRole, ThemeTextRole.title);
     expect(ordinary, isNot(box));
     expect(box.toJson(), containsPair('slot', 'title'));
-    expect(ordinary.copyWith(textRole: ThemeTextRole.body).toJson(),
-        isNot(contains('textRole')));
+    expect(
+      ordinary.copyWith(textRole: ThemeTextRole.body).toJson(),
+      isNot(contains('textRole')),
+    );
   });
 
   test('a slide is blank-layout unless it says otherwise', () {

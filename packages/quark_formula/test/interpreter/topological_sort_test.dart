@@ -51,11 +51,7 @@ void main() {
         (0, 0): <(int, int)>{},
         (0, 1): {(0, 0)},
       };
-      final result = kahnSort(
-        {(0, 0), (0, 1)},
-        deps,
-        excludedNodes: {(0, 0)},
-      );
+      final result = kahnSort({(0, 0), (0, 1)}, deps, excludedNodes: {(0, 0)});
       expect(result.order, [(0, 1)]);
       expect(result.remaining, isEmpty);
     });
@@ -74,7 +70,7 @@ void main() {
     test('edges to literal (non-formula) cells do not inflate in-degree', () {
       // (0,1) depends on (0,0), but (0,0) is not in the formula node set.
       final deps = {
-        (0, 1): {(0, 0)}
+        (0, 1): {(0, 0)},
       };
       final result = kahnSort({(0, 1)}, deps);
       expect(result.order, [(0, 1)]);

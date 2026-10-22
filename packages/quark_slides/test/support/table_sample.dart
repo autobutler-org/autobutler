@@ -24,24 +24,26 @@ TableElement sampleTable() => TableElement(
           ),
           SlideTableCell(
             paragraphs: const [
-              TextParagraph([TextRun('Q3')])
+              TextParagraph([TextRun('Q3')]),
             ],
             borders: CellBorders(bottom: thin()),
           ),
           const SlideTableCell(
             paragraphs: [
-              TextParagraph([TextRun('Q4')])
+              TextParagraph([TextRun('Q4')]),
             ],
             anchor: TextAnchor.middle,
           ),
         ],
         [
-          const SlideTableCell(paragraphs: [
-            TextParagraph([TextRun('North')])
-          ]),
+          const SlideTableCell(
+            paragraphs: [
+              TextParagraph([TextRun('North')]),
+            ],
+          ),
           SlideTableCell(
             paragraphs: const [
-              TextParagraph([TextRun('12')])
+              TextParagraph([TextRun('12')]),
             ],
             fill: const SlideColor.theme(ThemeColor.accent2),
             borders: CellBorders.all(
@@ -57,14 +59,16 @@ TableElement sampleTable() => TableElement(
         [
           const SlideTableCell(
             paragraphs: [
-              TextParagraph([TextRun('Total')])
+              TextParagraph([TextRun('Total')]),
             ],
             colSpan: 2,
           ),
           const SlideTableCell(),
-          const SlideTableCell(paragraphs: [
-            TextParagraph([TextRun('30')])
-          ]),
+          const SlideTableCell(
+            paragraphs: [
+              TextParagraph([TextRun('30')]),
+            ],
+          ),
         ],
       ],
     );

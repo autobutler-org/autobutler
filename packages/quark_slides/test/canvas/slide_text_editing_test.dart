@@ -18,9 +18,7 @@ Future<void> typeText(WidgetTester tester, String text) async {
   tester.testTextInput.updateEditingValue(
     TextEditingValue(
       text: value.text.replaceRange(selection.start, selection.end, text),
-      selection: TextSelection.collapsed(
-        offset: selection.start + text.length,
-      ),
+      selection: TextSelection.collapsed(offset: selection.start + text.length),
     ),
   );
   await tester.pump();
@@ -63,8 +61,10 @@ void main() {
   }
 
   group('entering edit mode', () {
-    testBothViewports('a double tap opens the box under the caret',
-        (tester, size) async {
+    testBothViewports('a double tap opens the box under the caret', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await doubleTap(tester, titleCenter(tester));
       expect(editing.isEditing, isTrue);
@@ -74,21 +74,31 @@ void main() {
       expect(focusedField(tester).controller.text, 'Quarterly review');
       final caret = editing.textSelection;
       expect(caret.isCollapsed, isTrue);
-      expect(caret.baseOffset, inInclusiveRange(4, 12),
-          reason: 'the caret lands near the middle of the centered text');
+      expect(
+        caret.baseOffset,
+        inInclusiveRange(4, 12),
+        reason: 'the caret lands near the middle of the centered text',
+      );
       expect(tester.takeException(), isNull);
     });
 
-    testBothViewports('a mouse double-click opens it too',
-        (tester, size) async {
+    testBothViewports('a mouse double-click opens it too', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
-      await doubleTap(tester, titleCenter(tester),
-          kind: PointerDeviceKind.mouse);
+      await doubleTap(
+        tester,
+        titleCenter(tester),
+        kind: PointerDeviceKind.mouse,
+      );
       expect(editing.elementId, 'title');
     });
 
-    testBothViewports('Enter and F2 open the selected text box',
-        (tester, size) async {
+    testBothViewports('Enter and F2 open the selected text box', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       expect(editing.elementId, 'title');
@@ -110,8 +120,10 @@ void main() {
       expect(editing.isEditing, isFalse);
     });
 
-    testBothViewports('the editor lies exactly over the box at canvas scale',
-        (tester, size) async {
+    testBothViewports('the editor lies exactly over the box at canvas scale', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       final before = tester.getRect(
         find.descendant(
@@ -131,8 +143,10 @@ void main() {
   });
 
   group('typing', () {
-    testBothViewports('a whole session commits as one undo step',
-        (tester, size) async {
+    testBothViewports('a whole session commits as one undo step', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await typeText(tester, '!');
@@ -147,8 +161,10 @@ void main() {
       expect(editing.isEditing, isFalse);
       final title = textBox(doc, 'title');
       expect(title.plainText, 'Quarterly review!!?');
-      expect(title.paragraphs.single.runs.last,
-          const TextRun('?', bold: true, italic: true, fontSize: 72));
+      expect(
+        title.paragraphs.single.runs.last,
+        const TextRun('?', bold: true, italic: true, fontSize: 72),
+      );
       expect(undoAll(doc), 1);
       expect(doc.presentation, canvasDeck());
     });
@@ -164,8 +180,10 @@ void main() {
       expect(harness(tester).selection, isEmpty);
     });
 
-    testBothViewports('a click inside the box keeps editing',
-        (tester, size) async {
+    testBothViewports('a click inside the box keeps editing', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await tester.tapAt(titleCenter(tester));
@@ -174,8 +192,10 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testBothViewports('ending a session that typed nothing records nothing',
-        (tester, size) async {
+    testBothViewports('ending a session that typed nothing records nothing', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -183,8 +203,10 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testBothViewports('a line break splits the paragraph into a new field',
-        (tester, size) async {
+    testBothViewports('a line break splits the paragraph into a new field', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await typeText(tester, '\nQ3');
@@ -201,8 +223,10 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testBothViewports('backspace at a paragraph start joins it to the last',
-        (tester, size) async {
+    testBothViewports('backspace at a paragraph start joins it to the last', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await typeText(tester, '\nQ3');
@@ -226,8 +250,10 @@ void main() {
       expect(editing.textSelection, const TextSelection.collapsed(offset: 16));
     });
 
-    testBothViewports('Delete at a paragraph end joins the next one',
-        (tester, size) async {
+    testBothViewports('Delete at a paragraph end joins the next one', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await typeText(tester, '\nQ3');
@@ -260,8 +286,10 @@ void main() {
       expect(editing.textSelection, const TextSelection.collapsed(offset: 16));
     });
 
-    testBothViewports('a tap in another paragraph moves the caret there',
-        (tester, size) async {
+    testBothViewports('a tap in another paragraph moves the caret there', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await typeText(tester, '\nQ3');
@@ -276,8 +304,10 @@ void main() {
       expect(editing.draft!.paragraphs[1].plainText, 'Q3');
     });
 
-    testBothViewports('Ctrl+Z steps back through the session, not the deck',
-        (tester, size) async {
+    testBothViewports('Ctrl+Z steps back through the session, not the deck', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await typeText(tester, '\nQ3');
@@ -297,8 +327,10 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testBothViewports('a growing box grows to its text when committed',
-        (tester, size) async {
+    testBothViewports('a growing box grows to its text when committed', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       for (var i = 0; i < 4; i++) {
@@ -312,8 +344,10 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testBothViewports('undoing the box away mid-session drops the session',
-        (tester, size) async {
+    testBothViewports('undoing the box away mid-session drops the session', (
+      tester,
+      size,
+    ) async {
       doc.controller.addElement(
         's',
         TextBox(
@@ -335,8 +369,10 @@ void main() {
   });
 
   group('formatting', () {
-    testBothViewports('formats the selected boxes whole when not editing',
-        (tester, size) async {
+    testBothViewports('formats the selected boxes whole when not editing', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       harness(tester).select({'title', 'box'});
       await tester.pump();
@@ -352,8 +388,10 @@ void main() {
       expect(undoAll(doc), 2);
     });
 
-    testBothViewports('nothing to format without a text box',
-        (tester, size) async {
+    testBothViewports('nothing to format without a text box', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       harness(tester).select({'box'});
       await tester.pump();
@@ -363,22 +401,30 @@ void main() {
       expect(editing.selectionFormat, const TextFormat());
     });
 
-    testBothViewports('formats the selected text while editing',
-        (tester, size) async {
+    testBothViewports('formats the selected text while editing', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       // Select "Quarterly" in the field, as a drag would.
-      focusedField(tester).controller.selection =
-          const TextSelection(baseOffset: 0, extentOffset: 9);
+      focusedField(tester).controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 9,
+      );
       await tester.pump();
-      expect(editing.textSelection.textInside(editing.draft!.plainText),
-          'Quarterly');
+      expect(
+        editing.textSelection.textInside(editing.draft!.plainText),
+        'Quarterly',
+      );
       expect(editing.selectionFormat.bold, isFalse);
-      editing.format(const TextFormat(
-        underline: true,
-        fontFamily: 'Inter',
-        color: SlideColor.white,
-      ));
+      editing.format(
+        const TextFormat(
+          underline: true,
+          fontFamily: 'Inter',
+          color: SlideColor.white,
+        ),
+      );
       await tester.pump();
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pump();
@@ -396,8 +442,10 @@ void main() {
       expect(undoAll(doc), 1);
     });
 
-    testBothViewports('Ctrl+A then Ctrl+B bolds every paragraph',
-        (tester, size) async {
+    testBothViewports('Ctrl+A then Ctrl+B bolds every paragraph', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await typeText(tester, '\nQ3');
@@ -411,8 +459,10 @@ void main() {
       expect(TextToggle.bold.isOn(editing.selectionFormat), isTrue);
     });
 
-    testBothViewports('a format at a collapsed caret styles what comes next',
-        (tester, size) async {
+    testBothViewports('a format at a collapsed caret styles what comes next', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       editing.format(const TextFormat(fontSize: 20.0));
@@ -425,17 +475,18 @@ void main() {
       );
     });
 
-    testBothViewports('lists draw markers and box fields apply',
-        (tester, size) async {
+    testBothViewports('lists draw markers and box fields apply', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       await editTitle(tester);
       await typeText(tester, '\nQ3');
       editing.selectAll();
       editing.toggle(TextToggle.numberedList);
-      editing.format(const TextFormat(
-        anchor: TextAnchor.bottom,
-        lineSpacing: 1.5,
-      ));
+      editing.format(
+        const TextFormat(anchor: TextAnchor.bottom, lineSpacing: 1.5),
+      );
       await tester.pump();
       expect(find.text('1.', findRichText: true), findsOne);
       expect(find.text('2.', findRichText: true), findsOne);
@@ -443,8 +494,10 @@ void main() {
       await tester.pump();
       final title = textBox(doc, 'title');
       expect(title.anchor, TextAnchor.bottom);
-      expect(title.paragraphs.map((p) => p.list),
-          everyElement(TextListStyle.numbered));
+      expect(
+        title.paragraphs.map((p) => p.list),
+        everyElement(TextListStyle.numbered),
+      );
       expect(title.paragraphs.map((p) => p.lineSpacing), everyElement(1.5));
       expect(find.text('2.', findRichText: true), findsOne);
       expect(undoAll(doc), 1);
@@ -453,8 +506,10 @@ void main() {
   });
 
   group('the text tool', () {
-    testBothViewports('a click places a box ready for typing',
-        (tester, size) async {
+    testBothViewports('a click places a box ready for typing', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       harness(tester).useTool(SlideCanvasTool.text);
       await tester.pump();
@@ -490,8 +545,10 @@ void main() {
       expect(box.frame.height, closeTo(400, 2));
     });
 
-    testBothViewports('a new box left empty disappears again',
-        (tester, size) async {
+    testBothViewports('a new box left empty disappears again', (
+      tester,
+      size,
+    ) async {
       await pump(tester, size);
       harness(tester).useTool(SlideCanvasTool.text);
       await tester.pump();
@@ -505,8 +562,10 @@ void main() {
   });
 
   group('accessibility', () {
-    testBothViewports('editing announces itself and the field reads its text',
-        (tester, size) async {
+    testBothViewports('editing announces itself and the field reads its text', (
+      tester,
+      size,
+    ) async {
       final semantics = tester.ensureSemantics();
       final announcements = <String>[];
       tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler(
@@ -517,24 +576,25 @@ void main() {
           return null;
         },
       );
-      addTearDown(() => tester.binding.defaultBinaryMessenger
-          .setMockDecodedMessageHandler(SystemChannels.accessibility, null));
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger
+            .setMockDecodedMessageHandler(SystemChannels.accessibility, null),
+      );
       await pump(tester, size);
       expect(find.bySemanticsLabel('Quarterly review'), findsOne);
       await editTitle(tester);
       expect(announcements, ['Editing text']);
-      expect(
-        find.semantics.byValue('Quarterly review'),
-        findsOne,
-      );
+      expect(find.semantics.byValue('Quarterly review'), findsOne);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pump();
       expect(announcements, ['Editing text', 'Done editing text']);
       semantics.dispose();
     });
 
-    testBothViewports('a screen reader tap on a selected text box edits it',
-        (tester, size) async {
+    testBothViewports('a screen reader tap on a selected text box edits it', (
+      tester,
+      size,
+    ) async {
       final semantics = tester.ensureSemantics();
       await pump(tester, size);
       final title = find.semantics.byLabel('Quarterly review');
@@ -548,8 +608,10 @@ void main() {
       semantics.dispose();
     });
 
-    testBothViewports('200% text scale leaves the editor alone',
-        (tester, size) async {
+    testBothViewports('200% text scale leaves the editor alone', (
+      tester,
+      size,
+    ) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pump(tester, size);
@@ -562,34 +624,41 @@ void main() {
       await editTitle(tester);
       await typeText(tester, '\nmore');
       expect(tester.takeException(), isNull);
-      expect(tester.getRect(find.byType(EditableText).first).height,
-          closeTo(before.height, 0.01));
+      expect(
+        tester.getRect(find.byType(EditableText).first).height,
+        closeTo(before.height, 0.01),
+      );
     });
 
-    testBothViewports('an empty box shows its placeholder only while editable',
-        (tester, size) async {
-      doc.controller.addElement(
-        's',
-        TextBox(
-          id: 'sub',
-          frame: ElementFrame(x: 100, y: 900, width: 800, height: 100),
-          placeholder: 'Click to add subtitle',
-        ),
-      );
-      await pump(tester, size);
-      expect(find.text('Click to add subtitle', findRichText: true), findsOne);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: SlideCanvas.readOnly(
-            slide: doc.presentation.slides.single,
-            size: doc.presentation.size,
+    testBothViewports(
+      'an empty box shows its placeholder only while editable',
+      (tester, size) async {
+        doc.controller.addElement(
+          's',
+          TextBox(
+            id: 'sub',
+            frame: ElementFrame(x: 100, y: 900, width: 800, height: 100),
+            placeholder: 'Click to add subtitle',
           ),
-        ),
-      );
-      expect(
-        find.text('Click to add subtitle', findRichText: true),
-        findsNothing,
-      );
-    });
+        );
+        await pump(tester, size);
+        expect(
+          find.text('Click to add subtitle', findRichText: true),
+          findsOne,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: SlideCanvas.readOnly(
+              slide: doc.presentation.slides.single,
+              size: doc.presentation.size,
+            ),
+          ),
+        );
+        expect(
+          find.text('Click to add subtitle', findRichText: true),
+          findsNothing,
+        );
+      },
+    );
   });
 }

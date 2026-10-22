@@ -215,7 +215,9 @@ Path dashedPath(Path source, List<double> intervals) {
       if (index.isEven) {
         dashed.addPath(
           metric.extractPath(
-              distance, math.min(distance + length, metric.length)),
+            distance,
+            math.min(distance + length, metric.length),
+          ),
           Offset.zero,
         );
       }

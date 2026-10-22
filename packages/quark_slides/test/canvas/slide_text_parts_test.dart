@@ -66,8 +66,9 @@ void main() {
       expect(moves, [caret]);
     });
 
-    testWidgets('draws the runs and underlines the composing range',
-        (tester) async {
+    testWidgets('draws the runs and underlines the composing range', (
+      tester,
+    ) async {
       final c = SlideParagraphEditingController(
         paragraph: const TextParagraph([
           TextRun('ab', bold: true),
@@ -83,10 +84,14 @@ void main() {
         composing: const TextRange(start: 1, end: 3),
       );
       late TextSpan span;
-      await tester.pumpWidget(Builder(builder: (context) {
-        span = c.buildTextSpan(context: context, withComposing: true);
-        return const SizedBox();
-      }));
+      await tester.pumpWidget(
+        Builder(
+          builder: (context) {
+            span = c.buildTextSpan(context: context, withComposing: true);
+            return const SizedBox();
+          },
+        ),
+      );
       final parts = span.children!.cast<TextSpan>();
       expect(parts.map((p) => p.text), ['a', 'b', 'c', 'd']);
       expect(parts[0].style!.fontWeight, FontWeight.bold);
@@ -114,13 +119,17 @@ void main() {
     });
 
     test('line spacing and list markers take part in the measure', () {
-      final spaced = box(1).copyWith(paragraphs: const [
-        TextParagraph([TextRun('x')], lineSpacing: 2),
-      ]);
+      final spaced = box(1).copyWith(
+        paragraphs: const [
+          TextParagraph([TextRun('x')], lineSpacing: 2),
+        ],
+      );
       expect(layout.contentHeight(spaced), closeTo(72, 2));
-      final listed = box(1).copyWith(paragraphs: const [
-        TextParagraph([TextRun('x')], list: TextListStyle.bullet),
-      ]);
+      final listed = box(1).copyWith(
+        paragraphs: const [
+          TextParagraph([TextRun('x')], list: TextListStyle.bullet),
+        ],
+      );
       expect(layout.markerWidth(listed.paragraphs.single), 54);
       expect(layout.contentHeight(listed), closeTo(36 * 1.2, 2));
     });
@@ -132,10 +141,7 @@ void main() {
       expect(scale, lessThan(1));
       expect(layout.contentHeight(tall, scale: scale), lessThanOrEqualTo(100));
       expect(layout.shrinkScale(box(6, fit: TextAutoFit.fixed)), 1);
-      expect(
-        layout.shrinkScale(box(500)),
-        SlideTextLayout.minShrinkScale,
-      );
+      expect(layout.shrinkScale(box(500)), SlideTextLayout.minShrinkScale);
     });
 
     testWidgets('a shrinking box draws its text smaller', (tester) async {

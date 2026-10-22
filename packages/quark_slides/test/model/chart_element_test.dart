@@ -76,8 +76,10 @@ void main() {
       expect(chart.legendEntries.map((e) => e.name), ['Revenue', 'Costs']);
       final pie = chart.copyWith(kind: ChartKind.pie);
       expect(pie.legendEntries.map((e) => e.name), ['Q1', 'Q2', 'Q3']);
-      expect(pie.legendEntries[1].color,
-          const SlideColor.theme(ThemeColor.accent2));
+      expect(
+        pie.legendEntries[1].color,
+        const SlideColor.theme(ThemeColor.accent2),
+      );
     });
 
     test('withFrame and withId keep the chart', () {
@@ -103,11 +105,11 @@ void main() {
 
   group('screen reader text', () {
     test('a chart reads as a summary', () {
-      final chart = sampleChart().copyWith(
-        options: const ChartOptions(),
+      final chart = sampleChart().copyWith(options: const ChartOptions());
+      expect(
+        defaultSlideElementLabel(chart),
+        'Bar chart, 2 series, 3 categories; highest value 42 in Q3',
       );
-      expect(defaultSlideElementLabel(chart),
-          'Bar chart, 2 series, 3 categories; highest value 42 in Q3');
       expect(
         defaultSlideChartSummary(sampleChart().copyWith(kind: ChartKind.line)),
         'Line chart titled Sales, 2 series, 3 categories; '
@@ -120,8 +122,10 @@ void main() {
         kind: ChartKind.pie,
         options: const ChartOptions(),
       );
-      expect(defaultSlideChartSummary(one),
-          'Pie chart, 1 series, 3 categories; highest value 42 in Q3');
+      expect(
+        defaultSlideChartSummary(one),
+        'Pie chart, 1 series, 3 categories; highest value 42 in Q3',
+      );
       expect(
         defaultSlideChartSummary(
           one.copyWith(kind: ChartKind.area, data: ChartData()),
@@ -140,7 +144,7 @@ void main() {
         data: ChartData(
           categories: const [''],
           series: [
-            ChartSeries(values: const [1])
+            ChartSeries(values: const [1]),
           ],
         ),
       );
@@ -148,11 +152,14 @@ void main() {
     });
 
     test('chart tools are named for what they insert', () {
-      expect(defaultSlideToolLabel(const SlideCanvasTool.chart(ChartKind.pie)),
-          'Insert pie chart');
+      expect(
+        defaultSlideToolLabel(const SlideCanvasTool.chart(ChartKind.pie)),
+        'Insert pie chart',
+      );
       expect(
         defaultSlideToolLabel(
-            const SlideCanvasTool.chart(ChartKind.horizontalBar)),
+          const SlideCanvasTool.chart(ChartKind.horizontalBar),
+        ),
         'Insert horizontal bar chart',
       );
     });

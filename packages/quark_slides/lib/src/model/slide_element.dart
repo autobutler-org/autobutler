@@ -129,8 +129,9 @@ sealed class SlideElement {
           stroke: json['stroke'] == null
               ? null
               : Stroke.fromJson(json['stroke'], '$path.stroke'),
-          cornerRadius:
-              _nonNegative(optionalNumber(json, 'cornerRadius', path)),
+          cornerRadius: _nonNegative(
+            optionalNumber(json, 'cornerRadius', path),
+          ),
           opacity: _opacity(json, path),
           shadow: _shadow(json, path),
           extra: unknownFields(json, ShapeElement._known),

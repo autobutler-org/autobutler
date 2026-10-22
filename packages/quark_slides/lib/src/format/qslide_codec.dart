@@ -109,11 +109,8 @@ abstract final class QslideCodec {
   static JsonMap _fromVersion1(JsonMap json) {
     final theme = json['theme'];
     final builtIn = theme is String ? SlideThemes.byId(theme) : null;
-    return {
-      ...json,
-      'schemaVersion': 2,
-      'theme': builtIn?.toJson(),
-    }..removeWhere((key, value) => key == 'theme' && value == null);
+    return {...json, 'schemaVersion': 2, 'theme': builtIn?.toJson()}
+      ..removeWhere((key, value) => key == 'theme' && value == null);
   }
 
   /// Version 2 to 3: transitions are new, and a deck without any cuts from

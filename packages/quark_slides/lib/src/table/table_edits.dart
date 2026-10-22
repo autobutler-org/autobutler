@@ -77,8 +77,7 @@ TableElement transposeTable(TableElement table) => table.copyWith(
       cells: [
         for (var c = 0; c < table.columnCount; c++)
           [
-            for (var r = 0; r < table.rowCount; r++)
-              table.cell(r, c).transposed,
+            for (var r = 0; r < table.rowCount; r++) table.cell(r, c).transposed
           ],
       ],
     );
@@ -96,7 +95,10 @@ TableElement insertTableRows(TableElement table, int index, {int count = 1}) {
   final blank = [
     for (final cell in table.cells[from])
       SlideTableCell(
-          fill: cell.fill, borders: cell.borders, anchor: cell.anchor),
+        fill: cell.fill,
+        borders: cell.borders,
+        anchor: cell.anchor,
+      ),
   ];
   final cells = [
     for (var r = 0; r < table.rowCount; r++)
@@ -110,9 +112,7 @@ TableElement insertTableRows(TableElement table, int index, {int count = 1}) {
       ],
   ]..insertAll(index, List.generate(count, (_) => blank));
   return table.copyWith(
-    frame: table.frame.copyWith(
-      height: table.frame.height + height * count,
-    ),
+    frame: table.frame.copyWith(height: table.frame.height + height * count),
     rowHeights: [...table.rowHeights]
       ..insertAll(index, List.filled(count, height)),
     cells: cells,
@@ -126,9 +126,7 @@ TableElement insertTableColumns(
   int index, {
   int count = 1,
 }) =>
-    transposeTable(
-      insertTableRows(transposeTable(table), index, count: count),
-    );
+    transposeTable(insertTableRows(transposeTable(table), index, count: count));
 
 /// [table] without the [count] rows from [first], or `null` when that is
 /// every row. The table grows shorter. A merge loses the rows deleted from
@@ -138,7 +136,7 @@ TableElement? deleteTableRows(TableElement table, int first, {int count = 1}) {
   final end = math.min(table.rowCount, first + count);
   if (end - first >= table.rowCount) return null;
   final cells = [
-    for (final row in table.cells) [...row]
+    for (final row in table.cells) [...row],
   ];
   for (var r = 0; r < table.rowCount; r++) {
     for (var c = 0; c < table.columnCount; c++) {
@@ -188,11 +186,7 @@ TableElement? deleteTableColumns(
 /// [minTableCellSize]. The column to its right gives or takes the
 /// difference, so the table keeps its width, as dragging the line between
 /// them does; the last column changes the table's width instead.
-TableElement resizeTableColumn(
-  TableElement table,
-  int column,
-  double width,
-) {
+TableElement resizeTableColumn(TableElement table, int column, double width) {
   RangeError.checkValidIndex(column, table.columnWidths, 'column');
   final widths = [...table.columnWidths];
   if (column + 1 < widths.length) {
@@ -256,7 +250,7 @@ TableElement formatTableCells(
   _checkRange(table, range);
   final area = table.expandToMerges(range);
   final cells = [
-    for (final row in table.cells) [...row]
+    for (final row in table.cells) [...row],
   ];
   for (var r = area.top; r <= area.bottom; r++) {
     for (var c = area.left; c <= area.right; c++) {
@@ -341,18 +335,14 @@ TableElement mergeTableCells(TableElement table, CellRange range) {
   final area = table.expandToMerges(range);
   if (area.isSingle) return table;
   final cells = [
-    for (final row in table.cells) [...row]
+    for (final row in table.cells) [...row],
   ];
   final paragraphs = <TextParagraph>[];
   for (var r = area.top; r <= area.bottom; r++) {
     for (var c = area.left; c <= area.right; c++) {
       final cell = cells[r][c];
       if (cell.plainText.isNotEmpty) paragraphs.addAll(cell.paragraphs);
-      cells[r][c] = cell.copyWith(
-        paragraphs: const [],
-        rowSpan: 1,
-        colSpan: 1,
-      );
+      cells[r][c] = cell.copyWith(paragraphs: const [], rowSpan: 1, colSpan: 1);
     }
   }
   final anchor = table.cell(area.top, area.left);
@@ -370,7 +360,7 @@ TableElement unmergeTableCells(TableElement table, CellRange range) {
   _checkRange(table, range);
   final area = table.expandToMerges(range);
   final cells = [
-    for (final row in table.cells) [...row]
+    for (final row in table.cells) [...row],
   ];
   for (var r = area.top; r <= area.bottom; r++) {
     for (var c = area.left; c <= area.right; c++) {

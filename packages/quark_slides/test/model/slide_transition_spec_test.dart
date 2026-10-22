@@ -15,10 +15,10 @@ void main() {
       expect(const SlideTransitionSpec(durationMs: 50).durationMs, 200);
       expect(const SlideTransitionSpec(durationMs: 9000).durationMs, 2000);
       expect(const SlideTransitionSpec(durationMs: 1200).durationMs, 1200);
-      final read = SlideTransitionSpec.fromJson(
-        {'kind': 'fade', 'duration': -4},
-        r'$',
-      );
+      final read = SlideTransitionSpec.fromJson({
+        'kind': 'fade',
+        'duration': -4,
+      }, r'$');
       expect(read.durationMs, 200);
     });
 
@@ -49,19 +49,19 @@ void main() {
     });
 
     test('an unknown direction reads as left', () {
-      final t = SlideTransitionSpec.fromJson(
-        {'kind': 'push', 'direction': 'diagonal'},
-        r'$',
-      );
+      final t = SlideTransitionSpec.fromJson({
+        'kind': 'push',
+        'direction': 'diagonal',
+      }, r'$');
       expect(t.direction, SlideTransitionDirection.left);
     });
 
     test('a mistyped duration names its path', () {
       expect(
-        () => SlideTransitionSpec.fromJson(
-          {'kind': 'fade', 'duration': 'slow'},
-          r'$.transition',
-        ),
+        () => SlideTransitionSpec.fromJson({
+          'kind': 'fade',
+          'duration': 'slow',
+        }, r'$.transition'),
         throwsA(
           isA<QslideFormatException>().having(
             (e) => e.path,
@@ -80,10 +80,9 @@ void main() {
         'kind': 'cube',
         'duration': 800,
       });
-      expect(
-        unknown.copyWith(kind: SlideTransitionKind.zoom).toJson(),
-        {'kind': 'zoom'},
-      );
+      expect(unknown.copyWith(kind: SlideTransitionKind.zoom).toJson(), {
+        'kind': 'zoom',
+      });
     });
 
     test('reduced motion turns movement into the shortest fade', () {
@@ -98,15 +97,12 @@ void main() {
     });
 
     test('reversed moves the other way', () {
-      expect(
-        SlideTransitionDirection.values.map((d) => d.reversed),
-        [
-          SlideTransitionDirection.right,
-          SlideTransitionDirection.left,
-          SlideTransitionDirection.down,
-          SlideTransitionDirection.up,
-        ],
-      );
+      expect(SlideTransitionDirection.values.map((d) => d.reversed), [
+        SlideTransitionDirection.right,
+        SlideTransitionDirection.left,
+        SlideTransitionDirection.down,
+        SlideTransitionDirection.up,
+      ]);
       const push = SlideTransitionSpec(
         kind: SlideTransitionKind.push,
         durationMs: 900,
@@ -116,10 +112,10 @@ void main() {
     });
 
     test('only push and wipe have a direction', () {
-      expect(
-        SlideTransitionKind.values.where((k) => k.isDirectional),
-        [SlideTransitionKind.push, SlideTransitionKind.wipe],
-      );
+      expect(SlideTransitionKind.values.where((k) => k.isDirectional), [
+        SlideTransitionKind.push,
+        SlideTransitionKind.wipe,
+      ]);
     });
   });
 

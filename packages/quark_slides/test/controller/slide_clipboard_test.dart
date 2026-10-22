@@ -24,10 +24,14 @@ Presentation deck() => Presentation(
               source: 'asset:logo-1',
               altText: 'Logo',
             ),
-            GroupElement(id: 'g', frame: f(1000, 500, 300, 300), children: [
-              ShapeElement(id: 'g1', frame: f(0, 0, 100, 100)),
-              ShapeElement(id: 'g2', frame: f(200, 200, 100, 100)),
-            ]),
+            GroupElement(
+              id: 'g',
+              frame: f(1000, 500, 300, 300),
+              children: [
+                ShapeElement(id: 'g1', frame: f(0, 0, 100, 100)),
+                ShapeElement(id: 'g2', frame: f(200, 200, 100, 100)),
+              ],
+            ),
           ],
         ),
         const Slide(id: 's2'),
@@ -80,21 +84,24 @@ void main() {
     test('a newer version is refused, an unknown element kept', () {
       expect(
         () => SlideClipboardCodec.decode(
-            '{"format": "quark-slides/elements", "version": 2}'),
+          '{"format": "quark-slides/elements", "version": 2}',
+        ),
         throwsA(isA<QslideFormatException>()),
       );
-      final kept = SlideClipboardCodec.decode(jsonEncode({
-        'format': SlideClipboardCodec.format,
-        'version': 1,
-        'elements': [
-          {
-            'id': 'x',
-            'type': 'chart',
-            'frame': {'x': 0, 'y': 0, 'width': 10, 'height': 10},
-            'series': [1, 2],
-          },
-        ],
-      }))!;
+      final kept = SlideClipboardCodec.decode(
+        jsonEncode({
+          'format': SlideClipboardCodec.format,
+          'version': 1,
+          'elements': [
+            {
+              'id': 'x',
+              'type': 'chart',
+              'frame': {'x': 0, 'y': 0, 'width': 10, 'height': 10},
+              'series': [1, 2],
+            },
+          ],
+        }),
+      )!;
       expect(kept.single, isA<UnknownElement>());
       expect(kept.single.toJson()['series'], [1, 2]);
     });
@@ -147,8 +154,10 @@ void main() {
         Presentation(slides: [const Slide(id: 'x')]),
       );
       final ids = await clipboard.paste(other, 'x');
-      expect(other.presentation.slideById('x')!.elementById(ids.single),
-          isA<ShapeElement>());
+      expect(
+        other.presentation.slideById('x')!.elementById(ids.single),
+        isA<ShapeElement>(),
+      );
     });
 
     test('the in-app memory clipboard is shared', () async {
@@ -166,22 +175,25 @@ void main() {
       expect(ids, hasLength(2));
     });
 
-    test('plain text pastes as a centered text box, a paragraph a line',
-        () async {
-      await clipboard.write('Hello\r\nworld');
-      final ids = await clipboard.paste(doc, 's');
-      final box = slide().elementById(ids.single) as TextBox;
-      expect(box.plainText, 'Hello\nworld');
-      expect(box.frame.x, (1920 - 600) / 2);
-      expect(undoAll(), 1);
-    });
+    test(
+      'plain text pastes as a centered text box, a paragraph a line',
+      () async {
+        await clipboard.write('Hello\r\nworld');
+        final ids = await clipboard.paste(doc, 's');
+        final box = slide().elementById(ids.single) as TextBox;
+        expect(box.plainText, 'Hello\nworld');
+        expect(box.frame.x, (1920 - 600) / 2);
+        expect(undoAll(), 1);
+      },
+    );
 
     test('blank, empty or newer clipboards paste nothing', () async {
       expect(await clipboard.paste(doc, 's'), isEmpty);
       await clipboard.write('   \n');
       expect(await clipboard.paste(doc, 's'), isEmpty);
-      await clipboard
-          .write('{"format": "quark-slides/elements", "version": 9}');
+      await clipboard.write(
+        '{"format": "quark-slides/elements", "version": 9}',
+      );
       expect(await clipboard.paste(doc, 's'), isEmpty);
       expect(doc.canUndo, isFalse);
     });
@@ -199,8 +211,10 @@ void main() {
       final second = doc.duplicateElements('s', {'a'});
       expect(slide().elementById(first.first)!.frame, f(116, 116, 200, 100));
       expect(slide().elementById(first.last)!.frame.x, 516);
-      expect(slide().elementById(second.single)!.frame,
-          f(116, 116, 200, 100).translate(16, 16));
+      expect(
+        slide().elementById(second.single)!.frame,
+        f(116, 116, 200, 100).translate(16, 16),
+      );
       expect(slide().elements.map((e) => e.id).skip(3), [...first, ...second]);
       expect(undoAll(), 2);
     });
