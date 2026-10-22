@@ -291,18 +291,50 @@ type xShapeProps struct {
 	Effects *xEffects `xml:"effectLst"`
 }
 
-// xEffects is a shape's effect list; only its shadows are read, to report
-// that they were left out.
+// xEffects is a shape's effect list; only its shadows are read. An outer
+// shadow is drawn; an inner or preset one is only reported.
 type xEffects struct {
-	Outer  *struct{} `xml:"outerShdw"`
-	Inner  *struct{} `xml:"innerShdw"`
-	Preset *struct{} `xml:"prstShdw"`
+	Outer  *xOuterShadow `xml:"outerShdw"`
+	Inner  *struct{}     `xml:"innerShdw"`
+	Preset *struct{}     `xml:"prstShdw"`
 }
 
-// hasShadow reports whether the shape's own effect list casts a shadow.
-func (p xShapeProps) hasShadow() bool {
+// xOuterShadow is a drop shadow: its blur, how far it falls (dist) and which
+// way (dir, 60,000ths of a degree clockwise from +x), whether it turns with
+// the shape, its scale and skew, and its color.
+type xOuterShadow struct {
+	BlurRad      xInt   `xml:"blurRad,attr"`
+	Dist         xInt   `xml:"dist,attr"`
+	Dir          xInt   `xml:"dir,attr"`
+	RotWithShape *xBool `xml:"rotWithShape,attr"`
+	SX           *xInt  `xml:"sx,attr"`
+	SY           *xInt  `xml:"sy,attr"`
+	KX           xInt   `xml:"kx,attr"`
+	KY           xInt   `xml:"ky,attr"`
+	xColorChoice
+}
+
+// scaled reports whether the shadow is scaled or skewed, which the editor
+// does not draw. Its alignment only anchors a scale or skew, so on its own
+// it changes nothing.
+func (o xOuterShadow) scaled() bool {
+	unscaled := func(v *xInt) bool { return v == nil || *v == 100_000 }
+	return !unscaled(o.SX) || !unscaled(o.SY) || o.KX != 0 || o.KY != 0
+}
+
+// shadowFate says what became of the shape's own shadow when the element it
+// converted to does or does not carry one.
+func (p xShapeProps) shadowFate(carried bool) shadowFate {
 	e := p.Effects
-	return e != nil && (e.Outer != nil || e.Inner != nil || e.Preset != nil)
+	switch {
+	case e == nil || (e.Outer == nil && e.Inner == nil && e.Preset == nil):
+		return shadowNone
+	case e.Outer == nil || !carried:
+		return shadowLeftOut
+	case e.Inner != nil || e.Preset != nil || e.Outer.scaled():
+		return shadowApproximated
+	}
+	return shadowDrawn
 }
 
 // xCustomGeometry is a freeform's outline: its guides and its paths.

@@ -32,7 +32,7 @@ void main() {
     );
     final saved = QslideCodec.encode(deckOf(shape));
     expect(saved.indexOf('"adj1"'), lessThan(saved.indexOf('"adj2"')));
-    expect(saved, isNot(contains('"schemaVersion": 6')));
+    expect(saved, isNot(contains('"schemaVersion": 7')));
     final read =
         QslideCodec.decode(saved).slides.single.elements.single as ShapeElement;
     expect(read, shape);
@@ -94,7 +94,7 @@ void main() {
     final shape = deck.slides.single.elements.single as ShapeElement;
     expect(shape.kind, ShapeKind.path);
     expect(shape.preset, 'rtTriangle');
-    expect(QslideCodec.schemaVersion, 5);
+    expect(QslideCodec.schemaVersion, 6);
   });
 
   test('restyling to another kind drops the preset and the contours', () {
