@@ -6,19 +6,19 @@ import '../support/table_sample.dart';
 /// A 1920×1080 deck with one slide `s` holding [sampleTable] (`tbl`) and a
 /// shape `box`.
 Presentation deck() => Presentation(
-      slides: [
-        Slide(
-          id: 's',
-          elements: [
-            sampleTable(),
-            ShapeElement(
-              id: 'box',
-              frame: ElementFrame(x: 0, y: 0, width: 10, height: 10),
-            ),
-          ],
+  slides: [
+    Slide(
+      id: 's',
+      elements: [
+        sampleTable(),
+        ShapeElement(
+          id: 'box',
+          frame: ElementFrame(x: 0, y: 0, width: 10, height: 10),
         ),
       ],
-    );
+    ),
+  ],
+);
 
 void main() {
   late SlideDocumentController doc;
@@ -235,8 +235,9 @@ void main() {
       measured.setCellText('s', 'tbl', 1, 0, [
         for (var i = 0; i < 4; i++) TextParagraph.plain('line $i'),
       ]);
-      final t = measured.presentation.slides.single.findElement('tbl')!
-          as TableElement;
+      final t =
+          measured.presentation.slides.single.findElement('tbl')!
+              as TableElement;
       expect(t.rowHeights[1], 4 * 30 + 2 * TableElement.cellPaddingY);
       expect(t.frame.height, t.rowHeights.fold(0.0, (a, b) => a + b));
       // It does not shrink back on its own.

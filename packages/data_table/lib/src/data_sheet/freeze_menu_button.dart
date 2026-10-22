@@ -37,13 +37,12 @@ class DataSheetFreezeMenuButton extends StatelessWidget {
       String label,
       bool checked,
       VoidCallback action,
-    ) =>
-        CheckedPopupMenuItem<VoidCallback>(
-          key: ValueKey(key),
-          value: action,
-          checked: checked,
-          child: Text(label),
-        );
+    ) => CheckedPopupMenuItem<VoidCallback>(
+      key: ValueKey(key),
+      value: action,
+      checked: checked,
+      child: Text(label),
+    );
 
     return PopupMenuButton<VoidCallback>(
       key: const ValueKey('data_sheet_freeze'),

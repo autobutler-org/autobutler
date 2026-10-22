@@ -139,9 +139,9 @@ abstract final class QslideCodec {
 
   /// The `.qslide` root object for [presentation].
   static JsonMap toJson(Presentation presentation) => {
-        'schemaVersion': schemaVersion,
-        ...presentation.toJson(),
-      };
+    'schemaVersion': schemaVersion,
+    ...presentation.toJson(),
+  };
 
   /// The text of a `.qslide` file for [presentation], indented two spaces
   /// so that saved files diff cleanly.

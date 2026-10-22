@@ -68,11 +68,11 @@ class DataSheetFormatBar extends StatelessWidget {
         return LayoutBuilder(
           builder: (context, constraints) =>
               constraints.maxWidth < compactBreakpoint
-                  ? Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: FormatPhoneMenu(actions: actions),
-                    )
-                  : FormatToolbarRow(actions: actions),
+              ? Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: FormatPhoneMenu(actions: actions),
+                )
+              : FormatToolbarRow(actions: actions),
         );
       },
     );

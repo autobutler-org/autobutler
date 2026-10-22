@@ -24,43 +24,43 @@ void testBothViewports(
 /// an ellipse `ball` and an image `pic`, back to front, on a background
 /// image.
 Presentation canvasDeck() => Presentation(
-      slides: [
-        Slide(
-          id: 's',
-          background: const SlideBackground(image: 'bg.jpg'),
-          elements: [
-            TextBox(
-              id: 'title',
-              frame: ElementFrame(x: 160, y: 80, width: 1600, height: 200),
-              paragraphs: const [
-                TextParagraph([
-                  TextRun('Quarterly ', fontSize: 72),
-                  TextRun('review', bold: true, fontSize: 72),
-                ], alignment: TextAlignment.center),
-              ],
-            ),
-            ShapeElement(
-              id: 'box',
-              frame: ElementFrame(x: 200, y: 400, width: 600, height: 450),
-              fill: const SlideColor(0xFF3366FF),
-            ),
-            ShapeElement(
-              id: 'ball',
-              frame: ElementFrame(x: 1300, y: 450, width: 400, height: 400),
-              kind: ShapeKind.ellipse,
-              fill: const SlideColor(0xFFFFCC00),
-            ),
-            ImageElement(
-              id: 'pic',
-              frame: ElementFrame(x: 900, y: 900, width: 200, height: 150),
-              source: 'photos/dog.jpg',
-              altText: 'A dog',
-              fit: ImageFit.cover,
-            ),
+  slides: [
+    Slide(
+      id: 's',
+      background: const SlideBackground(image: 'bg.jpg'),
+      elements: [
+        TextBox(
+          id: 'title',
+          frame: ElementFrame(x: 160, y: 80, width: 1600, height: 200),
+          paragraphs: const [
+            TextParagraph([
+              TextRun('Quarterly ', fontSize: 72),
+              TextRun('review', bold: true, fontSize: 72),
+            ], alignment: TextAlignment.center),
           ],
         ),
+        ShapeElement(
+          id: 'box',
+          frame: ElementFrame(x: 200, y: 400, width: 600, height: 450),
+          fill: const SlideColor(0xFF3366FF),
+        ),
+        ShapeElement(
+          id: 'ball',
+          frame: ElementFrame(x: 1300, y: 450, width: 400, height: 400),
+          kind: ShapeKind.ellipse,
+          fill: const SlideColor(0xFFFFCC00),
+        ),
+        ImageElement(
+          id: 'pic',
+          frame: ElementFrame(x: 900, y: 900, width: 200, height: 150),
+          source: 'photos/dog.jpg',
+          altText: 'A dog',
+          fit: ImageFit.cover,
+        ),
       ],
-    );
+    ),
+  ],
+);
 
 /// Hosts a [SlideCanvas] and owns its selection and zoom, as an app page
 /// would.
@@ -121,23 +121,23 @@ class CanvasHarnessState extends State<CanvasHarness> {
 
   @override
   Widget build(BuildContext context) => SlideCanvas(
-        document: widget.document,
-        slideId: 's',
-        selection: selection,
-        onSelectionChanged: select,
-        zoom: zoom,
-        onZoomChanged: (z) => setState(() => zoom = z),
-        imageBuilder: widget.imageBuilder,
-        textEditing: widget.textEditing,
-        tools: tools,
-        onPickImage: widget.onPickImage,
-        clipboard: widget.clipboard,
-        highlights: widget.highlights,
-        currentHighlight: widget.currentHighlight,
-        tableEditing: widget.tableEditing,
-        interaction: widget.interaction,
-        chartEditing: widget.chartEditing,
-      );
+    document: widget.document,
+    slideId: 's',
+    selection: selection,
+    onSelectionChanged: select,
+    zoom: zoom,
+    onZoomChanged: (z) => setState(() => zoom = z),
+    imageBuilder: widget.imageBuilder,
+    textEditing: widget.textEditing,
+    tools: tools,
+    onPickImage: widget.onPickImage,
+    clipboard: widget.clipboard,
+    highlights: widget.highlights,
+    currentHighlight: widget.currentHighlight,
+    tableEditing: widget.tableEditing,
+    interaction: widget.interaction,
+    chartEditing: widget.chartEditing,
+  );
 }
 
 /// Pumps a [CanvasHarness] over [document] filling a [size] screen.

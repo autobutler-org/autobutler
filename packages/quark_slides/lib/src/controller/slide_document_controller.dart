@@ -90,8 +90,8 @@ class SlideDocumentController {
     this.onChanged,
     this.maxUndoDepth = 100,
     this.measureText,
-  })  : _presentation = presentation,
-        _generateId = newId ?? _randomId;
+  }) : _presentation = presentation,
+       _generateId = newId ?? _randomId;
 
   /// Called after every change to [presentation], [canUndo] or [canRedo].
   void Function()? onChanged;
@@ -385,14 +385,14 @@ class SlideDocumentController {
   /// doc.applyTransitionToAll(const SlideTransitionSpec.fade());
   /// ```
   void applyTransitionToAll(SlideTransitionSpec transition) => _commit(
-        _presentation.copyWith(
-          defaultTransition: transition,
-          slides: [
-            for (final slide in _presentation.slides)
-              slide.copyWith(transition: null),
-          ],
-        ),
-      );
+    _presentation.copyWith(
+      defaultTransition: transition,
+      slides: [
+        for (final slide in _presentation.slides)
+          slide.copyWith(transition: null),
+      ],
+    ),
+  );
 
   // ---------------------------------------------------------------------------
   // Themes and layouts
@@ -531,8 +531,8 @@ class SlideDocumentController {
   }
 
   bool _idInUse(String id) => _presentation.slides.any(
-        (s) => s.id == id || s.allElements.any((e) => e.id == id),
-      );
+    (s) => s.id == id || s.allElements.any((e) => e.id == id),
+  );
 
   /// Moves every element in [elementIds] on the slide [slideId] by [dx],
   /// [dy] slide units, as one step.
@@ -545,12 +545,12 @@ class SlideDocumentController {
     Iterable<String> elementIds,
     double dx,
     double dy,
-  ) =>
-      _updateTree(slideId, elementIds, (e, parent) {
-        final (x, y) =
-            parent == null ? (dx, dy) : rotateVector(dx, dy, -parent.rotation);
-        return e.withFrame(e.frame.translate(x, y));
-      });
+  ) => _updateTree(slideId, elementIds, (e, parent) {
+    final (x, y) = parent == null
+        ? (dx, dy)
+        : rotateVector(dx, dy, -parent.rotation);
+    return e.withFrame(e.frame.translate(x, y));
+  });
 
   /// Gives the element [elementId] a new size, and a new top-left corner
   /// when [x] or [y] is given — as dragging a left or top handle needs.
@@ -613,23 +613,22 @@ class SlideDocumentController {
   static List<SlideElement> _removeFrom(
     List<SlideElement> list,
     Set<String> ids,
-  ) =>
-      [
-        for (final e in list)
-          if (ids.contains(e.id))
-            ...const <SlideElement>[]
-          else if (e is GroupElement)
-            ...() {
-              final children = _removeFrom(e.children, ids);
-              if (children.length == e.children.length) return [e];
-              final group = e.copyWith(children: children);
-              return children.length < 2
-                  ? ungroupChildren(group)
-                  : [fitGroup(group)];
-            }()
-          else
-            e,
-      ];
+  ) => [
+    for (final e in list)
+      if (ids.contains(e.id))
+        ...const <SlideElement>[]
+      else if (e is GroupElement)
+        ...() {
+          final children = _removeFrom(e.children, ids);
+          if (children.length == e.children.length) return [e];
+          final group = e.copyWith(children: children);
+          return children.length < 2
+              ? ungroupChildren(group)
+              : [fitGroup(group)];
+        }()
+      else
+        e,
+  ];
 
   /// Moves the element [elementId] to stacking position [toIndex]: 0 sends
   /// it to the back, the last index brings it to the front.
@@ -688,14 +687,13 @@ class SlideDocumentController {
     String slideId,
     String elementId,
     List<TextParagraph> paragraphs,
-  ) =>
-      _updateTree(
-        slideId,
-        [elementId],
-        (e, _) => _fitted(
-          _textBox(e).copyWith(paragraphs: List.unmodifiable(paragraphs)),
-        ),
-      );
+  ) => _updateTree(
+    slideId,
+    [elementId],
+    (e, _) => _fitted(
+      _textBox(e).copyWith(paragraphs: List.unmodifiable(paragraphs)),
+    ),
+  );
 
   /// Applies [format] to all the text of every text box in [elementIds]
   /// on the slide [slideId], as one step; other elements in [elementIds]
@@ -704,12 +702,11 @@ class SlideDocumentController {
     String slideId,
     Iterable<String> elementIds,
     TextFormat format,
-  ) =>
-      _updateTree(
-        slideId,
-        elementIds,
-        (e, _) => e is TextBox ? _fitted(formatTextBox(e, format)) : e,
-      );
+  ) => _updateTree(
+    slideId,
+    elementIds,
+    (e, _) => e is TextBox ? _fitted(formatTextBox(e, format)) : e,
+  );
 
   /// Inserts a text box on the slide [slideId] with its top-left corner at
   /// the slide point [at] and returns its id.
@@ -863,7 +860,8 @@ class SlideDocumentController {
       throw ArgumentError.value(naturalSize, 'naturalSize', 'has no area');
     }
     final size = _presentation.size;
-    final box = within ??
+    final box =
+        within ??
         _centered(
           size.width * imageFitFraction,
           size.height * imageFitFraction,
@@ -896,8 +894,7 @@ class SlideDocumentController {
     String slideId,
     Iterable<String> elementIds,
     ElementStyle style,
-  ) =>
-      _updateTree(slideId, elementIds, (e, _) => style.applyTo(e));
+  ) => _updateTree(slideId, elementIds, (e, _) => style.applyTo(e));
 
   /// Sets the image [elementId]'s alt text, which a screen reader reads
   /// for it. Throws an [ArgumentError] when the element is not an
@@ -957,8 +954,9 @@ class SlideDocumentController {
   /// a [measureText].
   T _fitted<T extends SlideElement>(T element, [Object? theme = unset]) {
     final measure = measureText;
-    final resolved =
-        identical(theme, unset) ? _presentation.theme : theme as SlideTheme?;
+    final resolved = identical(theme, unset)
+        ? _presentation.theme
+        : theme as SlideTheme?;
     if (element is TableElement && measure != null) {
       return fitTableRows(element, (box) => measure(box, resolved)) as T;
     }
@@ -1012,12 +1010,12 @@ class SlideDocumentController {
   /// frame: [defaultTableColumnWidth] per column, narrowed to fit 80% of
   /// the slide's width, by [defaultTableRowHeight] per row.
   ({double width, double height}) defaultTableSize(int rows, int columns) => (
-        width: min(
-          columns * defaultTableColumnWidth,
-          _presentation.size.width * 0.8,
-        ),
-        height: rows * defaultTableRowHeight,
-      );
+    width: min(
+      columns * defaultTableColumnWidth,
+      _presentation.size.width * 0.8,
+    ),
+    height: rows * defaultTableRowHeight,
+  );
 
   /// The width of each column of a table [insertTable] makes with no frame.
   static const defaultTableColumnWidth = 300.0;
@@ -1033,12 +1031,11 @@ class SlideDocumentController {
     String tableId,
     int row, {
     bool after = false,
-  }) =>
-      _updateTable(
-        slideId,
-        tableId,
-        (t) => insertTableRows(t, after ? row + 1 : row),
-      );
+  }) => _updateTable(
+    slideId,
+    tableId,
+    (t) => insertTableRows(t, after ? row + 1 : row),
+  );
 
   /// Inserts a blank column left of [column] of the table [tableId], or
   /// right of it with [after], as one step. See [insertTableColumns].
@@ -1047,12 +1044,11 @@ class SlideDocumentController {
     String tableId,
     int column, {
     bool after = false,
-  }) =>
-      _updateTable(
-        slideId,
-        tableId,
-        (t) => insertTableColumns(t, after ? column + 1 : column),
-      );
+  }) => _updateTable(
+    slideId,
+    tableId,
+    (t) => insertTableColumns(t, after ? column + 1 : column),
+  );
 
   /// Deletes [count] rows from [first] of the table [tableId], as one
   /// step; deleting every row deletes the table. See [deleteTableRows].
@@ -1092,12 +1088,11 @@ class SlideDocumentController {
     String tableId,
     int column,
     double width,
-  ) =>
-      _updateTable(
-        slideId,
-        tableId,
-        (t) => resizeTableColumn(t, column, width),
-      );
+  ) => _updateTable(
+    slideId,
+    tableId,
+    (t) => resizeTableColumn(t, column, width),
+  );
 
   /// Makes [row] of the table [tableId] [height] tall, but never shorter
   /// than its text, as one step; the table grows or shrinks with it. See
@@ -1107,8 +1102,7 @@ class SlideDocumentController {
     String tableId,
     int row,
     double height,
-  ) =>
-      _updateTable(slideId, tableId, (t) => resizeTableRow(t, row, height));
+  ) => _updateTable(slideId, tableId, (t) => resizeTableRow(t, row, height));
 
   /// Replaces the text of the cell at [row], [column] of the table
   /// [tableId] — the anchor's, when the cell is merged — as one step; the
@@ -1119,12 +1113,11 @@ class SlideDocumentController {
     int row,
     int column,
     List<TextParagraph> paragraphs,
-  ) =>
-      _updateTable(
-        slideId,
-        tableId,
-        (t) => setTableCellText(t, row, column, paragraphs),
-      );
+  ) => _updateTable(
+    slideId,
+    tableId,
+    (t) => setTableCellText(t, row, column, paragraphs),
+  );
 
   /// Applies [format] to the cells of [range] in the table [tableId], as
   /// one step. See [CellFormat].
@@ -1159,17 +1152,16 @@ class SlideDocumentController {
     bool? headerRow,
     bool? bandedRows,
     SlideColor? accent,
-  }) =>
-      _updateTable(
-        slideId,
-        tableId,
-        (t) => styleTable(
-          t,
-          headerRow: headerRow,
-          bandedRows: bandedRows,
-          accent: accent,
-        ),
-      );
+  }) => _updateTable(
+    slideId,
+    tableId,
+    (t) => styleTable(
+      t,
+      headerRow: headerRow,
+      bandedRows: bandedRows,
+      accent: accent,
+    ),
+  );
 
   TableElement _tableOf(String slideId, String tableId) {
     final slide = _slideOf(slideId);
@@ -1187,8 +1179,7 @@ class SlideDocumentController {
     String slideId,
     String tableId,
     TableElement Function(TableElement table) update,
-  ) =>
-      _updateTree(slideId, [tableId], (e, _) => _fitted(update(_table(e))));
+  ) => _updateTree(slideId, [tableId], (e, _) => _fitted(update(_table(e))));
 
   // ---------------------------------------------------------------------------
   // Charts
@@ -1204,17 +1195,17 @@ class SlideDocumentController {
   /// The data a new chart of [kind] starts with, for the user to replace:
   /// four quarters by three series, or one series for a pie.
   static ChartData sampleChartData(ChartKind kind) => ChartData(
-        categories: const ['Q1', 'Q2', 'Q3', 'Q4'],
-        series: kind == ChartKind.pie
-            ? [
-                ChartSeries(name: 'Series 1', values: const [40, 25, 20, 15]),
-              ]
-            : [
-                ChartSeries(name: 'Series 1', values: const [12, 19, 15, 24]),
-                ChartSeries(name: 'Series 2', values: const [8, 11, 14, 17]),
-                ChartSeries(name: 'Series 3', values: const [5, 9, 7, 12]),
-              ],
-      );
+    categories: const ['Q1', 'Q2', 'Q3', 'Q4'],
+    series: kind == ChartKind.pie
+        ? [
+            ChartSeries(name: 'Series 1', values: const [40, 25, 20, 15]),
+          ]
+        : [
+            ChartSeries(name: 'Series 1', values: const [12, 19, 15, 24]),
+            ChartSeries(name: 'Series 2', values: const [8, 11, 14, 17]),
+            ChartSeries(name: 'Series 3', values: const [5, 9, 7, 12]),
+          ],
+  );
 
   /// Inserts a chart of [kind] on the slide [slideId] and returns its id.
   ///
@@ -1247,9 +1238,9 @@ class SlideDocumentController {
 
   /// The size of a chart [insertChart] makes with no frame.
   ({double width, double height}) get defaultChartSize => (
-        width: min(defaultChartWidth, _presentation.size.width * 0.8),
-        height: defaultChartHeight,
-      );
+    width: min(defaultChartWidth, _presentation.size.width * 0.8),
+    height: defaultChartHeight,
+  );
 
   /// Replaces the chart [chartId]'s data, as one step. Throws an
   /// [ArgumentError] past the `ChartData` limits.
@@ -1277,21 +1268,20 @@ class SlideDocumentController {
     bool? showGridlines,
     String? categoryAxisTitle,
     String? valueAxisTitle,
-  }) =>
-      _updateChart(
-        slideId,
-        chartId,
-        (c) => c.copyWith(
-          options: c.options.copyWith(
-            title: title,
-            showLegend: showLegend,
-            showDataLabels: showDataLabels,
-            showGridlines: showGridlines,
-            categoryAxisTitle: categoryAxisTitle,
-            valueAxisTitle: valueAxisTitle,
-          ),
-        ),
-      );
+  }) => _updateChart(
+    slideId,
+    chartId,
+    (c) => c.copyWith(
+      options: c.options.copyWith(
+        title: title,
+        showLegend: showLegend,
+        showDataLabels: showDataLabels,
+        showGridlines: showGridlines,
+        categoryAxisTitle: categoryAxisTitle,
+        valueAxisTitle: valueAxisTitle,
+      ),
+    ),
+  );
 
   /// Adds a series after the chart [chartId]'s last, as one step: [name],
   /// or "Series N", with [values], or zeros, fitted to its categories.
@@ -1301,23 +1291,22 @@ class SlideDocumentController {
     String chartId, {
     String? name,
     List<double>? values,
-  }) =>
-      _updateChart(slideId, chartId, (c) {
-        final series = c.data.series;
-        return c.copyWith(
-          data: _checkedChartData(
-            c.data.copyWith(
-              series: [
-                ...series,
-                ChartSeries(
-                  name: name ?? 'Series ${series.length + 1}',
-                  values: values ?? const [],
-                ),
-              ],
+  }) => _updateChart(slideId, chartId, (c) {
+    final series = c.data.series;
+    return c.copyWith(
+      data: _checkedChartData(
+        c.data.copyWith(
+          series: [
+            ...series,
+            ChartSeries(
+              name: name ?? 'Series ${series.length + 1}',
+              values: values ?? const [],
             ),
-          ),
-        );
-      });
+          ],
+        ),
+      ),
+    );
+  });
 
   /// Removes series [index] of the chart [chartId], as one step, and the
   /// color it had of its own (see `ChartElement.colors`), so the series
@@ -1332,7 +1321,8 @@ class SlideDocumentController {
         }
         return c.copyWith(
           data: c.data.copyWith(series: [...series]..removeAt(index)),
-          colors: [...c.colors]..removeRange(
+          colors: [...c.colors]
+            ..removeRange(
               min(index, c.colors.length),
               min(index + 1, c.colors.length),
             ),
@@ -1360,14 +1350,13 @@ class SlideDocumentController {
     String slideId,
     String chartId,
     ChartElement Function(ChartElement chart) update,
-  ) =>
-      _updateTree(
-        slideId,
-        [chartId],
-        (e, _) => e is ChartElement
-            ? update(e)
-            : throw ArgumentError.value(chartId, 'chartId', 'is not a chart'),
-      );
+  ) => _updateTree(
+    slideId,
+    [chartId],
+    (e, _) => e is ChartElement
+        ? update(e)
+        : throw ArgumentError.value(chartId, 'chartId', 'is not a chart'),
+  );
 
   // ---------------------------------------------------------------------------
   // Grouping
@@ -1502,15 +1491,14 @@ class SlideDocumentController {
     Iterable<String> elementIds,
     DistributeAxis axis, {
     bool toSlide = false,
-  }) =>
-      _placeOnSlide(
-        slideId,
-        distributeFrames(
-          _framesOnSlide(slideId, elementIds),
-          axis,
-          within: toSlide ? _slideBox : null,
-        ),
-      );
+  }) => _placeOnSlide(
+    slideId,
+    distributeFrames(
+      _framesOnSlide(slideId, elementIds),
+      axis,
+      within: toSlide ? _slideBox : null,
+    ),
+  );
 
   /// Gives [elementIds] on the slide [slideId] the width, height or both of
   /// [reference] — the largest of them, left out — each keeping its
@@ -1521,22 +1509,21 @@ class SlideDocumentController {
     Iterable<String> elementIds,
     SizeMatch match, {
     String? reference,
-  }) =>
-      _placeOnSlide(
-        slideId,
-        matchFrameSizes(
-          _framesOnSlide(slideId, elementIds),
-          match,
-          reference: reference,
-        ),
-      );
+  }) => _placeOnSlide(
+    slideId,
+    matchFrameSizes(
+      _framesOnSlide(slideId, elementIds),
+      match,
+      reference: reference,
+    ),
+  );
 
   SlideBox get _slideBox => (
-        left: 0,
-        top: 0,
-        right: _presentation.size.width,
-        bottom: _presentation.size.height,
-      );
+    left: 0,
+    top: 0,
+    right: _presentation.size.width,
+    bottom: _presentation.size.height,
+  );
 
   /// The frames on the slide of [elementIds], by id.
   Map<String, ElementFrame> _framesOnSlide(

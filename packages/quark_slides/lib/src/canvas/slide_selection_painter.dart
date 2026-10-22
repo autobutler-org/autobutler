@@ -52,10 +52,9 @@ class SlideSelectionPainter extends CustomPainter {
       ..strokeWidth = 1.5;
     if (groupFrame case final group?) {
       canvas.drawPath(
-        Path()
-          ..addPolygon([
-            for (final c in group.corners) viewport.toView(c),
-          ], true),
+        Path()..addPolygon([
+          for (final c in group.corners) viewport.toView(c),
+        ], true),
         Paint()
           ..color = style.selectionColor.withValues(alpha: 0.4)
           ..style = PaintingStyle.stroke
@@ -64,10 +63,9 @@ class SlideSelectionPainter extends CustomPainter {
     }
     for (final frame in frames) {
       canvas.drawPath(
-        Path()
-          ..addPolygon([
-            for (final c in frame.corners) viewport.toView(c),
-          ], true),
+        Path()..addPolygon([
+          for (final c in frame.corners) viewport.toView(c),
+        ], true),
         outline,
       );
     }

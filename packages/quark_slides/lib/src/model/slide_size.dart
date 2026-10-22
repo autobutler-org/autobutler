@@ -11,7 +11,7 @@ import '../format/json_fields.dart';
 class SlideSize {
   /// Creates a slide size; both dimensions must be positive.
   SlideSize({required this.width, required this.height, this.extra = const {}})
-      : assert(width > 0 && height > 0, 'a slide size must be positive');
+    : assert(width > 0 && height > 0, 'a slide size must be positive');
 
   /// A 16:9 slide, 1920×1080 units. The default for new presentations.
   static final widescreen = SlideSize(width: 1920, height: 1080);
@@ -51,10 +51,10 @@ class SlideSize {
 
   /// The size as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        'width': jsonNumber(width),
-        'height': jsonNumber(height),
-      };
+    ...extra,
+    'width': jsonNumber(width),
+    'height': jsonNumber(height),
+  };
 
   @override
   bool operator ==(Object other) =>

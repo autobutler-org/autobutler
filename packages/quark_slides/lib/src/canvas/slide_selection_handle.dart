@@ -36,7 +36,7 @@ class SlideSelectionHandle extends StatelessWidget {
     if (!handle.isResize) return SystemMouseCursors.grab;
     final degrees =
         math.atan2(handle.dy.toDouble(), handle.dx.toDouble()) * 180 / math.pi +
-            rotation;
+        rotation;
     // Fold the direction into [0, 180) and pick the nearest of the four
     // double-headed cursors, 45 degrees apart.
     final sector = ((degrees % 180) / 45).round() % 4;
@@ -50,20 +50,20 @@ class SlideSelectionHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MouseRegion(
-        cursor: cursorFor(handle, rotation),
-        child: SizedBox.square(
-          dimension: style.handleHitSize,
-          child: Center(
-            child: Container(
-              width: style.handleSize,
-              height: style.handleSize,
-              decoration: BoxDecoration(
-                color: style.handleFillColor,
-                border: Border.all(color: style.selectionColor, width: 1.5),
-                shape: handle.isResize ? BoxShape.rectangle : BoxShape.circle,
-              ),
-            ),
+    cursor: cursorFor(handle, rotation),
+    child: SizedBox.square(
+      dimension: style.handleHitSize,
+      child: Center(
+        child: Container(
+          width: style.handleSize,
+          height: style.handleSize,
+          decoration: BoxDecoration(
+            color: style.handleFillColor,
+            border: Border.all(color: style.selectionColor, width: 1.5),
+            shape: handle.isResize ? BoxShape.rectangle : BoxShape.circle,
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

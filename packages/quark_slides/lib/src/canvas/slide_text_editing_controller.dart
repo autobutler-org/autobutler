@@ -187,8 +187,9 @@ class SlideTextEditingController extends ChangeNotifier {
     bool removeIfEmpty = false,
   }) {
     if (isEditing) commit();
-    final element =
-        _doc?.presentation.slideById(_slideId!)?.findElement(elementId);
+    final element = _doc?.presentation
+        .slideById(_slideId!)
+        ?.findElement(elementId);
     if (element is! TextBox) {
       throw ArgumentError.value(elementId, 'elementId', 'is not a text box');
     }
@@ -206,8 +207,9 @@ class SlideTextEditingController extends ChangeNotifier {
     TextSelection? selection,
   }) {
     if (isEditing) commit();
-    final element =
-        _doc?.presentation.slideById(_slideId!)?.findElement(tableId);
+    final element = _doc?.presentation
+        .slideById(_slideId!)
+        ?.findElement(tableId);
     if (element is! TableElement) {
       throw ArgumentError.value(tableId, 'tableId', 'is not a table');
     }
@@ -280,12 +282,9 @@ class SlideTextEditingController extends ChangeNotifier {
       }
       if (draft.anchor != original.anchor ||
           draft.autoFit != original.autoFit) {
-        doc.formatText(
-            slideId,
-            {
-              draft.id,
-            },
-            TextFormat(anchor: draft.anchor, autoFit: draft.autoFit));
+        doc.formatText(slideId, {
+          draft.id,
+        }, TextFormat(anchor: draft.anchor, autoFit: draft.autoFit));
       }
     });
   }

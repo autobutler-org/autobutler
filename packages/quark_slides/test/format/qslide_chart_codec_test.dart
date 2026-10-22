@@ -29,22 +29,22 @@ Map<String, Object?> chartJson({
   List<Object?> categories = const ['A', 'B'],
   List<Object?>? series,
   List<Object?>? colors,
-}) =>
-    {
-      'id': 'c',
-      'type': 'chart',
-      'frame': {'x': 0, 'y': 0, 'width': 200, 'height': 100},
-      'kind': kind,
-      'categories': categories,
-      'series': series ??
-          [
-            {
-              'name': 'S',
-              'values': [1, 2],
-            },
-          ],
-      if (colors != null) 'colors': colors,
-    };
+}) => {
+  'id': 'c',
+  'type': 'chart',
+  'frame': {'x': 0, 'y': 0, 'width': 200, 'height': 100},
+  'kind': kind,
+  'categories': categories,
+  'series':
+      series ??
+      [
+        {
+          'name': 'S',
+          'values': [1, 2],
+        },
+      ],
+  'colors': ?colors,
+};
 
 ChartElement onlyChart(Presentation deck) =>
     deck.slides.single.elements.single as ChartElement;

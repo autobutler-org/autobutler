@@ -16,8 +16,9 @@ class ThemeShapeStyle {
     this.stroke,
     Stroke? line,
     this.extra = const {},
-  }) : line = line ??
-            Stroke(color: const SlideColor.theme(ThemeColor.text), width: 4);
+  }) : line =
+           line ??
+           Stroke(color: const SlideColor.theme(ThemeColor.text), width: 4);
 
   /// A new shape's fill, or `null` for hollow.
   final SlideColor? fill;
@@ -51,11 +52,11 @@ class ThemeShapeStyle {
 
   /// The shape style as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        if (fill != null) 'fill': fill!.toHex(),
-        if (stroke != null) 'stroke': stroke!.toJson(),
-        'line': line.toJson(),
-      };
+    ...extra,
+    if (fill != null) 'fill': fill!.toHex(),
+    if (stroke != null) 'stroke': stroke!.toJson(),
+    'line': line.toJson(),
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` to clear
   /// [fill] or [stroke].
@@ -63,13 +64,12 @@ class ThemeShapeStyle {
     Object? fill = unset,
     Object? stroke = unset,
     Stroke? line,
-  }) =>
-      ThemeShapeStyle(
-        fill: identical(fill, unset) ? this.fill : fill as SlideColor?,
-        stroke: identical(stroke, unset) ? this.stroke : stroke as Stroke?,
-        line: line ?? this.line,
-        extra: extra,
-      );
+  }) => ThemeShapeStyle(
+    fill: identical(fill, unset) ? this.fill : fill as SlideColor?,
+    stroke: identical(stroke, unset) ? this.stroke : stroke as Stroke?,
+    line: line ?? this.line,
+    extra: extra,
+  );
 
   @override
   bool operator ==(Object other) =>

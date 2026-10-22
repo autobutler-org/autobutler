@@ -101,7 +101,10 @@ class _SlideTransitionViewState extends State<SlideTransitionView>
   bool get _reduceMotion =>
       MediaQuery.disableAnimationsOf(context) ||
       WidgetsBinding
-          .instance.platformDispatcher.accessibilityFeatures.reduceMotion;
+          .instance
+          .platformDispatcher
+          .accessibilityFeatures
+          .reduceMotion;
 
   // iOS Reduce Motion does not reach MediaQuery, so its change is heard
   // here; a transition already playing finishes at once.
@@ -115,8 +118,9 @@ class _SlideTransitionViewState extends State<SlideTransitionView>
   void didUpdateWidget(SlideTransitionView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.slideId == widget.slideId) return;
-    var transition =
-        widget.reverse ? widget.transition.reversed : widget.transition;
+    var transition = widget.reverse
+        ? widget.transition.reversed
+        : widget.transition;
     if (_reduceMotion) transition = transition.reducedMotion;
     if (transition.kind == SlideTransitionKind.none) {
       _controller.value = 1;
@@ -138,44 +142,44 @@ class _SlideTransitionViewState extends State<SlideTransitionView>
 
   @override
   Widget build(BuildContext context) => ClipRect(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final frame = _outgoing == null
-                ? const SlideTransitionFrame(
-                    outgoing: SlideTransitionLayer.still,
-                    incoming: SlideTransitionLayer.still,
-                  )
-                : SlideTransitionFrame.at(
-                    _playing,
-                    SlideTransitionFrame.ease(_controller.value),
-                  );
-            // Each layer is keyed by its slide, so the slide that was
-            // arriving keeps its state as it becomes the one leaving.
-            Widget layer(String id, SlideTransitionLayer at, Widget child) =>
-                FractionalTranslation(
-                  key: ValueKey('slide_transition_$id'),
-                  translation: at.offset,
-                  child: Transform.scale(
-                    scale: at.scale,
-                    child: Opacity(
-                      opacity: at.opacity,
-                      child: ClipRect(
-                        clipper: SlideTransitionClipper(at.clip),
-                        child: child,
-                      ),
-                    ),
+    child: AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final frame = _outgoing == null
+            ? const SlideTransitionFrame(
+                outgoing: SlideTransitionLayer.still,
+                incoming: SlideTransitionLayer.still,
+              )
+            : SlideTransitionFrame.at(
+                _playing,
+                SlideTransitionFrame.ease(_controller.value),
+              );
+        // Each layer is keyed by its slide, so the slide that was
+        // arriving keeps its state as it becomes the one leaving.
+        Widget layer(String id, SlideTransitionLayer at, Widget child) =>
+            FractionalTranslation(
+              key: ValueKey('slide_transition_$id'),
+              translation: at.offset,
+              child: Transform.scale(
+                scale: at.scale,
+                child: Opacity(
+                  opacity: at.opacity,
+                  child: ClipRect(
+                    clipper: SlideTransitionClipper(at.clip),
+                    child: child,
                   ),
-                );
-            return Stack(
-              fit: StackFit.passthrough,
-              children: [
-                if (_outgoing != null)
-                  layer(_outgoingId!, frame.outgoing, _outgoing!),
-                layer(widget.slideId, frame.incoming, widget.child),
-              ],
+                ),
+              ),
             );
-          },
-        ),
-      );
+        return Stack(
+          fit: StackFit.passthrough,
+          children: [
+            if (_outgoing != null)
+              layer(_outgoingId!, frame.outgoing, _outgoing!),
+            layer(widget.slideId, frame.incoming, widget.child),
+          ],
+        );
+      },
+    ),
+  );
 }

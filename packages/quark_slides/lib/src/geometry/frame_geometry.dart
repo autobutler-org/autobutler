@@ -133,7 +133,8 @@ extension FrameGeometry on ElementFrame {
     final anchor = toSlide(
       Offset(-handle.dx * width / 2, -handle.dy * height / 2),
     );
-    final newCenter = anchor -
+    final newCenter =
+        anchor -
         rotateOffset(
           Offset(-handle.dx * newWidth / 2, -handle.dy * newHeight / 2),
           rotation,
@@ -215,9 +216,9 @@ extension SlideHitTest on Slide {
   /// The ids, back to front, of every element whose rotated bounds lie
   /// wholly inside [area] — what a marquee drag selects.
   List<String> elementsInside(Rect area) => [
-        for (final element in elements)
-          if (_encloses(area, element.frame.bounds)) element.id,
-      ];
+    for (final element in elements)
+      if (_encloses(area, element.frame.bounds)) element.id,
+  ];
 
   /// The smallest box holding the bounds of every element in [ids] — on the
   /// slide or inside a group — or `null` when none of them is on the slide.

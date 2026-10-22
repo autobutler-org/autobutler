@@ -71,24 +71,25 @@ class TextRun {
       strikethrough: optionalBool(json, 'strikethrough', path, false),
       fontSize: optionalNumber(json, 'fontSize', path),
       fontFamily: optionalString(json, 'fontFamily', path),
-      color:
-          color == null ? null : SlideColor.parse(color, path: '$path.color'),
+      color: color == null
+          ? null
+          : SlideColor.parse(color, path: '$path.color'),
       extra: unknownFields(json, _known),
     );
   }
 
   /// The run as its `.qslide` object; default styles are omitted.
   JsonMap toJson() => {
-        ...extra,
-        'text': text,
-        if (bold) 'bold': true,
-        if (italic) 'italic': true,
-        if (underline) 'underline': true,
-        if (strikethrough) 'strikethrough': true,
-        if (fontSize != null) 'fontSize': jsonNumber(fontSize!),
-        if (fontFamily != null) 'fontFamily': fontFamily,
-        if (color != null) 'color': color!.toHex(),
-      };
+    ...extra,
+    'text': text,
+    if (bold) 'bold': true,
+    if (italic) 'italic': true,
+    if (underline) 'underline': true,
+    if (strikethrough) 'strikethrough': true,
+    if (fontSize != null) 'fontSize': jsonNumber(fontSize!),
+    if (fontFamily != null) 'fontFamily': fontFamily,
+    if (color != null) 'color': color!.toHex(),
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` to a
   /// nullable style to make it inherit again.
@@ -101,21 +102,19 @@ class TextRun {
     Object? fontSize = unset,
     Object? fontFamily = unset,
     Object? color = unset,
-  }) =>
-      TextRun(
-        text ?? this.text,
-        bold: bold ?? this.bold,
-        italic: italic ?? this.italic,
-        underline: underline ?? this.underline,
-        strikethrough: strikethrough ?? this.strikethrough,
-        fontSize:
-            identical(fontSize, unset) ? this.fontSize : fontSize as double?,
-        fontFamily: identical(fontFamily, unset)
-            ? this.fontFamily
-            : fontFamily as String?,
-        color: identical(color, unset) ? this.color : color as SlideColor?,
-        extra: extra,
-      );
+  }) => TextRun(
+    text ?? this.text,
+    bold: bold ?? this.bold,
+    italic: italic ?? this.italic,
+    underline: underline ?? this.underline,
+    strikethrough: strikethrough ?? this.strikethrough,
+    fontSize: identical(fontSize, unset) ? this.fontSize : fontSize as double?,
+    fontFamily: identical(fontFamily, unset)
+        ? this.fontFamily
+        : fontFamily as String?,
+    color: identical(color, unset) ? this.color : color as SlideColor?,
+    extra: extra,
+  );
 
   /// Whether [other] is styled exactly like this run — every field but
   /// [text] matches, unknown fields included — so the two could be one run.
@@ -136,16 +135,16 @@ class TextRun {
 
   @override
   int get hashCode => Object.hash(
-        text,
-        bold,
-        italic,
-        underline,
-        strikethrough,
-        fontSize,
-        fontFamily,
-        color,
-        jsonHash(extra),
-      );
+    text,
+    bold,
+    italic,
+    underline,
+    strikethrough,
+    fontSize,
+    fontFamily,
+    color,
+    jsonHash(extra),
+  );
 
   @override
   String toString() => 'TextRun($text)';

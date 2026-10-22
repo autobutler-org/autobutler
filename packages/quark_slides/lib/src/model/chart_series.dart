@@ -39,9 +39,9 @@ class ChartSeries {
             null => 0,
             final num n when n.isFinite => n.toDouble(),
             _ => throw QslideFormatException(
-                'expected a number',
-                path: '$path.values[$i]',
-              ),
+              'expected a number',
+              path: '$path.values[$i]',
+            ),
           },
       ],
       extra: unknownFields(json, _known),
@@ -50,17 +50,17 @@ class ChartSeries {
 
   /// The series as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        if (name.isNotEmpty) 'name': name,
-        'values': [for (final v in values) jsonNumber(v)],
-      };
+    ...extra,
+    if (name.isNotEmpty) 'name': name,
+    'values': [for (final v in values) jsonNumber(v)],
+  };
 
   /// Returns a copy with the given fields replaced.
   ChartSeries copyWith({String? name, List<double>? values}) => ChartSeries(
-        name: name ?? this.name,
-        values: values ?? this.values,
-        extra: extra,
-      );
+    name: name ?? this.name,
+    values: values ?? this.values,
+    extra: extra,
+  );
 
   /// This series with [count] values: cut short, or padded with zeros.
   ChartSeries withLength(int count) => values.length == count

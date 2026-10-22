@@ -58,9 +58,9 @@ Future<DataSheetController> _pumpSheet(
 Finder _cell(int r, int c) => find.byKey(ValueKey('r${r}c$c')).first;
 
 Finder get _cellEditor => find.descendant(
-      of: find.byType(EditableCell),
-      matching: find.byType(TextField),
-    );
+  of: find.byType(EditableCell),
+  matching: find.byType(TextField),
+);
 
 Finder get _bar => find.byKey(const ValueKey('data_sheet_formula_field'));
 

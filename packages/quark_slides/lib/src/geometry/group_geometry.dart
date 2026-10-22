@@ -132,9 +132,9 @@ GroupElement groupOf(String id, List<SlideElement> members) {
 /// [group]'s children with their frames in the space the group lives in —
 /// what ungrouping puts in its place. Nothing moves on the slide.
 List<SlideElement> ungroupChildren(GroupElement group) => [
-      for (final child in group.children)
-        child.withFrame(frameInParent(group.frame, child.frame)),
-    ];
+  for (final child in group.children)
+    child.withFrame(frameInParent(group.frame, child.frame)),
+];
 
 /// [group] given [frame], its children scaled with it.
 ///
@@ -170,10 +170,10 @@ GroupElement resizeGroup(GroupElement group, ElementFrame frame) {
 /// with it (see [resizeGroup]).
 SlideElement reframe(SlideElement element, ElementFrame frame) =>
     element is GroupElement &&
-            (frame.width != element.frame.width ||
-                frame.height != element.frame.height)
-        ? resizeGroup(element, frame)
-        : element.withFrame(frame);
+        (frame.width != element.frame.width ||
+            frame.height != element.frame.height)
+    ? resizeGroup(element, frame)
+    : element.withFrame(frame);
 
 /// [group] with its frame fitted to its children's bounds again, after one
 /// of them moved, grew or shrank. Nothing moves on the slide: the frame

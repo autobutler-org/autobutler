@@ -18,8 +18,8 @@ DataSheetController _make(List<List<String>> values) {
 
 /// A [rows] by [cols] sheet whose cells hold `r,c`.
 DataSheetController _grid(int rows, int cols) => _make([
-      for (var r = 0; r < rows; r++) [for (var c = 0; c < cols; c++) '$r,$c'],
-    ]);
+  for (var r = 0; r < rows; r++) [for (var c = 0; c < cols; c++) '$r,$c'],
+]);
 
 CellRange _range(int top, int left, int bottom, int right) =>
     CellRange(top: top, left: left, bottom: bottom, right: right);
@@ -30,9 +30,9 @@ const _bold = CellFormat(bold: true);
 
 /// The formatted cells, keyed `"r,c"`, with the bold ones marked.
 Set<String> _boldCells(DataSheetController c) => {
-      for (final MapEntry(key: (r, col), value: f) in c.formats.entries)
-        if (f.bold) '$r,$col',
-    };
+  for (final MapEntry(key: (r, col), value: f) in c.formats.entries)
+    if (f.bold) '$r,$col',
+};
 
 void main() {
   group('applyFormat', () {

@@ -42,10 +42,8 @@ Presentation shadowDeck(ElementShadow shadow, {double rotation = 0}) =>
 
 /// The render object painting the element [id], its first custom paint.
 RenderObject painterOf(WidgetTester tester, String id) => tester.renderObject(
-      find
-          .descendant(of: elementKey(id), matching: find.byType(CustomPaint))
-          .first,
-    );
+  find.descendant(of: elementKey(id), matching: find.byType(CustomPaint)).first,
+);
 
 /// Whether [method] and [args] are a shadow layer tinted [color] and
 /// blurred to [sigma].

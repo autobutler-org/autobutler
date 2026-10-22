@@ -83,9 +83,9 @@ T enumByName<T extends Enum>(
 /// The entries of [json] whose keys are not in [known]: the fields a newer
 /// writer added, kept so that saving the document again does not drop them.
 JsonMap unknownFields(JsonMap json, Set<String> known) => Map.unmodifiable({
-      for (final entry in json.entries)
-        if (!known.contains(entry.key)) entry.key: entry.value,
-    });
+  for (final entry in json.entries)
+    if (!known.contains(entry.key)) entry.key: entry.value,
+});
 
 /// Writes [value] as an integer when it has no fractional part, so files
 /// read `1920` rather than `1920.0`.

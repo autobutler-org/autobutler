@@ -32,8 +32,8 @@ class CellRange {
     required this.left,
     required this.bottom,
     required this.right,
-  })  : assert(top <= bottom),
-        assert(left <= right);
+  }) : assert(top <= bottom),
+       assert(left <= right);
 
   /// Creates the range spanning two opposite corners, in either order.
   factory CellRange.fromCorners(int rowA, int colA, int rowB, int colB) =>

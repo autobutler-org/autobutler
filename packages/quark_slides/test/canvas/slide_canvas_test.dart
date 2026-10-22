@@ -388,8 +388,8 @@ void main() {
     ) async {
       await pumpCanvas(tester, doc, size: size);
       List<String> order() => [
-            for (final e in doc.presentation.slideById('s')!.elements) e.id,
-          ];
+        for (final e in doc.presentation.slideById('s')!.elements) e.id,
+      ];
       await tester.tap(elementKey('box'));
       await tester.pump();
       await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);

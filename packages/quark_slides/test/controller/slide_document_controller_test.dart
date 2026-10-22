@@ -22,8 +22,8 @@ class Harness {
   List<String> get slideIds => [for (final s in doc.presentation.slides) s.id];
 
   List<String> elementIds(String slideId) => [
-        for (final e in doc.presentation.slideById(slideId)!.elements) e.id,
-      ];
+    for (final e in doc.presentation.slideById(slideId)!.elements) e.id,
+  ];
 
   ElementFrame frameOf(String slideId, String elementId) =>
       doc.presentation.slideById(slideId)!.elementById(elementId)!.frame;

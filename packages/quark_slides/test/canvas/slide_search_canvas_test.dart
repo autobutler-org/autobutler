@@ -44,17 +44,16 @@ Presentation searchDeck() {
 }
 
 List<SlideMatch> search(Presentation deck, String text) => SlideSearch.find(
-      deck,
-      SlideSearchQuery(text),
-      scope: const SlideSearchScope(includeNotes: true),
-    ).matches;
+  deck,
+  SlideSearchQuery(text),
+  scope: const SlideSearchScope(includeNotes: true),
+).matches;
 
 /// The highlight painters on screen.
 List<SlideTextHighlightPainter> painters(WidgetTester tester) => [
-      for (final paint
-          in tester.widgetList<CustomPaint>(find.byType(CustomPaint)))
-        if (paint.painter case final SlideTextHighlightPainter p) p,
-    ];
+  for (final paint in tester.widgetList<CustomPaint>(find.byType(CustomPaint)))
+    if (paint.painter case final SlideTextHighlightPainter p) p,
+];
 
 void main() {
   testBothViewports('highlights paint behind matches on this slide only', (

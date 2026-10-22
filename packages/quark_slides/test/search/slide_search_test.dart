@@ -11,44 +11,44 @@ TextBox box(String id, List<TextParagraph> paragraphs, {double y = 0}) =>
 /// shape, and a group `g` holding a group `h` holding the box `deep`
 /// (`a cat`), with notes `Cat notes\nmore cat`. `s2`: a box `u` (`concat`).
 Presentation deck() => Presentation(
-      slides: [
-        Slide(
-          id: 's1',
-          notes: 'Cat notes\nmore cat',
-          elements: [
-            box('t', const [
-              TextParagraph([TextRun('Cat '), TextRun('and cat', bold: true)]),
-            ]),
-            ShapeElement(id: 'shape', frame: frame(200)),
+  slides: [
+    Slide(
+      id: 's1',
+      notes: 'Cat notes\nmore cat',
+      elements: [
+        box('t', const [
+          TextParagraph([TextRun('Cat '), TextRun('and cat', bold: true)]),
+        ]),
+        ShapeElement(id: 'shape', frame: frame(200)),
+        GroupElement(
+          id: 'g',
+          frame: frame(300),
+          children: [
             GroupElement(
-              id: 'g',
-              frame: frame(300),
+              id: 'h',
+              frame: frame(),
               children: [
-                GroupElement(
-                  id: 'h',
-                  frame: frame(),
-                  children: [
-                    box('deep', [TextParagraph.plain('a cat')]),
-                  ],
-                ),
+                box('deep', [TextParagraph.plain('a cat')]),
               ],
             ),
           ],
         ),
-        Slide(
-          id: 's2',
-          elements: [
-            box('u', [TextParagraph.plain('concat')]),
-          ],
-        ),
       ],
-    );
+    ),
+    Slide(
+      id: 's2',
+      elements: [
+        box('u', [TextParagraph.plain('concat')]),
+      ],
+    ),
+  ],
+);
 
 List<String> describe(SlideSearchResult result) => [
-      for (final m in result.matches)
-        '${m.slideId}:${m.field.name}:${m.elementPath.join('/')}:'
-            '${m.paragraph}:${m.start}-${m.end}',
-    ];
+  for (final m in result.matches)
+    '${m.slideId}:${m.field.name}:${m.elementPath.join('/')}:'
+        '${m.paragraph}:${m.start}-${m.end}',
+];
 
 SlideSearchResult find(
   Presentation p,
@@ -57,17 +57,16 @@ SlideSearchResult find(
   bool wholeWord = false,
   bool regex = false,
   SlideSearchScope scope = SlideSearchScope.allSlides,
-}) =>
-    SlideSearch.find(
-      p,
-      SlideSearchQuery(
-        text,
-        caseSensitive: caseSensitive,
-        wholeWord: wholeWord,
-        regex: regex,
-      ),
-      scope: scope,
-    );
+}) => SlideSearch.find(
+  p,
+  SlideSearchQuery(
+    text,
+    caseSensitive: caseSensitive,
+    wholeWord: wholeWord,
+    regex: regex,
+  ),
+  scope: scope,
+);
 
 void main() {
   group('SlideSearch.find', () {

@@ -39,11 +39,11 @@ class CellBorders {
 
   /// Every side drawn with [stroke].
   const CellBorders.all(Stroke stroke)
-      : top = stroke,
-        right = stroke,
-        bottom = stroke,
-        left = stroke,
-        extra = const {};
+    : top = stroke,
+      right = stroke,
+      bottom = stroke,
+      left = stroke,
+      extra = const {};
 
   /// No lines at all.
   static const none = CellBorders();
@@ -67,29 +67,29 @@ class CellBorders {
 
   /// The line along [side], or `null`.
   Stroke? operator [](CellSide side) => switch (side) {
-        CellSide.top => top,
-        CellSide.right => right,
-        CellSide.bottom => bottom,
-        CellSide.left => left,
-      };
+    CellSide.top => top,
+    CellSide.right => right,
+    CellSide.bottom => bottom,
+    CellSide.left => left,
+  };
 
   /// A copy with [side]'s line replaced by [stroke], `null` for none.
   CellBorders withSide(CellSide side, Stroke? stroke) => switch (side) {
-        CellSide.top => copyWith(top: stroke),
-        CellSide.right => copyWith(right: stroke),
-        CellSide.bottom => copyWith(bottom: stroke),
-        CellSide.left => copyWith(left: stroke),
-      };
+    CellSide.top => copyWith(top: stroke),
+    CellSide.right => copyWith(right: stroke),
+    CellSide.bottom => copyWith(bottom: stroke),
+    CellSide.left => copyWith(left: stroke),
+  };
 
   /// The borders with rows and columns swapped: top for left and bottom for
   /// right, as transposing a table needs.
   CellBorders get transposed => CellBorders(
-        top: left,
-        right: bottom,
-        bottom: right,
-        left: top,
-        extra: extra,
-      );
+    top: left,
+    right: bottom,
+    bottom: right,
+    left: top,
+    extra: extra,
+  );
 
   /// Reads borders from their `.qslide` object at [path].
   factory CellBorders.fromJson(Object? value, String path) {
@@ -107,12 +107,12 @@ class CellBorders {
 
   /// The borders as their `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        if (top != null) 'top': top!.toJson(),
-        if (right != null) 'right': right!.toJson(),
-        if (bottom != null) 'bottom': bottom!.toJson(),
-        if (left != null) 'left': left!.toJson(),
-      };
+    ...extra,
+    if (top != null) 'top': top!.toJson(),
+    if (right != null) 'right': right!.toJson(),
+    if (bottom != null) 'bottom': bottom!.toJson(),
+    if (left != null) 'left': left!.toJson(),
+  };
 
   /// Whether no side has a line and nothing unknown is kept.
   bool get isEmpty =>
@@ -129,14 +129,13 @@ class CellBorders {
     Object? right = unset,
     Object? bottom = unset,
     Object? left = unset,
-  }) =>
-      CellBorders(
-        top: identical(top, unset) ? this.top : top as Stroke?,
-        right: identical(right, unset) ? this.right : right as Stroke?,
-        bottom: identical(bottom, unset) ? this.bottom : bottom as Stroke?,
-        left: identical(left, unset) ? this.left : left as Stroke?,
-        extra: extra,
-      );
+  }) => CellBorders(
+    top: identical(top, unset) ? this.top : top as Stroke?,
+    right: identical(right, unset) ? this.right : right as Stroke?,
+    bottom: identical(bottom, unset) ? this.bottom : bottom as Stroke?,
+    left: identical(left, unset) ? this.left : left as Stroke?,
+    extra: extra,
+  );
 
   @override
   bool operator ==(Object other) =>

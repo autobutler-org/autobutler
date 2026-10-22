@@ -4,29 +4,29 @@ import 'package:quark_slides/quark_slides.dart';
 /// A deck with one slide `s`: text boxes `a` (`Hello`) and `b` (`World`,
 /// fixed size), and a shape `c`, each 200 by 50.
 Presentation deck() => Presentation(
-      slides: [
-        Slide(
-          id: 's',
-          elements: [
-            TextBox(
-              id: 'a',
-              frame: ElementFrame(x: 0, y: 0, width: 200, height: 50),
-              paragraphs: [TextParagraph.plain('Hello')],
-            ),
-            TextBox(
-              id: 'b',
-              frame: ElementFrame(x: 0, y: 100, width: 200, height: 50),
-              paragraphs: [TextParagraph.plain('World')],
-              autoFit: TextAutoFit.fixed,
-            ),
-            ShapeElement(
-              id: 'c',
-              frame: ElementFrame(x: 0, y: 200, width: 200, height: 50),
-            ),
-          ],
+  slides: [
+    Slide(
+      id: 's',
+      elements: [
+        TextBox(
+          id: 'a',
+          frame: ElementFrame(x: 0, y: 0, width: 200, height: 50),
+          paragraphs: [TextParagraph.plain('Hello')],
+        ),
+        TextBox(
+          id: 'b',
+          frame: ElementFrame(x: 0, y: 100, width: 200, height: 50),
+          paragraphs: [TextParagraph.plain('World')],
+          autoFit: TextAutoFit.fixed,
+        ),
+        ShapeElement(
+          id: 'c',
+          frame: ElementFrame(x: 0, y: 200, width: 200, height: 50),
         ),
       ],
-    );
+    ),
+  ],
+);
 
 /// Measures 40 slide units per paragraph.
 double lines(TextBox box, SlideTheme? theme) => box.paragraphs.length * 40.0;
@@ -168,8 +168,11 @@ void main() {
     addTearDown(notifier.dispose);
     final controller = notifier.controller;
     controller.editText('s', 'a', List.filled(4, TextParagraph.plain('x')));
-    final grown =
-        notifier.presentation.slideById('s')!.elementById('a')!.frame.height;
+    final grown = notifier.presentation
+        .slideById('s')!
+        .elementById('a')!
+        .frame
+        .height;
     expect(grown, closeTo(4 * 36 * 1.2, 4));
   });
 }

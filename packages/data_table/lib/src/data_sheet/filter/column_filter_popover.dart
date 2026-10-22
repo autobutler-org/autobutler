@@ -28,7 +28,7 @@ Future<void> showColumnFilterPopover({
     barrierLabel: 'Close the filter for column $label',
     barrierColor: Colors.transparent,
     transitionDuration: Duration.zero,
-    pageBuilder: (context, _, __) => Padding(
+    pageBuilder: (context, _, _) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: CustomSingleChildLayout(
         delegate: _PopoverLayout(anchor),

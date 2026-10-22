@@ -13,7 +13,7 @@ import 'theme_color.dart';
 class ThemePalette {
   /// Creates a palette from [colors], each `0xAARRGGBB`.
   ThemePalette(Map<ThemeColor, int> colors, {this.extra = const {}})
-      : _colors = Map.unmodifiable(colors);
+    : _colors = Map.unmodifiable(colors);
 
   final Map<ThemeColor, int> _colors;
 
@@ -30,26 +30,25 @@ class ThemePalette {
     final known = ThemeColor.values.asNameMap();
     return ThemePalette({
       for (final MapEntry(:key, :value) in json.entries)
-        if (known[key] case final role?)
-          role: SlideColor.parse(
-            value is String ? value : '',
-            path: '$path.$key',
-          ).argb,
+        ?known[key]: SlideColor.parse(
+          value is String ? value : '',
+          path: '$path.$key',
+        ).argb,
     }, extra: unknownFields(json, known.keys.toSet()));
   }
 
   /// The palette as its `.qslide` object, every role written out.
   JsonMap toJson() => {
-        ...extra,
-        for (final role in ThemeColor.values)
-          role.name: SlideColor(this[role]).toHex(),
-      };
+    ...extra,
+    for (final role in ThemeColor.values)
+      role.name: SlideColor(this[role]).toHex(),
+  };
 
   /// Returns a copy with the colors in [colors] replaced.
   ThemePalette copyWith(Map<ThemeColor, int> colors) => ThemePalette({
-        for (final role in ThemeColor.values) role: this[role],
-        ...colors,
-      }, extra: extra);
+    for (final role in ThemeColor.values) role: this[role],
+    ...colors,
+  }, extra: extra);
 
   @override
   bool operator ==(Object other) =>
@@ -59,7 +58,7 @@ class ThemePalette {
 
   @override
   int get hashCode => Object.hash(
-        Object.hashAll(ThemeColor.values.map((role) => this[role])),
-        jsonHash(extra),
-      );
+    Object.hashAll(ThemeColor.values.map((role) => this[role])),
+    jsonHash(extra),
+  );
 }
