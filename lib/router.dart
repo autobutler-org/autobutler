@@ -13,6 +13,7 @@ import 'package:quark/pages/document_editor_page.dart';
 import 'package:quark/pages/file_browser_page.dart';
 import 'package:quark/pages/file_viewer_page.dart';
 import 'package:quark/pages/login_page.dart';
+import 'package:quark/pages/document_viewer_page.dart';
 import 'package:quark/pages/markdown_viewer_page.dart';
 import 'package:quark/pages/model_viewer_page.dart';
 import 'package:quark/pages/photo_duplicates_page.dart';
@@ -39,6 +40,7 @@ import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/file_kind.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
+import 'package:quark/utils/document_viewer_files.dart';
 import 'package:quark/utils/markdown_viewer_files.dart';
 import 'package:quark/utils/model_viewer_files.dart';
 import 'package:quark_slides/quark_slides.dart' show Presentation;
@@ -213,6 +215,9 @@ class AppRoutes {
   /// The 3D model viewer, `/model/<path>` (#2988).
   static const modelViewer = '/model';
 
+  /// The read-only document viewer, `/document/<path>` (#2987).
+  static const documentViewer = '/document';
+
   /// Percent-encode a file path for use in a URL, keeping `/` as the segment
   /// separator.
   ///
@@ -274,6 +279,11 @@ class AppRoutes {
   /// Device serial is passed as a query param when non-empty.
   static String modelViewerPath(String path, {String? serial}) =>
       _withSerial('$modelViewer/${encodeFilePath(path)}', serial);
+
+  /// Build a URL for a DOCX, DOCM, ODT or RTF file in the document viewer.
+  /// e.g. documentViewerPath('work/q3.docx') → '/document/work/q3.docx'
+  static String documentViewerPath(String path, {String? serial}) =>
+      _withSerial('$documentViewer/${encodeFilePath(path)}', serial);
 
   /// Build a deep-link URL that opens [path] in the correct viewer.
   /// e.g. viewFile('photos/beach.jpg') → '/view/photos/beach.jpg'
@@ -922,6 +932,15 @@ final router = GoRouter(
         deviceSerial: state.uri.queryParameters['serial'] ?? '',
       ),
     ),
+    GoRoute(
+      // Matches /document/<anything including slashes> — the document viewer.
+      path: '${AppRoutes.documentViewer}/:path(.*)',
+      builder: (context, state) => DocumentViewerPage(
+        key: ValueKey(state.uri.toString()),
+        filePath: state.pathParameters['path'] ?? '',
+        deviceSerial: state.uri.queryParameters['serial'] ?? '',
+      ),
+    ),
   ],
   errorBuilder: (context, state) =>
       Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
@@ -930,7 +949,8 @@ final router = GoRouter(
 /// Where `/view/[path]` belongs instead, or null when [FileViewerPage] shows
 /// it. Docs, sheets and presentations have editors at their own URLs, source
 /// and plain text the code viewer, Markdown its rendered viewer, 3D models the
-/// model viewer; a folder or an archive is browsed in Files. [serial] rides
+/// model viewer, word-processing documents the document viewer; a folder or an
+/// archive is browsed in Files. [serial] rides
 /// along to whichever it is.
 String? viewFileRedirect(String path, String? serial) {
   final folder = AppRoutes.filesPath(path);
@@ -943,6 +963,9 @@ String? viewFileRedirect(String path, String? serial) {
   }
   if (opensInModelViewer(path)) {
     return AppRoutes.modelViewerPath(path, serial: serial);
+  }
+  if (opensInDocumentViewer(path)) {
+    return AppRoutes.documentViewerPath(path, serial: serial);
   }
   return switch (fileKindForName(path)) {
     FileKind.qdoc => AppRoutes.docFile(path, serial: serial),

@@ -35,6 +35,7 @@ import 'package:quark/utils/connection_error.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_kind.dart';
 import 'package:quark/utils/files_route_path_utils.dart';
+import 'package:quark/utils/document_viewer_files.dart';
 import 'package:quark/utils/markdown_viewer_files.dart';
 import 'package:quark/utils/model_viewer_files.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
@@ -1588,6 +1589,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       );
       return;
     }
+    // DOCX, DOCM, ODT and RTF open read-only, read on the Quark (#2987).
+    if (opensInDocumentViewer(node.name)) {
+      _goToEditor(
+        node.apiPath,
+        AppRoutes.documentViewerPath(node.apiPath, serial: serial),
+      );
+      return;
+    }
     switch (kind) {
       // Navigate into archives as virtual directories.
       case FileKind.archive:
@@ -2041,6 +2050,14 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       _goToEditor(
         filePath,
         AppRoutes.modelViewerPath(filePath, serial: serial),
+      );
+      return;
+    }
+    // DOCX, DOCM, ODT and RTF open read-only, read on the Quark (#2987).
+    if (opensInDocumentViewer(fileName)) {
+      _goToEditor(
+        filePath,
+        AppRoutes.documentViewerPath(filePath, serial: serial),
       );
       return;
     }
