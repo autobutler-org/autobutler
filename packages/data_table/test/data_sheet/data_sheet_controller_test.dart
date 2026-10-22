@@ -69,8 +69,10 @@ void main() {
         final table = _makeTable([
           ['a', 'b'],
         ]);
-        final c =
-            DataSheetController.fromTable(table, columnWidths: [120.0, 80.0]);
+        final c = DataSheetController.fromTable(
+          table,
+          columnWidths: [120.0, 80.0],
+        );
         expect(c.columnWidths, [120.0, 80.0]);
         c.dispose();
       });
@@ -284,7 +286,7 @@ void main() {
 
       test('addRow appends a new rowHeight', () {
         final c = _makeController([
-          ['a']
+          ['a'],
         ]);
         c.addRow();
         expect(c.rowHeights.length, 2);
@@ -331,7 +333,7 @@ void main() {
     group('setColumnWidth', () {
       test('updates the width at the given index', () {
         final c = _makeController([
-          ['a', 'b']
+          ['a', 'b'],
         ]);
         c.setColumnWidth(0, 150.0);
         expect(c.columnWidths[0], 150.0);
@@ -340,7 +342,7 @@ void main() {
 
       test('clamps to kMinColumnWidth', () {
         final c = _makeController([
-          ['a']
+          ['a'],
         ]);
         c.setColumnWidth(0, 0.0);
         expect(c.columnWidths[0], 24.0);
@@ -349,7 +351,7 @@ void main() {
 
       test('does nothing for out-of-range index', () {
         final c = _makeController([
-          ['a']
+          ['a'],
         ]);
         expect(() => c.setColumnWidth(5, 100.0), returnsNormally);
         c.dispose();
@@ -360,7 +362,7 @@ void main() {
       test('updates the height at the given index', () {
         final c = _makeController([
           ['a'],
-          ['b']
+          ['b'],
         ]);
         c.setRowHeight(1, 60.0);
         expect(c.rowHeights[1], 60.0);
@@ -369,7 +371,7 @@ void main() {
 
       test('clamps to kMinRowHeight', () {
         final c = _makeController([
-          ['a']
+          ['a'],
         ]);
         c.setRowHeight(0, 0.0);
         expect(c.rowHeights[0], 24.0);
@@ -390,7 +392,7 @@ void main() {
 
       test('does nothing for out-of-range column', () {
         final c = _makeController([
-          ['a']
+          ['a'],
         ]);
         expect(() => c.autoSizeColumn(5), returnsNormally);
         c.dispose();
@@ -400,7 +402,7 @@ void main() {
     group('autoSizeRow', () {
       test('sets height >= kMinRowHeight', () {
         final c = _makeController([
-          ['Hello World']
+          ['Hello World'],
         ]);
         c.autoSizeRow(0);
         expect(c.rowHeights[0], greaterThanOrEqualTo(24.0));
@@ -409,7 +411,7 @@ void main() {
 
       test('does nothing for out-of-range row', () {
         final c = _makeController([
-          ['a']
+          ['a'],
         ]);
         expect(() => c.autoSizeRow(5), returnsNormally);
         c.dispose();
@@ -694,14 +696,11 @@ void main() {
 
       test('pasteValues lands a block at the top-left, growing the sheet', () {
         final c = _grid();
-        c.pasteValues(
-          const CellRange(top: 1, left: 1, bottom: 1, right: 1),
-          [
-            ['1', '2', '3'],
-            ['4', '5', '6'],
-            ['7', '8', '9'],
-          ],
-        );
+        c.pasteValues(const CellRange(top: 1, left: 1, bottom: 1, right: 1), [
+          ['1', '2', '3'],
+          ['4', '5', '6'],
+          ['7', '8', '9'],
+        ]);
         expect(_values(c), [
           ['a', 'b', 'c', ''],
           ['d', '1', '2', '3'],
@@ -765,8 +764,10 @@ void main() {
           ['a', 'b', 'c'],
         ]);
         // The selection is collapsed onto a cell that still exists.
-        expect(c.selection.range,
-            const CellRange(top: 0, left: 0, bottom: 0, right: 0));
+        expect(
+          c.selection.range,
+          const CellRange(top: 0, left: 0, bottom: 0, right: 0),
+        );
         c.undo();
         expect(c.rowCount, 3);
         c.dispose();

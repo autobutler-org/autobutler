@@ -1,3 +1,5 @@
+// cspell:words nmaxretry publickey
+
 package install
 
 import (
@@ -79,11 +81,90 @@ func TestSSHDropIn(t *testing.T) {
 			t.Errorf("drop-in is missing %q:\n%s", want, sshdDropInContent)
 		}
 	}
+	// Both limits are global keywords and must sit before the first Match, or
+	// sshd rejects the file (LoginGraceTime) or scopes them to one block.
+	global := sshdDropInContent[:strings.Index(sshdDropInContent, "\nMatch ")]
+	for _, want := range []string{"\nMaxAuthTries 3\n", "\nLoginGraceTime 30\n"} {
+		if !strings.Contains(global, want) {
+			t.Errorf("drop-in is missing global %q before its Match block:\n%s", want, sshdDropInContent)
+		}
+	}
 	if !strings.HasSuffix(sshdDropInContent, "Match all\n") {
 		t.Error("drop-in must close its Match block so later config does not land in it")
 	}
 	if !strings.HasPrefix(sshdDropInPath, sshdDropInDir+"/") || !strings.HasSuffix(sshdDropInPath, ".conf") {
 		t.Errorf("sshd includes only *.conf from %s, not %s", sshdDropInDir, sshdDropInPath)
+	}
+}
+
+// The jail bans an address only for SSH, and only for failed passwords: a
+// client offering the wrong keys before the right one is never banned (#3578).
+func TestFail2banJail(t *testing.T) {
+	for _, want := range []string{
+		"\n[" + fail2banJailName + "]\n",
+		"\nenabled = true\n",
+		"\nfilter = " + fail2banJailName + "\n",
+		"\nport = ssh\n",
+		"\nbackend = systemd\n",
+		"\nmaxretry = ",
+	} {
+		if !strings.Contains(fail2banJailContent, want) {
+			t.Errorf("jail is missing %q:\n%s", want, fail2banJailContent)
+		}
+	}
+	if !strings.Contains(fail2banFilterContent, "Failed password for") {
+		t.Errorf("filter does not match failed passwords:\n%s", fail2banFilterContent)
+	}
+	if strings.Contains(strings.ToLower(fail2banFilterContent), "publickey") {
+		t.Errorf("filter matches key failures, which could ban a key-only admin:\n%s", fail2banFilterContent)
+	}
+	if !strings.HasSuffix(fail2banJailPath, ".local") && !strings.HasSuffix(fail2banJailPath, ".conf") {
+		t.Errorf("fail2ban reads only *.conf and *.local from jail.d, not %s", fail2banJailPath)
+	}
+}
+
+// Quark never installs fail2ban, so without it no fail2ban config is written.
+func TestInstallFail2banJail_SkipsWithoutFail2ban(t *testing.T) {
+	etc := t.TempDir()
+	changed, err := installFail2banJail(etc)
+	if err != nil {
+		t.Fatalf("installFail2banJail: %v", err)
+	}
+	if changed {
+		t.Error("reported a write with no fail2ban on the host")
+	}
+	entries, err := os.ReadDir(etc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("wrote %v with no fail2ban on the host", entries)
+	}
+}
+
+func TestInstallFail2banJail_WritesWithFail2ban(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("writeRootFile gives the file to root, which needs root")
+	}
+	etc := t.TempDir()
+	for _, dir := range []string{"jail.d", "filter.d"} {
+		if err := os.Mkdir(filepath.Join(etc, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i, wantChanged := range []bool{true, false} {
+		changed, err := installFail2banJail(etc)
+		if err != nil {
+			t.Fatalf("run %d: installFail2banJail: %v", i, err)
+		}
+		if changed != wantChanged {
+			t.Errorf("run %d: changed = %v, want %v", i, changed, wantChanged)
+		}
+	}
+	jail, _ := os.ReadFile(filepath.Join(etc, "jail.d", filepath.Base(fail2banJailPath)))
+	filter, _ := os.ReadFile(filepath.Join(etc, "filter.d", fail2banJailName+".conf"))
+	if string(jail) != fail2banJailContent || string(filter) != fail2banFilterContent {
+		t.Errorf("jail.d or filter.d holds the wrong content:\n%s\n%s", jail, filter)
 	}
 }
 

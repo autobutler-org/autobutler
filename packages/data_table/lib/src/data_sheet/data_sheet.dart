@@ -242,8 +242,9 @@ class _DataSheetViewState extends State<_DataSheetView> {
     _horizontalScroll.dispose();
     _verticalScroll.dispose();
     controller.removeListener(_onControllerChanged);
-    controller.activeCellEditingController
-        .removeListener(_onEditingTextChanged);
+    controller.activeCellEditingController.removeListener(
+      _onEditingTextChanged,
+    );
     if (_ownsController) controller.dispose();
     super.dispose();
   }

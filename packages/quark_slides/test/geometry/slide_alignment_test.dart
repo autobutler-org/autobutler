@@ -14,18 +14,24 @@ void main() {
 
   group('alignFrames', () {
     test('left, center and right line up on the box around them all', () {
-      expect(alignFrames(frames, ElementAlignment.left).values.map((e) => e.x),
-          [100, 100, 100]);
       expect(
-          alignFrames(frames, ElementAlignment.right)
-              .values
-              .map((e) => e.x + e.width),
-          [500, 500, 500]);
+        alignFrames(frames, ElementAlignment.left).values.map((e) => e.x),
+        [100, 100, 100],
+      );
       expect(
-          alignFrames(frames, ElementAlignment.center)
-              .values
-              .map((e) => e.x + e.width / 2),
-          [300, 300, 300]);
+        alignFrames(
+          frames,
+          ElementAlignment.right,
+        ).values.map((e) => e.x + e.width),
+        [500, 500, 500],
+      );
+      expect(
+        alignFrames(
+          frames,
+          ElementAlignment.center,
+        ).values.map((e) => e.x + e.width / 2),
+        [300, 300, 300],
+      );
     });
 
     test('top, middle and bottom only move vertically', () {
@@ -33,23 +39,33 @@ void main() {
       expect(top.values.map((e) => e.y), [100, 100, 100]);
       expect(top.values.map((e) => e.x), [100, 300, 150]);
       expect(
-          alignFrames(frames, ElementAlignment.bottom)
-              .values
-              .map((e) => e.y + e.height),
-          [550, 550, 550]);
+        alignFrames(
+          frames,
+          ElementAlignment.bottom,
+        ).values.map((e) => e.y + e.height),
+        [550, 550, 550],
+      );
       expect(
-          alignFrames(frames, ElementAlignment.middle)
-              .values
-              .map((e) => e.y + e.height / 2),
-          [325, 325, 325]);
+        alignFrames(
+          frames,
+          ElementAlignment.middle,
+        ).values.map((e) => e.y + e.height / 2),
+        [325, 325, 325],
+      );
     });
 
     test('aligns to the slide when given it', () {
-      final one = alignFrames({'a': frames['a']!}, ElementAlignment.center,
-          within: slide);
+      final one = alignFrames(
+        {'a': frames['a']!},
+        ElementAlignment.center,
+        within: slide,
+      );
       expect(one['a'], f(910, 100, 100, 50));
-      final bottom = alignFrames({'a': frames['a']!}, ElementAlignment.bottom,
-          within: slide);
+      final bottom = alignFrames(
+        {'a': frames['a']!},
+        ElementAlignment.bottom,
+        within: slide,
+      );
       expect(bottom['a']!.y, 1030);
     });
 
@@ -97,10 +113,11 @@ void main() {
     });
 
     test('across the slide the ends meet its edges', () {
-      final spread = distributeFrames({
-        'a': f(500, 0, 100, 10),
-        'b': f(700, 0, 100, 10),
-      }, DistributeAxis.horizontal, within: slide);
+      final spread = distributeFrames(
+        {'a': f(500, 0, 100, 10), 'b': f(700, 0, 100, 10)},
+        DistributeAxis.horizontal,
+        within: slide,
+      );
       expect(spread['a']!.x, 0);
       expect(spread['b']!.x, 1820);
     });
@@ -126,8 +143,10 @@ void main() {
     });
 
     test('an unknown reference is refused', () {
-      expect(() => matchFrameSizes(frames, SizeMatch.both, reference: 'z'),
-          throwsArgumentError);
+      expect(
+        () => matchFrameSizes(frames, SizeMatch.both, reference: 'z'),
+        throwsArgumentError,
+      );
     });
   });
 }

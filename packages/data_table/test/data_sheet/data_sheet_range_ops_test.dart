@@ -298,9 +298,7 @@ void main() {
 
     test('columns shrink the band by how many frozen columns went', () {
       final c = DataSheetController.fromTable(
-        DataTable([
-          DataRow(List.generate(6, (i) => DataCell('$i'))),
-        ]),
+        DataTable([DataRow(List.generate(6, (i) => DataCell('$i')))]),
         frozenColumns: 2,
       );
       addTearDown(c.dispose);

@@ -130,8 +130,11 @@ void main() {
 
     test('replaces the pending pick, so a drag grows it into a range', () {
       final first = pickReference(at('=SUM(|)'), 'B2')!;
-      final grown =
-          pickReference(first.value, 'B2:D9', pending: first.inserted)!;
+      final grown = pickReference(
+        first.value,
+        'B2:D9',
+        pending: first.inserted,
+      )!;
       expect(show(grown.value), '=SUM(B2:D9|)');
       expect(grown.inserted, const TextRange(start: 5, end: 10));
       final moved = pickReference(grown.value, 'C4', pending: grown.inserted)!;

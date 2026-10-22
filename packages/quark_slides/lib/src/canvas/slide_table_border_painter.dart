@@ -27,14 +27,22 @@ class SlideTableBorderPainter extends CustomPainter {
     final ys = [for (var r = 0; r <= table.rowCount; r++) table.rowStart(r)];
     for (var r = 0; r <= table.rowCount; r++) {
       for (var c = 0; c < table.columnCount; c++) {
-        _edge(canvas, table.edgeAbove(r, c), Offset(xs[c], ys[r]),
-            Offset(xs[c + 1], ys[r]));
+        _edge(
+          canvas,
+          table.edgeAbove(r, c),
+          Offset(xs[c], ys[r]),
+          Offset(xs[c + 1], ys[r]),
+        );
       }
     }
     for (var r = 0; r < table.rowCount; r++) {
       for (var c = 0; c <= table.columnCount; c++) {
-        _edge(canvas, table.edgeBefore(r, c), Offset(xs[c], ys[r]),
-            Offset(xs[c], ys[r + 1]));
+        _edge(
+          canvas,
+          table.edgeBefore(r, c),
+          Offset(xs[c], ys[r]),
+          Offset(xs[c], ys[r + 1]),
+        );
       }
     }
   }

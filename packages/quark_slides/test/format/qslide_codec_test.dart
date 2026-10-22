@@ -8,20 +8,23 @@ import '../support/sample_presentation.dart';
 
 String fixture(String name) => File('test/fixtures/$name').readAsStringSync();
 
-Matcher throwsFormatAt(String path) => throwsA(
-      isA<QslideFormatException>().having((e) => e.path, 'path', path),
-    );
+Matcher throwsFormatAt(String path) =>
+    throwsA(isA<QslideFormatException>().having((e) => e.path, 'path', path));
 
 void main() {
   group('golden sample.qslide', () {
     test('encoding the sample deck matches the fixture byte for byte', () {
       expect(
-          QslideCodec.encode(samplePresentation()), fixture('sample.qslide'));
+        QslideCodec.encode(samplePresentation()),
+        fixture('sample.qslide'),
+      );
     });
 
     test('decoding the fixture gives the sample deck', () {
       expect(
-          QslideCodec.decode(fixture('sample.qslide')), samplePresentation());
+        QslideCodec.decode(fixture('sample.qslide')),
+        samplePresentation(),
+      );
     });
 
     test('integral numbers are written without a fraction', () {
@@ -80,8 +83,10 @@ void main() {
       doc.moveElements('s1', ['e5'], 10, 0);
       doc.moveElements('s1', ['e7'], 0, 50);
       final json = jsonDecode(QslideCodec.encode(doc.presentation)) as Map;
-      final saved = ((json['slides'] as List).single['elements'] as List)
-          .firstWhere((e) => e['id'] == 'e5') as Map;
+      final saved =
+          ((json['slides'] as List).single['elements'] as List).firstWhere(
+        (e) => e['id'] == 'e5',
+      ) as Map;
       expect(saved['locked'], isTrue);
       final children = saved['children'] as List;
       expect(children[0]['series'], isNotEmpty);
@@ -129,46 +134,48 @@ void main() {
       );
     });
 
-    test('an unknown alignment, fit, anchor or list falls back to the default',
-        () {
-      final deck = QslideCodec.fromJson({
-        'schemaVersion': 1,
-        'slides': [
-          {
-            'id': 's',
-            'elements': [
-              {
-                'id': 't',
-                'type': 'text',
-                'frame': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
-                'anchor': 'baseline',
-                'autoFit': 'wrap',
-                'paragraphs': [
-                  {'runs': [], 'align': 'distributed', 'list': 'roman'},
-                ],
-              },
-              {
-                'id': 'i',
-                'type': 'image',
-                'frame': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
-                'source': 'a.png',
-                'fit': 'tile',
-              },
-            ],
-          },
-        ],
-      });
-      final slide = deck.slides.single;
-      expect(
-        (slide.elements[0] as TextBox).paragraphs.single.alignment,
-        TextAlignment.start,
-      );
-      expect((slide.elements[1] as ImageElement).fit, ImageFit.contain);
-      final box = slide.elements[0] as TextBox;
-      expect(box.anchor, TextAnchor.top);
-      expect(box.autoFit, TextAutoFit.grow);
-      expect(box.paragraphs.single.list, TextListStyle.none);
-    });
+    test(
+      'an unknown alignment, fit, anchor or list falls back to the default',
+      () {
+        final deck = QslideCodec.fromJson({
+          'schemaVersion': 1,
+          'slides': [
+            {
+              'id': 's',
+              'elements': [
+                {
+                  'id': 't',
+                  'type': 'text',
+                  'frame': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
+                  'anchor': 'baseline',
+                  'autoFit': 'wrap',
+                  'paragraphs': [
+                    {'runs': [], 'align': 'distributed', 'list': 'roman'},
+                  ],
+                },
+                {
+                  'id': 'i',
+                  'type': 'image',
+                  'frame': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
+                  'source': 'a.png',
+                  'fit': 'tile',
+                },
+              ],
+            },
+          ],
+        });
+        final slide = deck.slides.single;
+        expect(
+          (slide.elements[0] as TextBox).paragraphs.single.alignment,
+          TextAlignment.start,
+        );
+        expect((slide.elements[1] as ImageElement).fit, ImageFit.contain);
+        final box = slide.elements[0] as TextBox;
+        expect(box.anchor, TextAnchor.top);
+        expect(box.autoFit, TextAutoFit.grow);
+        expect(box.paragraphs.single.list, TextListStyle.none);
+      },
+    );
   });
 
   group('defaults', () {
@@ -203,7 +210,9 @@ void main() {
         ],
       });
       expect(
-          (deck.slides.single.elements.single as LineElement).stroke, Stroke());
+        (deck.slides.single.elements.single as LineElement).stroke,
+        Stroke(),
+      );
     });
   });
 
@@ -263,12 +272,7 @@ void main() {
     test('a non-numeric opacity names its path', () {
       expect(
         () => read([
-          {
-            'id': 'a',
-            'type': 'line',
-            'frame': frame,
-            'opacity': 'half',
-          },
+          {'id': 'a', 'type': 'line', 'frame': frame, 'opacity': 'half'},
         ]),
         throwsFormatAt(r'$.slides[0].elements[0].opacity'),
       );
@@ -277,10 +281,7 @@ void main() {
 
   group('ImageSource', () {
     test('an asset: reference is an uploaded asset, anything else a path', () {
-      expect(
-        ImageSource.parse('asset:abc'),
-        const UploadedAssetImage('abc'),
-      );
+      expect(ImageSource.parse('asset:abc'), const UploadedAssetImage('abc'));
       expect(
         ImageSource.parse('photos/dog.jpg'),
         const QuarkFileImage('photos/dog.jpg'),

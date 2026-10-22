@@ -162,8 +162,10 @@ void main() {
             id: 's',
             elements: [
               box('b', const [
-                TextParagraph(
-                    [TextRun('😀 '), TextRun('naïve 😀', bold: true)]),
+                TextParagraph([
+                  TextRun('😀 '),
+                  TextRun('naïve 😀', bold: true),
+                ]),
               ]),
             ],
           ),
@@ -282,7 +284,7 @@ void main() {
         '(a|b)*',
         '(a+)?',
         '(a{2})+',
-        r'\(a+\)+'
+        r'\(a+\)+',
       ]) {
         expect(SlideSearchQuery.repeatsRepetition(ok), isFalse, reason: ok);
       }
@@ -290,8 +292,10 @@ void main() {
 
     test('an overlong pattern is refused', () {
       final long = 'a' * (SlideSearchQuery.maxPatternLength + 1);
-      expect(find(deck(), long, regex: true).error,
-          SlideSearchError.unsafePattern);
+      expect(
+        find(deck(), long, regex: true).error,
+        SlideSearchError.unsafePattern,
+      );
     });
 
     test('empty matches are skipped', () {

@@ -13,12 +13,16 @@ Presentation interactionDeck() {
   final deck = canvasDeck();
   final slide = deck.slides.single;
   final table = sampleTable();
-  return deck.copyWith(slides: [
-    slide.copyWith(elements: [
-      ...slide.elements,
-      table.withFrame(table.frame.copyWith(x: 1400, y: 880)),
-    ]),
-  ]);
+  return deck.copyWith(
+    slides: [
+      slide.copyWith(
+        elements: [
+          ...slide.elements,
+          table.withFrame(table.frame.copyWith(x: 1400, y: 880)),
+        ],
+      ),
+    ],
+  );
 }
 
 void main() {
@@ -116,8 +120,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testBothViewports('marquee, Tab and Escape still select',
-        (tester, size) async {
+    testBothViewports('marquee, Tab and Escape still select', (
+      tester,
+      size,
+    ) async {
       await pumpCanvas(
         tester,
         doc,
@@ -140,8 +146,10 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testBothViewports('table cells select but do not edit or clear',
-        (tester, size) async {
+    testBothViewports('table cells select but do not edit or clear', (
+      tester,
+      size,
+    ) async {
       final cells = SlideTableEditingController();
       addTearDown(cells.dispose);
       final editing = SlideTextEditingController();
@@ -172,8 +180,9 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testWidgets('a screen reader selects, labels stay, and nothing edits',
-        (tester) async {
+    testWidgets('a screen reader selects, labels stay, and nothing edits', (
+      tester,
+    ) async {
       final semantics = tester.ensureSemantics();
       final editing = SlideTextEditingController();
       addTearDown(editing.dispose);
@@ -185,10 +194,7 @@ void main() {
       );
       expect(find.bySemanticsLabel('Quarterly review'), findsOne);
       expect(find.bySemanticsLabel('Image: A dog'), findsOne);
-      expect(
-        find.bySemanticsLabel('Row 1, column 1: Region'),
-        findsOne,
-      );
+      expect(find.bySemanticsLabel('Row 1, column 1: Region'), findsOne);
       tester.semantics.tap(find.semantics.byLabel('Quarterly review'));
       await tester.pump();
       expect(harness(tester).selection, {'title'});
@@ -201,8 +207,9 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('switching to it ends text editing, keeping what was typed',
-        (tester) async {
+    testWidgets('switching to it ends text editing, keeping what was typed', (
+      tester,
+    ) async {
       final editing = SlideTextEditingController();
       addTearDown(editing.dispose);
       await pumpCanvas(tester, doc, textEditing: editing);
@@ -232,8 +239,10 @@ void main() {
   });
 
   group('viewOnly', () {
-    testBothViewports('neither selects nor edits, but zooms',
-        (tester, size) async {
+    testBothViewports('neither selects nor edits, but zooms', (
+      tester,
+      size,
+    ) async {
       final before = doc.presentation;
       await pumpCanvas(
         tester,
@@ -268,8 +277,9 @@ void main() {
       expect(doc.controller.canUndo, isFalse);
     });
 
-    testWidgets('ignores a selection it is given and keeps its labels',
-        (tester) async {
+    testWidgets('ignores a selection it is given and keeps its labels', (
+      tester,
+    ) async {
       final semantics = tester.ensureSemantics();
       await pumpCanvas(
         tester,

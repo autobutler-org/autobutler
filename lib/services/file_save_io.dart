@@ -3,7 +3,12 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/services/download_destination.dart';
+import 'package:quark/services/download_notices.dart';
+import 'package:quark/utils/error_text.dart';
+import 'package:quark/utils/file_kind.dart';
 
 /// Asks the user where to save a file named [fileName], and returns the path
 /// they chose, or null when they canceled.
@@ -13,8 +18,9 @@ typedef SavePathPicker = Future<String?> Function(String fileName);
 /// platform saves through `file_picker` instead (#3150).
 bool get _usesMobileDialog => Platform.isAndroid || Platform.isIOS;
 
-/// The native save of a download: the mobile dialog on Android and iOS, the
-/// desktop one everywhere else. See `saveDownloadThroughDialog`.
+/// The native save of a download: on Android and iOS the photo library for a
+/// picture or video and the mobile dialog for anything else, the desktop
+/// dialog everywhere else. See `saveDownloadThroughDialog`.
 Future<String?> saveDownloadPlatform({
   required String Function(Map<String, String> headers) fileNameFor,
   required Future<DownloadedFile> Function() download,
@@ -28,21 +34,35 @@ Future<String?> saveDownloadPlatform({
   }
   final downloaded = await download();
   try {
+    final fileName = fileNameFor(downloaded.headers);
+    // The photo library reads the format from the extension, and the temp
+    // file has none. It sits alone in its own directory, which delete removes.
+    final source = await File(
+      downloaded.path,
+    ).rename('${downloaded.path}${fileExtension(fileName)}');
     // Awaited, not just returned: the finally below deletes the temp file, and
-    // an unawaited future would let that race the dialog reading it.
-    return await FlutterFileDialog.saveFile(
-      params: SaveFileDialogParams(
-        sourceFilePath: downloaded.path,
-        fileName: fileNameFor(downloaded.headers),
+    // an unawaited future would let that race the save reading it.
+    return await saveToPhotoLibraryOrFiles(
+      destination: downloadDestinationFor(fileName),
+      requestAccess: _requestPhotoLibraryAccess,
+      saveToLibrary: (destination) =>
+          _saveFileToPhotoLibrary(source, fileName, destination),
+      saveToFiles: () => FlutterFileDialog.saveFile(
+        params: SaveFileDialogParams(
+          sourceFilePath: source.path,
+          fileName: fileName,
+        ),
       ),
+      notify: announceDownloadNotice,
     );
   } finally {
     await downloaded.delete();
   }
 }
 
-/// The native save of [bytes]: the mobile dialog on Android and iOS, the
-/// desktop one everywhere else.
+/// The native save of [bytes]: on Android and iOS the photo library for a
+/// picture or video and the mobile dialog for anything else, the desktop
+/// dialog everywhere else.
 Future<String?> saveBytesPlatform(Uint8List bytes, String fileName) {
   if (!_usesMobileDialog) {
     return saveBytesToPickedPath(
@@ -51,9 +71,94 @@ Future<String?> saveBytesPlatform(Uint8List bytes, String fileName) {
       pickPath: _pickDesktopSavePath,
     );
   }
-  return FlutterFileDialog.saveFile(
-    params: SaveFileDialogParams(data: bytes, fileName: fileName),
+  return saveToPhotoLibraryOrFiles(
+    destination: downloadDestinationFor(fileName),
+    requestAccess: _requestPhotoLibraryAccess,
+    saveToLibrary: (destination) async {
+      if (destination == DownloadDestination.photoLibraryImage) {
+        final entity = await PhotoManager.editor.saveImage(
+          bytes,
+          filename: fileName,
+          title: fileName,
+        );
+        return entity.id;
+      }
+      // A video can only be added from a file, so the bytes go to one first.
+      final dir = await Directory.systemTemp.createTemp('quark_save_');
+      try {
+        final file = File('${dir.path}/video${fileExtension(fileName)}');
+        await file.writeAsBytes(bytes, flush: true);
+        return await _saveFileToPhotoLibrary(file, fileName, destination);
+      } finally {
+        await dir.delete(recursive: true);
+      }
+    },
+    saveToFiles: () => FlutterFileDialog.saveFile(
+      params: SaveFileDialogParams(data: bytes, fileName: fileName),
+    ),
+    notify: announceDownloadNotice,
   );
+}
+
+/// The mobile save (#3334): a picture or video goes into the photo library
+/// when [requestAccess] allows it, anything else through [saveToFiles].
+///
+/// A person who declines photo access still gets the file, through
+/// [saveToFiles], and [notify] tells them why it went there. A file the
+/// library refuses (a format it cannot read) goes to [saveToFiles] as well,
+/// so a download is never lost to the library's choosiness. Returns where the
+/// file landed — the library's asset id, or the saved path — or null when the
+/// save dialog was canceled.
+@visibleForTesting
+Future<String?> saveToPhotoLibraryOrFiles({
+  required DownloadDestination destination,
+  required Future<bool> Function() requestAccess,
+  required Future<String> Function(DownloadDestination destination)
+  saveToLibrary,
+  required Future<String?> Function() saveToFiles,
+  required void Function(String notice) notify,
+}) async {
+  if (destination == DownloadDestination.files) return saveToFiles();
+  if (!await requestAccess()) {
+    final saved = await saveToFiles();
+    if (saved != null) notify(Errors.photoLibraryAccessDenied);
+    return saved;
+  }
+  try {
+    return await saveToLibrary(destination);
+  } catch (_) {
+    // The library refused this file; the save dialog takes anything.
+    return saveToFiles();
+  }
+}
+
+/// Asks for permission to add to the photo library: add-only on iOS, which
+/// is all a save needs, and pictures on Android, whose manifest declares
+/// `READ_MEDIA_IMAGES` already for the Photos page.
+Future<bool> _requestPhotoLibraryAccess() async {
+  final state = await PhotoManager.requestPermissionExtend(
+    requestOption: const PermissionRequestOption(
+      iosAccessLevel: IosAccessLevel.addOnly,
+      androidPermission: AndroidPermission(
+        type: RequestType.image,
+        mediaLocation: false,
+      ),
+    ),
+  );
+  return state.hasAccess;
+}
+
+/// Adds [file] to the photo library as [destination] says, named [fileName],
+/// and returns the new asset's id.
+Future<String> _saveFileToPhotoLibrary(
+  File file,
+  String fileName,
+  DownloadDestination destination,
+) async {
+  final entity = destination == DownloadDestination.photoLibraryVideo
+      ? await PhotoManager.editor.saveVideo(file, title: fileName)
+      : await PhotoManager.editor.saveImageWithPath(file.path, title: fileName);
+  return entity.id;
 }
 
 /// The desktop save: asks [pickPath] for a destination first, and only then

@@ -28,12 +28,9 @@ class ChartPieSlice {
     for (final (i, v) in values.indexed) {
       if (v <= 0) continue;
       final sweep = v / total * 2 * math.pi;
-      slices.add(ChartPieSlice(
-        index: i,
-        value: v,
-        startAngle: angle,
-        sweepAngle: sweep,
-      ));
+      slices.add(
+        ChartPieSlice(index: i, value: v, startAngle: angle, sweepAngle: sweep),
+      );
       angle += sweep;
     }
     return slices;

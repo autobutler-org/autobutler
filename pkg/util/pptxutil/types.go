@@ -3,8 +3,54 @@ package pptxutil
 import (
 	"archive/zip"
 	"bufio"
+	"encoding/json"
 	"io"
 )
+
+// shapeContour is one outline of a path shape, as .qslide stores it, in
+// the frame's own space: 0 at its left or top, 1 at its right or bottom.
+// Fill and Stroke are set only to false; left out, the outline takes the
+// shape's fill and its outline.
+type shapeContour struct {
+	Commands []pathCommand `json:"commands"`
+	Fill     *bool         `json:"fill,omitempty"`
+	Stroke   *bool         `json:"stroke,omitempty"`
+}
+
+// pathCommand is one command of a contour. Op is move, line, quad, cubic,
+// arc or close, and says which other fields it uses: an end point X, Y;
+// control points X1, Y1 and X2, Y2; or an arc's radii WR, HR as fractions
+// of the frame and its Start and Swing in degrees clockwise from 3 o'clock.
+type pathCommand struct {
+	Op    string  `json:"op"`
+	X     float64 `json:"x"`
+	Y     float64 `json:"y"`
+	X1    float64 `json:"x1"`
+	Y1    float64 `json:"y1"`
+	X2    float64 `json:"x2"`
+	Y2    float64 `json:"y2"`
+	WR    float64 `json:"wR"`
+	HR    float64 `json:"hR"`
+	Start float64 `json:"start"`
+	Swing float64 `json:"swing"`
+}
+
+// MarshalJSON writes only the fields the command's op uses.
+func (c pathCommand) MarshalJSON() ([]byte, error) {
+	out := map[string]any{"op": c.Op}
+	switch c.Op {
+	case "move", "line":
+		out["x"], out["y"] = c.X, c.Y
+	case "quad":
+		out["x1"], out["y1"], out["x"], out["y"] = c.X1, c.Y1, c.X, c.Y
+	case "cubic":
+		out["x1"], out["y1"], out["x2"], out["y2"] = c.X1, c.Y1, c.X2, c.Y2
+		out["x"], out["y"] = c.X, c.Y
+	case "arc":
+		out["wR"], out["hR"], out["start"], out["swing"] = c.WR, c.HR, c.Start, c.Swing
+	}
+	return json.Marshal(out)
+}
 
 // qslideSize is a presentation's slide size in slide units.
 type qslideSize struct {
@@ -62,12 +108,20 @@ type qslideElement struct {
 	// body when left out.
 	TextRole string `json:"textRole"`
 
-	// A shape, and the stroke and opacity a line shares.
-	Kind         string        `json:"kind"`
-	Fill         string        `json:"fill"`
-	Stroke       *qslideStroke `json:"stroke"`
-	CornerRadius *float64      `json:"cornerRadius"`
-	Opacity      *float64      `json:"opacity"`
+	// A shape, and the stroke and opacity a line shares. Preset and Adjust
+	// are a path shape's preset geometry and the adjust values the file
+	// stored, and Contours its freeform outlines; other kinds leave them
+	// empty.
+	Kind         string             `json:"kind"`
+	Preset       string             `json:"preset"`
+	Adjust       map[string]float64 `json:"adjust"`
+	Contours     []shapeContour     `json:"contours"`
+	Fill         string             `json:"fill"`
+	Stroke       *qslideStroke      `json:"stroke"`
+	CornerRadius *float64           `json:"cornerRadius"`
+	Opacity      *float64           `json:"opacity"`
+	// Shadow is a shape's or picture's drop shadow, or nil.
+	Shadow *qslideShadow `json:"shadow"`
 
 	// A picture.
 	Source  string `json:"source"`
@@ -132,6 +186,15 @@ type qslideStroke struct {
 	Color *string  `json:"color"`
 	Width *float64 `json:"width"`
 	Dash  any      `json:"dash"`
+}
+
+// qslideShadow is a drop shadow: its color, its offset on the slide and its
+// blur, in slide units.
+type qslideShadow struct {
+	Color string  `json:"color"`
+	X     float64 `json:"x"`
+	Y     float64 `json:"y"`
+	Blur  float64 `json:"blur"`
 }
 
 // qslideParagraph is one paragraph of a text box.

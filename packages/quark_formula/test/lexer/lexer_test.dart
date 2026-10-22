@@ -5,8 +5,9 @@ import 'package:test/test.dart';
 void main() {
   group('lex', () {
     test('tokenizes a representative formula and emits eof', () {
-      final tokens =
-          lex('=SUM(\$a\$1:B2, "he""llo", true, 1.25E+3) >= 5').toList();
+      final tokens = lex(
+        '=SUM(\$a\$1:B2, "he""llo", true, 1.25E+3) >= 5',
+      ).toList();
 
       expect(
         tokens,
@@ -63,7 +64,10 @@ void main() {
         () => lex('=').toList(),
         throwsA(
           isA<LexError>().having((error) => error.offset, 'offset', 0).having(
-              (error) => error.message, 'message', contains('Standalone =')),
+                (error) => error.message,
+                'message',
+                contains('Standalone ='),
+              ),
         ),
       );
 
@@ -71,7 +75,10 @@ void main() {
         () => lex('A1 = 2').toList(),
         throwsA(
           isA<LexError>().having((error) => error.offset, 'offset', 3).having(
-              (error) => error.message, 'message', contains('Standalone =')),
+                (error) => error.message,
+                'message',
+                contains('Standalone ='),
+              ),
         ),
       );
     });
@@ -81,9 +88,10 @@ void main() {
         () => lex(r'$foo').toList(),
         throwsA(
           isA<LexError>().having((error) => error.offset, 'offset', 0).having(
-              (error) => error.message,
-              'message',
-              contains('Invalid cell reference')),
+                (error) => error.message,
+                'message',
+                contains('Invalid cell reference'),
+              ),
         ),
       );
 
@@ -91,16 +99,18 @@ void main() {
         () => lex('"abc').toList(),
         throwsA(
           isA<LexError>().having((error) => error.offset, 'offset', 0).having(
-              (error) => error.message,
-              'message',
-              contains('Unterminated string')),
+                (error) => error.message,
+                'message',
+                contains('Unterminated string'),
+              ),
         ),
       );
     });
 
     test('tokenizes each operator and delimiter with exact offsets', () {
-      final tokens =
-          lex('A1:B2+3-4*5/6%7^8,(9)<=10<>11!=12==13<14>15>=16').toList();
+      final tokens = lex(
+        'A1:B2+3-4*5/6%7^8,(9)<=10<>11!=12==13<14>15>=16',
+      ).toList();
 
       expect(
         tokens,
@@ -177,18 +187,11 @@ void main() {
     });
 
     test('accepts empty formulas as eof-only streams', () {
-      expect(
-        lex('').toList(),
-        equals([
-          Token(kind: TokenKind.eof, offset: 0),
-        ]),
-      );
+      expect(lex('').toList(), equals([Token(kind: TokenKind.eof, offset: 0)]));
 
       expect(
         lex('   ').toList(),
-        equals([
-          Token(kind: TokenKind.eof, offset: 3),
-        ]),
+        equals([Token(kind: TokenKind.eof, offset: 3)]),
       );
     });
 

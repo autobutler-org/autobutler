@@ -15,6 +15,7 @@ func (r *router) Routes() []*serverutil.Route {
 	return []*serverutil.Route{
 		previewDocumentRoute,
 		getPartRoute,
+		getPropertiesRoute,
 	}
 }
 

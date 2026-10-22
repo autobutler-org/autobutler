@@ -26,8 +26,9 @@ class LinkedScrollControllers {
     if (_syncing || !leader.hasClients || !follower.hasClients) return;
     final phase = SchedulerBinding.instance.schedulerPhase;
     if (phase == SchedulerPhase.persistentCallbacks) {
-      SchedulerBinding.instance
-          .addPostFrameCallback((_) => _follow(leader, follower));
+      SchedulerBinding.instance.addPostFrameCallback(
+        (_) => _follow(leader, follower),
+      );
       return;
     }
     final position = follower.position;

@@ -79,7 +79,12 @@ newer file without losing anything. A breaking change bumps `schemaVersion`,
 and a reader refuses a file newer than `QslideCodec.schemaVersion` with a
 `QslideFormatException` rather than misreading it. An unknown value of a small
 enum (paragraph alignment, image fit, line cap, text role, theme color
-role) reads as its default.
+role) reads as its default. A shape of kind `path` is additive at version
+5. It names a `preset` and stores that preset's `adjust` values, or it
+lists `contours` of move, line, curve, arc and close commands in the
+frame's own space (0 at the left or top, 1 at the right or bottom). A
+reader that does not know `path` keeps the element as an unknown element
+and writes it back.
 
 **Migration.** A file older than `QslideCodec.schemaVersion` is upgraded one
 version at a time as it is read, and saved at the current version. Version 2

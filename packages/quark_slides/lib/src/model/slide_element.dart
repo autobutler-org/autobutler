@@ -1,3 +1,4 @@
+// cspell:words insertable
 import 'dart:math' as math;
 
 import '../format/json_fields.dart';
@@ -8,7 +9,9 @@ import 'chart_data.dart';
 import 'chart_kind.dart';
 import 'chart_options.dart';
 import 'element_frame.dart';
+import 'element_shadow.dart';
 import 'image_source.dart';
+import 'shape_contour.dart';
 import 'slide_color.dart';
 import 'stroke.dart';
 import '../theme/theme_text_role.dart';
@@ -113,18 +116,24 @@ sealed class SlideElement {
         final kind = ShapeKind.values.asNameMap()[json['kind']];
         if (kind == null) break;
         final fill = optionalString(json, 'fill', path);
+        final preset = optionalString(json, 'preset', path);
         return ShapeElement(
           id: id,
           frame: frame,
           kind: kind,
+          preset: preset == null || preset.isEmpty ? null : preset,
+          adjust: _adjust(json, path),
+          contours: _contours(json, path),
           fill:
               fill == null ? null : SlideColor.parse(fill, path: '$path.fill'),
           stroke: json['stroke'] == null
               ? null
               : Stroke.fromJson(json['stroke'], '$path.stroke'),
-          cornerRadius:
-              _nonNegative(optionalNumber(json, 'cornerRadius', path)),
+          cornerRadius: _nonNegative(
+            optionalNumber(json, 'cornerRadius', path),
+          ),
           opacity: _opacity(json, path),
+          shadow: _shadow(json, path),
           extra: unknownFields(json, ShapeElement._known),
         );
       case ImageElement.typeName:
@@ -134,6 +143,7 @@ sealed class SlideElement {
           source: requireString(json, 'source', path),
           altText: optionalString(json, 'altText', path) ?? '',
           fit: enumByName(json, 'fit', ImageFit.values, ImageFit.contain),
+          shadow: _shadow(json, path),
           extra: unknownFields(json, ImageElement._known),
         );
       case LineElement.typeName:
@@ -179,8 +189,41 @@ sealed class SlideElement {
 double _opacity(JsonMap json, String path) =>
     (optionalNumber(json, 'opacity', path) ?? 1).clamp(0.0, 1.0);
 
+/// Reads an element's optional `shadow`.
+ElementShadow? _shadow(JsonMap json, String path) => json['shadow'] == null
+    ? null
+    : ElementShadow.fromJson(json['shadow'], '$path.shadow');
+
 double? _nonNegative(double? value) =>
     value == null ? null : math.max(0, value);
+
+/// A path shape's adjust values, guide name to the number it stores.
+Map<String, double> _adjust(JsonMap json, String path) {
+  final value = json['adjust'];
+  if (value == null) return const {};
+  final obj = asObject(value, '$path.adjust');
+  final out = <String, double>{};
+  for (final entry in obj.entries) {
+    final n = entry.value;
+    if (n is! num || !n.isFinite) {
+      throw QslideFormatException(
+        'expected a number',
+        path: '$path.adjust.${entry.key}',
+      );
+    }
+    out[entry.key] = n.toDouble();
+  }
+  return Map.unmodifiable(out);
+}
+
+/// A path shape's contours, in order.
+List<ShapeContour> _contours(JsonMap json, String path) {
+  final list = optionalList(json, 'contours', path);
+  return List.unmodifiable([
+    for (var i = 0; i < list.length; i++)
+      ShapeContour.fromJson(list[i], '$path.contours[$i]'),
+  ]);
+}
 
 /// Where a [TextBox]'s text sits between the top and bottom of its frame.
 enum TextAnchor {
@@ -362,6 +405,22 @@ enum ShapeKind {
 
   /// A five-pointed star.
   star,
+
+  /// An outline stored as a [ShapeElement.preset] and its
+  /// [ShapeElement.adjust] values, or as [ShapeElement.contours]. An empty
+  /// path draws as a rectangle. It is not a drawing tool; see [insertable].
+  path;
+
+  /// The kinds a drawing tool offers. [path] is an imported outline.
+  static const insertable = <ShapeKind>[
+    rectangle,
+    roundedRectangle,
+    ellipse,
+    triangle,
+    diamond,
+    arrow,
+    star,
+  ];
 }
 
 /// A filled and outlined geometric figure, drawn at [opacity].
@@ -371,16 +430,26 @@ enum ShapeKind {
 /// rounds its corners by [cornerRadius] slide units, or by 15% of its
 /// shorter side when that is `null`, so it keeps its proportions as it is
 /// resized; other kinds ignore it.
+///
+/// A [ShapeKind.path] draws [contours] when it has any, and otherwise the
+/// preset named by [preset] at [adjust]. Both are optional and additive:
+/// a file from before path shapes has neither, and reads as it did.
+///
+/// A [shadow], when it has one, is cast by the fill and outline together.
 class ShapeElement extends SlideElement {
   /// Creates a shape; [opacity] runs from 0 (invisible) to 1 (opaque).
   const ShapeElement({
     required super.id,
     required super.frame,
     this.kind = ShapeKind.rectangle,
+    this.preset,
+    this.adjust = const {},
+    this.contours = const [],
     this.fill,
     this.stroke,
     this.cornerRadius,
     this.opacity = 1,
+    this.shadow,
     super.extra,
   })  : assert(cornerRadius == null || cornerRadius >= 0),
         assert(opacity >= 0 && opacity <= 1);
@@ -393,14 +462,29 @@ class ShapeElement extends SlideElement {
     'type',
     'frame',
     'kind',
+    'preset',
+    'adjust',
+    'contours',
     'fill',
     'stroke',
     'cornerRadius',
     'opacity',
+    'shadow',
   };
 
   /// Which figure to draw.
   final ShapeKind kind;
+
+  /// The preset geometry a [ShapeKind.path] draws, or null. Ignored for
+  /// every other kind, and when [contours] is not empty.
+  final String? preset;
+
+  /// Adjust values for [preset], guide name to the number the file stored.
+  final Map<String, double> adjust;
+
+  /// The outlines of a [ShapeKind.path], in the frame's own space. When
+  /// this is not empty it is drawn instead of [preset].
+  final List<ShapeContour> contours;
 
   /// The fill color, or `null` for a hollow shape.
   final SlideColor? fill;
@@ -415,20 +499,36 @@ class ShapeElement extends SlideElement {
   /// How opaque the whole shape is, fill and outline together: 0 to 1.
   final double opacity;
 
+  /// The drop shadow the shape casts, or `null` for none.
+  final ElementShadow? shadow;
+
   @override
   String get type => typeName;
 
   @override
   JsonMap _fieldsToJson() => {
         'kind': kind.name,
+        if (preset != null) 'preset': preset,
+        if (adjust.isNotEmpty)
+          'adjust': {
+            for (final key in (adjust.keys.toList()..sort()))
+              key: jsonNumber(adjust[key]!),
+          },
+        if (contours.isNotEmpty)
+          'contours': [for (final contour in contours) contour.toJson()],
         if (fill != null) 'fill': fill!.toHex(),
         if (stroke != null) 'stroke': stroke!.toJson(),
         if (cornerRadius != null) 'cornerRadius': jsonNumber(cornerRadius!),
         if (opacity != 1) 'opacity': jsonNumber(opacity),
+        if (shadow != null) 'shadow': shadow!.toJson(),
       };
 
   /// Returns a copy with the given fields replaced; pass `null` to clear
-  /// [fill], [stroke] or [cornerRadius].
+  /// [fill], [stroke], [cornerRadius], [preset] or [shadow].
+  ///
+  /// Changing [kind] drops [preset], [adjust] and [contours] unless the
+  /// call passes new values, so restyling a path to another figure does
+  /// not keep a hidden outline.
   ShapeElement copyWith({
     String? id,
     ElementFrame? frame,
@@ -437,19 +537,35 @@ class ShapeElement extends SlideElement {
     Object? stroke = unset,
     Object? cornerRadius = unset,
     double? opacity,
-  }) =>
-      ShapeElement(
-        id: id ?? this.id,
-        frame: frame ?? this.frame,
-        kind: kind ?? this.kind,
-        fill: identical(fill, unset) ? this.fill : fill as SlideColor?,
-        stroke: identical(stroke, unset) ? this.stroke : stroke as Stroke?,
-        cornerRadius: identical(cornerRadius, unset)
-            ? this.cornerRadius
-            : cornerRadius as double?,
-        opacity: opacity ?? this.opacity,
-        extra: extra,
-      );
+    Object? preset = unset,
+    Object? adjust = unset,
+    Object? contours = unset,
+    Object? shadow = unset,
+  }) {
+    final resetPath = kind != null && kind != this.kind;
+    return ShapeElement(
+      id: id ?? this.id,
+      frame: frame ?? this.frame,
+      kind: kind ?? this.kind,
+      preset: identical(preset, unset)
+          ? (resetPath ? null : this.preset)
+          : preset as String?,
+      adjust: identical(adjust, unset)
+          ? (resetPath ? const {} : this.adjust)
+          : Map<String, double>.unmodifiable(adjust as Map<String, double>),
+      contours: identical(contours, unset)
+          ? (resetPath ? const [] : this.contours)
+          : List<ShapeContour>.unmodifiable(contours as List<ShapeContour>),
+      fill: identical(fill, unset) ? this.fill : fill as SlideColor?,
+      stroke: identical(stroke, unset) ? this.stroke : stroke as Stroke?,
+      cornerRadius: identical(cornerRadius, unset)
+          ? this.cornerRadius
+          : cornerRadius as double?,
+      opacity: opacity ?? this.opacity,
+      shadow: identical(shadow, unset) ? this.shadow : shadow as ElementShadow?,
+      extra: extra,
+    );
+  }
 
   @override
   ShapeElement withFrame(ElementFrame frame) => copyWith(frame: frame);
@@ -463,10 +579,14 @@ class ShapeElement extends SlideElement {
       other.id == id &&
       other.frame == frame &&
       other.kind == kind &&
+      other.preset == preset &&
+      jsonEquals(other.adjust, adjust) &&
+      listEquals(other.contours, contours) &&
       other.fill == fill &&
       other.stroke == stroke &&
       other.cornerRadius == cornerRadius &&
       other.opacity == opacity &&
+      other.shadow == shadow &&
       jsonEquals(other.extra, extra);
 
   @override
@@ -474,10 +594,14 @@ class ShapeElement extends SlideElement {
         id,
         frame,
         kind,
+        preset,
+        jsonHash(adjust),
+        Object.hashAll(contours),
         fill,
         stroke,
         cornerRadius,
         opacity,
+        shadow,
         jsonHash(extra),
       );
 }
@@ -495,7 +619,7 @@ enum ImageFit {
   fill,
 }
 
-/// A picture placed on the slide.
+/// A picture placed on the slide, casting [shadow] when it has one.
 class ImageElement extends SlideElement {
   /// Creates an image element.
   const ImageElement({
@@ -504,13 +628,22 @@ class ImageElement extends SlideElement {
     required this.source,
     this.altText = '',
     this.fit = ImageFit.contain,
+    this.shadow,
     super.extra,
   });
 
   /// The `type` discriminator, `image`.
   static const typeName = 'image';
 
-  static const _known = {'id', 'type', 'frame', 'source', 'altText', 'fit'};
+  static const _known = {
+    'id',
+    'type',
+    'frame',
+    'source',
+    'altText',
+    'fit',
+    'shadow',
+  };
 
   /// The picture, as an [ImageSource] reference string — a Quark file path
   /// or `asset:<id>` for an uploaded asset — that the host app resolves.
@@ -527,6 +660,10 @@ class ImageElement extends SlideElement {
   /// How the picture fits the frame.
   final ImageFit fit;
 
+  /// The drop shadow the frame casts, or `null` for none. It is the
+  /// frame's shadow whatever [fit] leaves of it uncovered.
+  final ElementShadow? shadow;
+
   @override
   String get type => typeName;
 
@@ -535,15 +672,18 @@ class ImageElement extends SlideElement {
         'source': source,
         if (altText.isNotEmpty) 'altText': altText,
         if (fit != ImageFit.contain) 'fit': fit.name,
+        if (shadow != null) 'shadow': shadow!.toJson(),
       };
 
-  /// Returns a copy with the given fields replaced.
+  /// Returns a copy with the given fields replaced; pass `null` to clear
+  /// [shadow].
   ImageElement copyWith({
     String? id,
     ElementFrame? frame,
     String? source,
     String? altText,
     ImageFit? fit,
+    Object? shadow = unset,
   }) =>
       ImageElement(
         id: id ?? this.id,
@@ -551,6 +691,8 @@ class ImageElement extends SlideElement {
         source: source ?? this.source,
         altText: altText ?? this.altText,
         fit: fit ?? this.fit,
+        shadow:
+            identical(shadow, unset) ? this.shadow : shadow as ElementShadow?,
         extra: extra,
       );
 
@@ -568,11 +710,12 @@ class ImageElement extends SlideElement {
       other.source == source &&
       other.altText == altText &&
       other.fit == fit &&
+      other.shadow == shadow &&
       jsonEquals(other.extra, extra);
 
   @override
   int get hashCode =>
-      Object.hash(id, frame, source, altText, fit, jsonHash(extra));
+      Object.hash(id, frame, source, altText, fit, shadow, jsonHash(extra));
 }
 
 /// What is drawn at an end of a [LineElement]. A value this version does

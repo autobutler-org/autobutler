@@ -16,6 +16,7 @@ import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/chat_channels_service.dart';
 import 'package:quark/services/events_service.dart';
 import 'package:quark/services/sharing_service.dart';
+import 'package:quark/utils/search_fold.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 
 /// Lists the channels the signed-in account belongs to.
@@ -439,19 +440,19 @@ class ChatController extends ChangeNotifier {
   int? get searchMatchCount => _searchMatches?.length;
 
   /// The loaded messages whose decrypted text contains [searchQuery],
-  /// whatever the case, oldest first; null when there is no query. A message
+  /// whatever the case or accent, oldest first; null when there is no query. A message
   /// waiting for its key, one that won't open, a deleted one and a system
   /// line have no text to match.
   // ponytail: scans the loaded window on each read; keep an index if a long
   // channel stutters, and for history that isn't loaded (#2429).
   List<ChatTimelineMessage>? get _searchMatches {
-    final needle = _searchQuery.trim().toLowerCase();
+    final needle = foldForSearch(_searchQuery.trim());
     if (!_isSearching || needle.isEmpty) return null;
     return [
       for (final entry in _messages?.entries ?? const <ChatTimelineEntry>[])
         if (entry is ChatTimelineMessage &&
             entry.state == ChatMessageState.ready &&
-            (entry.text ?? '').toLowerCase().contains(needle))
+            foldForSearch(entry.text ?? '').contains(needle))
           entry,
     ];
   }

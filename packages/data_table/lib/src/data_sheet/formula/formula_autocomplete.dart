@@ -85,8 +85,9 @@ class _FormulaAutocompleteState extends State<FormulaAutocomplete> {
         ? const <BuiltinFunction>[]
         : builtinsMatching(query.prefix);
     final sameList = matches.length == _matches.length &&
-        Iterable.generate(matches.length)
-            .every((i) => matches[i].name == _matches[i].name);
+        Iterable.generate(
+          matches.length,
+        ).every((i) => matches[i].name == _matches[i].name);
     setState(() {
       _query = query;
       if (!sameList) _index = 0;
@@ -102,8 +103,11 @@ class _FormulaAutocompleteState extends State<FormulaAutocomplete> {
   void _accept(BuiltinFunction function) {
     final query = _query;
     if (query == null) return;
-    widget.controller.value =
-        acceptFunction(widget.controller.value, query, function.name);
+    widget.controller.value = acceptFunction(
+      widget.controller.value,
+      query,
+      function.name,
+    );
   }
 
   void _move(int step) {

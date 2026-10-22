@@ -44,7 +44,7 @@ Presentation chartSamplePresentation() => Presentation(
                   data: ChartData(
                     categories: const ['North', 'South'],
                     series: [
-                      ChartSeries(values: const [3, 1])
+                      ChartSeries(values: const [3, 1]),
                     ],
                   ),
                   options: const ChartOptions(

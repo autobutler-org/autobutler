@@ -143,11 +143,8 @@ class SlideTableCell {
       );
 
   /// The cell with rows and columns swapped, as transposing a table needs.
-  SlideTableCell get transposed => copyWith(
-        borders: borders.transposed,
-        rowSpan: colSpan,
-        colSpan: rowSpan,
-      );
+  SlideTableCell get transposed =>
+      copyWith(borders: borders.transposed, rowSpan: colSpan, colSpan: rowSpan);
 
   @override
   bool operator ==(Object other) =>

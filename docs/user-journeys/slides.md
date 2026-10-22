@@ -560,7 +560,7 @@ same drive as the presentation (`photos/cover.jpg`).
   a file that is not a PowerPoint file is refused before it is uploaded.
 - "Importing Talk.pptx…" shows with a spinner until the Quark answers. The presentation is written beside the
   PowerPoint file as `Talk.qslide` (or `Talk_(1).qslide` when that is taken) with its pictures in `Talk_media`; the
-  PowerPoint file itself is unchanged.
+  PowerPoint file itself is unchanged. Those pictures do not appear in Photos (JN-PH-001).
 - Fade, push, wipe and zoom transitions come across with their direction and duration.
 - When anything could not come across — charts, tables, SmartArt, video, animations, other transitions, unusual
   shapes — a summary lists

@@ -1434,6 +1434,70 @@ void main() {
       c.dispose();
     });
 
+    // cspell:words strasse straße straẞe résumé
+    test('folds accents and ß so a plain query finds them', () async {
+      final chat = await openGeneral();
+      final c = chat.controller;
+      chat.opened[1]!.fakeEntries = [
+        ChatTimelineMessage(
+          message: message(1),
+          state: ChatMessageState.ready,
+          text: 'Café at the Straße',
+        ),
+        ChatTimelineMessage(
+          message: message(2),
+          state: ChatMessageState.ready,
+          text: 'NAÏVE RÉSUMÉ',
+        ),
+        ChatTimelineMessage(
+          message: message(3),
+          state: ChatMessageState.ready,
+          text: 'plain cafe',
+        ),
+      ];
+      c.toggleSearch();
+
+      c.search('cafe');
+      expect(c.messageItems.map((i) => i.id), ['3', '1']);
+      c.search('CAFÉ');
+      expect(c.messageItems.map((i) => i.id), ['3', '1']);
+      c.search('strasse');
+      expect(c.messageItems.map((i) => i.id), ['1']);
+      c.search('STRAẞE');
+      expect(c.messageItems.map((i) => i.id), ['1']);
+      c.search('naive resume');
+      expect(c.messageItems.map((i) => i.id), ['2']);
+      c.search('résumé');
+      expect(c.messageItems.map((i) => i.id), ['2']);
+      c.dispose();
+    });
+
+    test(
+      'a resync keeps the search and matches the messages fetched again',
+      () async {
+        final chat = await openGeneral();
+        final c = chat.controller
+          ..toggleSearch()
+          ..search('lunch');
+        expect(c.searchMatchCount, 2);
+
+        chat.opened[1]!.fakeEntries = [
+          ChatTimelineMessage(
+            message: message(7),
+            state: ChatMessageState.ready,
+            text: 'Second lunch',
+          ),
+        ];
+        chat.events.add(const FileEvent(kind: 'resync', path: ''));
+        await pumpEventQueue();
+
+        expect(c.isSearching, isTrue);
+        expect(c.searchQuery, 'lunch');
+        expect(c.messageItems.map((i) => i.id), ['7']);
+        c.dispose();
+      },
+    );
+
     test('closing search forgets the query', () async {
       final chat = await openGeneral();
       final c = chat.controller

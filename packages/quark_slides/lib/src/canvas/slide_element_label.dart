@@ -133,7 +133,7 @@ String defaultSlideChartDataLabel(ChartElement chart) {
           '${[
         for (final (s, one) in series.indexed)
           '${one.name.trim().isEmpty ? 'Series ${s + 1}' : one.name.trim()} '
-              '${formatChartValue(one.values[c])}',
+              '${formatChartValue(one.values[c])}'
       ].join(', ')}.',
   ].join(' ');
 }

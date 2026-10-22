@@ -99,14 +99,27 @@ type outRun struct {
 
 // outShape is a preset shape.
 type outShape struct {
-	ID           string     `json:"id"`
-	Type         string     `json:"type"`
-	Frame        outFrame   `json:"frame"`
-	Kind         string     `json:"kind"`
-	Fill         string     `json:"fill,omitempty"`
-	Stroke       *outStroke `json:"stroke,omitempty"`
-	CornerRadius *float64   `json:"cornerRadius,omitempty"`
-	Opacity      *float64   `json:"opacity,omitempty"`
+	ID           string             `json:"id"`
+	Type         string             `json:"type"`
+	Frame        outFrame           `json:"frame"`
+	Kind         string             `json:"kind"`
+	Preset       string             `json:"preset,omitempty"`
+	Adjust       map[string]float64 `json:"adjust,omitempty"`
+	Contours     []shapeContour     `json:"contours,omitempty"`
+	Fill         string             `json:"fill,omitempty"`
+	Stroke       *outStroke         `json:"stroke,omitempty"`
+	CornerRadius *float64           `json:"cornerRadius,omitempty"`
+	Opacity      *float64           `json:"opacity,omitempty"`
+	Shadow       *outShadow         `json:"shadow,omitempty"`
+}
+
+// outShadow is a drop shadow in slide units; the offset and blur are left
+// out at 0.
+type outShadow struct {
+	Color string  `json:"color"`
+	X     float64 `json:"x,omitempty"`
+	Y     float64 `json:"y,omitempty"`
+	Blur  float64 `json:"blur,omitempty"`
 }
 
 // outStroke is an outline; dash is left out when solid.
@@ -118,12 +131,13 @@ type outStroke struct {
 
 // outImage is a picture.
 type outImage struct {
-	ID      string   `json:"id"`
-	Type    string   `json:"type"`
-	Frame   outFrame `json:"frame"`
-	Source  string   `json:"source"`
-	AltText string   `json:"altText,omitempty"`
-	Fit     string   `json:"fit,omitempty"`
+	ID      string     `json:"id"`
+	Type    string     `json:"type"`
+	Frame   outFrame   `json:"frame"`
+	Source  string     `json:"source"`
+	AltText string     `json:"altText,omitempty"`
+	Fit     string     `json:"fit,omitempty"`
+	Shadow  *outShadow `json:"shadow,omitempty"`
 }
 
 // outLine is a straight line; its stroke is always written.

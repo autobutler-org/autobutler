@@ -1,15 +1,18 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:quark/models/file_node.dart';
+import 'package:quark/services/auth_service.dart';
 import 'package:quark/services/files_service.dart';
 import 'package:quark/services/file_browser_actions.dart';
 import 'package:quark/services/slides_service.dart';
 import 'package:quark/services/storage_service.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
+import 'package:quark/utils/file_browser_landing_config.dart';
 import 'package:quark/utils/folder_picker.dart';
 import 'package:quark/utils/file_browser_path_utils.dart';
 import 'package:quark/utils/quark_widget.dart';
@@ -48,7 +51,13 @@ class FileBrowserController {
     this.saveNode = downloadNode,
     this.saveArchiveFile = FilesService.saveArchiveFile,
     this.saveBytesToFile = FilesService.saveBytesToFile,
+    this.accountSettled = AuthService.accountSettled,
   });
+
+  /// Waits for `/auth/status` to settle and answers what it threw, null when
+  /// it answered — [AuthService.accountSettled], injectable so a test can
+  /// fake it.
+  final Future<Object?> Function() accountSettled;
 
   /// The saves behind Download, injectable so a test can fake them. Each
   /// answers null when the user canceled the save dialog (#3212).
@@ -93,6 +102,19 @@ class FileBrowserController {
     if (selected.length == devices.length) return null;
     return [for (final d in selected) d.serial];
   }
+
+  /// Waits, for no longer than [FileBrowserLandingConfig.accountWait], for
+  /// the Quark to say whether the signed-in account is an admin, which decides
+  /// where a bare `/files` opens (#3211). Answers what went wrong, a
+  /// [TimeoutException] when it took too long, or null when the admin flag is
+  /// the Quark's answer.
+  Future<Object?> settleAccount() => accountSettled().timeout(
+    FileBrowserLandingConfig.accountWait,
+    onTimeout: () => TimeoutException(
+      'auth status still pending',
+      FileBrowserLandingConfig.accountWait,
+    ),
+  );
 
   Future<List<FileNode>> fetchFiles(
     String currentPath, {
