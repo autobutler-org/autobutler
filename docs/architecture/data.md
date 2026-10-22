@@ -288,3 +288,11 @@ a plaintext: the app derives and opens everything ([Chat security](../chat-secur
 derivation). A snapshot copies both tables as they are into `vault_items_backup.db`, and `backup.ImportVault`
 restores them ([Backup](backup.md)). The household vault of `005_vault`, one master password for everyone, is
 dropped by `038_drop_household_vault`.
+
+Nothing can move the household vault into an account's vault: its entries are encrypted under the old shared master
+password, and the Quark never holds an account's vault key. So it is kept, never deleted (#3616). On SQLite,
+`initSchema` copies its tables into `household-vault-<UTC time>.db` beside `quark.db` before 038 runs, refuses to
+migrate if the copy fails or does not count the same as the source, and runs `VACUUM` once 038 has dropped them, so
+the plaintext entry names and hosts are not left in the freed pages. `GET /vault/legacy` lists those copies and any
+`vault.db` an older Quark left in a drive's data directory, and the vault page tells every account about them. The
+PostgreSQL set still drops the tables without a copy.

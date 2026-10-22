@@ -105,6 +105,9 @@ HOST_PATH_ALLOWED=(
     "pkg/util/thumbnailutil/generate.go"
     # A RAW download converted to JPEG goes through dcraw.
     "pkg/util/fileutil/download.go"
+    # The household vault an older Quark left in a data directory, not the user's
+    # files: listed for the vault page, never changed (#3616).
+    "pkg/util/vaultutil/legacy.go"
     # The chat and vault exports are written by SQLite, which takes a host directory.
     "pkg/backup/snapshot.go"
 )
@@ -149,6 +152,9 @@ OS_FILE_ALLOWED=(
     "pkg/util/accessutil/helpers.go"
     # Factory reset: DeleteAccount removes the data directory and stale mount points.
     "pkg/util/authutil/"
+    # The household vault an older Quark left in a data directory, not the user's
+    # files: listed for the vault page, never changed (#3616).
+    "pkg/util/vaultutil/legacy.go"
     # The chat and vault exports and imports are SQLite files outside the user's files.
     "pkg/backup/ciphertext_backup.go"
     # When the last snapshot backup completed is in the database; this imports,

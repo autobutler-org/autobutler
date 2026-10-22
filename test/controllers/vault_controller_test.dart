@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/controllers/vault_controller.dart';
+import 'package:quark/models/legacy_vault.dart';
 import 'package:quark/models/account_keys.dart';
 import 'package:quark/models/vault_item.dart';
 import 'package:quark/services/account_crypto.dart';
@@ -91,6 +92,43 @@ void main() {
     fail = false;
     await c.load();
     expect(c.status, VaultStatus.noVault);
+  });
+
+  test('lists the household vaults an earlier Quark left, and a failed '
+      'look still serves the vault (#3616)', () async {
+    var fail = false;
+    final c = VaultController(
+      loadCrypto: () async => crypto,
+      fetchKey: server.fetchKey,
+      listLegacyVaults: () async => fail
+          ? throw const ApiException(404)
+          : const [
+              LegacyVault(
+                kind: 'drive',
+                path: '/media/usb/quark/data/vault.db',
+                readable: true,
+                entries: 4,
+                folders: 1,
+                deviceName: 'USB',
+              ),
+            ],
+      events: events.stream,
+    );
+    addTearDown(c.dispose);
+
+    await c.load();
+    expect(c.status, VaultStatus.noVault);
+    final listed = c.legacyVaults.single;
+    expect(listed.onDrive, isTrue);
+    expect(listed.deviceName, 'USB');
+    expect(listed.entries, 4);
+    expect(listed.folders, 1);
+    expect(listed.path, '/media/usb/quark/data/vault.db');
+
+    fail = true;
+    await c.load();
+    expect(c.status, VaultStatus.noVault);
+    expect(c.error, isNull);
   });
 
   group('setting up with the recovery phrase', () {

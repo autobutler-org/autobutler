@@ -2705,6 +2705,43 @@ definitions:
           type: integer
         type: array
     type: object
+  vaultutil.LegacyVault:
+    properties:
+      deviceName:
+        description: DeviceName names the drive a LegacyVaultOnDrive file is on.
+        type: string
+      deviceSerial:
+        description: |-
+          DeviceSerial is that drive's serial or, for a kept copy, the drive the
+          household vault had been moved to.
+        type: string
+      entries:
+        description: Entries and Folders count what it holds.
+        type: integer
+      folders:
+        type: integer
+      kind:
+        description: Kind is LegacyVaultKept or LegacyVaultOnDrive.
+        type: string
+      path:
+        description: Path is the file on this Quark.
+        type: string
+      readable:
+        description: |-
+          Readable is false for a file that is not a database Quark can count;
+          it is listed all the same, with no counts.
+        type: boolean
+    type: object
+  vaultutil.ListLegacyVaultsResult:
+    properties:
+      vaults:
+        description: |-
+          Vaults lists the kept copies first, oldest first, then each drive's
+          vault.db. It is empty, never nil, when there are none.
+        items:
+          $ref: '#/definitions/vaultutil.LegacyVault'
+        type: array
+    type: object
 info:
   contact: {}
   description: |-
@@ -10218,6 +10255,33 @@ paths:
       security:
       - BearerAuth: []
       summary: Set up the caller's vault
+      tags:
+      - vault
+  /vault/legacy:
+    get:
+      description: 'Lists the shared household vault from before per-account vaults
+        (#3616): the copy kept beside the database when an upgrade dropped its tables,
+        and any vault.db an older Quark left on a drive. None of it is in anyone''s
+        new vault, because it is encrypted under the old shared master password. Nothing
+        is changed or deleted; the list is empty when there is nothing to report.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vaultutil.ListLegacyVaultsResult'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/serverutil.Response'
+      security:
+      - BearerAuth: []
+      summary: List the household vaults an earlier Quark left on this device
       tags:
       - vault
   /version:

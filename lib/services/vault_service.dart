@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:quark/models/legacy_vault.dart';
 import 'package:quark/models/vault_item.dart';
 import 'package:quark/models/vault_key.dart';
 import 'package:quark/services/app_settings.dart';
@@ -102,6 +103,18 @@ class VaultService with AuthenticatedService {
   static Future<void> deleteItem(int id) async {
     final response = await instance.authenticatedDelete(_uri('/items/$id'));
     _check(response, 'delete vault item $id');
+  }
+
+  /// The household vaults an earlier Quark left on this device (#3616),
+  /// which the vault page tells every account about. Empty for most Quarks.
+  static Future<List<LegacyVault>> listLegacyVaults() async {
+    final response = await instance.authenticatedGet(_uri('/legacy'));
+    _check(response, 'list household vaults');
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return [
+      for (final vault in body['vaults'] as List? ?? const [])
+        LegacyVault.fromJson(vault as Map<String, dynamic>),
+    ];
   }
 
   static Map<String, String> _bearer(String? token) =>

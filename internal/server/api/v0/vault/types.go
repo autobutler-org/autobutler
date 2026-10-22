@@ -17,6 +17,7 @@ func (r *router) Routes() []*serverutil.Route {
 		getVaultItemRoute,
 		updateVaultItemRoute,
 		deleteVaultItemRoute,
+		listLegacyVaultsRoute,
 	}
 }
 

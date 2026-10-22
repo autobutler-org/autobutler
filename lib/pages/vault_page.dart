@@ -226,66 +226,76 @@ class _VaultPageState extends State<VaultPage>
             const AppThemeToggle(),
           ],
           drawer: const AppDrawer(activeSection: QuarkDrawerSection.vault),
-          body: switch (status) {
-            VaultStatus.loading => const Center(child: QuarkLoader()),
-            VaultStatus.error when isQuarkUnreachableError(error!) =>
-              QuarkDisconnectedView(
-                hostAddress: AppSettings.instance.activeHost,
-                onRetry: manualRefresh,
-                onManageHosts: () =>
-                    context.go(AppRoutes.settingsTab(SettingsTab.general)),
+          // The household vault an earlier Quark left is told to every
+          // account, whatever state its own vault is in (#3616).
+          body: Column(
+            children: [
+              VaultLegacyNotice(vaults: _vault.legacyVaults),
+              Expanded(
+                child: switch (status) {
+                  VaultStatus.loading => const Center(child: QuarkLoader()),
+                  VaultStatus.error when isQuarkUnreachableError(error!) =>
+                    QuarkDisconnectedView(
+                      hostAddress: AppSettings.instance.activeHost,
+                      onRetry: manualRefresh,
+                      onManageHosts: () => context.go(
+                        AppRoutes.settingsTab(SettingsTab.general),
+                      ),
+                    ),
+                  VaultStatus.error => VaultErrorView(
+                    message: Errors.message(error, 'load your vault'),
+                    onRetry: manualRefresh,
+                  ),
+                  VaultStatus.noVault => VaultPasswordForm(
+                    key: const ValueKey('vault_setup'),
+                    icon: QuarkIcons.shield_outlined,
+                    title: 'Set up your vault',
+                    message:
+                        'Your vault is encrypted on your devices with the password '
+                        'you sign in to Quark with, so there is no second password '
+                        'to remember. Nobody else, not even an admin, can open it.',
+                    submitLabel: 'Set up vault',
+                    phraseHelp:
+                        'Your account recovery phrase lets a recovery keep this '
+                        'vault if you forget your password. A mistyped phrase is '
+                        "not checked: it simply won't open the vault.",
+                    isBusy: _vault.isBusy,
+                    error: formError == null
+                        ? null
+                        : Errors.message(formError, 'set up your vault'),
+                    onSubmit: (password, phrase) =>
+                        _vault.setUp(password, phrase: phrase),
+                  ),
+                  VaultStatus.locked => VaultPasswordForm(
+                    key: const ValueKey('vault_unlock'),
+                    title: 'Your vault is locked',
+                    message:
+                        'Enter the password you sign in to Quark with. Your vault '
+                        'opens on this device; the Quark never sees what is in it.',
+                    submitLabel: 'Unlock',
+                    isBusy: _vault.isBusy,
+                    error: formError == null
+                        ? null
+                        : Errors.message(formError, 'unlock your vault'),
+                    secondaryLabel: 'Start over',
+                    onSecondary: _startOver,
+                    onSubmit: (password, _) => _vault.unlock(password),
+                  ),
+                  VaultStatus.unlocked => VaultEntryList(
+                    entries: _vault.visibleRows,
+                    folders: _vault.folderOptions,
+                    selectedFolderId: _vault.folderId,
+                    initialQuery: _vault.query,
+                    vaultIsEmpty: _vault.entries.isEmpty,
+                    onSearchChanged: _vault.search,
+                    onFolderSelected: _vault.filterFolder,
+                    onDeleteFolder: _deleteFolder,
+                    onTapEntry: _openEntry,
+                  ),
+                },
               ),
-            VaultStatus.error => VaultErrorView(
-              message: Errors.message(error, 'load your vault'),
-              onRetry: manualRefresh,
-            ),
-            VaultStatus.noVault => VaultPasswordForm(
-              key: const ValueKey('vault_setup'),
-              icon: QuarkIcons.shield_outlined,
-              title: 'Set up your vault',
-              message:
-                  'Your vault is encrypted on your devices with the password '
-                  'you sign in to Quark with, so there is no second password '
-                  'to remember. Nobody else, not even an admin, can open it.',
-              submitLabel: 'Set up vault',
-              phraseHelp:
-                  'Your account recovery phrase lets a recovery keep this '
-                  'vault if you forget your password. A mistyped phrase is '
-                  "not checked: it simply won't open the vault.",
-              isBusy: _vault.isBusy,
-              error: formError == null
-                  ? null
-                  : Errors.message(formError, 'set up your vault'),
-              onSubmit: (password, phrase) =>
-                  _vault.setUp(password, phrase: phrase),
-            ),
-            VaultStatus.locked => VaultPasswordForm(
-              key: const ValueKey('vault_unlock'),
-              title: 'Your vault is locked',
-              message:
-                  'Enter the password you sign in to Quark with. Your vault '
-                  'opens on this device; the Quark never sees what is in it.',
-              submitLabel: 'Unlock',
-              isBusy: _vault.isBusy,
-              error: formError == null
-                  ? null
-                  : Errors.message(formError, 'unlock your vault'),
-              secondaryLabel: 'Start over',
-              onSecondary: _startOver,
-              onSubmit: (password, _) => _vault.unlock(password),
-            ),
-            VaultStatus.unlocked => VaultEntryList(
-              entries: _vault.visibleRows,
-              folders: _vault.folderOptions,
-              selectedFolderId: _vault.folderId,
-              initialQuery: _vault.query,
-              vaultIsEmpty: _vault.entries.isEmpty,
-              onSearchChanged: _vault.search,
-              onFolderSelected: _vault.filterFolder,
-              onDeleteFolder: _deleteFolder,
-              onTapEntry: _openEntry,
-            ),
-          },
+            ],
+          ),
         );
       },
     );

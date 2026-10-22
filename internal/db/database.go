@@ -166,6 +166,16 @@ func initSchema(database *DatabaseSqlc) error {
 		)
 	}
 
+	// Before 038 drops the household vault, keep a copy of it (#3616).
+	path, err := databaseFilePath(database.Db)
+	if err != nil {
+		return err
+	}
+	kept, err := preserveHouseholdVault(database.Db, path)
+	if err != nil {
+		return fmt.Errorf("did not migrate the database, because the household vault could not be kept: %w", err)
+	}
+
 	driver, err := sqlite.WithInstance(database.Db, &sqlite.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create sqlite driver: %w", err)
@@ -177,6 +187,17 @@ func initSchema(database *DatabaseSqlc) error {
 	// ErrNoChange just means the schema is already at the latest migration.
 	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+	if kept != "" {
+		// DROP TABLE only frees pages, and the household vault kept its entry
+		// names and hosts in plaintext. They are proven to be in the copy, so
+		// the free pages are cleared.
+		if _, err := database.Db.Exec(`VACUUM`); err != nil {
+			slog.Warn("kept the household vault but could not clear its freed pages from the database",
+				"error", err, "copy", kept)
+		}
+		slog.Warn("kept the household vault from an earlier Quark before the upgrade dropped it. "+
+			"Nothing was deleted; the vault page lists the copy.", "copy", kept)
 	}
 	return nil
 }
