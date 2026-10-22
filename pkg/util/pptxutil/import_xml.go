@@ -280,9 +280,47 @@ type xShapeProps struct {
 			Formula string `xml:"fmla,attr"`
 		} `xml:"avLst>gd"`
 	} `xml:"prstGeom"`
-	Custom *struct{} `xml:"custGeom"`
+	Custom *xCustomGeometry `xml:"custGeom"`
 	xFill
 	Line *xLine `xml:"ln"`
+}
+
+// xCustomGeometry is a freeform's outline: its guides and its paths.
+type xCustomGeometry struct {
+	Adjust []xGuide `xml:"avLst>gd"`
+	Guides []xGuide `xml:"gdLst>gd"`
+	Paths  []xPath  `xml:"pathLst>path"`
+}
+
+// xGuide is a named formula.
+type xGuide struct {
+	Name    string `xml:"name,attr"`
+	Formula string `xml:"fmla,attr"`
+}
+
+// xPath is one freeform path in its own w by h coordinate space; a zero
+// size is the shape's extent in EMU. Fill "none" leaves it unfilled, and
+// stroke "0" draws no outline along it.
+type xPath struct {
+	W        xInt           `xml:"w,attr"`
+	H        xInt           `xml:"h,attr"`
+	Fill     string         `xml:"fill,attr"`
+	Stroke   *xBool         `xml:"stroke,attr"`
+	Commands []xPathCommand `xml:",any"`
+}
+
+// xPathCommand is moveTo, lnTo, quadBezTo, cubicBezTo, arcTo or close.
+// Coordinates and arc values are numbers or guide names.
+type xPathCommand struct {
+	XMLName xml.Name
+	Points  []struct {
+		X string `xml:"x,attr"`
+		Y string `xml:"y,attr"`
+	} `xml:"pt"`
+	WR    string `xml:"wR,attr"`
+	HR    string `xml:"hR,attr"`
+	StAng string `xml:"stAng,attr"`
+	SwAng string `xml:"swAng,attr"`
 }
 
 // xXfrm is a transform in EMU, rotated clockwise in 60,000ths of a degree.
