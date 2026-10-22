@@ -1752,6 +1752,21 @@ release/yank: ## Yank a release: remove from Azure + mark GitHub release as pre-
 
 ##@ Helpers
 
+.PHONY: cloc
+cloc: ## Count lines of code
+	if command -v cloc >/dev/null 2>&1; then \
+		cloc \
+			--vcs=git \
+			--md \
+			--report-file=cloc-report.md \
+			--exclude-lang=Markdown \
+			--fullpath \
+			--not-match-f='(internal/db/.*\.sql\.go|internal/db/querier_postgres\.go|docs/swagger/|internal/server/public/|\.g\.dart)$$'; \
+	else \
+		echo "Error: cloc is not installed."; \
+		exit 1; \
+	fi
+
 .PHONY: version
 version: ## Print version
 	$(GO) run $(GO_LDFLAGS) $(ENTRYPOINT) version
