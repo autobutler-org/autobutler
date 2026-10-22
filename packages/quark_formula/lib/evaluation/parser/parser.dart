@@ -93,8 +93,8 @@ class FormulaParser {
   FormulaNode _parseAddition() {
     var left = _parseTerm();
 
-    while (
-        _current.kind == TokenKind.plus || _current.kind == TokenKind.minus) {
+    while (_current.kind == TokenKind.plus ||
+        _current.kind == TokenKind.minus) {
       final operator = _current;
       _advance();
       final right = _parseTerm();

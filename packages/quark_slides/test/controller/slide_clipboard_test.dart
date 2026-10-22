@@ -9,34 +9,34 @@ ElementFrame f(double x, double y, double w, double h, [double r = 0]) =>
 /// Slide `s` holds a shape `a`, an image `pic` and a group `g` of shapes
 /// `g1` and `g2`; slide `s2` is empty.
 Presentation deck() => Presentation(
-      slides: [
-        Slide(
-          id: 's',
-          elements: [
-            ShapeElement(
-              id: 'a',
-              frame: f(100, 100, 200, 100),
-              fill: const SlideColor(0xFF3366FF),
-            ),
-            ImageElement(
-              id: 'pic',
-              frame: f(500, 100, 300, 200),
-              source: 'asset:logo-1',
-              altText: 'Logo',
-            ),
-            GroupElement(
-              id: 'g',
-              frame: f(1000, 500, 300, 300),
-              children: [
-                ShapeElement(id: 'g1', frame: f(0, 0, 100, 100)),
-                ShapeElement(id: 'g2', frame: f(200, 200, 100, 100)),
-              ],
-            ),
+  slides: [
+    Slide(
+      id: 's',
+      elements: [
+        ShapeElement(
+          id: 'a',
+          frame: f(100, 100, 200, 100),
+          fill: const SlideColor(0xFF3366FF),
+        ),
+        ImageElement(
+          id: 'pic',
+          frame: f(500, 100, 300, 200),
+          source: 'asset:logo-1',
+          altText: 'Logo',
+        ),
+        GroupElement(
+          id: 'g',
+          frame: f(1000, 500, 300, 300),
+          children: [
+            ShapeElement(id: 'g1', frame: f(0, 0, 100, 100)),
+            ShapeElement(id: 'g2', frame: f(200, 200, 100, 100)),
           ],
         ),
-        const Slide(id: 's2'),
       ],
-    );
+    ),
+    const Slide(id: 's2'),
+  ],
+);
 
 /// A clipboard of its own, so tests do not share [SlideClipboard.memory].
 SlideClipboard scratch() {

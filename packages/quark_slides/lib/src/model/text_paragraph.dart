@@ -49,11 +49,10 @@ class TextParagraph {
   factory TextParagraph.plain(
     String text, {
     TextAlignment alignment = TextAlignment.start,
-  }) =>
-      TextParagraph(
-        text.isEmpty ? const [] : [TextRun(text)],
-        alignment: alignment,
-      );
+  }) => TextParagraph(
+    text.isEmpty ? const [] : [TextRun(text)],
+    alignment: alignment,
+  );
 
   /// The styled spans, in reading order.
   final List<TextRun> runs;
@@ -103,12 +102,12 @@ class TextParagraph {
 
   /// The paragraph as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        'runs': [for (final run in runs) run.toJson()],
-        if (alignment != TextAlignment.start) 'align': alignment.name,
-        if (lineSpacing != null) 'lineSpacing': jsonNumber(lineSpacing!),
-        if (list != TextListStyle.none) 'list': list.name,
-      };
+    ...extra,
+    'runs': [for (final run in runs) run.toJson()],
+    if (alignment != TextAlignment.start) 'align': alignment.name,
+    if (lineSpacing != null) 'lineSpacing': jsonNumber(lineSpacing!),
+    if (list != TextListStyle.none) 'list': list.name,
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` as
   /// [lineSpacing] to restore the default.
@@ -117,16 +116,15 @@ class TextParagraph {
     TextAlignment? alignment,
     Object? lineSpacing = unset,
     TextListStyle? list,
-  }) =>
-      TextParagraph(
-        runs ?? this.runs,
-        alignment: alignment ?? this.alignment,
-        lineSpacing: identical(lineSpacing, unset)
-            ? this.lineSpacing
-            : lineSpacing as double?,
-        list: list ?? this.list,
-        extra: extra,
-      );
+  }) => TextParagraph(
+    runs ?? this.runs,
+    alignment: alignment ?? this.alignment,
+    lineSpacing: identical(lineSpacing, unset)
+        ? this.lineSpacing
+        : lineSpacing as double?,
+    list: list ?? this.list,
+    extra: extra,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -139,12 +137,12 @@ class TextParagraph {
 
   @override
   int get hashCode => Object.hash(
-        Object.hashAll(runs),
-        alignment,
-        lineSpacing,
-        list,
-        jsonHash(extra),
-      );
+    Object.hashAll(runs),
+    alignment,
+    lineSpacing,
+    list,
+    jsonHash(extra),
+  );
 
   @override
   String toString() => 'TextParagraph($plainText)';

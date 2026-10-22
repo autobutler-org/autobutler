@@ -112,27 +112,13 @@ String _generateExpression(
     case 2:
       return '(${_generateExpression(random, depth + 1, insideFunctionArgument)})';
     case 3:
-      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, [
-            '+',
-            '-'
-          ])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
+      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, ['+', '-'])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
     case 4:
-      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, [
-            '*',
-            '/',
-            '%'
-          ])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
+      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, ['*', '/', '%'])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
     case 5:
       return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ^ ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
     case 6:
-      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, [
-            '==',
-            '!=',
-            '<',
-            '<=',
-            '>',
-            '>='
-          ])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
+      return '${_generateExpression(random, depth + 1, insideFunctionArgument)} ${_pick(random, ['==', '!=', '<', '<=', '>', '>='])} ${_generateExpression(random, depth + 1, insideFunctionArgument)}';
     default:
       return _generateFunctionCall(random, depth + 1);
   }

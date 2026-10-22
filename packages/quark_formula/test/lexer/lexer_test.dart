@@ -63,7 +63,9 @@ void main() {
       expect(
         () => lex('=').toList(),
         throwsA(
-          isA<LexError>().having((error) => error.offset, 'offset', 0).having(
+          isA<LexError>()
+              .having((error) => error.offset, 'offset', 0)
+              .having(
                 (error) => error.message,
                 'message',
                 contains('Standalone ='),
@@ -74,7 +76,9 @@ void main() {
       expect(
         () => lex('A1 = 2').toList(),
         throwsA(
-          isA<LexError>().having((error) => error.offset, 'offset', 3).having(
+          isA<LexError>()
+              .having((error) => error.offset, 'offset', 3)
+              .having(
                 (error) => error.message,
                 'message',
                 contains('Standalone ='),
@@ -87,7 +91,9 @@ void main() {
       expect(
         () => lex(r'$foo').toList(),
         throwsA(
-          isA<LexError>().having((error) => error.offset, 'offset', 0).having(
+          isA<LexError>()
+              .having((error) => error.offset, 'offset', 0)
+              .having(
                 (error) => error.message,
                 'message',
                 contains('Invalid cell reference'),
@@ -98,7 +104,9 @@ void main() {
       expect(
         () => lex('"abc').toList(),
         throwsA(
-          isA<LexError>().having((error) => error.offset, 'offset', 0).having(
+          isA<LexError>()
+              .having((error) => error.offset, 'offset', 0)
+              .having(
                 (error) => error.message,
                 'message',
                 contains('Unterminated string'),
@@ -199,7 +207,9 @@ void main() {
       expect(
         () => lex('1e+').toList(),
         throwsA(
-          isA<LexError>().having((error) => error.offset, 'offset', 1).having(
+          isA<LexError>()
+              .having((error) => error.offset, 'offset', 1)
+              .having(
                 (error) => error.message,
                 'message',
                 contains('Invalid scientific notation'),
@@ -210,7 +220,9 @@ void main() {
       expect(
         () => lex('A1 ? B2').toList(),
         throwsA(
-          isA<LexError>().having((error) => error.offset, 'offset', 3).having(
+          isA<LexError>()
+              .having((error) => error.offset, 'offset', 3)
+              .having(
                 (error) => error.message,
                 'message',
                 contains('Unexpected character: ?'),
@@ -221,7 +233,9 @@ void main() {
       expect(
         () => lex('!TRUE').toList(),
         throwsA(
-          isA<LexError>().having((error) => error.offset, 'offset', 0).having(
+          isA<LexError>()
+              .having((error) => error.offset, 'offset', 0)
+              .having(
                 (error) => error.message,
                 'message',
                 contains('Unexpected character: !'),

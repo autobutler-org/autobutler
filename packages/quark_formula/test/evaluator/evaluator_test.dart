@@ -5,7 +5,7 @@ void main() {
   group('FormulaEvaluator', () {
     FormulaValue evaluateFormula(String source, {CellAccessor? accessor}) {
       final parsed = parseTokens(lex(source));
-      return evaluate(parsed, accessor ?? (_, __) => blankValue);
+      return evaluate(parsed, accessor ?? (_, _) => blankValue);
     }
 
     test(
@@ -72,7 +72,7 @@ void main() {
     test('propagates circular reference hook errors from the accessor', () {
       final value = evaluateFormula(
         '=A1',
-        accessor: (_, __) => refError('Circular reference'),
+        accessor: (_, _) => refError('Circular reference'),
       );
 
       expect(value, refError('Circular reference'));
@@ -92,7 +92,7 @@ void main() {
       'returns a value error when a range is evaluated outside a function',
       () {
         final parsed = RangeNode(startRef: 'A1', endRef: 'A2', offset: 0);
-        final evaluator = FormulaEvaluator(cellAccessor: (_, __) => blankValue);
+        final evaluator = FormulaEvaluator(cellAccessor: (_, _) => blankValue);
 
         expect(
           evaluator.evaluate(parsed),

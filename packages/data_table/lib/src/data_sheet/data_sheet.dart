@@ -135,15 +135,15 @@ class DataSheet extends StatelessWidget {
   });
 
   DataSheet.unnamed({super.key})
-      : table = DataTable([]),
-        beforeCellValueChanged = null,
-        afterCellValueChanged = null,
-        controller = null,
-        columnWidths = null,
-        controlScheme = null,
-        showHeadings = true,
-        showFormulaBar = true,
-        clipboard = null;
+    : table = DataTable([]),
+      beforeCellValueChanged = null,
+      afterCellValueChanged = null,
+      controller = null,
+      columnWidths = null,
+      controlScheme = null,
+      showHeadings = true,
+      showFormulaBar = true,
+      clipboard = null;
 
   @override
   Widget build(BuildContext context) {
@@ -574,16 +574,16 @@ class _DataSheetViewState extends State<_DataSheetView> {
 
     // A frozen pane wider or taller than its share of the grid is clipped.
     Widget clipWidth(Widget child) => SizedBox(
-          width: left,
-          child: ClipRect(
-            child: OverflowBox(
-              alignment: Alignment.topLeft,
-              minWidth: fullLeft,
-              maxWidth: fullLeft,
-              child: child,
-            ),
-          ),
-        );
+      width: left,
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.topLeft,
+          minWidth: fullLeft,
+          maxWidth: fullLeft,
+          child: child,
+        ),
+      ),
+    );
 
     Widget row(int r, {required bool frozenSide}) =>
         ValueListenableBuilder<List<DataCell>>(
@@ -752,15 +752,15 @@ class _DataSheetViewState extends State<_DataSheetView> {
   /// How far the frozen panes reach into a grid of [size]: the left edge of
   /// the scrolling columns and the top edge of the scrolling rows.
   ({double left, double top}) _frozenExtent(Size size) => (
-        left: math.min(
-          _gutterWidth + _span(0, controller.frozenColumns, _colWidth),
-          size.width * kMaxFrozenFraction,
-        ),
-        top: math.min(
-          _headerHeight + _span(0, controller.frozenRows, _rowHeight),
-          size.height * kMaxFrozenFraction,
-        ),
-      );
+    left: math.min(
+      _gutterWidth + _span(0, controller.frozenColumns, _colWidth),
+      size.width * kMaxFrozenFraction,
+    ),
+    top: math.min(
+      _headerHeight + _span(0, controller.frozenRows, _rowHeight),
+      size.height * kMaxFrozenFraction,
+    ),
+  );
 
   /// The cell under [global], clamped to the sheet's edges so a drag past
   /// the last row or column selects up to it. Hidden rows are skipped.
@@ -838,9 +838,10 @@ class _DataSheetViewState extends State<_DataSheetView> {
               isFiltered: controller.filterFor(c) != null,
               filterTooltip: controller.filterFor(c) != null
                   ? 'Column ${columnLabel(c)} is filtered: '
-                      '$shown of ${controller.rowCount} rows shown'
+                        '$shown of ${controller.rowCount} rows shown'
                   : 'Filter column ${columnLabel(c)}',
-              onFilter: controller.filterFor(c) != null ||
+              onFilter:
+                  controller.filterFor(c) != null ||
                       _colWidth(c) >= kMinFilterButtonColumnWidth
                   ? (anchor) => _openFilter(c, anchor)
                   : null,
@@ -918,21 +919,21 @@ class _DataSheetViewState extends State<_DataSheetView> {
                   },
                 )
               : error != null
-                  ? Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: FormulaErrorChip(
-                          key: ValueKey('r${r}c${c}_error'),
-                          code: error.code,
-                          message: error.message,
-                        ),
-                      ),
-                    )
-                  : FormattedCellText(
-                      text: controller.formattedValueAt(r, c),
-                      format: format,
-                    );
+              ? Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: FormulaErrorChip(
+                      key: ValueKey('r${r}c${c}_error'),
+                      code: error.code,
+                      message: error.message,
+                    ),
+                  ),
+                )
+              : FormattedCellText(
+                  text: controller.formattedValueAt(r, c),
+                  format: format,
+                );
 
           final cell = Cell(
             key: ValueKey('r${r}c$c'),
@@ -944,8 +945,9 @@ class _DataSheetViewState extends State<_DataSheetView> {
                 : SystemMouseCursors.cell,
             height: rowHeight,
             referenceColor: controller.activeRefColors[(r, c)],
-            fillColor:
-                format.fillColor == null ? null : Color(format.fillColor!),
+            fillColor: format.fillColor == null
+                ? null
+                : Color(format.fillColor!),
             child: cellChild,
           );
 
@@ -1000,7 +1002,7 @@ class _DataSheetViewState extends State<_DataSheetView> {
     _pickedRef = null;
     final isChangeAccepted =
         widget.beforeCellValueChanged?.call(value, changedRow, changedCol) ??
-            true;
+        true;
     if (isChangeAccepted) {
       controller.updateCell(changedRow, changedCol, DataCell(value));
     }

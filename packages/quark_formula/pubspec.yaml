@@ -3,7 +3,7 @@ description: Formula engine extracted from data_table
 version: 0.0.1
 homepage: "https://github.com/autobutler-org/quark"
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.11.0
 
 resolution: workspace
 

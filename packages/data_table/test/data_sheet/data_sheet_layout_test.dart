@@ -5,11 +5,11 @@ import 'package:data_table/src/models/data_table.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 DataTable _table(int rows, int cols) => DataTable(
-      List.generate(
-        rows,
-        (r) => DataRow(List.generate(cols, (c) => DataCell('$r,$c'))),
-      ),
-    );
+  List.generate(
+    rows,
+    (r) => DataRow(List.generate(cols, (c) => DataCell('$r,$c'))),
+  ),
+);
 
 /// #2691: pixel sizes, auto-fit and frozen panes on the controller, and the
 /// layout keys a `.qsheet` tab saves them under.

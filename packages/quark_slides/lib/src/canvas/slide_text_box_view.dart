@@ -54,10 +54,10 @@ class SlideTextBoxView extends StatelessWidget {
 
   /// The alignment that holds text against [anchor]'s edge.
   static Alignment alignmentOf(TextAnchor anchor) => switch (anchor) {
-        TextAnchor.top => Alignment.topLeft,
-        TextAnchor.middle => Alignment.centerLeft,
-        TextAnchor.bottom => Alignment.bottomLeft,
-      };
+    TextAnchor.top => Alignment.topLeft,
+    TextAnchor.middle => Alignment.centerLeft,
+    TextAnchor.bottom => Alignment.bottomLeft,
+  };
 
   @override
   Widget build(BuildContext context) {

@@ -79,15 +79,15 @@ ElementFrame _alignOne(
     ElementAlignment.left => frame.translate(target.left - box.left, 0),
     ElementAlignment.right => frame.translate(target.right - box.right, 0),
     ElementAlignment.center => frame.translate(
-        mid(target.left, target.right) - mid(box.left, box.right),
-        0,
-      ),
+      mid(target.left, target.right) - mid(box.left, box.right),
+      0,
+    ),
     ElementAlignment.top => frame.translate(0, target.top - box.top),
     ElementAlignment.bottom => frame.translate(0, target.bottom - box.bottom),
     ElementAlignment.middle => frame.translate(
-        0,
-        mid(target.top, target.bottom) - mid(box.top, box.bottom),
-      ),
+      0,
+      mid(target.top, target.bottom) - mid(box.top, box.bottom),
+    ),
   };
 }
 
@@ -145,11 +145,11 @@ Map<String, ElementFrame> matchFrameSizes(
           (a, b) => b.width * b.height > a.width * a.height ? b : a,
         )
       : frames[reference] ??
-          (throw ArgumentError.value(
-            reference,
-            'reference',
-            'not in frames',
-          ));
+            (throw ArgumentError.value(
+              reference,
+              'reference',
+              'not in frames',
+            ));
   final width = match == SizeMatch.height ? null : model.width;
   final height = match == SizeMatch.width ? null : model.height;
   return {

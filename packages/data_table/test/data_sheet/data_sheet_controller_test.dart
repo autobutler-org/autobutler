@@ -6,16 +6,16 @@ import 'package:data_table/src/models/data_table.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 List<List<String>> _values(DataSheetController c) => [
-      for (var r = 0; r < c.rowCount; r++)
-        [for (var col = 0; col < c.colCount; col++) c.cellAt(r, col).value],
-    ];
+  for (var r = 0; r < c.rowCount; r++)
+    [for (var col = 0; col < c.colCount; col++) c.cellAt(r, col).value],
+];
 
 /// A 3x3 sheet of `a`..`i`, row by row.
 DataSheetController _grid() => _makeController([
-      ['a', 'b', 'c'],
-      ['d', 'e', 'f'],
-      ['g', 'h', 'i'],
-    ]);
+  ['a', 'b', 'c'],
+  ['d', 'e', 'f'],
+  ['g', 'h', 'i'],
+]);
 
 DataTable _makeTable(List<List<String>> values) {
   return DataTable(

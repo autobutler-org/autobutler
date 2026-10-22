@@ -79,12 +79,14 @@ class _FormulaAutocompleteState extends State<FormulaAutocomplete> {
     if (_dismissedText != null && _dismissedText != value.text) {
       _dismissedText = null;
     }
-    final query =
-        _focused && _dismissedText == null ? functionQueryAt(value) : null;
+    final query = _focused && _dismissedText == null
+        ? functionQueryAt(value)
+        : null;
     final matches = query == null
         ? const <BuiltinFunction>[]
         : builtinsMatching(query.prefix);
-    final sameList = matches.length == _matches.length &&
+    final sameList =
+        matches.length == _matches.length &&
         Iterable.generate(
           matches.length,
         ).every((i) => matches[i].name == _matches[i].name);

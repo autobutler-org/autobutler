@@ -104,11 +104,11 @@ void main() {
   group('SlideTextLayout', () {
     const layout = SlideTextLayout();
     TextBox box(int lines, {TextAutoFit fit = TextAutoFit.shrink}) => TextBox(
-          id: 't',
-          frame: ElementFrame(x: 0, y: 0, width: 400, height: 100),
-          paragraphs: List.filled(lines, TextParagraph.plain('line')),
-          autoFit: fit,
-        );
+      id: 't',
+      frame: ElementFrame(x: 0, y: 0, width: 400, height: 100),
+      paragraphs: List.filled(lines, TextParagraph.plain('line')),
+      autoFit: fit,
+    );
 
     test('measures a line per paragraph at the default size', () {
       expect(layout.contentHeight(box(1)), closeTo(36 * 1.2, 2));

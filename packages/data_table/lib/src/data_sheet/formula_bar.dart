@@ -247,15 +247,16 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
     const verticalOverhead = 12.0; // top+bottom padding inside the bar
     final textStyle =
         Theme.of(context).textTheme.bodyMedium ?? const TextStyle(fontSize: 14);
-    final tp = TextPainter(
-      text: TextSpan(text: text, style: textStyle),
-      textDirection: ui.TextDirection.ltr,
-    )..layout(
-        maxWidth: (fieldWidth - horizontalOverhead).clamp(
-          1.0,
-          double.infinity,
-        ),
-      );
+    final tp =
+        TextPainter(
+          text: TextSpan(text: text, style: textStyle),
+          textDirection: ui.TextDirection.ltr,
+        )..layout(
+          maxWidth: (fieldWidth - horizontalOverhead).clamp(
+            1.0,
+            double.infinity,
+          ),
+        );
     final needed = (tp.height + verticalOverhead).clamp(
       _minHeight,
       double.infinity,
@@ -359,9 +360,7 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                               child: Text(
                                 label,
                                 key: const ValueKey('data_sheet_name_box'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       fontFamily: 'monospace',
                                       fontWeight: FontWeight.w600,
@@ -378,11 +377,11 @@ class _DataSheetFormulaBarState extends State<DataSheetFormulaBar> {
                       child: Center(
                         child: Text(
                           'fx',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    fontStyle: FontStyle.italic,
-                                    color: cs.primary,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                fontStyle: FontStyle.italic,
+                                color: cs.primary,
+                              ),
                         ),
                       ),
                     ),

@@ -31,17 +31,17 @@ Presentation tableDeck() {
 
 /// The screen point at the center of cell [row], [column] of `tbl`.
 Offset cellCenter(WidgetTester tester, int row, int column) => slideToGlobal(
-      tester,
-      Offset(360 + 400 * column + 200.0, 300 + 150 * row + 75.0),
-    );
+  tester,
+  Offset(360 + 400 * column + 200.0, 300 + 150 * row + 75.0),
+);
 
 Finder cellKey(int row, int column) =>
     find.byKey(ValueKey(SlideTableView.cellKeyName('tbl', row, column)));
 
 /// The editor's paragraph field that has focus.
 EditableText focusedField(WidgetTester tester) => tester.widget<EditableText>(
-      find.byWidgetPredicate((w) => w is EditableText && w.focusNode.hasFocus),
-    );
+  find.byWidgetPredicate((w) => w is EditableText && w.focusNode.hasFocus),
+);
 
 Future<void> typeText(WidgetTester tester, String text) async {
   final value = focusedField(tester).controller.value;

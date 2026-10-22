@@ -3,7 +3,7 @@ description: Headless presentation engine for Flutter — the slide data model, 
 version: 0.0.1
 homepage: "https://github.com/autobutler-org/quark"
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.11.0
 
 resolution: workspace
 

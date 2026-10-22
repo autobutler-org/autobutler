@@ -13,32 +13,32 @@ Matcher throwsFormatAt(String path) =>
 
 /// A one-slide deck holding [table], a table object.
 Map<String, Object?> deckWith(Map<String, Object?> table) => {
-      'schemaVersion': 5,
-      'slides': [
-        {
-          'id': 's',
-          'elements': [table],
-        },
-      ],
-    };
+  'schemaVersion': 5,
+  'slides': [
+    {
+      'id': 's',
+      'elements': [table],
+    },
+  ],
+};
 
 Map<String, Object?> tableJson({
   List<Object?> columns = const [100, 100],
   List<Object?> rows = const [50],
   List<Object?>? cells,
-}) =>
-    {
-      'id': 't',
-      'type': 'table',
-      'frame': {'x': 0, 'y': 0, 'width': 200, 'height': 50},
-      'columns': columns,
-      'rows': rows,
-      'cells': cells ??
-          [
-            for (var r = 0; r < rows.length; r++)
-              [for (var c = 0; c < columns.length; c++) <String, Object?>{}],
-          ],
-    };
+}) => {
+  'id': 't',
+  'type': 'table',
+  'frame': {'x': 0, 'y': 0, 'width': 200, 'height': 50},
+  'columns': columns,
+  'rows': rows,
+  'cells':
+      cells ??
+      [
+        for (var r = 0; r < rows.length; r++)
+          [for (var c = 0; c < columns.length; c++) <String, Object?>{}],
+      ],
+};
 
 void main() {
   group('golden table_sample.qslide', () {

@@ -28,8 +28,8 @@ class Presentation {
     this.defaultTransition = SlideTransitionSpec.none,
     List<Slide> slides = const [],
     this.extra = const {},
-  })  : size = size ?? SlideSize.widescreen,
-        slides = List.unmodifiable(slides);
+  }) : size = size ?? SlideSize.widescreen,
+       slides = List.unmodifiable(slides);
 
   /// The presentation's title, shown in file listings and the window.
   final String title;
@@ -105,14 +105,14 @@ class Presentation {
   /// The presentation fields of a `.qslide` root object, without
   /// `schemaVersion`; `QslideCodec.encode` adds it.
   JsonMap toJson() => {
-        ...extra,
-        'title': title,
-        'size': size.toJson(),
-        if (theme != null) 'theme': theme!.toJson(),
-        if (defaultTransition != SlideTransitionSpec.none)
-          'transition': defaultTransition.toJson(),
-        'slides': [for (final s in slides) s.toJson()],
-      };
+    ...extra,
+    'title': title,
+    'size': size.toJson(),
+    if (theme != null) 'theme': theme!.toJson(),
+    if (defaultTransition != SlideTransitionSpec.none)
+      'transition': defaultTransition.toJson(),
+    'slides': [for (final s in slides) s.toJson()],
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` as [theme]
   /// for none.
@@ -122,15 +122,14 @@ class Presentation {
     Object? theme = unset,
     SlideTransitionSpec? defaultTransition,
     List<Slide>? slides,
-  }) =>
-      Presentation(
-        title: title ?? this.title,
-        size: size ?? this.size,
-        theme: identical(theme, unset) ? this.theme : theme as SlideTheme?,
-        defaultTransition: defaultTransition ?? this.defaultTransition,
-        slides: slides ?? this.slides,
-        extra: extra,
-      );
+  }) => Presentation(
+    title: title ?? this.title,
+    size: size ?? this.size,
+    theme: identical(theme, unset) ? this.theme : theme as SlideTheme?,
+    defaultTransition: defaultTransition ?? this.defaultTransition,
+    slides: slides ?? this.slides,
+    extra: extra,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -144,13 +143,13 @@ class Presentation {
 
   @override
   int get hashCode => Object.hash(
-        title,
-        size,
-        theme,
-        defaultTransition,
-        Object.hashAll(slides),
-        jsonHash(extra),
-      );
+    title,
+    size,
+    theme,
+    defaultTransition,
+    Object.hashAll(slides),
+    jsonHash(extra),
+  );
 
   @override
   String toString() => 'Presentation($title, ${slides.length} slides)';

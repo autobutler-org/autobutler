@@ -19,14 +19,17 @@ Presentation themedDeck(SlideTheme? theme) {
         id: 's',
         layoutId: layout.id,
         elements: [
-          layout.placeholder('title')!.emptyBox('title', size).copyWith(
-            paragraphs: [
-              TextParagraph.plain(
-                'Agenda',
-                alignment: TextAlignment.center,
+          layout
+              .placeholder('title')!
+              .emptyBox('title', size)
+              .copyWith(
+                paragraphs: [
+                  TextParagraph.plain(
+                    'Agenda',
+                    alignment: TextAlignment.center,
+                  ),
+                ],
               ),
-            ],
-          ),
           layout.placeholder('subtitle')!.emptyBox('sub', size),
           ShapeElement(
             id: 'box',
@@ -51,8 +54,8 @@ Color backgroundColor(WidgetTester tester) => tester
 
 /// The render object painting the element [id]'s shape.
 RenderObject shapeOf(WidgetTester tester, String id) => tester.renderObject(
-      find.descendant(of: elementKey(id), matching: find.byType(CustomPaint)),
-    );
+  find.descendant(of: elementKey(id), matching: find.byType(CustomPaint)),
+);
 
 /// The root text style of the element [id]'s first paragraph.
 TextStyle textStyleOf(WidgetTester tester, String id) => tester

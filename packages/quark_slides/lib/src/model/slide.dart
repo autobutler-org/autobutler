@@ -94,14 +94,14 @@ class Slide {
 
   /// The slide as its `.qslide` object.
   JsonMap toJson() => {
-        ...extra,
-        'id': id,
-        if (background != null) 'background': background!.toJson(),
-        'elements': [for (final e in elements) e.toJson()],
-        if (notes.isNotEmpty) 'notes': notes,
-        if (layoutId != SlideLayout.blankId) 'layout': layoutId,
-        if (transition != null) 'transition': transition!.toJson(),
-      };
+    ...extra,
+    'id': id,
+    if (background != null) 'background': background!.toJson(),
+    'elements': [for (final e in elements) e.toJson()],
+    if (notes.isNotEmpty) 'notes': notes,
+    if (layoutId != SlideLayout.blankId) 'layout': layoutId,
+    if (transition != null) 'transition': transition!.toJson(),
+  };
 
   /// Returns a copy with the given fields replaced; pass `null` as
   /// [background] to fall back to the theme's, and as [transition] to
@@ -113,21 +113,19 @@ class Slide {
     String? notes,
     String? layoutId,
     Object? transition = unset,
-  }) =>
-      Slide(
-        id: id ?? this.id,
-        background: identical(background, unset)
-            ? this.background
-            : background as SlideBackground?,
-        elements:
-            elements == null ? this.elements : List.unmodifiable(elements),
-        notes: notes ?? this.notes,
-        layoutId: layoutId ?? this.layoutId,
-        transition: identical(transition, unset)
-            ? this.transition
-            : transition as SlideTransitionSpec?,
-        extra: extra,
-      );
+  }) => Slide(
+    id: id ?? this.id,
+    background: identical(background, unset)
+        ? this.background
+        : background as SlideBackground?,
+    elements: elements == null ? this.elements : List.unmodifiable(elements),
+    notes: notes ?? this.notes,
+    layoutId: layoutId ?? this.layoutId,
+    transition: identical(transition, unset)
+        ? this.transition
+        : transition as SlideTransitionSpec?,
+    extra: extra,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -142,14 +140,14 @@ class Slide {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        background,
-        Object.hashAll(elements),
-        notes,
-        layoutId,
-        transition,
-        jsonHash(extra),
-      );
+    id,
+    background,
+    Object.hashAll(elements),
+    notes,
+    layoutId,
+    transition,
+    jsonHash(extra),
+  );
 
   @override
   String toString() => 'Slide($id, ${elements.length} elements)';
