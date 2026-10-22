@@ -124,20 +124,19 @@ dependencies:
   ffi: ^2.2.0
   hooks: ^2.2.0
 
-# Patched desktop_drop: upstream's web handler calls webkitGetAsEntry()! on every
-# item in a drag, but that returns null for the string items a drag carries
-# alongside its files -- dragging from the browser's downloads menu sends
-# text/uri-list and text/plain next to the file. The null assert threw before
-# catchError was attached, so nothing uploaded and the drag highlight stayed
-# stuck. See #1831, and upstream MixinNetwork/flutter-plugins#456 / #459.
-# Tracks our fork's main; pubspec.lock pins the resolved commit, so a build is
-# still reproducible -- but `pub upgrade` will take whatever main has moved to.
-# Drop this override once a release carrying the fix is on pub.dev.
+# desktop_drop pinned to upstream's merge commit of MixinNetwork/flutter-plugins#503
+# (the #1831 fix): upstream's web handler called webkitGetAsEntry()! on every
+# item in a drag, which is null for the string items a drag carries alongside
+# its files (the browser's downloads menu sends text/uri-list and text/plain),
+# so nothing uploaded and the drag highlight stayed stuck. The pin stays on the
+# 0.8.4 API until the hosted ^0.9 migration is unblocked: desktop_drop 0.9
+# needs cross_file ^0.4 while flutter_image_compress needs cross_file ^0.3.
+# Drop this override once that move is done (#3640).
 dependency_overrides:
   desktop_drop:
     git:
-      url: https://github.com/autobutler-org/flutter-plugins.git
-      ref: main
+      url: https://github.com/MixinNetwork/flutter-plugins.git
+      ref: 541ad007b7fa7a3316778f559415d3eb3cebfe67
       path: packages/desktop_drop
 
 dev_dependencies:
