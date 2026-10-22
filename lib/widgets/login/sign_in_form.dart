@@ -148,57 +148,74 @@ class SignInForm extends StatelessWidget {
             const SizedBox(height: 16),
           ],
 
-          // Username
-          TextFormField(
-            controller: usernameController,
-            focusNode: usernameFocus,
-            decoration: const InputDecoration(
-              labelText: 'Username',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(QuarkIcons.person_outline),
-            ),
-            onTap: onFieldTap,
-            textInputAction: TextInputAction.next,
-            autofillHints: const [AutofillHints.username],
-            autocorrect: false,
-            onFieldSubmitted: (_) {
-              FocusScope.of(context).requestFocus(passwordFocus);
-            },
-            // Revalidates as the user types once they have touched the
-            // field, so "Username is required" goes away when they supply
-            // one instead of sitting there until the next submit (#2020).
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Username is required' : null,
-          ),
-          const SizedBox(height: 16),
-
-          // Password
-          TextFormField(
-            controller: passwordController,
-            focusNode: passwordFocus,
-            obscureText: obscurePassword,
-            decoration: InputDecoration(
-              labelText: 'Password',
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(QuarkIcons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscurePassword
-                      ? QuarkIcons.visibility_outlined
-                      : QuarkIcons.visibility_off_outlined,
+          // One group, so on web the browser sees a password input beside
+          // the username one: Flutter puts a DOM input only behind the
+          // focused field and the rest of its group, and a password manager
+          // filling from the DOM found nothing to put the password in
+          // (#3591). Leaving the tree after a sign-in commits the group,
+          // which offers to save the login.
+          AutofillGroup(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Username
+                TextFormField(
+                  controller: usernameController,
+                  focusNode: usernameFocus,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(QuarkIcons.person_outline),
+                  ),
+                  onTap: onFieldTap,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.username],
+                  autocorrect: false,
+                  onFieldSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(passwordFocus);
+                  },
+                  // Revalidates as the user types once they have touched the
+                  // field, so "Username is required" goes away when they supply
+                  // one instead of sitting there until the next submit (#2020).
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Username is required'
+                      : null,
                 ),
-                tooltip: obscurePassword ? 'Show password' : 'Hide password',
-                onPressed: onTogglePassword,
-              ),
+                const SizedBox(height: 16),
+
+                // Password
+                TextFormField(
+                  controller: passwordController,
+                  focusNode: passwordFocus,
+                  obscureText: obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(QuarkIcons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword
+                            ? QuarkIcons.visibility_outlined
+                            : QuarkIcons.visibility_off_outlined,
+                      ),
+                      tooltip: obscurePassword
+                          ? 'Show password'
+                          : 'Hide password',
+                      onPressed: onTogglePassword,
+                    ),
+                  ),
+                  onTap: onFieldTap,
+                  textInputAction: TextInputAction.done,
+                  autofillHints: const [AutofillHints.password],
+                  onFieldSubmitted: (_) => loading ? null : onSubmit(),
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? 'Password is required' : null,
+                ),
+              ],
             ),
-            onTap: onFieldTap,
-            textInputAction: TextInputAction.done,
-            autofillHints: const [AutofillHints.password],
-            onFieldSubmitted: (_) => loading ? null : onSubmit(),
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (v) =>
-                (v == null || v.isEmpty) ? 'Password is required' : null,
           ),
           const SizedBox(height: 24),
 
