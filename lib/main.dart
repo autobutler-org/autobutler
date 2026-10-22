@@ -13,9 +13,12 @@ import 'package:quark/controllers/connection_controller.dart';
 import 'package:quark/controllers/file_browser_cache.dart';
 import 'package:quark/controllers/jobs_controller.dart';
 import 'package:quark/controllers/notifications_controller.dart';
+import 'package:quark/controllers/vault_cache_controller.dart';
+import 'package:quark/controllers/vault_controller.dart';
 import 'package:quark/router.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/auth_service.dart';
+import 'package:quark/services/download_notices.dart';
 import 'package:quark/services/local_trust_overrides_stub.dart'
     if (dart.library.io) 'package:quark/services/local_trust_overrides_io.dart';
 import 'package:quark/services/video_playback_backend.dart';
@@ -74,10 +77,19 @@ Future<void> _run() async {
   ChatKeysController.instance.start();
   // Shares channel keys with members who are waiting for them (#2417).
   ChatChannelKeysController.instance.start();
+  // Keeps the vault's ciphertext where native autofill can read it (#3596).
+  VaultCacheController.instance.start(vault: VaultController.instance);
   // A right-click opens an item's own menu everywhere it has one (#2276), so
   // the browser's menu is turned off once, for the whole app. Text fields
   // fall back to Flutter's own copy/paste menu.
   if (kIsWeb) await BrowserContextMenu.disableContextMenu();
+  // Says why a picture went to Files rather than Photos (#3334), on whatever
+  // page started the download.
+  downloadNotices.listen(
+    (message) => rootScaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(content: Text(message)),
+    ),
+  );
   deferFirstFrameUntilRouted(binding, router.routerDelegate);
   runApp(const QuarkApp());
 }

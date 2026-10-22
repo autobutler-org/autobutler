@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quark/services/authenticated_service.dart';
+import 'package:quark/services/download_destination.dart';
 import 'package:quark/services/file_save_io.dart';
 import 'package:quark/services/files_service.dart';
+import 'package:quark/utils/error_text.dart';
 
 // The desktop save (#3150): the destination is asked for before anything is
 // downloaded, and the download is then moved there, never held in memory.
@@ -122,5 +124,90 @@ void main() {
       destination,
     );
     expect(await File(destination).readAsString(), 'hello');
+  });
+
+  // The mobile save (#3334): the photo library for pictures and videos, the
+  // save dialog for the rest and for anything the library cannot take.
+  group('saveToPhotoLibraryOrFiles', () {
+    late List<String> calls;
+    late List<String> notices;
+
+    setUp(() {
+      calls = [];
+      notices = [];
+    });
+
+    Future<String?> save(
+      DownloadDestination destination, {
+      bool allowed = true,
+      bool libraryRefuses = false,
+      String? filesResult = '/files/saved',
+    }) => saveToPhotoLibraryOrFiles(
+      destination: destination,
+      requestAccess: () async {
+        calls.add('ask');
+        return allowed;
+      },
+      saveToLibrary: (destination) async {
+        calls.add('library:${destination.name}');
+        if (libraryRefuses) throw Exception('unsupported format');
+        return 'asset-1';
+      },
+      saveToFiles: () async {
+        calls.add('files');
+        return filesResult;
+      },
+      notify: notices.add,
+    );
+
+    test('a picture goes to the library', () async {
+      expect(await save(DownloadDestination.photoLibraryImage), 'asset-1');
+      expect(calls, ['ask', 'library:photoLibraryImage']);
+      expect(notices, isEmpty);
+    });
+
+    test('a video goes to the library', () async {
+      expect(await save(DownloadDestination.photoLibraryVideo), 'asset-1');
+      expect(calls, ['ask', 'library:photoLibraryVideo']);
+    });
+
+    test(
+      'another file goes to Files without asking for photo access',
+      () async {
+        expect(await save(DownloadDestination.files), '/files/saved');
+        expect(calls, ['files']);
+        expect(notices, isEmpty);
+      },
+    );
+
+    test('declined access still saves to Files and says why', () async {
+      expect(
+        await save(DownloadDestination.photoLibraryImage, allowed: false),
+        '/files/saved',
+      );
+      expect(calls, ['ask', 'files']);
+      expect(notices, [Errors.photoLibraryAccessDenied]);
+    });
+
+    test('declined access then a canceled dialog says nothing', () async {
+      expect(
+        await save(
+          DownloadDestination.photoLibraryImage,
+          allowed: false,
+          filesResult: null,
+        ),
+        isNull,
+      );
+      expect(notices, isEmpty);
+    });
+
+    test('a file the library refuses goes to Files', () async {
+      expect(
+        await save(DownloadDestination.photoLibraryImage, libraryRefuses: true),
+        '/files/saved',
+      );
+      expect(calls, ['ask', 'library:photoLibraryImage', 'files']);
+      expect(notices, isEmpty);
+    });
   });
 }

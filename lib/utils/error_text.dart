@@ -202,6 +202,12 @@ abstract final class Errors {
     QuarkModelParseIssue.noSurfaces => 'This model has no surfaces to show.',
   };
 
+  /// A download meant for the photo library went through the save dialog
+  /// instead, because the person declined photo access (#3334).
+  static const String photoLibraryAccessDenied =
+      "Quark isn't allowed to add to your photos, so this was saved as a file "
+      'instead. You can allow it in Settings.';
+
   /// Files dropped onto the Photos page that are not images. The page leaves
   /// them out rather than filling the library with them (#2214).
   static String notPhotos(int count) => count == 1
