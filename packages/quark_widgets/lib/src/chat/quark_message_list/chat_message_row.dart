@@ -41,15 +41,20 @@ import 'chat_message_row/chat_reaction_picker.dart';
 /// leading edge, and a screen reader hears "Mentions you". An unverified
 /// message draws no mentions: its text is not the sender's.
 ///
+/// While the menu a long press or right-click opened is open, the row stands
+/// on a tint of the primary color. It clears when an entry is chosen or the
+/// menu is dismissed, and "Add reaction" keeps it until its emoji menu closes.
+///
 /// A part of `QuarkMessageList`, tested through it.
 ///
-/// Key prefixes: `message_mention_<id>` on the highlight of a message that
+/// Key prefixes: `message_menu_open_<id>` on the row's tint (its color is
+/// null when no menu is open), `message_mention_<id>` on the highlight of a message that
 /// mentions the reader, `message_body_<id>` on a text message's body,
 /// `message_menu_<id>` on the menu button, `message_copy_<id>`,
 /// `message_menu_react_<id>` and `message_delete_<id>` on the menu's entries,
 /// `message_menu_react_<id>_<emoji>` on each emoji "Add reaction" offers, and
 /// those of `ChatReactionBar` and `ChatReactionPicker`.
-class ChatMessageRow extends StatelessWidget {
+class ChatMessageRow extends StatefulWidget {
   /// Creates the row for [message].
   const ChatMessageRow({
     required this.message,
@@ -106,8 +111,9 @@ class ChatMessageRow extends StatelessWidget {
   /// reaction" opens its emoji there. Empty for anything but a text message.
   List<QuarkMenuEntry> menuEntries(
     BuildContext context,
-    Offset Function() position,
-  ) {
+    Offset Function() position, {
+    ValueChanged<Future<void>>? onReactionMenu,
+  }) {
     final onCopy = this.onCopy;
     final onDelete = this.onDelete;
     final onReact = this.onReact;
@@ -127,7 +133,7 @@ class ChatMessageRow extends StatelessWidget {
           icon: QuarkIcons.add_reaction_outlined,
           onSelected: () {
             if (!context.mounted) return;
-            showQuarkMenu(
+            final emojiMenu = showQuarkMenu(
               context,
               position: position(),
               entries: [
@@ -139,6 +145,7 @@ class ChatMessageRow extends StatelessWidget {
                   ),
               ],
             );
+            onReactionMenu?.call(emojiMenu);
           },
         ),
       if (onDelete != null)
@@ -163,25 +170,59 @@ class ChatMessageRow extends StatelessWidget {
       '${at.minute.toString().padLeft(2, '0')}';
 
   @override
+  State<ChatMessageRow> createState() => _ChatMessageRowState();
+}
+
+/// The state of a [ChatMessageRow]: whether its long-press or right-click menu
+/// is open, which tints the row until that menu, and the emoji menu "Add
+/// reaction" opens in its place, has closed.
+class _ChatMessageRowState extends State<ChatMessageRow> {
+  bool _menuOpen = false;
+
+  Future<void> _openMenu(BuildContext context, Offset position) async {
+    // "Add reaction" opens its emoji menu as the first one closes; that
+    // future is waited on too, so the tint does not blink off between them.
+    Future<void>? emojiMenu;
+    setState(() => _menuOpen = true);
+    try {
+      await showQuarkMenu(
+        context,
+        position: position,
+        entries: widget.menuEntries(
+          context,
+          () => position,
+          onReactionMenu: (menu) => emojiMenu = menu,
+        ),
+      );
+      await emojiMenu;
+    } finally {
+      if (mounted) setState(() => _menuOpen = false);
+    }
+  }
+
+  @override
+  @override
   Widget build(BuildContext context) {
     final tokens = QuarkTokens.of(context);
-    final avatar = this.avatar;
-    final onReact = this.onReact;
+    final message = widget.message;
+    final avatarSize = widget.avatarSize;
+    final onCopy = widget.onCopy;
+    final onDelete = widget.onDelete;
+    final onOpenLink = widget.onOpenLink;
+    final longPressOpensMenu = widget.longPressOpensMenu;
+    final avatar = widget.avatar;
+    final onReact = widget.onReact;
     final reacts = message.kind == ChatMessageKind.text;
-    final selfName = this.selfName;
+    final selfName = widget.selfName;
     final mentionNames = reacts && !message.isUnverified
-        ? this.mentionNames
+        ? widget.mentionNames
         : const <String>[];
     final mentionsSelf =
         selfName != null &&
         ChatMentions.mentions(message.body, mentionNames, selfName);
     final hasMenu =
         reacts && (onCopy != null || onReact != null || onDelete != null);
-    void openMenu(Offset position) => showQuarkMenu(
-      context,
-      position: position,
-      entries: menuEntries(context, () => position),
-    );
+    void openMenu(Offset position) => _openMenu(context, position);
     final muted = TextStyle(
       color: tokens.mutedForeground,
       fontStyle: FontStyle.italic,
@@ -227,142 +268,148 @@ class ChatMessageRow extends StatelessWidget {
       ),
     };
 
-    final row = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPressStart: hasMenu && longPressOpensMenu
-          ? (details) => openMenu(details.globalPosition)
-          : null,
-      onSecondaryTapUp: hasMenu
-          ? (details) => openMenu(details.globalPosition)
-          : null,
-      child: Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: tokens.spacingMd,
-          top: avatar == null ? tokens.spacingXs : tokens.spacingSm,
-          end: tokens.spacingMd,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(width: avatarSize, child: avatar),
-            SizedBox(width: tokens.spacingSm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (avatar != null)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            message.authorName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: tokens.foreground,
-                              fontWeight: FontWeight.w600,
+    final row = DecoratedBox(
+      key: ValueKey('message_menu_open_${message.id}'),
+      decoration: BoxDecoration(
+        color: _menuOpen ? tokens.primary.withValues(alpha: 0.16) : null,
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPressStart: hasMenu && longPressOpensMenu
+            ? (details) => openMenu(details.globalPosition)
+            : null,
+        onSecondaryTapUp: hasMenu
+            ? (details) => openMenu(details.globalPosition)
+            : null,
+        child: Padding(
+          padding: EdgeInsetsDirectional.only(
+            start: tokens.spacingMd,
+            top: avatar == null ? tokens.spacingXs : tokens.spacingSm,
+            end: tokens.spacingMd,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: avatarSize, child: avatar),
+              SizedBox(width: tokens.spacingSm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (avatar != null)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              message.authorName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: tokens.foreground,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: tokens.spacingSm),
-                        Text(
-                          timeOf(message.sentAt),
-                          style: TextStyle(
-                            color: tokens.mutedForeground,
-                            fontSize: 12,
+                          SizedBox(width: tokens.spacingSm),
+                          Text(
+                            ChatMessageRow.timeOf(message.sentAt),
+                            style: TextStyle(
+                              color: tokens.mutedForeground,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  // The buttons stand beside the body, not the header: their
-                  // 48dp sets the height of a short message, and beside the
-                  // header they would set it short of the rest (#2890). They
-                  // sit at the body's foot, level with its reactions: a
-                  // reversed list grows a row upward, and from the top the
-                  // first reaction moved the button just used from under the
-                  // pointer and the focus ring (#3257).
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        // At least as tall as the buttons, with the body at
-                        // its top, so the buttons' foot is the body's.
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            minHeight: kMinInteractiveDimension,
-                          ),
-                          child: Align(
-                            alignment: AlignmentDirectional.topStart,
-                            heightFactor: 1,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                maxWidth: maxBodyWidth,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  body,
-                                  if (reacts && message.reactions.isNotEmpty)
-                                    ChatReactionBar(
-                                      messageId: message.id,
-                                      reactions: message.reactions,
-                                      onToggle: onReact,
-                                    ),
-                                  if (message.isUnverified)
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          QuarkIcons.warning_amber,
-                                          size: 14,
-                                          color: tokens.warning,
-                                        ),
-                                        SizedBox(width: tokens.spacingXs),
-                                        Flexible(
-                                          child: Text(
-                                            'Unverified',
-                                            style: TextStyle(
-                                              color: tokens.warning,
-                                              fontSize: 12,
+                        ],
+                      ),
+                    // The buttons stand beside the body, not the header: their
+                    // 48dp sets the height of a short message, and beside the
+                    // header they would set it short of the rest (#2890). They
+                    // sit at the body's foot, level with its reactions: a
+                    // reversed list grows a row upward, and from the top the
+                    // first reaction moved the button just used from under the
+                    // pointer and the focus ring (#3257).
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          // At least as tall as the buttons, with the body at
+                          // its top, so the buttons' foot is the body's.
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minHeight: kMinInteractiveDimension,
+                            ),
+                            child: Align(
+                              alignment: AlignmentDirectional.topStart,
+                              heightFactor: 1,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: ChatMessageRow.maxBodyWidth,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    body,
+                                    if (reacts && message.reactions.isNotEmpty)
+                                      ChatReactionBar(
+                                        messageId: message.id,
+                                        reactions: message.reactions,
+                                        onToggle: onReact,
+                                      ),
+                                    if (message.isUnverified)
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            QuarkIcons.warning_amber,
+                                            size: 14,
+                                            color: tokens.warning,
+                                          ),
+                                          SizedBox(width: tokens.spacingXs),
+                                          Flexible(
+                                            child: Text(
+                                              'Unverified',
+                                              style: TextStyle(
+                                                color: tokens.warning,
+                                                fontSize: 12,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
+                                        ],
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      if (reacts && onReact != null)
-                        ChatReactionPicker(
-                          messageId: message.id,
-                          onPick: onReact,
-                        ),
-                      if (hasMenu)
-                        // The same 48dp touch target as the picker beside it,
-                        // so the two glyphs share a center (#2605). The
-                        // Builder makes the button the anchor of "Add
-                        // reaction".
-                        Builder(
-                          builder: (context) => QuarkMenuButton(
-                            key: ValueKey('message_menu_${message.id}'),
-                            tooltip: 'Message actions',
-                            iconSize: 18,
-                            entries: menuEntries(
-                              context,
-                              () => quarkMenuAnchor(context),
+                        if (reacts && onReact != null)
+                          ChatReactionPicker(
+                            messageId: message.id,
+                            onPick: onReact,
+                          ),
+                        if (hasMenu)
+                          // The same 48dp touch target as the picker beside it,
+                          // so the two glyphs share a center (#2605). The
+                          // Builder makes the button the anchor of "Add
+                          // reaction".
+                          Builder(
+                            builder: (context) => QuarkMenuButton(
+                              key: ValueKey('message_menu_${message.id}'),
+                              tooltip: 'Message actions',
+                              iconSize: 18,
+                              entries: widget.menuEntries(
+                                context,
+                                () => quarkMenuAnchor(context),
+                              ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
