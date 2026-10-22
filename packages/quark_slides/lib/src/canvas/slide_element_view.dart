@@ -12,6 +12,7 @@ import 'slide_group_view.dart';
 import 'slide_image_source.dart';
 import 'slide_line_painter.dart';
 import 'slide_placeholder_view.dart';
+import 'slide_shadow_painter.dart';
 import 'slide_shape_painter.dart';
 import 'slide_table_view.dart';
 import 'slide_text_editor.dart';
@@ -32,6 +33,8 @@ import 'slide_text_box_view.dart';
 /// inside a group as well — and speaks for itself to a screen reader.
 /// [showPlaceholder] shows an empty text box's placeholder. A shape or line
 /// is drawn at its opacity; an image reads as its alt text through [label].
+/// A shape or image casts its shadow, when it has one, offset the slide's
+/// way however the element is turned (see [paintShadow]).
 /// A group draws its children inside its frame (see [SlideGroupView]), each
 /// named by [elementLabel]. A text box paints its [highlights] behind its
 /// text. A table draws its cells (see [SlideTableView]), each named by
@@ -181,12 +184,19 @@ class SlideElementView extends StatelessWidget {
           chartDataLabel: chartDataLabel,
         ),
     };
+    final shadowed = switch (element) {
+      ImageElement(:final shadow?) => CustomPaint(
+          painter: SlideShadowPainter(shadow, frame.rotation, theme),
+          child: content,
+        ),
+      _ => content,
+    };
     final opacity = switch (element) {
       ShapeElement(:final opacity) || LineElement(:final opacity) => opacity,
       _ => 1.0,
     };
     final drawn =
-        opacity < 1 ? Opacity(opacity: opacity, child: content) : content;
+        opacity < 1 ? Opacity(opacity: opacity, child: shadowed) : shadowed;
     return Positioned(
       left: frame.x,
       top: frame.y,
