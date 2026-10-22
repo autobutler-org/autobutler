@@ -234,20 +234,6 @@ func SetDeviceID(id string) error {
 	return set("deviceId", id)
 }
 
-// GetActiveBranch returns the active dev branch, or empty string if not set.
-func GetActiveBranch() string {
-	s, err := Load()
-	if err != nil {
-		return ""
-	}
-	return s.ActiveBranch
-}
-
-// SetActiveBranch persists the active dev branch.
-func SetActiveBranch(branch string) error {
-	return set("activeBranch", branch)
-}
-
 // AuthSaltSecret returns this install's salt secret, making and persisting it
 // on first use. Losing it locks nobody out: an account's real salt is stored
 // with the account, and the secret only decides the salt offered for a

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -89,17 +88,15 @@ func TestBytesConversions(t *testing.T) {
 		bytes uint64
 		kb    float64
 		mb    float64
-		gb    float64
 	}{
-		{"1KB", 1024, 1.0, 0.0009765625, 0.00000095367431640625},
-		{"1MB", 1048576, 1024.0, 1.0, 0.0009765625},
-		{"1GB", 1073741824, 1048576.0, 1024.0, 1.0},
-		{"1TB", 1099511627776, 1073741824.0, 1048576.0, 1024.0},
+		{"1KB", 1024, 1.0, 0.0009765625},
+		{"1MB", 1048576, 1024.0, 1.0},
+		{"1GB", 1073741824, 1048576.0, 1024.0},
+		{"1TB", 1099511627776, 1073741824.0, 1048576.0},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Test BytesTo* functions
 			kb := BytesToKB(tt.bytes)
 			if kb != tt.kb {
 				t.Errorf("BytesToKB(%d) = %f; want %f", tt.bytes, kb, tt.kb)
@@ -109,107 +106,7 @@ func TestBytesConversions(t *testing.T) {
 			if mb != tt.mb {
 				t.Errorf("BytesToMB(%d) = %f; want %f", tt.bytes, mb, tt.mb)
 			}
-
-			gb := BytesToGB(tt.bytes)
-			if gb != tt.gb {
-				t.Errorf("BytesToGB(%d) = %f; want %f", tt.bytes, gb, tt.gb)
-			}
 		})
-	}
-}
-
-func TestReverseConversions(t *testing.T) {
-	tests := []struct {
-		name  string
-		kb    float64
-		mb    float64
-		gb    float64
-		tb    float64
-		bytes uint64
-	}{
-		{"1KB to bytes", 1.0, 0, 0, 0, 1024},
-		{"1MB to bytes", 0, 1.0, 0, 0, 1048576},
-		{"1GB to bytes", 0, 0, 1.0, 0, 1073741824},
-		{"1TB to bytes", 0, 0, 0, 1.0, 1099511627776},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.kb > 0 {
-				result := KBToBytes(tt.kb)
-				if result != tt.bytes {
-					t.Errorf("KBToBytes(%f) = %d; want %d", tt.kb, result, tt.bytes)
-				}
-			}
-			if tt.mb > 0 {
-				result := MBToBytes(tt.mb)
-				if result != tt.bytes {
-					t.Errorf("MBToBytes(%f) = %d; want %d", tt.mb, result, tt.bytes)
-				}
-			}
-			if tt.gb > 0 {
-				result := GBToBytes(tt.gb)
-				if result != tt.bytes {
-					t.Errorf("GBToBytes(%f) = %d; want %d", tt.gb, result, tt.bytes)
-				}
-			}
-			if tt.tb > 0 {
-				result := TBToBytes(tt.tb)
-				if result != tt.bytes {
-					t.Errorf("TBToBytes(%f) = %d; want %d", tt.tb, result, tt.bytes)
-				}
-			}
-		})
-	}
-}
-
-func TestCalculateSummary(t *testing.T) {
-	devices := []Device{
-		{
-			TotalBytes:     1000000000000, // 1TB
-			UsedBytes:      500000000000,  // 500GB
-			AvailableBytes: 500000000000,  // 500GB
-		},
-		{
-			TotalBytes:     2000000000000, // 2TB
-			UsedBytes:      1000000000000, // 1TB
-			AvailableBytes: 1000000000000, // 1TB
-		},
-	}
-
-	summary := CalculateSummary(devices)
-
-	if summary.TotalDevices != 2 {
-		t.Errorf("Expected 2 devices, got %d", summary.TotalDevices)
-	}
-
-	if summary.TotalBytes != 3000000000000 {
-		t.Errorf("Expected total bytes 3000000000000, got %d", summary.TotalBytes)
-	}
-
-	if summary.UsedBytes != 1500000000000 {
-		t.Errorf("Expected used bytes 1500000000000, got %d", summary.UsedBytes)
-	}
-
-	if summary.AvailBytes != 1500000000000 {
-		t.Errorf("Expected avail bytes 1500000000000, got %d", summary.AvailBytes)
-	}
-
-	// Check TB conversions (approximately)
-	if summary.TotalTB < 2.7 || summary.TotalTB > 2.8 {
-		t.Errorf("Expected TotalTB around 2.73, got %f", summary.TotalTB)
-	}
-}
-
-func TestCalculateSummary_EmptyDevices(t *testing.T) {
-	summary := CalculateSummary([]Device{})
-
-	if summary.TotalDevices != 0 {
-		t.Errorf("Expected 0 devices, got %d", summary.TotalDevices)
-	}
-
-	if summary.TotalBytes != 0 {
-		t.Errorf("Expected 0 total bytes, got %d", summary.TotalBytes)
 	}
 }
 
@@ -824,35 +721,6 @@ func TestImageMIMEType_RawFormats(t *testing.T) {
 	}
 }
 
-func TestVideoMIMETypeFromExtension(t *testing.T) {
-	tests := []struct {
-		extension string
-		expected  string
-	}{
-		{extension: ".mp4", expected: "video/mp4"},
-		{extension: ".m4v", expected: "video/x-m4v"},
-		{extension: ".webm", expected: "video/webm"},
-		{extension: ".ogv", expected: "video/ogg"},
-		{extension: ".avi", expected: "video/x-msvideo"},
-		{extension: ".mov", expected: "video/quicktime"},
-		{extension: "mp4", expected: "video/mp4"},
-		{extension: ".MP4", expected: "video/mp4"},
-		{extension: " .mov ", expected: "video/quicktime"},
-		{extension: ".mkv", expected: "video/x-matroska"},
-		{extension: ".unknown", expected: "application/octet-stream"},
-		{extension: "", expected: "application/octet-stream"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.extension, func(t *testing.T) {
-			result := VideoMIMETypeFromExtension(tt.extension)
-			if result != tt.expected {
-				t.Errorf("VideoMIMETypeFromExtension(%q) = %q; want %q", tt.extension, result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestAudioMIMETypeFromExtension(t *testing.T) {
 	tests := []struct {
 		extension string
@@ -878,30 +746,6 @@ func TestAudioMIMETypeFromExtension(t *testing.T) {
 			result := AudioMIMETypeFromExtension(tt.extension)
 			if result != tt.expected {
 				t.Errorf("AudioMIMETypeFromExtension(%q) = %q; want %q", tt.extension, result, tt.expected)
-			}
-		})
-	}
-}
-
-func TestSizeBytesToString(t *testing.T) {
-	tests := []struct {
-		name     string
-		bytes    int64
-		expected string
-	}{
-		{"0 bytes", 0, "0 B"},
-		{"500 bytes", 500, "500 B"},
-		{"1 KB", 1024, "1.0 KB"},
-		{"1 MB", 1048576, "1.0 MB"},
-		{"1 GB", 1073741824, "1.0 GB"},
-		{"1 TB", 1099511627776, "1.0 TB"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := SizeBytesToString(tt.bytes)
-			if result != tt.expected {
-				t.Errorf("SizeBytesToString(%d) = %s; want %s", tt.bytes, result, tt.expected)
 			}
 		})
 	}
@@ -937,76 +781,6 @@ func TestCustomFileInfo(t *testing.T) {
 	// Test Sys()
 	if fi.Sys() != nil {
 		t.Error("Expected Sys() to return nil")
-	}
-}
-
-func TestGetDeviceInfoForPath_MacOSVolume(t *testing.T) {
-	if runtime.GOOS != "darwin" {
-		t.Skip("Skipping macOS-specific test")
-	}
-
-	deviceName, devicePath := GetDeviceInfoForPath("/Volumes/MyDrive/some/file.txt")
-	if deviceName != "MyDrive" {
-		t.Errorf("Expected deviceName 'MyDrive', got '%s'", deviceName)
-	}
-	if devicePath != "/Volumes/MyDrive" {
-		t.Errorf("Expected devicePath '/Volumes/MyDrive', got '%s'", devicePath)
-	}
-}
-
-func TestGetDeviceInfoForPath_MacOSMainDrive(t *testing.T) {
-	if runtime.GOOS != "darwin" {
-		t.Skip("Skipping macOS-specific test")
-	}
-
-	deviceName, devicePath := GetDeviceInfoForPath("/Users/test/file.txt")
-	if deviceName != "Macintosh HD" {
-		t.Errorf("Expected deviceName 'Macintosh HD', got '%s'", deviceName)
-	}
-	if devicePath != "/" {
-		t.Errorf("Expected devicePath '/', got '%s'", devicePath)
-	}
-}
-
-func TestGetDeviceInfoForPath_LinuxMedia(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("Skipping Linux-specific test")
-	}
-
-	deviceName, devicePath := GetDeviceInfoForPath("/media/user/USB/file.txt")
-	if deviceName != "USB" {
-		t.Errorf("Expected deviceName 'USB', got '%s'", deviceName)
-	}
-	if devicePath != "/media/user/USB" {
-		t.Errorf("Expected devicePath '/media/user/USB', got '%s'", devicePath)
-	}
-}
-
-func TestGetDeviceInfoForPath_LinuxMnt(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("Skipping Linux-specific test")
-	}
-
-	deviceName, devicePath := GetDeviceInfoForPath("/mnt/external/file.txt")
-	if deviceName != "external" {
-		t.Errorf("Expected deviceName 'external', got '%s'", deviceName)
-	}
-	if devicePath != "/mnt/external" {
-		t.Errorf("Expected devicePath '/mnt/external', got '%s'", devicePath)
-	}
-}
-
-func TestGetDeviceInfoForPath_LinuxRoot(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("Skipping Linux-specific test")
-	}
-
-	deviceName, devicePath := GetDeviceInfoForPath("/home/user/file.txt")
-	if deviceName != "Root" {
-		t.Errorf("Expected deviceName 'Root', got '%s'", deviceName)
-	}
-	if devicePath != "/" {
-		t.Errorf("Expected devicePath '/', got '%s'", devicePath)
 	}
 }
 
@@ -1122,19 +896,6 @@ func TestDetermineFileTypeFromPath_NonexistentFile(t *testing.T) {
 	result := DetermineFileTypeFromPath("/nonexistent/path/file.unknown")
 	if result != FileTypeGeneric {
 		t.Errorf("DetermineFileTypeFromPath(nonexistent) = %s; want %s", result, FileTypeGeneric)
-	}
-}
-
-func TestGetAvailableSpaceInBytes(t *testing.T) {
-	// Test that GetAvailableSpaceInBytes returns a non-zero value for a valid directory
-	tempDir := t.TempDir()
-
-	availableSpace := GetAvailableSpaceInBytes(tempDir)
-
-	// We just verify that it returns a reasonable value (greater than 0)
-	// The actual value will vary by system
-	if availableSpace == 0 {
-		t.Errorf("GetAvailableSpaceInBytes() = 0; want > 0")
 	}
 }
 

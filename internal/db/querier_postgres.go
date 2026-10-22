@@ -469,11 +469,6 @@ func (a *postgresQueries) GetFavoritesAlbum(ctx context.Context, userID int64) (
 	return PhotoAlbum(row), err
 }
 
-func (a *postgresQueries) GetFileContent(ctx context.Context, arg GetFileContentParams) (FileContent, error) {
-	row, err := a.q.GetFileContent(ctx, pgdb.GetFileContentParams(arg))
-	return FileContent(row), err
-}
-
 func (a *postgresQueries) GetGroup(ctx context.Context, id int64) (Group, error) {
 	row, err := a.q.GetGroup(ctx, id)
 	return Group(row), err

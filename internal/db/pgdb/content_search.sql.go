@@ -32,30 +32,6 @@ func (q *Queries) DeleteFileContentBySerial(ctx context.Context, serial string) 
 	return err
 }
 
-const getFileContent = `-- name: GetFileContent :one
-SELECT id, serial, rel_path, extracted, updated_at
-FROM file_content
-WHERE serial = $1 AND rel_path = $2
-`
-
-type GetFileContentParams struct {
-	Serial  string
-	RelPath string
-}
-
-func (q *Queries) GetFileContent(ctx context.Context, arg GetFileContentParams) (FileContent, error) {
-	row := q.db.QueryRowContext(ctx, getFileContent, arg.Serial, arg.RelPath)
-	var i FileContent
-	err := row.Scan(
-		&i.ID,
-		&i.Serial,
-		&i.RelPath,
-		&i.Extracted,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const upsertFileContent = `-- name: UpsertFileContent :exec
 INSERT INTO file_content (serial, rel_path, extracted, updated_at)
 VALUES ($1, $2, $3, CURRENT_TIMESTAMP)

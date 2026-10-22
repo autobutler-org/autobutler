@@ -45,14 +45,6 @@ func NewHttpError(statusCode int, message string) *HttpError {
 	}
 }
 
-// NewHttpErrorf creates an HttpError with the given status code and a formatted message.
-func NewHttpErrorf(statusCode int, format string, args ...any) *HttpError {
-	return &HttpError{
-		StatusCode: statusCode,
-		Message:    fmt.Sprintf(format, args...),
-	}
-}
-
 type Response struct {
 	StatusCode  int
 	Data        any
@@ -182,12 +174,6 @@ func AccessLogger() gin.HandlerFunc {
 // otherwise land in the log.
 func Recovery(out io.Writer) gin.HandlerFunc {
 	return gin.RecoveryWithWriter(redactingWriter{out: out})
-}
-
-func RegisterRouter(engine *gin.Engine, router Router) {
-	for _, route := range router.Routes() {
-		engine.Handle(route.Method, route.Path, route.Handler)
-	}
 }
 
 func WrapApiRoute(handler func(c *gin.Context) *Response) gin.HandlerFunc {

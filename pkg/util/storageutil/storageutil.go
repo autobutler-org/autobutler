@@ -8,10 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
-
-	"golang.org/x/sys/unix"
 )
 
 type FileType string
@@ -94,47 +91,6 @@ func IsRawImageExtension(extension string) bool {
 		return true
 	default:
 		return false
-	}
-}
-
-func VideoMIMETypeFromExtension(extension string) string {
-	normalizedExt := strings.TrimSpace(strings.ToLower(extension))
-	if normalizedExt == "" {
-		return "application/octet-stream"
-	}
-	if !strings.HasPrefix(normalizedExt, ".") {
-		normalizedExt = "." + normalizedExt
-	}
-
-	switch normalizedExt {
-	case ".mp4":
-		return "video/mp4"
-	case ".m4v":
-		return "video/x-m4v"
-	case ".webm":
-		return "video/webm"
-	case ".ogv":
-		return "video/ogg"
-	case ".avi":
-		return "video/x-msvideo"
-	case ".mov":
-		return "video/quicktime"
-	case ".mpeg", ".mpg":
-		return "video/mpeg"
-	case ".mkv":
-		return "video/x-matroska"
-	case ".3gp":
-		return "video/3gpp"
-	case ".3g2":
-		return "video/3gpp2"
-	case ".wmv":
-		return "video/x-ms-wmv"
-	case ".flv":
-		return "video/x-flv"
-	case ".ts":
-		return "video/mp2t"
-	default:
-		return "application/octet-stream"
 	}
 }
 
@@ -251,19 +207,6 @@ func DetermineFileTypeFromPath(filePath string) FileType {
 	}
 }
 
-func SizeBytesToString(size_bytes int64) string {
-	if size_bytes < 1024 {
-		return fmt.Sprintf("%d B", size_bytes)
-	} else if size_bytes < 1024*1024 {
-		return fmt.Sprintf("%.1f KB", float64(size_bytes)/1024)
-	} else if size_bytes < 1024*1024*1024 {
-		return fmt.Sprintf("%.1f MB", float64(size_bytes)/(1024*1024))
-	} else if size_bytes < 1024*1024*1024*1024 {
-		return fmt.Sprintf("%.1f GB", float64(size_bytes)/(1024*1024*1024))
-	}
-	return fmt.Sprintf("%.1f TB", float64(size_bytes)/(1024*1024*1024*1024))
-}
-
 func GetFolderSize(dir string) (int64, error) {
 	var size int64
 	err := filepath.Walk(dir, func(_ string, info fs.FileInfo, err error) error {
@@ -320,72 +263,6 @@ func NumberedName(fileName string, n int) string {
 // SetupFilesDir prepares the system storage root. Called once on startup.
 func SetupFilesDir() error {
 	return setupFilesDirIn(GetDataDir())
-}
-
-// GetDeviceInfoForPath returns the device name and device path for a given file path
-// This is used to populate device info even for single-device scenarios
-func GetDeviceInfoForPath(path string) (deviceName string, devicePath string) {
-	// Get the absolute path
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return "", "" // coverage: ignore - requires filepath.Abs to fail
-	}
-
-	// Try to detect the device this path is on
-	// This is a best-effort approach using the storage package
-	// Import note: we can't import storage here due to circular dependency,
-	// so we'll use a simple heuristic based on mount points
-
-	// For now, use a simple approach: check if path starts with common mount points
-	// This could be enhanced later to use actual device detection
-	switch runtime.GOOS {
-	case "darwin": // coverage: ignore - Not run in CI
-		// On macOS, check if it's under /Volumes/
-		if strings.HasPrefix(absPath, "/Volumes/") {
-			parts := strings.Split(absPath, "/")
-			if len(parts) >= 3 {
-				deviceName = parts[2] // Volume name
-				devicePath = filepath.Join("/Volumes", parts[2])
-				return
-			}
-		}
-		// Default to "Macintosh HD" for main drive
-		deviceName = "Macintosh HD"
-		devicePath = "/"
-	case "linux": // coverage: ignore - Not run in mac dev environments
-		// On Linux, check if it's under /media/ or /mnt/
-		if strings.HasPrefix(absPath, "/media/") { // coverage: ignore
-			parts := strings.Split(absPath, "/")
-			if len(parts) >= 4 { // coverage: ignore
-				deviceName = parts[3] // Device name
-				devicePath = filepath.Join("/media", parts[2], parts[3])
-				return
-			}
-		} else if strings.HasPrefix(absPath, "/mnt/") { // coverage: ignore
-			parts := strings.Split(absPath, "/")
-			if len(parts) >= 3 { // coverage: ignore
-				deviceName = parts[2] // Mount point name
-				devicePath = filepath.Join("/mnt", parts[2])
-				return
-			}
-		}
-		// Default to root filesystem
-		deviceName = "Root" // coverage: ignore
-		devicePath = "/"    // coverage: ignore
-	default: // coverage: ignore - unsupported OS
-		deviceName = "Default"
-		devicePath = "/"
-	}
-
-	return
-}
-
-func GetAvailableSpaceInBytes(fileDir string) uint64 {
-	var stat unix.Statfs_t
-	if err := unix.Statfs(fileDir, &stat); err != nil {
-		return 0
-	}
-	return stat.Bavail * uint64(stat.Bsize)
 }
 
 // InitializeDeviceDataDir creates the quark data directory structure on a device

@@ -56,13 +56,6 @@ type ConvertDocumentResult struct {
 	Warnings []string
 }
 
-// IsDocumentPath reports whether a path names a word-processing document
-// the document readers understand. The list grows with docreadutil's.
-func IsDocumentPath(filePath string) bool {
-	_, ok := docreadutil.FormatForName(filePath)
-	return ok
-}
-
 // ConvertDocumentToQdoc reads the document at params.FilePath and writes it
 // as a sibling .qdoc ("Open as Quark doc"). The document itself is left
 // untouched.

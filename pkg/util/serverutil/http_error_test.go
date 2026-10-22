@@ -63,56 +63,6 @@ func TestNewHttpError(t *testing.T) {
 	}
 }
 
-func TestNewHttpErrorf(t *testing.T) {
-	tests := []struct {
-		name       string
-		statusCode int
-		format     string
-		args       []any
-		wantMsg    string
-	}{
-		{
-			name:       "single string arg",
-			statusCode: http.StatusBadRequest,
-			format:     "invalid field: %s",
-			args:       []any{"email"},
-			wantMsg:    "invalid field: email",
-		},
-		{
-			name:       "int arg",
-			statusCode: http.StatusNotFound,
-			format:     "user %d not found",
-			args:       []any{42},
-			wantMsg:    "user 42 not found",
-		},
-		{
-			name:       "multiple args",
-			statusCode: http.StatusForbidden,
-			format:     "%s cannot access %s",
-			args:       []any{"guest", "/admin"},
-			wantMsg:    "guest cannot access /admin",
-		},
-		{
-			name:       "no args",
-			statusCode: http.StatusConflict,
-			format:     "conflict detected",
-			args:       nil,
-			wantMsg:    "conflict detected",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := NewHttpErrorf(tt.statusCode, tt.format, tt.args...)
-			if err.StatusCode != tt.statusCode {
-				t.Errorf("StatusCode = %d, want %d", err.StatusCode, tt.statusCode)
-			}
-			if err.Message != tt.wantMsg {
-				t.Errorf("Message = %q, want %q", err.Message, tt.wantMsg)
-			}
-		})
-	}
-}
-
 func TestHttpError_ImplementsError(t *testing.T) {
 	var _ error = (*HttpError)(nil)
 }

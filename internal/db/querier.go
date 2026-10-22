@@ -210,7 +210,6 @@ type Querier interface {
 	GetDeviceName(ctx context.Context, deviceSerial string) (string, error)
 	GetDeviceRole(ctx context.Context, deviceSerial string) (string, error)
 	GetFavoritesAlbum(ctx context.Context, userID int64) (PhotoAlbum, error)
-	GetFileContent(ctx context.Context, arg GetFileContentParams) (FileContent, error)
 	GetGroup(ctx context.Context, id int64) (Group, error)
 	GetInstallID(ctx context.Context) (string, error)
 	GetJob(ctx context.Context, id int64) (Job, error)

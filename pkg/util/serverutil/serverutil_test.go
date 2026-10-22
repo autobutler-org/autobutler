@@ -322,13 +322,6 @@ func TestHttpError_Error(t *testing.T) {
 	}
 }
 
-func TestHttpErrorf(t *testing.T) {
-	err := serverutil.NewHttpErrorf(http.StatusBadRequest, "invalid param: %s", "foo")
-	if err.Error() != "invalid param: foo" {
-		t.Errorf("expected 'invalid param: foo', got %q", err.Error())
-	}
-}
-
 func TestWrapApiRoute_HttpErrorOverridesStatusCode(t *testing.T) {
 	handler := func(c *gin.Context) *serverutil.Response {
 		httpErr := serverutil.NewHttpError(http.StatusNotFound, "thing not found")
@@ -376,42 +369,6 @@ type mockRouter struct {
 
 func (m *mockRouter) Routes() []*serverutil.Route {
 	return m.routes
-}
-
-func TestRegisterRouter(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	engine := gin.New()
-
-	router := &mockRouter{
-		routes: []*serverutil.Route{
-			serverutil.NewRoute("GET", "/test", func(c *gin.Context) {
-				c.String(200, "OK")
-			}),
-			serverutil.NewRoute("POST", "/test", func(c *gin.Context) {
-				c.String(201, "Created")
-			}),
-		},
-	}
-
-	serverutil.RegisterRouter(engine, router)
-
-	// Test GET route
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
-	engine.ServeHTTP(w, req)
-
-	if w.Code != 200 {
-		t.Errorf("expected status 200 for GET /test, got %d", w.Code)
-	}
-
-	// Test POST route
-	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("POST", "/test", nil)
-	engine.ServeHTTP(w, req)
-
-	if w.Code != 201 {
-		t.Errorf("expected status 201 for POST /test, got %d", w.Code)
-	}
 }
 
 func TestRegisterRouterWithGroup(t *testing.T) {

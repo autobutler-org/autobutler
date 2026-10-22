@@ -15,7 +15,6 @@ import (
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/internal/db/dbtest"
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/authutil"
 	"github.com/autobutler-org/quark/pkg/util/avatarutil"
 	"github.com/autobutler-org/quark/pkg/util/chatutil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
@@ -278,31 +277,6 @@ func TestResolvePermsUnionsEveryRow(t *testing.T) {
 	}
 	if got := f.resolve(t, "bob", channel.ID); got != chatutil.PermsAll {
 		t.Errorf("bob = %v, want every permission", got)
-	}
-
-	resolved, err := chatutil.ResolveMemberUsers(chatutil.ResolveMemberUsersParams{Ctx: context.Background(), Database: f.database, ChannelID: channel.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	wantUsers := []chatutil.ResolvedUser{
-		{UserID: f.users["admin"], Username: "admin", Perms: chatutil.PresetViewer},
-		{UserID: f.users["bob"], Username: "bob", Perms: chatutil.PermsAll},
-		{UserID: f.users["carol"], Username: "carol", Perms: want},
-		{UserID: f.users["dave"], Username: "dave", Perms: chatutil.PermReadMessages | chatutil.PermSendMessages},
-	}
-	if !slices.Equal(resolved.Users, wantUsers) {
-		t.Errorf("ResolveMemberUsers = %+v, want %+v", resolved.Users, wantUsers)
-	}
-
-	// A disabled account drops out of everyone.
-	if _, err := f.database.Queries.SetUserStatus(context.Background(), db.SetUserStatusParams{
-		ToStatus: authutil.StatusDisabled, Username: "admin", FromStatus: authutil.StatusActive,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	resolved, err = chatutil.ResolveMemberUsers(chatutil.ResolveMemberUsersParams{Ctx: context.Background(), Database: f.database, ChannelID: channel.ID})
-	if err != nil || len(resolved.Users) != 3 {
-		t.Errorf("ResolveMemberUsers after disabling admin = %+v, %v; want 3 users", resolved.Users, err)
 	}
 }
 
