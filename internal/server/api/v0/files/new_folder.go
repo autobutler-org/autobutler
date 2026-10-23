@@ -4,8 +4,6 @@ import (
 	"errors"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
@@ -40,20 +38,12 @@ func newFolder(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(errors.New("folderName is required"))
 	}
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-	check := access.Check(serial, folderDir, accessutil.Write)
-	if !check.Readable {
-		return serverutil.NotFound(errNoAccess)
-	}
-	if !check.Allowed {
-		return serverutil.Forbidden(errReadOnly)
+	if resp := gate(access, serial, folderDir, accessutil.Write); resp != nil {
+		return resp
 	}
 
 	result, err := fileutil.CreateFolder(fileutil.CreateFolderParams{
@@ -68,7 +58,7 @@ func newFolder(c *gin.Context) *serverutil.Response {
 		return fileError(err)
 	}
 	if result.Created {
-		grantOwner(c, deps, access, serial, result.Path)
+		accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, serial, result.Path)
 	}
 	return serverutil.Ok()
 }

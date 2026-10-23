@@ -23,12 +23,8 @@ func ctxOf(d Device) context.Context {
 // namespace, or no registry at all, is storageutil.ErrDeviceNotFound, so a
 // request for an unplugged drive never lands on another device's trash.
 func trasherFor(d Device) (vfs.Trasher, error) {
-	var fsys vfs.VFS
-	ok := false
-	if d.Registry != nil {
-		fsys, ok = d.Registry.Get(vfs.FilesNamespace(d.Serial))
-	}
-	if !ok {
+	fsys, err := vfs.FilesFS(d.Registry, d.Serial)
+	if err != nil {
 		return nil, fmt.Errorf("%w: %s", storageutil.ErrDeviceNotFound, d.Serial)
 	}
 	trasher, ok := fsys.(vfs.Trasher)

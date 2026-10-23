@@ -6,8 +6,6 @@ import (
 	"path"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
@@ -38,19 +36,12 @@ func convertDocument(c *gin.Context) *serverutil.Response {
 	}
 	serial := c.Query("serial")
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-	if !access.Check(serial, filePath, accessutil.Read).Readable {
-		return serverutil.NotFound(errNoAccess)
-	}
-	if !access.Check(serial, path.Dir(filePath), accessutil.Write).Allowed {
-		return serverutil.Forbidden(errReadOnly)
+	if resp := gateReadWrite(access, serial, filePath, path.Dir(filePath)); resp != nil {
+		return resp
 	}
 
 	result, err := fileutil.ConvertDocumentToQdoc(fileutil.ConvertDocumentParams{
@@ -70,7 +61,7 @@ func convertDocument(c *gin.Context) *serverutil.Response {
 		return fileError(err)
 	}
 	if !result.Replaced {
-		grantOwner(c, deps, access, serial, result.Path)
+		accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, serial, result.Path)
 	}
 
 	warnings := result.Warnings

@@ -66,16 +66,12 @@ func uploadFilesNested(c *gin.Context, rootDir string) *serverutil.Response {
 		return serverutil.BadRequest(errBothConflictChoices)
 	}
 	// Checked before a byte of the body is read.
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	access, resp := loadAccess(c, deps)
+	if resp != nil {
+		return resp
 	}
-	check := access.Check(serial, rootDir, accessutil.Write)
-	if !check.Readable {
-		return serverutil.NotFound(errNoAccess)
-	}
-	if !check.Allowed {
-		return serverutil.Forbidden(errReadOnly)
+	if resp := gate(access, serial, rootDir, accessutil.Write); resp != nil {
+		return resp
 	}
 	reader, err := c.Request.MultipartReader()
 	if err != nil {

@@ -5,13 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/autobutler-org/quark/pkg/util/docreadutil"
 	"github.com/autobutler-org/quark/pkg/util/eventbus"
-	"github.com/autobutler-org/quark/pkg/util/uploadutil"
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
@@ -72,104 +69,25 @@ func ConvertDocumentToQdoc(params ConvertDocumentParams) (ConvertDocumentResult,
 		}
 	}
 
-	dir := path.Dir(cleanRelPath(params.FilePath))
-	if dir == "." || dir == "/" {
-		dir = ""
-	}
-	base := path.Base(cleanRelPath(params.FilePath))
-	stem := strings.TrimSuffix(base, filepath.Ext(base))
-	target := path.Join(dir, stem+".qdoc")
-
-	fsys, err := FilesVFS(params.Registry, params.Serial)
-	if err != nil {
-		return ConvertDocumentResult{}, err
-	}
-	existed, err := exists(params.Ctx, fsys, target)
-	if err != nil {
-		return ConvertDocumentResult{}, err
-	}
-	if existed && !params.Overwrite {
-		return ConvertDocumentResult{}, fmt.Errorf("%w: %s already exists", vfs.ErrConflict, target)
-	}
-
-	// openXlsx opens any file for random access; a document is a zip too.
-	source, size, closer, err := openXlsx(params.Ctx, fsys, params.FilePath)
-	if err != nil {
-		return ConvertDocumentResult{}, err
-	}
-	defer closer.Close()
-
-	dest := uploadutil.Destination{
-		Registry: params.Registry,
-		// The move below publishes the path that matters.
-		EventBus: nil,
-	}
-	tempName := "." + stem + ".qdoc.converting"
-
-	pr, pw := io.Pipe()
-	type outcome struct {
-		result docreadutil.ConvertResult
-		err    error
-	}
-	converted := make(chan outcome, 1)
-	go func() {
-		result, err := docreadutil.Convert(docreadutil.ConvertParams{
-			Ctx:    params.Ctx,
-			Source: source,
-			Size:   size,
-			Format: format,
-			Output: docreadutil.OutputDelta,
-			Out:    pw,
+	done, target, replaced, err := stageSibling(siblingStage{
+		ctx: params.Ctx, registry: params.Registry, bus: params.EventBus,
+		filePath: params.FilePath, serial: params.Serial, overwrite: params.Overwrite,
+		beforeOverwrite: params.BeforeOverwrite, ext: ".qdoc",
+	}, func(source io.ReaderAt, size int64, out io.Writer) (docreadutil.ConvertResult, error) {
+		return docreadutil.Convert(docreadutil.ConvertParams{
+			Ctx: params.Ctx, Source: source, Size: size, Format: format,
+			Output: docreadutil.OutputDelta, Out: out,
 		})
-		pw.CloseWithError(err)
-		converted <- outcome{result: result, err: err}
-	}()
-
-	_, writeErr := dest.WriteFile(uploadutil.WriteFileParams{
-		Ctx:       params.Ctx,
-		Reader:    pr,
-		RootDir:   dir,
-		FileName:  tempName,
-		Serial:    params.Serial,
-		Overwrite: true,
-	})
-	pr.CloseWithError(writeErr)
-	done := <-converted
-
-	tempPath := path.Join(dir, tempName)
-	if done.err != nil {
-		discardTemp(params.Ctx, fsys, tempPath)
-		return ConvertDocumentResult{}, documentError(done.err)
-	}
-	if writeErr != nil {
-		discardTemp(params.Ctx, fsys, tempPath)
-		return ConvertDocumentResult{}, writeErr
-	}
-
-	if _, err := MoveFile(MoveFileParams{
-		Ctx:             params.Ctx,
-		Registry:        params.Registry,
-		EventBus:        params.EventBus,
-		OldFilePath:     tempPath,
-		NewFilePath:     target,
-		OldDeviceSerial: params.Serial,
-		NewDeviceSerial: params.Serial,
-		BeforeOverwrite: params.BeforeOverwrite,
-	}); err != nil {
-		discardTemp(params.Ctx, fsys, tempPath)
+	}, documentError)
+	if err != nil {
 		return ConvertDocumentResult{}, err
 	}
-
-	warnings := done.result.Warnings
-	if done.result.Truncated {
+	warnings := done.Warnings
+	if done.Truncated {
 		warnings = append(warnings, "The document is too long to convert whole; only its beginning was converted")
 	}
 	return ConvertDocumentResult{
-		Path:      target,
-		Replaced:  existed,
-		Truncated: done.result.Truncated,
-		Words:     done.result.Words,
-		Warnings:  warnings,
+		Path: target, Replaced: replaced, Truncated: done.Truncated, Words: done.Words, Warnings: warnings,
 	}, nil
 }
 

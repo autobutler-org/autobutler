@@ -35,9 +35,9 @@ func moveFile(c *gin.Context) *serverutil.Response {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return serverutil.BadRequest(err)
 	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	access, resp := loadAccess(c, deps)
+	if resp != nil {
+		return resp
 	}
 	// Moving things into a home or group folder is fine; moving the folder
 	// itself is not.
@@ -48,12 +48,8 @@ func moveFile(c *gin.Context) *serverutil.Response {
 		{req.OldDeviceSerial, req.OldFilePath},
 		{req.NewDeviceSerial, path.Dir(req.NewFilePath)},
 	} {
-		check := access.Check(target.serial, target.path, accessutil.Write)
-		if !check.Readable {
-			return serverutil.NotFound(errNoAccess)
-		}
-		if !check.Allowed {
-			return serverutil.Forbidden(errReadOnly)
+		if resp := gate(access, target.serial, target.path, accessutil.Write); resp != nil {
+			return resp
 		}
 	}
 

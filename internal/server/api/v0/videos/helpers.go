@@ -3,7 +3,6 @@ package v0_videos
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"math"
 	"net/http"
 	"path"
@@ -32,22 +31,6 @@ var errUnreadableVideo = errors.New("can't read this video: it may be damaged or
 // errReadOnly is what a caller hears when they may see a video but not write
 // beside it.
 var errReadOnly = errors.New("you do not have permission to change this")
-
-// grantOwner records the caller as owner of a file an edit just wrote (#1904).
-// The file already exists by then, so a failure is logged rather than failing
-// the request: the caller still reaches it through the write grant that let
-// them create it.
-func grantOwner(c *gin.Context, deps deputil.Dependencies, access accessutil.Access, serial, p string) {
-	if _, err := accessutil.GrantOwnerIfNeeded(accessutil.GrantOwnerIfNeededParams{
-		Ctx:          c.Request.Context(),
-		Database:     deps.Database(),
-		Access:       access,
-		DeviceSerial: serial,
-		Path:         p,
-	}); err != nil {
-		slog.Error("access: could not record the owner of a new item", "path", p, "serial", serial, "err", err)
-	}
-}
 
 // checkEdit applies the access an edit that writes a new file beside a video
 // needs: read on the video (404 without it) and write on its folder (403).
@@ -104,12 +87,8 @@ func unreadableVideo(err error) *serverutil.Response {
 // filesVFS is the files namespace of the device with serial, the internal
 // drive for the empty one, or nil when no such device is attached.
 func filesVFS(deps deputil.Dependencies, serial string) vfs.VFS {
-	registry := deps.VFSRegistry()
-	if registry == nil {
-		return nil
-	}
-	fsys, ok := registry.Get(vfs.FilesNamespace(serial))
-	if !ok {
+	fsys, err := vfs.FilesFS(deps.VFSRegistry(), serial)
+	if err != nil {
 		return nil
 	}
 	return fsys

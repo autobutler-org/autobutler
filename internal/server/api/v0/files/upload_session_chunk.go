@@ -63,7 +63,7 @@ func uploadSessionChunk(c *gin.Context) *serverutil.Response {
 		if err != nil {
 			slog.Error("access: could not load access to record the owner of an upload", "path", result.Path, "err", err)
 		} else {
-			grantOwner(c, deps, access, result.Serial, result.Path)
+			accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, result.Serial, result.Path)
 		}
 	}
 	return serverutil.Ok().WithData(uploadChunkResponse{

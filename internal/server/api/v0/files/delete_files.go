@@ -5,8 +5,6 @@ import (
 	"path"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
@@ -43,13 +41,9 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 		return fileError(err)
 	}
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
-	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
 	// Every path is checked before any is trashed, so a batch the caller may
 	// only partly change changes nothing.
@@ -57,12 +51,8 @@ func deleteFiles(c *gin.Context) *serverutil.Response {
 		if refused := refuseHomeRoot(access, params.Serial, path.Join(params.RootDir, p)); refused != nil {
 			return refused
 		}
-		check := access.Check(params.Serial, path.Join(params.RootDir, p), accessutil.Write)
-		if !check.Readable {
-			return serverutil.NotFound(errNoAccess)
-		}
-		if !check.Allowed {
-			return serverutil.Forbidden(errReadOnly)
+		if resp := gate(access, params.Serial, path.Join(params.RootDir, p), accessutil.Write); resp != nil {
+			return resp
 		}
 	}
 

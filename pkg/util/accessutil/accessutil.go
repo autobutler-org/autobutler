@@ -15,6 +15,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 	"path"
 	"path/filepath"
 	"slices"
@@ -370,6 +371,14 @@ func GrantOwnerIfNeeded(params GrantOwnerIfNeededParams) (GrantOwnerIfNeededResu
 		return GrantOwnerIfNeededResult{}, err
 	}
 	return GrantOwnerIfNeededResult{Granted: true}, nil
+}
+
+func RecordOwner(ctx context.Context, database *db.DatabaseSqlc, access Access, serial, path string) {
+	if _, err := GrantOwnerIfNeeded(GrantOwnerIfNeededParams{
+		Ctx: ctx, Database: database, Access: access, DeviceSerial: serial, Path: path,
+	}); err != nil {
+		slog.Error("access: could not record the owner of a new item", "path", path, "serial", serial, "err", err)
+	}
 }
 
 // MoveRowsParams carries access rows along with something that moved.

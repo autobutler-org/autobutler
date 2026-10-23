@@ -40,7 +40,7 @@ import (
 func deleteAccount(c *gin.Context) *serverutil.Response {
 	deps, ok := getQueries(c)
 	if !ok || (*deps).Database() == nil {
-		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
+		return serverutil.InternalServerError(nil)
 	}
 
 	// The username is what this handler needs: the password is checked against
@@ -94,13 +94,8 @@ func deleteAccount(c *gin.Context) *serverutil.Response {
 		Username: username,
 		Password: body.Password,
 	})
-	if errors.Is(err, authutil.ErrIncorrectPassword) {
-		return serverutil.NewResponse().WithStatusCode(http.StatusForbidden).WithError(err)
-	}
-	// A session that outlived its account has no password left to prove, and
-	// nothing it could still act on.
-	if errors.Is(err, authutil.ErrUserNotFound) {
-		return serverutil.Unauthorized(fmt.Errorf("not authenticated"))
+	if resp := passwordRefusal(err); resp != nil {
+		return resp
 	}
 	if err != nil {
 		return serverutil.InternalServerError(err)

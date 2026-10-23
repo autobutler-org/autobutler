@@ -1,8 +1,6 @@
 package v0_photos
 
 import (
-	"fmt"
-
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
@@ -24,7 +22,7 @@ import (
 func listDuplicates(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
-		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
+		return serverutil.InternalServerError(nil)
 	}
 
 	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())

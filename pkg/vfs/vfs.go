@@ -210,7 +210,28 @@ var (
 	// ErrTooLarge reports a write over [MaxInMemoryWriteBytes] into a namespace
 	// that holds content in memory.
 	ErrTooLarge = errors.New("vfs: content too large for an in-memory namespace")
+	// ErrNoFilesNamespace reports a registry with no files namespace for the
+	// internal drive. A serial whose own namespace is missing, while the
+	// internal one is registered, is [ErrNotFound] instead.
+	ErrNoFilesNamespace = errors.New("vfs: files namespace not registered")
 )
+
+// FilesFS returns the files namespace for serial, the internal drive when
+// serial is empty.
+func FilesFS(reg Registry, serial string) (VFS, error) {
+	if reg == nil {
+		return nil, ErrNoFilesNamespace
+	}
+	if fsys, ok := reg.Get(FilesNamespace(serial)); ok {
+		return fsys, nil
+	}
+	if serial != "" {
+		if _, ok := reg.Get(FilesNamespace("")); ok {
+			return nil, ErrNotFound
+		}
+	}
+	return nil, ErrNoFilesNamespace
+}
 
 // MaxInMemoryWriteBytes caps a write into a namespace that keeps content in
 // memory: DBVFS (a SQLite BLOB) and MemVFS (a map). Neither can stream, and

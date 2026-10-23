@@ -88,7 +88,7 @@ func trimVideo(c *gin.Context) *serverutil.Response {
 	}
 	// TrimFile wrote the clip under a name nothing had, so it is always a new
 	// file and never takes ownership of one that was already there.
-	grantOwner(c, deps, access, req.Serial, result.Path)
+	accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, req.Serial, result.Path)
 	// The event a conversion publishes for its output, so open file browsers
 	// list the clip now rather than at their next refresh.
 	if bus := deps.EventBus(); bus != nil {

@@ -19,11 +19,8 @@ import (
 // namespace is registered: the device is not attached, or the deployment has
 // no registry.
 func (d Destination) FilesVFS(serial string) vfs.VFS {
-	if d.Registry == nil {
-		return nil
-	}
-	fsys, ok := d.Registry.Get(vfs.FilesNamespace(serial))
-	if !ok {
+	fsys, err := vfs.FilesFS(d.Registry, serial)
+	if err != nil {
 		return nil
 	}
 	return fsys

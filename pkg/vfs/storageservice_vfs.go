@@ -183,24 +183,6 @@ func (v *StorageServiceVFS) filesDir() (string, error) {
 	return storageutil.GetFilesDir()
 }
 
-// attached reports ErrNotFound when this is a device namespace and its device
-// is no longer managed. The StorageService resolves an unknown serial to the
-// default files directory, so every single-path operation asks first rather
-// than let a stale namespace reach the internal drive (#2639).
-func (v *StorageServiceVFS) attached() error {
-	if v.serial == "" {
-		return nil
-	}
-	device, err := v.svc.FindManagedDeviceBySerial(v.serial)
-	if err != nil {
-		return err
-	}
-	if device == nil {
-		return ErrNotFound
-	}
-	return nil
-}
-
 // mimeTypeForName returns the MIME type for a file name. Image formats
 // (including HEIC/HEIF/TIFF/BMP, which Go's stdlib mime package doesn't
 // recognize — see #1567) are resolved via storageutil's own extension table
@@ -344,9 +326,6 @@ func (v *StorageServiceVFS) Delete(_ context.Context, path string, opts DeleteOp
 
 // MkdirAll creates a directory (and parents) in the vault.
 func (v *StorageServiceVFS) MkdirAll(_ context.Context, path string) error {
-	if err := v.attached(); err != nil {
-		return err
-	}
 	filesDir, err := v.filesDir()
 	if err != nil {
 		return err
@@ -356,9 +335,6 @@ func (v *StorageServiceVFS) MkdirAll(_ context.Context, path string) error {
 
 // Move renames src to dst on this namespace's device.
 func (v *StorageServiceVFS) Move(_ context.Context, src, dst string) error {
-	if err := v.attached(); err != nil {
-		return err
-	}
 	filesDir, err := v.filesDir()
 	if err != nil {
 		return err

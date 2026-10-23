@@ -2,8 +2,6 @@ package v0_files
 
 import (
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
@@ -30,13 +28,9 @@ func listArchive(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(nil)
 	}
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
-	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
 	if !access.Check(c.Query("serial"), filePath, accessutil.Read).Readable {
 		return serverutil.NotFound(errNoAccess)

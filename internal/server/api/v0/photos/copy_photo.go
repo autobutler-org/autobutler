@@ -66,7 +66,7 @@ func copyPhoto(c *gin.Context) *serverutil.Response {
 	if err != nil {
 		return serverutil.InternalServerError(err)
 	}
-	grantOwner(c, deps, access, req.Serial, result.RelPath)
+	accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, req.Serial, result.RelPath)
 
 	return serverutil.Ok().
 		WithContentType(serverutil.ContentTypeJSON).
