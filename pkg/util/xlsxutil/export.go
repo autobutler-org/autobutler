@@ -358,7 +358,6 @@ func escape(out io.Writer, s string) {
 	_ = xml.EscapeText(out, []byte(s))
 }
 
-// truncateRunes cuts s to at most limit runes.
 func truncateRunes(s string, limit int) string {
 	if utf8.RuneCountInString(s) <= limit {
 		return s

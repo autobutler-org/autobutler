@@ -74,7 +74,6 @@ func (v *LocalVFS) infoFromStat(relPath string, absPath string, fi os.FileInfo) 
 	return info, nil
 }
 
-// List returns a list of files in the given directory.
 func (v *LocalVFS) List(ctx context.Context, path string, filter *ListFilter) ([]FileInfo, error) {
 	absPath, err := v.abs(path)
 	if err != nil {
@@ -179,7 +178,6 @@ func (v *LocalVFS) Stat(ctx context.Context, path string) (FileInfo, error) {
 	return v.infoFromStat(cleanPath(path), absPath, fi)
 }
 
-// Open opens the file at the given path for reading.
 func (v *LocalVFS) Open(ctx context.Context, path string) (File, error) {
 	absPath, err := v.abs(path)
 	if err != nil {
@@ -188,8 +186,7 @@ func (v *LocalVFS) Open(ctx context.Context, path string) (File, error) {
 	return hostOpen(absPath)
 }
 
-// Write writes the content of r to the given path.
-// It uses an atomic write (temp file + rename) to avoid partial writes.
+// Uses an atomic write (temp file + rename) to avoid partial writes.
 func (v *LocalVFS) Write(ctx context.Context, path string, r io.Reader, opts WriteOptions) error {
 	absPath, err := v.abs(path)
 	if err != nil {
@@ -223,7 +220,6 @@ func (v *LocalVFS) Delete(ctx context.Context, path string, opts DeleteOptions) 
 	return hostDelete(absPath, opts)
 }
 
-// MkdirAll creates the directory at the given path, including all parents.
 func (v *LocalVFS) MkdirAll(ctx context.Context, path string) error {
 	absPath, err := v.abs(path)
 	if err != nil {

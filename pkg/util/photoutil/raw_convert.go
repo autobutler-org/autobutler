@@ -23,7 +23,6 @@ const rawToolTimeout = 30 * time.Second
 // RawToJPEG converts a camera RAW file to a JPEG image by extracting
 // the embedded preview. Tries dcraw first, then exiftool, each for at most
 // rawToolTimeout.
-// Returns the decoded image or an error if no tool is available.
 func RawToJPEG(filePath string) (image.Image, error) {
 	for _, convert := range []func(context.Context, string) (image.Image, error){rawViaDcraw, rawViaExiftool} {
 		ctx, cancel := context.WithTimeout(context.Background(), rawToolTimeout)

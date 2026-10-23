@@ -23,7 +23,6 @@ const (
 // valid for 365 days with SANs for localhost, the machine's own hostname and its
 // .local mDNS name, 127.0.0.1, ::1, and any local network IPs.
 // Cert and key are stored at dataDir/certs/server.crt and server.key.
-// Returns the paths to the cert and key files.
 func EnsureSelfSignedCert(dataDir string) (certFile, keyFile string, err error) {
 	certsDir := filepath.Join(dataDir, "certs")
 	certFile = filepath.Join(certsDir, "server.crt")

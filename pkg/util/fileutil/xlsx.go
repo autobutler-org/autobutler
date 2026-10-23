@@ -116,7 +116,7 @@ func stageSibling[T any](s siblingStage, produce func(io.ReaderAt, int64, io.Wri
 		return zero, "", false, fmt.Errorf("%w: %s already exists", vfs.ErrConflict, target)
 	}
 
-	source, size, closer, err := openXlsx(s.ctx, fsys, s.filePath)
+	source, size, closer, err := openZip(s.ctx, fsys, s.filePath)
 	if err != nil {
 		return zero, "", false, err
 	}
@@ -200,10 +200,8 @@ func discardTemp(ctx context.Context, fsys vfs.VFS, tempPath string) {
 	}
 }
 
-// openXlsx opens a workbook for random access, which is what reading a zip
-// needs: the central directory sits at the end of the file. A vfs.File reads
-// at an offset, so the workbook is read in place and nothing is copied.
-func openXlsx(ctx context.Context, fsys vfs.VFS, filePath string) (io.ReaderAt, int64, io.Closer, error) {
+// The central directory sits at the end of the file, so the reader has to seek.
+func openZip(ctx context.Context, fsys vfs.VFS, filePath string) (io.ReaderAt, int64, io.Closer, error) {
 	f, err := fsys.Open(ctx, filePath)
 	if errors.Is(err, vfs.ErrIsDirectory) {
 		return nil, 0, nil, &UnsupportedError{Err: fmt.Errorf("not a file: %s", filePath)}
