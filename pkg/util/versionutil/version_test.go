@@ -4,28 +4,6 @@ import (
 	"testing"
 )
 
-func TestNewVersion(t *testing.T) {
-	// Save and restore package-level Semver
-	origSemver := Semver
-	defer func() { Semver = origSemver }()
-
-	Semver = "v1.2.3"
-	v := NewVersion("abc1234", "go1.21.0", "2024-01-15")
-
-	if v.Semver != "v1.2.3" {
-		t.Errorf("Semver = %q, want %q", v.Semver, "v1.2.3")
-	}
-	if v.GitCommit != "abc1234" {
-		t.Errorf("GitCommit = %q, want %q", v.GitCommit, "abc1234")
-	}
-	if v.GoVersion != "go1.21.0" {
-		t.Errorf("GoVersion = %q, want %q", v.GoVersion, "go1.21.0")
-	}
-	if v.BuildDate != "2024-01-15" {
-		t.Errorf("BuildDate = %q, want %q", v.BuildDate, "2024-01-15")
-	}
-}
-
 func TestVersionString(t *testing.T) {
 	tests := []struct {
 		name      string

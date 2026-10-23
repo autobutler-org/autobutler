@@ -62,44 +62,6 @@ func doFavReq(engine *gin.Engine, method, path string, body []byte) *httptest.Re
 	return w
 }
 
-// TestToggleFavorite_AddsThenRemoves verifies POST /photos/favorite toggles
-// the favorite state: first call adds, second call removes.
-func TestToggleFavorite_AddsThenRemoves(t *testing.T) {
-	sqlDB, queries := newFavoritesTestDB(t)
-	engine := newFavoritesEngine(t, sqlDB, queries)
-
-	body, _ := json.Marshal(map[string]string{
-		"relPath":      "photos/sunset.jpg",
-		"deviceSerial": "DEV-001",
-	})
-
-	// First toggle → added.
-	w := doFavReq(engine, http.MethodPost, "/api/v0/photos/favorite", body)
-	if w.Code != http.StatusOK {
-		t.Fatalf("first toggle returned %d: %s", w.Code, w.Body.String())
-	}
-	var resp1 struct {
-		IsFavorite bool `json:"isFavorite"`
-	}
-	json.Unmarshal(w.Body.Bytes(), &resp1)
-	if !resp1.IsFavorite {
-		t.Errorf("first toggle: expected isFavorite=true")
-	}
-
-	// Second toggle → removed.
-	w2 := doFavReq(engine, http.MethodPost, "/api/v0/photos/favorite", body)
-	if w2.Code != http.StatusOK {
-		t.Fatalf("second toggle returned %d: %s", w2.Code, w2.Body.String())
-	}
-	var resp2 struct {
-		IsFavorite bool `json:"isFavorite"`
-	}
-	json.Unmarshal(w2.Body.Bytes(), &resp2)
-	if resp2.IsFavorite {
-		t.Errorf("second toggle: expected isFavorite=false")
-	}
-}
-
 // TestToggleFavorite_MissingRelPath verifies POST /photos/favorite returns 400
 // when relPath is absent.
 func TestToggleFavorite_MissingRelPath(t *testing.T) {

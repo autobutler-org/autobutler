@@ -26,173 +26,48 @@ func statPath(t *testing.T, engine *gin.Engine, filePath string) (map[string]any
 	return nil, w.Code
 }
 
-// --- stat endpoint: regular files ---
-
-func TestStatFile_QdocFile(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(filesDir, "note.qdoc"), []byte("{}"), 0644); err != nil {
-		t.Fatal(err)
+func TestStatFile(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		dir      bool
+		fileType string
+		content  []byte
+	}{
+		{name: "qdoc", path: "note.qdoc", fileType: "qdoc", content: []byte("{}")},
+		{name: "qsheet", path: "budget.qsheet", fileType: "qsheet", content: []byte("{}")},
+		{name: "image", path: "photo.jpg", fileType: "image", content: []byte("\xFF\xD8")},
+		{name: "video", path: "clip.mp4", fileType: "video", content: []byte("ftyp")},
+		{name: "plain directory", path: "photos", dir: true, fileType: "folder"},
+		{name: "folder named like qdoc", path: "things.qdoc", dir: true, fileType: "folder"},
+		{name: "folder named like qsheet", path: "data.qsheet", dir: true, fileType: "folder"},
+		{name: "folder named like image", path: "photo.jpg", dir: true, fileType: "folder"},
+		{name: "folder named like video", path: "clip.mp4", dir: true, fileType: "folder"},
 	}
-
-	body, code := statPath(t, engine, "note.qdoc")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); isDir {
-		t.Error("expected isDir=false for an qdoc file")
-	}
-	if ft, _ := body["fileType"].(string); ft != "qdoc" {
-		t.Errorf("expected fileType %q, got %q", "qdoc", ft)
-	}
-}
-
-func TestStatFile_QsheetFile(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(filesDir, "budget.qsheet"), []byte("{}"), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	body, code := statPath(t, engine, "budget.qsheet")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); isDir {
-		t.Error("expected isDir=false for an qsheet file")
-	}
-	if ft, _ := body["fileType"].(string); ft != "qsheet" {
-		t.Errorf("expected fileType %q, got %q", "qsheet", ft)
-	}
-}
-
-func TestStatFile_ImageFile(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(filesDir, "photo.jpg"), []byte("\xFF\xD8"), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	body, code := statPath(t, engine, "photo.jpg")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); isDir {
-		t.Error("expected isDir=false for an image file")
-	}
-	if ft, _ := body["fileType"].(string); ft != "image" {
-		t.Errorf("expected fileType %q, got %q", "image", ft)
-	}
-}
-
-func TestStatFile_VideoFile(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.WriteFile(filepath.Join(filesDir, "clip.mp4"), []byte("ftyp"), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	body, code := statPath(t, engine, "clip.mp4")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); isDir {
-		t.Error("expected isDir=false for a video file")
-	}
-	if ft, _ := body["fileType"].(string); ft != "video" {
-		t.Errorf("expected fileType %q, got %q", "video", ft)
-	}
-}
-
-// --- stat endpoint: plain directories ---
-
-func TestStatFile_PlainDirectory(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "photos"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	body, code := statPath(t, engine, "photos")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); !isDir {
-		t.Error("expected isDir=true for a plain directory")
-	}
-	if ft, _ := body["fileType"].(string); ft != "folder" {
-		t.Errorf("expected fileType %q, got %q", "folder", ft)
-	}
-}
-
-// --- stat endpoint: folders with misleading extensions ---
-// These are the core regression cases. A folder named like a known file
-// extension must be identified as a directory, not as that file type.
-
-func TestStatFile_FolderNamedLikeQdoc(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "things.qdoc"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	body, code := statPath(t, engine, "things.qdoc")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); !isDir {
-		t.Error("expected isDir=true: a folder named things.qdoc must not be treated as a document")
-	}
-	if ft, _ := body["fileType"].(string); ft != "folder" {
-		t.Errorf("expected fileType %q, got %q", "folder", ft)
-	}
-}
-
-func TestStatFile_FolderNamedLikeQsheet(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "data.qsheet"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	body, code := statPath(t, engine, "data.qsheet")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); !isDir {
-		t.Error("expected isDir=true: a folder named data.qsheet must not be treated as a spreadsheet")
-	}
-	if ft, _ := body["fileType"].(string); ft != "folder" {
-		t.Errorf("expected fileType %q, got %q", "folder", ft)
-	}
-}
-
-func TestStatFile_FolderNamedLikeImage(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "photo.jpg"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	body, code := statPath(t, engine, "photo.jpg")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); !isDir {
-		t.Error("expected isDir=true: a folder named photo.jpg must not be treated as an image")
-	}
-	if ft, _ := body["fileType"].(string); ft != "folder" {
-		t.Errorf("expected fileType %q, got %q", "folder", ft)
-	}
-}
-
-func TestStatFile_FolderNamedLikeVideo(t *testing.T) {
-	engine, filesDir := newTestEngine(t)
-	if err := os.Mkdir(filepath.Join(filesDir, "clip.mp4"), 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	body, code := statPath(t, engine, "clip.mp4")
-	if code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", code)
-	}
-	if isDir, _ := body["isDir"].(bool); !isDir {
-		t.Error("expected isDir=true: a folder named clip.mp4 must not be treated as a video")
-	}
-	if ft, _ := body["fileType"].(string); ft != "folder" {
-		t.Errorf("expected fileType %q, got %q", "folder", ft)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			engine, filesDir := newTestEngine(t)
+			target := filepath.Join(filesDir, tt.path)
+			var err error
+			if tt.dir {
+				err = os.Mkdir(target, 0755)
+			} else {
+				err = os.WriteFile(target, tt.content, 0644)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, code := statPath(t, engine, tt.path)
+			if code != http.StatusOK {
+				t.Fatalf("expected 200, got %d", code)
+			}
+			if isDir, _ := body["isDir"].(bool); isDir != tt.dir {
+				t.Errorf("isDir = %v, want %v", isDir, tt.dir)
+			}
+			if ft, _ := body["fileType"].(string); ft != tt.fileType {
+				t.Errorf("fileType = %q, want %q", ft, tt.fileType)
+			}
+		})
 	}
 }
 

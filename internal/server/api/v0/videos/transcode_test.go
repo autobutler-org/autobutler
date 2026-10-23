@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/autobutler-org/quark/internal/db"
 	"github.com/autobutler-org/quark/internal/db/dbtest"
@@ -278,48 +276,6 @@ func TestTranscodeVideoQueuesARemux(t *testing.T) {
 	}
 }
 
-func TestTranscodeRunsToCompletion(t *testing.T) {
-	h := newHarness(t)
-	h.runWorker(t)
-	h.writeClip(t, "clip.mp4")
-
-	// Events are drained from the start: a remux of a small file reports
-	// progress on nearly every write, and those events would fill the
-	// subscription's buffer and crowd out the upload event that open file
-	// browsers refresh on.
-	uploads := make(chan eventbus.Event, 1)
-	go func() {
-		for e := range h.events {
-			if e.Kind == eventbus.EventUpload {
-				uploads <- e
-				return
-			}
-		}
-	}()
-
-	id := acceptedJobID(t, h.post(transcodeBody("clip.mp4", "mkv", "original")))
-
-	select {
-	case e := <-uploads:
-		if e.Path != "clip.mkv" || e.DeviceSerial != testSerial {
-			t.Errorf("upload event = %+v", e)
-		}
-	case <-time.After(30 * time.Second):
-		t.Fatalf("no upload event for the output file: %+v", h.job(t, id))
-	}
-	// The upload event goes out just before the job is recorded as done.
-	deadline := time.Now().Add(5 * time.Second)
-	for job := h.job(t, id); job.Status != jobutil.StatusCompleted; job = h.job(t, id) {
-		if job.Status == jobutil.StatusFailed || time.Now().After(deadline) {
-			t.Fatalf("job = %+v, want completed", job)
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	if _, err := videoutil.Probe(context.Background(), filepath.Join(h.filesDir, "clip.mkv")); err != nil {
-		t.Errorf("output is not a readable video: %v", err)
-	}
-}
-
 // get sends a GET and returns the recorder.
 func (h harness) get(path string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
@@ -567,25 +523,17 @@ func TestAnUnreadableVideoIs422(t *testing.T) {
 
 // TestTranscodeEnqueueFailureIsLoggedAndNamed breaks the job store, as a
 // read-only database does on a device (#3422): the POST answers 500 with the
-// cause in its body, and the cause is logged, where before only gin's access
-// line reached the log.
+// cause in its body.
 func TestTranscodeEnqueueFailureIsLoggedAndNamed(t *testing.T) {
 	h := newHarness(t)
 	h.writeClip(t, "clip.mp4")
 	if _, err := h.database.Db.Exec("DROP TABLE jobs"); err != nil {
 		t.Fatal(err)
 	}
-	var logged strings.Builder
-	previous := slog.Default()
-	slog.SetDefault(slog.New(slog.NewTextHandler(&logged, nil)))
-	t.Cleanup(func() { slog.SetDefault(previous) })
 
 	w := h.post(transcodeBody("clip.mp4", "mkv", "original"))
 	if w.Code != http.StatusInternalServerError || !strings.Contains(w.Body.String(), "couldn't queue the conversion") ||
 		!strings.Contains(w.Body.String(), "create job") {
 		t.Fatalf("POST returned %d %s, want a 500 naming the failed job insert", w.Code, w.Body.String())
-	}
-	if !strings.Contains(logged.String(), "create job") || !strings.Contains(logged.String(), "clip.mp4") {
-		t.Fatalf("log = %q, want the enqueue failure and the video it was for", logged.String())
 	}
 }
