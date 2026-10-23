@@ -59,7 +59,7 @@ That cluster is roughly 500 to 700 lines, plus the tests that exist only to call
 
 While you are in `storageutil`, `DetermineFileTypeFromPath` calls `os.Stat` for an extension it does not recognize. Callers pass VFS-relative names (`fileutil/list.go`, `photoutil`). That stat hits the process working directory. The directory bit already comes from `VFS.Stat`.
 
-`pkg/vfs` `DBVFS` / `NewDBVFS` is a second decision, smaller than the office readers. The server never constructs it. `MemVFS` and `LocalVFS` already cover the interface. `dbvfs.go` and `dbvfs_test.go` are 462 lines of cloc code, 559 physical. The `vfs_db_*` queries are extra. Leave migration `007` alone. Dropping `vfs_db_entries` is a later migration if you remove the implementation. The comment on `NewDBVFS` says it backs the photos namespace. Albums are SQL rows.
+`DBVFS` / `NewDBVFS` is gone. The server never constructed it. `vfs_db_entries` stays; dropping the table is a later migration. Leave migration `007` alone.
 
 ## Pass 2: collapse copies into functions
 

@@ -81,10 +81,6 @@ func (a *postgresQueries) CountConnectedDevices(ctx context.Context) (int64, err
 	return a.q.CountConnectedDevices(ctx)
 }
 
-func (a *postgresQueries) CountDBVFSEntriesUnder(ctx context.Context, arg CountDBVFSEntriesUnderParams) (int64, error) {
-	return a.q.CountDBVFSEntriesUnder(ctx, pgdb.CountDBVFSEntriesUnderParams(arg))
-}
-
 func (a *postgresQueries) CountMusicTracks(ctx context.Context, arg CountMusicTracksParams) (int64, error) {
 	return a.q.CountMusicTracks(ctx, pgdb.CountMusicTracksParams(arg))
 }
@@ -210,14 +206,6 @@ func (a *postgresQueries) DeleteChatReaction(ctx context.Context, id int64) erro
 
 func (a *postgresQueries) DeleteConnectedDevice(ctx context.Context, id int64) error {
 	return a.q.DeleteConnectedDevice(ctx, id)
-}
-
-func (a *postgresQueries) DeleteDBVFSEntry(ctx context.Context, arg DeleteDBVFSEntryParams) (int64, error) {
-	return a.q.DeleteDBVFSEntry(ctx, pgdb.DeleteDBVFSEntryParams(arg))
-}
-
-func (a *postgresQueries) DeleteDBVFSEntryTree(ctx context.Context, arg DeleteDBVFSEntryTreeParams) (int64, error) {
-	return a.q.DeleteDBVFSEntryTree(ctx, pgdb.DeleteDBVFSEntryTreeParams(arg))
 }
 
 func (a *postgresQueries) DeleteDeviceRole(ctx context.Context, deviceSerial string) error {
@@ -441,16 +429,6 @@ func (a *postgresQueries) GetConnectedDevice(ctx context.Context, id int64) (Con
 	return ConnectedDevice(row), err
 }
 
-func (a *postgresQueries) GetDBVFSEntry(ctx context.Context, arg GetDBVFSEntryParams) (GetDBVFSEntryRow, error) {
-	row, err := a.q.GetDBVFSEntry(ctx, pgdb.GetDBVFSEntryParams(arg))
-	return GetDBVFSEntryRow(row), err
-}
-
-func (a *postgresQueries) GetDBVFSEntryContent(ctx context.Context, arg GetDBVFSEntryContentParams) (GetDBVFSEntryContentRow, error) {
-	row, err := a.q.GetDBVFSEntryContent(ctx, pgdb.GetDBVFSEntryContentParams(arg))
-	return GetDBVFSEntryContentRow(row), err
-}
-
 func (a *postgresQueries) GetDefaultCalendar(ctx context.Context) (Calendar, error) {
 	row, err := a.q.GetDefaultCalendar(ctx)
 	return Calendar(row), err
@@ -551,14 +529,6 @@ func (a *postgresQueries) HeartbeatJobs(ctx context.Context, owner string) ([]in
 
 func (a *postgresQueries) InsertChatKeyGrant(ctx context.Context, arg InsertChatKeyGrantParams) error {
 	return a.q.InsertChatKeyGrant(ctx, pgdb.InsertChatKeyGrantParams(arg))
-}
-
-func (a *postgresQueries) InsertDBVFSDirIfAbsent(ctx context.Context, arg InsertDBVFSDirIfAbsentParams) error {
-	return a.q.InsertDBVFSDirIfAbsent(ctx, pgdb.InsertDBVFSDirIfAbsentParams(arg))
-}
-
-func (a *postgresQueries) InsertDBVFSFileIfAbsent(ctx context.Context, arg InsertDBVFSFileIfAbsentParams) (int64, error) {
-	return a.q.InsertDBVFSFileIfAbsent(ctx, pgdb.InsertDBVFSFileIfAbsentParams(arg))
 }
 
 func (a *postgresQueries) IsFavorite(ctx context.Context, arg IsFavoriteParams) (bool, error) {
@@ -849,18 +819,6 @@ func (a *postgresQueries) ListConnectedDevices(ctx context.Context) ([]Connected
 	items := make([]ConnectedDevice, len(rows))
 	for i, row := range rows {
 		items[i] = ConnectedDevice(row)
-	}
-	return items, nil
-}
-
-func (a *postgresQueries) ListDBVFSEntriesUnder(ctx context.Context, arg ListDBVFSEntriesUnderParams) ([]ListDBVFSEntriesUnderRow, error) {
-	rows, err := a.q.ListDBVFSEntriesUnder(ctx, pgdb.ListDBVFSEntriesUnderParams(arg))
-	if err != nil || rows == nil {
-		return nil, err
-	}
-	items := make([]ListDBVFSEntriesUnderRow, len(rows))
-	for i, row := range rows {
-		items[i] = ListDBVFSEntriesUnderRow(row)
 	}
 	return items, nil
 }
@@ -1194,10 +1152,6 @@ func (a *postgresQueries) MoveAlbumItems(ctx context.Context, arg MoveAlbumItems
 	return a.q.MoveAlbumItems(ctx, pgdb.MoveAlbumItemsParams(arg))
 }
 
-func (a *postgresQueries) MoveDBVFSEntryTree(ctx context.Context, arg MoveDBVFSEntryTreeParams) error {
-	return a.q.MoveDBVFSEntryTree(ctx, pgdb.MoveDBVFSEntryTreeParams(arg))
-}
-
 func (a *postgresQueries) MoveFavorites(ctx context.Context, arg MoveFavoritesParams) error {
 	return a.q.MoveFavorites(ctx, pgdb.MoveFavoritesParams(arg))
 }
@@ -1382,10 +1336,6 @@ func (a *postgresQueries) UpgradeToAuthKey(ctx context.Context, arg UpgradeToAut
 func (a *postgresQueries) UpsertConnectedDevice(ctx context.Context, arg UpsertConnectedDeviceParams) (ConnectedDevice, error) {
 	row, err := a.q.UpsertConnectedDevice(ctx, pgdb.UpsertConnectedDeviceParams(arg))
 	return ConnectedDevice(row), err
-}
-
-func (a *postgresQueries) UpsertDBVFSFile(ctx context.Context, arg UpsertDBVFSFileParams) (int64, error) {
-	return a.q.UpsertDBVFSFile(ctx, pgdb.UpsertDBVFSFileParams(arg))
 }
 
 func (a *postgresQueries) UpsertDeviceName(ctx context.Context, arg UpsertDeviceNameParams) error {

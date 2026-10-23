@@ -291,15 +291,6 @@ func exerciseQuerier(t *testing.T, conn *sql.DB) {
 	if len(albums) != 2 || albums[0].ParentID.Valid || !albums[1].ParentID.Valid {
 		t.Fatalf("ListAlbums did not put the root album first: %+v", albums)
 	}
-	if rows, err := q.UpsertDBVFSFile(ctx, db.UpsertDBVFSFileParams{Namespace: "ns", Path: "/f", Size: 1, Content: []byte("x")}); err != nil || rows != 1 {
-		t.Fatalf("UpsertDBVFSFile = %d, %v", rows, err)
-	}
-	for range 2 {
-		must(q.InsertDBVFSDirIfAbsent(ctx, db.InsertDBVFSDirIfAbsentParams{Namespace: "ns", Path: "/d"}))
-	}
-	if rows, err := q.UpsertDBVFSFile(ctx, db.UpsertDBVFSFileParams{Namespace: "ns", Path: "/d", Size: 1}); err != nil || rows != 0 {
-		t.Fatalf("UpsertDBVFSFile over a directory = %d, %v, want 0 rows", rows, err)
-	}
 
 	// Two owners of one folder come back in the order they were granted, on
 	// both engines: accessutil names the first as the folder's owner. Bob is
