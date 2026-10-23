@@ -10,7 +10,6 @@ import (
 	// Registers the GIF decoder with image.Decode.
 	_ "image/gif"
 	"io"
-	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
@@ -61,21 +60,6 @@ type GenerateThumbnailResult struct {
 	// before the crop and before any user rotation, so every size tier and
 	// every path to the same file agrees on it (#1666). Empty for video.
 	DHash string
-}
-
-// FilterPhotoFiles filters a list of files to only include photo files
-func FilterPhotoFiles(files []fs.FileInfo) []fs.FileInfo {
-	photoFiles := make([]fs.FileInfo, 0)
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-		fileType := storageutil.DetermineFileTypeFromPath(file.Name())
-		if fileType == storageutil.FileTypeImage {
-			photoFiles = append(photoFiles, file)
-		}
-	}
-	return photoFiles
 }
 
 // ApplyRotation rotates img by quarters × 90° clockwise.

@@ -2,12 +2,8 @@ package v0_files
 
 import (
 	"errors"
-	"log/slog"
-	"mime"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
@@ -37,44 +33,23 @@ func exportXlsx(c *gin.Context) *serverutil.Response {
 	}
 	serial := c.Query("serial")
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
-	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
 	if !access.Check(serial, filePath, accessutil.Read).Readable {
 		return serverutil.NotFound(errNoAccess)
 	}
-
-	// These go out with the first byte of the workbook, which is written only
-	// once the sheet has opened and its first tab has been read.
-	header := c.Writer.Header()
-	header.Set("Content-Type", xlsxContentType)
-	header.Set("Content-Disposition",
-		mime.FormatMediaType("attachment", map[string]string{"filename": fileutil.XlsxExportName(filePath)}))
-	_, err = fileutil.ExportQsheetToXlsx(fileutil.ExportXlsxParams{
-		Ctx:      c.Request.Context(),
-		Registry: deps.VFSRegistry(),
-		FilePath: filePath,
-		Serial:   serial,
-		Out:      c.Writer,
+	return writeExport(c, filePath, xlsxContentType, fileutil.XlsxExportName(filePath), "export: xlsx export stopped partway", func() error {
+		_, err := fileutil.ExportQsheetToXlsx(fileutil.ExportXlsxParams{
+			Ctx:      c.Request.Context(),
+			Registry: deps.VFSRegistry(),
+			FilePath: filePath,
+			Serial:   serial,
+			Out:      c.Writer,
+		})
+		return err
 	})
-	if err == nil {
-		return nil
-	}
-	if c.Writer.Written() {
-		// The status is committed and the workbook is cut short, which no
-		// spreadsheet app opens; all that is left is to log it.
-		slog.Warn("export: xlsx export stopped partway", "path", filePath, "err", err)
-		return nil
-	}
-	// The error answer is JSON, and gin keeps a Content-Type already set.
-	header.Del("Content-Type")
-	header.Del("Content-Disposition")
-	return fileError(err)
 }
 
 var exportXlsxRoute = serverutil.ApiRoute(

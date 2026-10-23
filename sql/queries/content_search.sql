@@ -10,8 +10,3 @@ DELETE FROM file_content WHERE serial = sqlc.arg(serial) AND rel_path = sqlc.arg
 
 -- name: DeleteFileContentBySerial :exec
 DELETE FROM file_content WHERE serial = sqlc.arg(serial);
-
--- name: GetFileContent :one
-SELECT id, serial, rel_path, extracted, updated_at
-FROM file_content
-WHERE serial = sqlc.arg(serial) AND rel_path = sqlc.arg(rel_path);

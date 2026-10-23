@@ -31,36 +31,6 @@ func createTestImage(t *testing.T, path string, width, height int) {
 	}
 }
 
-func TestFilterPhotoFiles(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	photoPath := filepath.Join(tmpDir, "photo.jpg")
-	createTestImage(t, photoPath, 100, 100)
-
-	txtPath := filepath.Join(tmpDir, "readme.txt")
-	os.WriteFile(txtPath, []byte("text"), 0644)
-
-	entries, err := os.ReadDir(tmpDir)
-	if err != nil {
-		t.Fatalf("Failed to read test directory: %v", err)
-	}
-
-	var fileInfos []os.FileInfo
-	for _, entry := range entries {
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		fileInfos = append(fileInfos, info)
-	}
-
-	photos := FilterPhotoFiles(fileInfos)
-
-	if len(photos) != 1 {
-		t.Errorf("Expected 1 photo, got %d", len(photos))
-	}
-}
-
 func TestGenerateThumbnail_Crops(t *testing.T) {
 	tmpDir := t.TempDir()
 	imagePath := filepath.Join(tmpDir, "test.png")
@@ -251,39 +221,6 @@ func TestGenerateThumbnail_UnsupportedFileType(t *testing.T) {
 	}
 	if result != nil {
 		t.Error("Expected nil result for unsupported file type")
-	}
-}
-
-func TestFilterPhotoFiles_EmptyList(t *testing.T) {
-	result := FilterPhotoFiles([]os.FileInfo{})
-	if len(result) != 0 {
-		t.Errorf("Expected empty result, got %d items", len(result))
-	}
-}
-
-func TestFilterPhotoFiles_MixedFiles(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	// Create test files
-	createTestImage(t, filepath.Join(tmpDir, "image.jpg"), 10, 10)
-	os.WriteFile(filepath.Join(tmpDir, "document.pdf"), []byte("pdf"), 0644)
-	os.Mkdir(filepath.Join(tmpDir, "subdir"), 0755)
-
-	entries, err := os.ReadDir(tmpDir)
-	if err != nil {
-		t.Fatalf("Failed to read directory: %v", err)
-	}
-
-	var fileInfos []os.FileInfo
-	for _, entry := range entries {
-		info, _ := entry.Info()
-		fileInfos = append(fileInfos, info)
-	}
-
-	photos := FilterPhotoFiles(fileInfos)
-
-	if len(photos) != 1 {
-		t.Errorf("Expected 1 photo file, got %d", len(photos))
 	}
 }
 

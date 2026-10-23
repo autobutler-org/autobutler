@@ -60,13 +60,12 @@ func changePassword(c *gin.Context) *serverutil.Response {
 		AfterChange:    afterChange,
 		KeepSessionID:  sessionID,
 	})
+	if resp := passwordRefusal(err); resp != nil {
+		return resp
+	}
 	switch {
-	case errors.Is(err, authutil.ErrIncorrectPassword):
-		return serverutil.NewResponse().WithStatusCode(http.StatusForbidden).WithError(err)
 	case errors.Is(err, authutil.ErrInvalidAuthKey):
 		return serverutil.BadRequest(err)
-	case errors.Is(err, authutil.ErrUserNotFound):
-		return serverutil.Unauthorized(fmt.Errorf("not authenticated"))
 	case err != nil:
 		// ErrAppTooOld is a 426 HttpError, whatever status this names.
 		return serverutil.InternalServerError(err)

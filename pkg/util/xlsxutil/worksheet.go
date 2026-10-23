@@ -174,7 +174,6 @@ func streamSheet(f *zip.File, extent sheetExtent, epoch time.Time, shared []stri
 	return filled, nil
 }
 
-// blankRow is a row of empty cells.
 func blankRow(width int) []string {
 	return make([]string, width)
 }

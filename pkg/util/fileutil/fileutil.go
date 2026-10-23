@@ -83,18 +83,12 @@ var ErrNoDevice = errors.New("storage device not found")
 // namespace of its own is a [NotFoundError] wrapping [ErrNoDevice], never the
 // internal drive.
 func FilesVFS(registry vfs.Registry, serial string) (vfs.VFS, error) {
-	if registry == nil {
-		return nil, ErrNoFilesNamespace
-	}
-	fsys, ok := registry.Get(vfs.FilesNamespace(serial))
-	switch {
-	case ok:
+	fsys, err := vfs.FilesFS(registry, serial)
+	if err == nil {
 		return fsys, nil
-	case serial == "":
-		return nil, ErrNoFilesNamespace
 	}
-	if _, ok := registry.Get(vfs.FilesNamespace("")); !ok {
-		return nil, ErrNoFilesNamespace
+	if errors.Is(err, vfs.ErrNotFound) {
+		return nil, notFound(ErrNoDevice)
 	}
-	return nil, notFound(ErrNoDevice)
+	return nil, ErrNoFilesNamespace
 }

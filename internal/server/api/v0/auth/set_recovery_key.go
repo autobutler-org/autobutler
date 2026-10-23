@@ -53,11 +53,8 @@ func setRecoveryKey(c *gin.Context) *serverutil.Response {
 		Username: username,
 		Password: req.Password,
 	})
-	if errors.Is(err, authutil.ErrIncorrectPassword) {
-		return serverutil.NewResponse().WithStatusCode(http.StatusForbidden).WithError(err)
-	}
-	if errors.Is(err, authutil.ErrUserNotFound) {
-		return serverutil.Unauthorized(fmt.Errorf("not authenticated"))
+	if resp := passwordRefusal(err); resp != nil {
+		return resp
 	}
 	if err != nil {
 		return serverutil.InternalServerError(err)

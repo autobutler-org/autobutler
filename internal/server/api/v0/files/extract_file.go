@@ -6,8 +6,6 @@ import (
 	"path"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
@@ -36,19 +34,12 @@ func extractFile(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(errors.New("filePath query parameter is required"))
 	}
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-	if !access.Check(serial, filePath, accessutil.Read).Readable {
-		return serverutil.NotFound(errNoAccess)
-	}
-	if !access.Check(serial, path.Dir(filePath), accessutil.Write).Allowed {
-		return serverutil.Forbidden(errReadOnly)
+	if resp := gateReadWrite(access, serial, filePath, path.Dir(filePath)); resp != nil {
+		return resp
 	}
 
 	extracted, err := fileutil.ExtractArchive(fileutil.ExtractArchiveParams{
@@ -65,7 +56,7 @@ func extractFile(c *gin.Context) *serverutil.Response {
 		return fileError(err)
 	}
 
-	grantOwner(c, deps, access, serial, extracted.CreatedPath)
+	accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, serial, extracted.CreatedPath)
 	return serverutil.Ok()
 }
 

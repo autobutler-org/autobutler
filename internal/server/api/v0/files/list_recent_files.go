@@ -1,9 +1,6 @@
 package v0_files
 
 import (
-	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
@@ -22,13 +19,9 @@ import (
 // @Security BearerAuth
 // @Router /files/recent [get]
 func listRecentFiles(c *gin.Context) *serverutil.Response {
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
-	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
 
 	result, err := fileutil.ListRecent(fileutil.ListRecentParams{

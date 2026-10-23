@@ -819,30 +819,6 @@ func RemoveMember(params RemoveMemberParams) (ListMembersResult, error) {
 		EventMemberRemoved, params.Principal.UserID, payload)
 }
 
-// ResolveMemberUsersParams names the channel whose members to resolve.
-type ResolveMemberUsersParams struct {
-	Ctx       context.Context
-	Database  *db.DatabaseSqlc
-	ChannelID int64
-}
-
-// ResolveMemberUsersResult is every active account the channel's rows reach.
-type ResolveMemberUsersResult struct {
-	Users []ResolvedUser
-}
-
-// ResolveMemberUsers expands a channel's rows into the active accounts they
-// reach, directly, through a group, or through everyone, each with its
-// effective set, by username. It checks no caller: it is for the Quark's own
-// use, such as working out who needs a channel key (#2417).
-func ResolveMemberUsers(params ResolveMemberUsersParams) (ResolveMemberUsersResult, error) {
-	if params.Database == nil {
-		return ResolveMemberUsersResult{}, accessutil.ErrNoDatabase
-	}
-	users, err := memberUsers(params.Ctx, params.Database.Queries, params.ChannelID)
-	return ResolveMemberUsersResult{Users: users}, err
-}
-
 // Sizes a stored chat identity must have (#2416). The public keys are X25519
 // and Ed25519, and the salts are libsodium's crypto_pwhash_SALTBYTES. A
 // wrapped key is nonce, ciphertext and tag, which the Quark can't open, so it

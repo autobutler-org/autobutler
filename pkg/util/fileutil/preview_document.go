@@ -59,7 +59,7 @@ func PreviewDocument(params PreviewDocumentParams) (PreviewDocumentResult, error
 	if err != nil {
 		return PreviewDocumentResult{}, err
 	}
-	source, size, closer, err := openXlsx(params.Ctx, fsys, params.FilePath)
+	source, size, closer, err := openZip(params.Ctx, fsys, params.FilePath)
 	if err != nil {
 		return PreviewDocumentResult{}, err
 	}
@@ -125,7 +125,7 @@ func OpenDocumentPart(params OpenDocumentPartParams) (OpenDocumentPartResult, er
 	if err != nil {
 		return OpenDocumentPartResult{}, err
 	}
-	source, size, closer, err := openXlsx(params.Ctx, fsys, params.FilePath)
+	source, size, closer, err := openZip(params.Ctx, fsys, params.FilePath)
 	if err != nil {
 		return OpenDocumentPartResult{}, err
 	}

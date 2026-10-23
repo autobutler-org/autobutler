@@ -83,7 +83,6 @@ func writeQsheet(w io.Writer, book workbook, shared []string, formats numberForm
 	return result, out.Flush()
 }
 
-// writeJSONRow writes one row as a JSON array of strings.
 func writeJSONRow(out *bufio.Writer, cells []string) error {
 	if err := out.WriteByte('['); err != nil {
 		return err

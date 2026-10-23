@@ -248,7 +248,6 @@ classDiagram
     }
     VFS <|.. LocalVFS : host directory
     VFS <|.. MemVFS : tests
-    VFS <|.. DBVFS : vfs_db_entries
     VFS <|.. StorageServiceVFS : managed devices
     HostPather <|.. LocalVFS
     HostPather <|.. StorageServiceVFS

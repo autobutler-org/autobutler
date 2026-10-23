@@ -1,8 +1,6 @@
 package v0_photos
 
 import (
-	"fmt"
-
 	"github.com/autobutler-org/quark/pkg/util/ctxutil"
 	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/photoutil"
@@ -23,7 +21,7 @@ import (
 func pauseIndex(c *gin.Context) *serverutil.Response {
 	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
 	if !ok {
-		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
+		return serverutil.InternalServerError(nil)
 	}
 	result, err := photoutil.PauseIndex(photoutil.PauseIndexParams{
 		Control: deps.PhotoIndex(), EventBus: deps.EventBus(),

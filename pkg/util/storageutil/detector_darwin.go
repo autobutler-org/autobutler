@@ -228,8 +228,6 @@ func (d *detector) getDeviceInfo(devicePath string) (*Device, error) {
 	return device, nil
 }
 
-// Helper functions
-
 // listedDisk is one whole disk from `diskutil list`.
 type listedDisk struct {
 	isInternal bool   // "internal" in the header; diskutil info's "Device Location: Internal"

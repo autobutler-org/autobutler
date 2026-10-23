@@ -100,7 +100,7 @@ func TestSyncWorker_UploadEventForAFolderMirrorsItsFiles(t *testing.T) {
 	if info, err := dst.Stat(t.Context(), "docs/sub"); err != nil || !info.IsDir {
 		t.Errorf("docs/sub not mirrored: %v", err)
 	}
-	if n := w.QueueLength(); n != 0 {
+	if n := queueLen(w); n != 0 {
 		t.Errorf("queued %d retries, want 0", n)
 	}
 }
@@ -156,7 +156,7 @@ func TestSyncWorker_UnattachedTargetDoesNothing(t *testing.T) {
 		w.handleEvent(t.Context(), evt)
 	}
 
-	if n := w.QueueLength(); n != 0 {
+	if n := queueLen(w); n != 0 {
 		t.Errorf("queued %d retries for an unplugged drive, want 0", n)
 	}
 	assertMemContent(t, src, "docs/a.txt", "a")
@@ -179,7 +179,7 @@ func TestSyncWorker_InterruptedCopyLeavesNoPartialFile(t *testing.T) {
 	for _, e := range entries {
 		t.Errorf("target holds %s after a failed copy", e.Name())
 	}
-	if n := w.QueueLength(); n != 1 {
+	if n := queueLen(w); n != 1 {
 		t.Errorf("queued %d retries, want 1", n)
 	}
 }

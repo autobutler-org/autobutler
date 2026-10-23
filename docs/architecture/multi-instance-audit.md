@@ -63,7 +63,7 @@ multi-instance work point at #2955.
 SQLite-only code that #2955 has to port, listed so nobody mistakes it for multi-instance work: `sqlite_master`
 and `pragma_table_info` in `internal/db/database.go:163`, `:207` and `internal/db/reset.go`; FTS5 `MATCH` in
 `pkg/util/searchutil/search.go:105`; `datetime('now')` and `IS` as null-safe equality in `sql/queries/jobs.sql`;
-raw `?`-placeholder SQL in `pkg/vfs/sqlite_metadata_store.go` and `pkg/vfs/dbvfs.go`; `ATTACH DATABASE` in
+raw `?`-placeholder SQL in `pkg/vfs/sqlite_metadata_store.go`; `ATTACH DATABASE` in
 `pkg/backup/chat_export.go:141`. One PostgreSQL trap is behavioral: the count-then-change guards that keep one
 admin and one channel owner (`pkg/util/authutil/helpers.go:27-51`, `pkg/util/chatutil/helpers.go:297-332`) run
 in a default-isolation transaction. SQLite's single writer makes them correct; under `READ COMMITTED` two

@@ -48,7 +48,6 @@ type Querier interface {
 	// Cap the count or cache it if a long channel ever makes the list slow.
 	CountChatUnreadForUser(ctx context.Context, userID int64) ([]CountChatUnreadForUserRow, error)
 	CountConnectedDevices(ctx context.Context) (int64, error)
-	CountDBVFSEntriesUnder(ctx context.Context, arg CountDBVFSEntriesUnderParams) (int64, error)
 	CountMusicTracks(ctx context.Context, arg CountMusicTracksParams) (int64, error)
 	// CountOtherAccounts counts the active and disabled accounts other than one.
 	// Pending requests are not accounts yet, so they do not count.
@@ -101,8 +100,6 @@ type Querier interface {
 	DeleteChatKeyGrant(ctx context.Context, arg DeleteChatKeyGrantParams) (int64, error)
 	DeleteChatReaction(ctx context.Context, id int64) error
 	DeleteConnectedDevice(ctx context.Context, id int64) error
-	DeleteDBVFSEntry(ctx context.Context, arg DeleteDBVFSEntryParams) (int64, error)
-	DeleteDBVFSEntryTree(ctx context.Context, arg DeleteDBVFSEntryTreeParams) (int64, error)
 	DeleteDeviceRole(ctx context.Context, deviceSerial string) error
 	DeleteExpiredSessions(ctx context.Context) error
 	// DeleteFavoritesUnder drops the favorite for a deleted path, and every
@@ -204,13 +201,10 @@ type Querier interface {
 	GetChatReaction(ctx context.Context, id int64) (ChatReaction, error)
 	GetChatReadMarker(ctx context.Context, arg GetChatReadMarkerParams) (int64, error)
 	GetConnectedDevice(ctx context.Context, id int64) (ConnectedDevice, error)
-	GetDBVFSEntry(ctx context.Context, arg GetDBVFSEntryParams) (GetDBVFSEntryRow, error)
-	GetDBVFSEntryContent(ctx context.Context, arg GetDBVFSEntryContentParams) (GetDBVFSEntryContentRow, error)
 	GetDefaultCalendar(ctx context.Context) (Calendar, error)
 	GetDeviceName(ctx context.Context, deviceSerial string) (string, error)
 	GetDeviceRole(ctx context.Context, deviceSerial string) (string, error)
 	GetFavoritesAlbum(ctx context.Context, userID int64) (PhotoAlbum, error)
-	GetFileContent(ctx context.Context, arg GetFileContentParams) (FileContent, error)
 	GetGroup(ctx context.Context, id int64) (Group, error)
 	GetInstallID(ctx context.Context) (string, error)
 	GetJob(ctx context.Context, id int64) (Job, error)
@@ -253,9 +247,6 @@ type Querier interface {
 	// InsertChatKeyGrant stores a grant unless the account already has one for
 	// that version: the first grant wins.
 	InsertChatKeyGrant(ctx context.Context, arg InsertChatKeyGrantParams) error
-	InsertDBVFSDirIfAbsent(ctx context.Context, arg InsertDBVFSDirIfAbsentParams) error
-	// Anything already at the path is left alone and reports no rows.
-	InsertDBVFSFileIfAbsent(ctx context.Context, arg InsertDBVFSFileIfAbsentParams) (int64, error)
 	IsFavorite(ctx context.Context, arg IsFavoriteParams) (bool, error)
 	IsUserAdmin(ctx context.Context, username string) (int64, error)
 	ListAccountRequestHistory(ctx context.Context, limit int64) ([]ListAccountRequestHistoryRow, error)
@@ -323,7 +314,6 @@ type Querier interface {
 	ListChatReactionsBetween(ctx context.Context, arg ListChatReactionsBetweenParams) ([]ChatReaction, error)
 	ListChildAlbums(ctx context.Context, parentID sql.NullInt64) ([]PhotoAlbum, error)
 	ListConnectedDevices(ctx context.Context) ([]ConnectedDevice, error)
-	ListDBVFSEntriesUnder(ctx context.Context, arg ListDBVFSEntriesUnderParams) ([]ListDBVFSEntriesUnderRow, error)
 	ListExactDuplicates(ctx context.Context) ([]ListExactDuplicatesRow, error)
 	ListFavorites(ctx context.Context, userID int64) ([]PhotoFavorite, error)
 	// ListGroupMembers lists every membership with the member's username, for
@@ -403,12 +393,7 @@ type Querier interface {
 	// account's jobs (#2756).
 	ListUserJobs(ctx context.Context, arg ListUserJobsParams) ([]Job, error)
 	ListUsers(ctx context.Context) ([]ListUsersRow, error)
-	// Queries behind pkg/vfs: vfs_metadata (SQLiteMetadataStore) and
-	// vfs_db_entries (DBVFS).
-	//
-	// A descendant of a directory is matched with substr rather than LIKE, so a
-	// '%' or '_' in a name is not a wildcard. prefix is "dir/", and its length is
-	// taken here because substr counts characters where Go's len counts bytes.
+	// Queries behind pkg/vfs: vfs_metadata (SQLiteMetadataStore).
 	ListVFSMetadata(ctx context.Context, arg ListVFSMetadataParams) ([]ListVFSMetadataRow, error)
 	ListVFSMetadataPathsByKey(ctx context.Context, arg ListVFSMetadataPathsByKeyParams) ([]string, error)
 	ListVFSMetadataPathsByKeyValue(ctx context.Context, arg ListVFSMetadataPathsByKeyValueParams) ([]string, error)
@@ -451,8 +436,6 @@ type Querier interface {
 	// and not NOT EXISTS: sqlc v1.30.0's SQLite engine leaves a parameter under a
 	// NOT unexpanded (sqlc-dev/sqlc#4110; v1.31.1 expands it).
 	MoveAlbumItems(ctx context.Context, arg MoveAlbumItemsParams) error
-	// Renames src and every descendant of it to sit under dst.
-	MoveDBVFSEntryTree(ctx context.Context, arg MoveDBVFSEntryTreeParams) error
 	// MoveFavorites points favorites at a moved file or folder, for every account.
 	// The count guard skips a row whose destination is already that account's favorite;
 	// DeleteFavoritesUnder on the old path clears those leftovers.
@@ -575,8 +558,6 @@ type Querier interface {
 	// no auth key matches, so an upgraded account's key is never overwritten.
 	UpgradeToAuthKey(ctx context.Context, arg UpgradeToAuthKeyParams) (int64, error)
 	UpsertConnectedDevice(ctx context.Context, arg UpsertConnectedDeviceParams) (ConnectedDevice, error)
-	// A directory already at the path is left alone and reports no rows.
-	UpsertDBVFSFile(ctx context.Context, arg UpsertDBVFSFileParams) (int64, error)
 	UpsertDeviceName(ctx context.Context, arg UpsertDeviceNameParams) error
 	UpsertDeviceRole(ctx context.Context, arg UpsertDeviceRoleParams) error
 	UpsertFileContent(ctx context.Context, arg UpsertFileContentParams) error

@@ -30,30 +30,6 @@ func TestProbeDisk_InvalidDir(t *testing.T) {
 	}
 }
 
-func TestClassifyDisk_Thresholds(t *testing.T) {
-	cases := []struct {
-		seqMBps float64
-		want    storageutil.DiskSpeedClass
-	}{
-		{250, storageutil.DiskSpeedFast},
-		{200, storageutil.DiskSpeedFast},
-		{199, storageutil.DiskSpeedMedium},
-		{50, storageutil.DiskSpeedMedium},
-		{20, storageutil.DiskSpeedMedium},
-		{19.9, storageutil.DiskSpeedSlow},
-		{5, storageutil.DiskSpeedSlow},
-		{0, storageutil.DiskSpeedSlow},
-	}
-	for _, tc := range cases {
-		// Use ProbeDisk indirectly via known threshold values — we verify the
-		// classification constants match the documented thresholds.
-		got := storageutil.ClassifyDiskSpeed(tc.seqMBps)
-		if got != tc.want {
-			t.Errorf("ClassifyDiskSpeed(%.1f): got %q, want %q", tc.seqMBps, got, tc.want)
-		}
-	}
-}
-
 func TestDeviceStatus_HasDiskProbeField(t *testing.T) {
 	// Compile-time check: DiskProbe field exists and is the right type.
 	ds := storageutil.DeviceStatus{}

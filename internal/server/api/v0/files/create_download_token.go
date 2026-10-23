@@ -37,9 +37,9 @@ func createDownloadToken(c *gin.Context) *serverutil.Response {
 	if !ok || username == "" {
 		return serverutil.Unauthorized(errors.New("authentication required"))
 	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	access, resp := loadAccess(c, deps)
+	if resp != nil {
+		return resp
 	}
 	if !access.Check(serial, filePath, accessutil.Read).Readable {
 		return serverutil.NotFound(errNoAccess)

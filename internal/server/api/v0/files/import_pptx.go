@@ -6,8 +6,6 @@ import (
 	"path"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
 
@@ -43,19 +41,12 @@ func importPptx(c *gin.Context) *serverutil.Response {
 	}
 	serial := c.Query("serial")
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
-	}
-	if !access.Check(serial, filePath, accessutil.Read).Readable {
-		return serverutil.NotFound(errNoAccess)
-	}
-	if !access.Check(serial, rootDir, accessutil.Write).Allowed {
-		return serverutil.Forbidden(errReadOnly)
+	if resp := gateReadWrite(access, serial, filePath, rootDir); resp != nil {
+		return resp
 	}
 
 	result, err := fileutil.ImportPptxToQslide(fileutil.ImportPptxParams{
@@ -72,12 +63,12 @@ func importPptx(c *gin.Context) *serverutil.Response {
 		slog.Error("import: pptx import failed", "path", filePath, "err", err)
 		return fileError(err)
 	}
-	grantOwner(c, deps, access, serial, result.Path)
+	accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, serial, result.Path)
 	if result.MediaDirCreated {
-		grantOwner(c, deps, access, serial, result.MediaDir)
+		accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, serial, result.MediaDir)
 	} else {
 		for _, p := range result.Media {
-			grantOwner(c, deps, access, serial, p)
+			accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, serial, p)
 		}
 	}
 

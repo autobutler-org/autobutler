@@ -59,8 +59,11 @@ func TestDisableUser_EndsSessionsAndKeepsOwnership(t *testing.T) {
 	if _, _, err := authutil.ValidateSession(ctx, q, adminLogin.SessionToken); err != nil {
 		t.Errorf("the admin's session ended too: %v", err)
 	}
-	if active, err := authutil.IsActive(ctx, q, bobID); err != nil || active {
-		t.Errorf("IsActive(disabled) = %v, %v", active, err)
+	user, err := q.GetUserByID(ctx, bobID)
+	if err != nil {
+		t.Errorf("look up disabled account: %v", err)
+	} else if user.Status != authutil.StatusDisabled {
+		t.Errorf("disabled account status = %s, want disabled", user.Status)
 	}
 	rows, err := q.ListPathAccessForUser(ctx, sql.NullInt64{Int64: bobID, Valid: true})
 	if err != nil || len(rows) != 1 {
@@ -79,8 +82,8 @@ func TestDisableUser_EndsSessionsAndKeepsOwnership(t *testing.T) {
 	if _, err := authutil.EnableUser(ctx, q, authutil.EnableUserParams{Username: "bob"}); !errors.Is(err, authutil.ErrUserNotFound) {
 		t.Errorf("enable an active account = %v, want ErrUserNotFound", err)
 	}
-	if active, err := authutil.IsActive(ctx, q, 9999); err != nil || active {
-		t.Errorf("IsActive(missing) = %v, %v; want false, nil", active, err)
+	if _, err := q.GetUserByID(ctx, 9999); !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("missing account lookup = %v, want ErrNoRows", err)
 	}
 }
 
@@ -111,7 +114,8 @@ func TestDisableUser_Refusals(t *testing.T) {
 	if err := disable(memberID, "admin"); !errors.Is(err, authutil.ErrLastAdmin) {
 		t.Errorf("disable the only active admin = %v, want ErrLastAdmin", err)
 	}
-	if active, _ := authutil.IsActive(ctx, q, adminID); !active {
+	user, err := q.GetUserByID(ctx, adminID)
+	if err != nil || user.Status != authutil.StatusActive {
 		t.Fatal("a refused disable turned the admin off")
 	}
 

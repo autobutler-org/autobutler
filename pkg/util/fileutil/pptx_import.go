@@ -90,7 +90,7 @@ func ImportPptxToQslide(params ImportPptxParams) (ImportPptxResult, error) {
 		return ImportPptxResult{}, err
 	}
 
-	source, size, closer, err := openXlsx(params.Ctx, fsys, params.FilePath)
+	source, size, closer, err := openZip(params.Ctx, fsys, params.FilePath)
 	if err != nil {
 		return ImportPptxResult{}, err
 	}

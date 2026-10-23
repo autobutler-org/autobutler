@@ -29,7 +29,6 @@ import (
 //	                    Recursive  MaxResults  MimePrefix  AfterPath
 //	MemVFS                  yes        yes         yes        yes
 //	LocalVFS                yes        yes         yes        yes
-//	DBVFS                   yes        yes          no         no
 //	StorageServiceVFS       yes        yes         yes        yes
 //	  (device-scoped)       yes        yes         yes        yes
 type conformanceTarget struct {
@@ -60,7 +59,6 @@ func conformanceTargets(t *testing.T) []conformanceTarget {
 	return []conformanceTarget{
 		newMemTarget(t),
 		newLocalTarget(t),
-		newDBTarget(t),
 		newStorageServiceTarget(t),
 		newDeviceStorageServiceTarget(t),
 	}
@@ -109,20 +107,6 @@ func newLocalTarget(t *testing.T) conformanceTarget {
 		canonical:          trimSlashes,
 		supportsMimePrefix: true,
 		supportsAfterPath:  true,
-	}
-}
-
-func newDBTarget(t *testing.T) conformanceTarget {
-	v := vfs.NewDBVFS(newTestDB(t), "db")
-	seedWrites(t, v, "")
-	return conformanceTarget{
-		name:      "DBVFS",
-		fs:        v,
-		root:      "",
-		canonical: trimSlashes,
-		// DBVFS reads only Recursive and MaxResults off ListFilter today.
-		supportsMimePrefix: false,
-		supportsAfterPath:  false,
 	}
 }
 

@@ -12,12 +12,11 @@ import (
 // unplugged, or never attached — is [vfs.ErrNotFound], so its files read as
 // missing rather than as the internal drive's (#2645).
 func DeviceFS(registry vfs.Registry, serial string) (vfs.VFS, error) {
-	if registry != nil {
-		if fsys, ok := registry.Get(vfs.FilesNamespace(serial)); ok {
-			return fsys, nil
-		}
+	fsys, err := vfs.FilesFS(registry, serial)
+	if err != nil {
+		return nil, fmt.Errorf("%w: no namespace for device %q", vfs.ErrNotFound, serial)
 	}
-	return nil, fmt.Errorf("%w: no namespace for device %q", vfs.ErrNotFound, serial)
+	return fsys, nil
 }
 
 // HostPath is the host path of relPath on fsys, for an external tool (dcraw,

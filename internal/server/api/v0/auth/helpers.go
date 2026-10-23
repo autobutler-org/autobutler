@@ -38,6 +38,17 @@ func accountRefusalResponse(err error) *serverutil.Response {
 	})
 }
 
+func passwordRefusal(err error) *serverutil.Response {
+	switch {
+	case errors.Is(err, authutil.ErrIncorrectPassword):
+		return serverutil.NewResponse().WithStatusCode(http.StatusForbidden).WithError(err)
+	case errors.Is(err, authutil.ErrUserNotFound):
+		return serverutil.Unauthorized(errors.New("not authenticated"))
+	default:
+		return nil
+	}
+}
+
 // storeRewrappedKeys validates the chat keys and vault key a credential change
 // carries, and returns the step that stores them inside that change's
 // transaction, nil when the body carried neither, and the announcement to make

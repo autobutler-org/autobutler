@@ -10,7 +10,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/vfs"
 )
 
-// MemVFS and DBVFS hold content in memory by design. Before #1723 neither
+// MemVFS holds content in memory by design. Before #1723 it never
 // bounded a write, so an oversized one was an OOM with nothing to diagnose it
 // by. It has to come back as ErrTooLarge instead.
 func TestMemVFSRefusesAWriteOverTheCap(t *testing.T) {

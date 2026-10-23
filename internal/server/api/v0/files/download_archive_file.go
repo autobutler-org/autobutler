@@ -7,8 +7,6 @@ import (
 	"strconv"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/iosemutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
@@ -43,13 +41,9 @@ func downloadArchiveFile(c *gin.Context) *serverutil.Response {
 		return serverutil.BadRequest(errors.New("filePath and entryPath query parameters are required"))
 	}
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
-	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
 	if !access.Check(serial, archivePath, accessutil.Read).Readable {
 		return serverutil.NotFound(errNoAccess)

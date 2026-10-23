@@ -6,7 +6,7 @@ import (
 	"github.com/autobutler-org/quark/pkg/util/storageutil"
 )
 
-// bytesFile is the [File] MemVFS and DBVFS hand out over content they already
+// bytesFile is the [File] MemVFS hands out over content it already
 // hold in memory, bounded by [MaxInMemoryWriteBytes]. Closing it releases
 // nothing.
 type bytesFile struct {

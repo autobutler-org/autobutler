@@ -22,7 +22,7 @@ import (
 func revokeAllSessions(c *gin.Context) *serverutil.Response {
 	deps, ok := getQueries(c)
 	if !ok {
-		return serverutil.InternalServerError(fmt.Errorf("dependencies not found in context"))
+		return serverutil.InternalServerError(nil)
 	}
 
 	userID, ok := ctxutil.Get[int64](c, "userID")

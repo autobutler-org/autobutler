@@ -42,12 +42,6 @@ func (w *SyncWorker) Stop() {
 	w.running = false
 }
 
-func (w *SyncWorker) QueueLength() int {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	return len(w.pending)
-}
-
 func (w *SyncWorker) loop(ctx context.Context, ch <-chan eventbus.Event) {
 	for {
 		select {

@@ -50,29 +50,6 @@ func doVersionReq(engine *gin.Engine, method, path string, body string) *httptes
 	return w
 }
 
-// TestGetInstalledVersion_ReturnsOK verifies GET /version returns 200 with
-// the expected fields populated.
-func TestGetInstalledVersion_ReturnsOK(t *testing.T) {
-	engine := newVersionEngine(t)
-
-	w := doVersionReq(engine, http.MethodGet, "/api/v0/version", "")
-	if w.Code != http.StatusOK {
-		t.Fatalf("GET /version returned %d: %s", w.Code, w.Body.String())
-	}
-	var v v0_version.VersionJSON
-	if err := json.Unmarshal(w.Body.Bytes(), &v); err != nil {
-		t.Fatalf("unmarshal: %v\nbody: %s", err, w.Body.String())
-	}
-	// In test builds versionutil falls back to "NOSEMVER" — verify the field
-	// exists and is a non-empty string.
-	if v.Semver == "" {
-		t.Error("Semver field is empty")
-	}
-	if v.GoVersion == "" {
-		t.Error("GoVersion field is empty")
-	}
-}
-
 // TestGetInstalledVersion_ResponseShape verifies the response contains the
 // expected JSON keys.
 func TestGetInstalledVersion_ResponseShape(t *testing.T) {
@@ -88,28 +65,6 @@ func TestGetInstalledVersion_ResponseShape(t *testing.T) {
 		if _, ok := raw[field]; !ok {
 			t.Errorf("response missing field %q", field)
 		}
-	}
-}
-
-// TestGetSbom_ReturnsOK verifies GET /sbom returns 200 with goVersion and
-// a dependencies array.
-func TestGetSbom_ReturnsOK(t *testing.T) {
-	engine := newVersionEngine(t)
-
-	w := doVersionReq(engine, http.MethodGet, "/api/v0/sbom", "")
-	if w.Code != http.StatusOK {
-		t.Fatalf("GET /sbom returned %d: %s", w.Code, w.Body.String())
-	}
-	var s v0_version.SbomJSON
-	if err := json.Unmarshal(w.Body.Bytes(), &s); err != nil {
-		t.Fatalf("unmarshal SbomJSON: %v\nbody: %s", err, w.Body.String())
-	}
-	if s.GoVersion == "" {
-		t.Error("SbomJSON.GoVersion is empty")
-	}
-	// The test binary always has at least one module (itself).
-	if s.Dependencies == nil {
-		t.Error("SbomJSON.Dependencies is nil")
 	}
 }
 

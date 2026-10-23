@@ -70,99 +70,96 @@ func ConvertXlsxToQsheet(params ConvertXlsxParams) (ConvertXlsxResult, error) {
 		}
 	}
 
-	dir := path.Dir(cleanRelPath(params.FilePath))
+	done, target, replaced, err := stageSibling(siblingStage{
+		ctx: params.Ctx, registry: params.Registry, bus: params.EventBus,
+		filePath: params.FilePath, serial: params.Serial, overwrite: params.Overwrite,
+		beforeOverwrite: params.BeforeOverwrite, ext: ".qsheet",
+	}, func(source io.ReaderAt, size int64, out io.Writer) (xlsxutil.ConvertToQsheetResult, error) {
+		return xlsxutil.ConvertToQsheet(xlsxutil.ConvertToQsheetParams{Source: source, Size: size, Out: out})
+	}, convertError)
+	if err != nil {
+		return ConvertXlsxResult{}, err
+	}
+	return ConvertXlsxResult{Path: target, Replaced: replaced, Tabs: done.Tabs, Rows: done.Rows, Cells: done.Cells}, nil
+}
+
+type siblingStage struct {
+	ctx             context.Context
+	registry        vfs.Registry
+	bus             *eventbus.Bus
+	filePath        string
+	serial          string
+	overwrite       bool
+	beforeOverwrite func(string)
+	ext             string
+}
+
+func stageSibling[T any](s siblingStage, produce func(io.ReaderAt, int64, io.Writer) (T, error), mapErr func(error) error) (T, string, bool, error) {
+	var zero T
+	dir := path.Dir(cleanRelPath(s.filePath))
 	if dir == "." || dir == "/" {
 		dir = ""
 	}
-	base := path.Base(cleanRelPath(params.FilePath))
+	base := path.Base(cleanRelPath(s.filePath))
 	stem := strings.TrimSuffix(base, filepath.Ext(base))
-	target := path.Join(dir, stem+".qsheet")
+	target := path.Join(dir, stem+s.ext)
 
-	fsys, err := FilesVFS(params.Registry, params.Serial)
+	fsys, err := FilesVFS(s.registry, s.serial)
 	if err != nil {
-		return ConvertXlsxResult{}, err
+		return zero, "", false, err
 	}
-	existed, err := exists(params.Ctx, fsys, target)
+	existed, err := exists(s.ctx, fsys, target)
 	if err != nil {
-		return ConvertXlsxResult{}, err
+		return zero, "", false, err
 	}
-	if existed && !params.Overwrite {
-		return ConvertXlsxResult{}, fmt.Errorf("%w: %s already exists", vfs.ErrConflict, target)
+	if existed && !s.overwrite {
+		return zero, "", false, fmt.Errorf("%w: %s already exists", vfs.ErrConflict, target)
 	}
 
-	source, size, closer, err := openXlsx(params.Ctx, fsys, params.FilePath)
+	source, size, closer, err := openZip(s.ctx, fsys, s.filePath)
 	if err != nil {
-		return ConvertXlsxResult{}, err
+		return zero, "", false, err
 	}
 	defer closer.Close()
 
-	// The conversion writes onto a pipe the destination reads from, so the
-	// .qsheet is never held whole on either side.
-	dest := uploadutil.Destination{
-		Registry: params.Registry,
-		// The event for the temporary file would announce a path that is about
-		// to be renamed; the move below publishes the one that matters.
-		EventBus: nil,
-	}
-	tempName := "." + stem + ".qsheet.converting"
-
+	dest := uploadutil.Destination{Registry: s.registry, EventBus: nil}
+	tempName := "." + stem + s.ext + ".converting"
 	pr, pw := io.Pipe()
-	converted := make(chan convertOutcome, 1)
+	type outcome struct {
+		result T
+		err    error
+	}
+	doneCh := make(chan outcome, 1)
 	go func() {
-		result, err := xlsxutil.ConvertToQsheet(xlsxutil.ConvertToQsheetParams{
-			Source: source,
-			Size:   size,
-			Out:    pw,
-		})
-		// Closing with the error is what stops the destination from storing a
-		// truncated document as if it were whole.
+		result, err := produce(source, size, pw)
 		pw.CloseWithError(err)
-		converted <- convertOutcome{result: result, err: err}
+		doneCh <- outcome{result, err}
 	}()
-
 	_, writeErr := dest.WriteFile(uploadutil.WriteFileParams{
-		Ctx:       params.Ctx,
-		Reader:    pr,
-		RootDir:   dir,
-		FileName:  tempName,
-		Serial:    params.Serial,
-		Overwrite: true,
+		Ctx: s.ctx, Reader: pr, RootDir: dir, FileName: tempName, Serial: s.serial, Overwrite: true,
 	})
-	// Unblocks the conversion if the destination gave up first.
 	pr.CloseWithError(writeErr)
-	outcome := <-converted
+	done := <-doneCh
 
 	tempPath := path.Join(dir, tempName)
-	if outcome.err != nil {
-		discardTemp(params.Ctx, fsys, tempPath)
-		return ConvertXlsxResult{}, convertError(outcome.err)
+	if done.err != nil {
+		discardTemp(s.ctx, fsys, tempPath)
+		return zero, "", false, mapErr(done.err)
 	}
 	if writeErr != nil {
-		discardTemp(params.Ctx, fsys, tempPath)
-		return ConvertXlsxResult{}, writeErr
+		discardTemp(s.ctx, fsys, tempPath)
+		return zero, "", false, writeErr
 	}
-
 	if _, err := MoveFile(MoveFileParams{
-		Ctx:             params.Ctx,
-		Registry:        params.Registry,
-		EventBus:        params.EventBus,
-		OldFilePath:     tempPath,
-		NewFilePath:     target,
-		OldDeviceSerial: params.Serial,
-		NewDeviceSerial: params.Serial,
-		BeforeOverwrite: params.BeforeOverwrite,
+		Ctx: s.ctx, Registry: s.registry, EventBus: s.bus,
+		OldFilePath: tempPath, NewFilePath: target,
+		OldDeviceSerial: s.serial, NewDeviceSerial: s.serial,
+		BeforeOverwrite: s.beforeOverwrite,
 	}); err != nil {
-		discardTemp(params.Ctx, fsys, tempPath)
-		return ConvertXlsxResult{}, err
+		discardTemp(s.ctx, fsys, tempPath)
+		return zero, "", false, err
 	}
-
-	return ConvertXlsxResult{
-		Path:     target,
-		Replaced: existed,
-		Tabs:     outcome.result.Tabs,
-		Rows:     outcome.result.Rows,
-		Cells:    outcome.result.Cells,
-	}, nil
+	return done.result, target, existed, nil
 }
 
 // IsXlsxPath reports whether a path names a workbook this can convert. The
@@ -174,14 +171,6 @@ func IsXlsxPath(filePath string) bool {
 		return true
 	}
 	return false
-}
-
-// convertOutcome carries what the conversion goroutine produced back to the
-// caller, so a conversion failure is reported as itself rather than as the
-// broken-pipe write error it causes.
-type convertOutcome struct {
-	result xlsxutil.ConvertToQsheetResult
-	err    error
 }
 
 // convertError maps what xlsxutil reports onto the errors the handler already
@@ -211,10 +200,8 @@ func discardTemp(ctx context.Context, fsys vfs.VFS, tempPath string) {
 	}
 }
 
-// openXlsx opens a workbook for random access, which is what reading a zip
-// needs: the central directory sits at the end of the file. A vfs.File reads
-// at an offset, so the workbook is read in place and nothing is copied.
-func openXlsx(ctx context.Context, fsys vfs.VFS, filePath string) (io.ReaderAt, int64, io.Closer, error) {
+// The central directory sits at the end of the file, so the reader has to seek.
+func openZip(ctx context.Context, fsys vfs.VFS, filePath string) (io.ReaderAt, int64, io.Closer, error) {
 	f, err := fsys.Open(ctx, filePath)
 	if errors.Is(err, vfs.ErrIsDirectory) {
 		return nil, 0, nil, &UnsupportedError{Err: fmt.Errorf("not a file: %s", filePath)}

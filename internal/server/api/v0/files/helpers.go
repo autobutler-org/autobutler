@@ -73,28 +73,68 @@ func refuseHomeRoot(access accessutil.Access, serial, p string) *serverutil.Resp
 	return serverutil.Forbidden(refusal)
 }
 
-// grantOwner records the caller as owner of something they just created
-// (#1903). The item already exists by then, so a failure is logged rather than
-// failing the request: the caller still reaches it through the write grant
-// that let them create it.
-func grantOwner(c *gin.Context, deps deputil.Dependencies, access accessutil.Access, serial, p string) {
-	if _, err := accessutil.GrantOwnerIfNeeded(accessutil.GrantOwnerIfNeededParams{
-		Ctx:          c.Request.Context(),
-		Database:     deps.Database(),
-		Access:       access,
-		DeviceSerial: serial,
-		Path:         p,
-	}); err != nil {
-		slog.Error("access: could not record the owner of a new item", "path", p, "serial", serial, "err", err)
+func loadCaller(c *gin.Context) (deputil.Dependencies, accessutil.Access, *serverutil.Response) {
+	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
+	if !ok {
+		return nil, accessutil.Access{}, serverutil.InternalServerError(nil)
 	}
+	access, resp := loadAccess(c, deps)
+	if resp != nil {
+		return nil, accessutil.Access{}, resp
+	}
+	return deps, access, nil
 }
 
-// grantOwners records the caller as owner of every file an upload created. A
-// file the upload replaced keeps the rows it had (#1903).
+func loadAccess(c *gin.Context, deps deputil.Dependencies) (accessutil.Access, *serverutil.Response) {
+	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
+	if err != nil {
+		return accessutil.Access{}, serverutil.InternalServerError(err)
+	}
+	return access, nil
+}
+
+func gate(access accessutil.Access, serial, p string, level accessutil.Level) *serverutil.Response {
+	check := access.Check(serial, p, level)
+	if !check.Readable {
+		return serverutil.NotFound(errNoAccess)
+	}
+	if !check.Allowed {
+		return serverutil.Forbidden(errReadOnly)
+	}
+	return nil
+}
+
+func gateReadWrite(access accessutil.Access, serial, readPath, writePath string) *serverutil.Response {
+	if !access.Check(serial, readPath, accessutil.Read).Readable {
+		return serverutil.NotFound(errNoAccess)
+	}
+	if !access.Check(serial, writePath, accessutil.Write).Allowed {
+		return serverutil.Forbidden(errReadOnly)
+	}
+	return nil
+}
+
+func writeExport(c *gin.Context, filePath, contentType, filename, stopped string, write func() error) *serverutil.Response {
+	header := c.Writer.Header()
+	header.Set("Content-Type", contentType)
+	header.Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
+	err := write()
+	if err == nil {
+		return nil
+	}
+	if c.Writer.Written() {
+		slog.Warn(stopped, "path", filePath, "err", err)
+		return nil
+	}
+	header.Del("Content-Type")
+	header.Del("Content-Disposition")
+	return fileError(err)
+}
+
 func grantOwners(c *gin.Context, deps deputil.Dependencies, access accessutil.Access, serial string, written []uploadutil.UploadedFile) {
 	for _, file := range written {
 		if file.Created {
-			grantOwner(c, deps, access, serial, file.Path)
+			accessutil.RecordOwner(c.Request.Context(), deps.Database(), access, serial, file.Path)
 		}
 	}
 }

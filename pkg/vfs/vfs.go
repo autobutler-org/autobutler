@@ -1,6 +1,6 @@
 // Package vfs provides the virtual filesystem layer: a common file interface
-// over local disk, in-memory, database-backed and storage-service namespaces,
-// a registry that maps namespaces to implementations, and per-path metadata.
+// over local disk, in-memory and storage-service namespaces, a registry that
+// maps namespaces to implementations, and per-path metadata.
 package vfs
 
 import (
@@ -38,8 +38,8 @@ type VFS interface {
 // at an offset, so a caller that needs random access — http.ServeContent, a zip
 // central directory, an image decoder rereading EXIF — takes it directly rather
 // than type-asserting the reader or buffering a stream to get it (#2640). The
-// disk-backed namespaces return an *os.File; MemVFS and DBVFS, which hold
-// bounded content in memory, return a reader over it.
+// disk-backed namespaces return an *os.File; MemVFS, which holds bounded
+// content in memory, returns a reader over it.
 type File interface {
 	io.ReadCloser
 	io.Seeker
@@ -210,12 +210,33 @@ var (
 	// ErrTooLarge reports a write over [MaxInMemoryWriteBytes] into a namespace
 	// that holds content in memory.
 	ErrTooLarge = errors.New("vfs: content too large for an in-memory namespace")
+	// ErrNoFilesNamespace reports a registry with no files namespace for the
+	// internal drive. A serial whose own namespace is missing, while the
+	// internal one is registered, is [ErrNotFound] instead.
+	ErrNoFilesNamespace = errors.New("vfs: files namespace not registered")
 )
 
+// FilesFS returns the files namespace for serial, the internal drive when
+// serial is empty.
+func FilesFS(reg Registry, serial string) (VFS, error) {
+	if reg == nil {
+		return nil, ErrNoFilesNamespace
+	}
+	if fsys, ok := reg.Get(FilesNamespace(serial)); ok {
+		return fsys, nil
+	}
+	if serial != "" {
+		if _, ok := reg.Get(FilesNamespace("")); ok {
+			return nil, ErrNotFound
+		}
+	}
+	return nil, ErrNoFilesNamespace
+}
+
 // MaxInMemoryWriteBytes caps a write into a namespace that keeps content in
-// memory: DBVFS (a SQLite BLOB) and MemVFS (a map). Neither can stream, and
-// that is deliberate — they are small-object stores, not file stores. What was
-// missing is the bound: without it an oversized write is an OOM with nothing
+// memory: MemVFS (a map). It cannot stream, and that is deliberate — it is a
+// small-object store, not a file store. What was missing is the bound: without
+// it an oversized write is an OOM with nothing
 // to diagnose it by, so the limit is enforced and reported instead (#1723).
 //
 // The `files` namespace is backed by StorageServiceVFS (see
@@ -315,19 +336,6 @@ func NewMemVFS(namespaceID string) *MemVFS {
 	// Root directory always exists
 	m.dirs[""] = true
 	return m
-}
-
-// DBVFS implements VFS backed by the vfs_db_entries SQLite table.
-// Used for namespaces whose data is virtual (no physical disk backing),
-// such as the photos namespace (albums, playlists).
-type DBVFS struct {
-	queries     db.Querier
-	namespaceID string
-}
-
-// NewDBVFS returns a DBVFS for the given namespace backed by conn.
-func NewDBVFS(conn *sql.DB, namespaceID string) *DBVFS {
-	return &DBVFS{queries: db.NewQueries(conn), namespaceID: namespaceID}
 }
 
 // StorageServiceVFS adapts storageutil.StorageService to the VFS interface

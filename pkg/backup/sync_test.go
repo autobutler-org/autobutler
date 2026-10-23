@@ -39,6 +39,12 @@ func newSyncWorker(registry vfs.Registry, serial string) *SyncWorker {
 	return w
 }
 
+func queueLen(w *SyncWorker) int {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return len(w.pending)
+}
+
 func newTestSyncWorker(t *testing.T) (*SyncWorker, string, string) {
 	t.Helper()
 	srcDir := t.TempDir()
@@ -133,8 +139,8 @@ func TestSyncWorker_QueueRetry(t *testing.T) {
 	w.queueRetry(eventbus.Event{Kind: eventbus.EventUpload, Path: "a.txt"})
 	w.queueRetry(eventbus.Event{Kind: eventbus.EventUpload, Path: "b.txt"})
 
-	if w.QueueLength() != 2 {
-		t.Errorf("expected queue length 2, got %d", w.QueueLength())
+	if queueLen(w) != 2 {
+		t.Errorf("expected queue length 2, got %d", queueLen(w))
 	}
 }
 
@@ -146,8 +152,8 @@ func TestSyncWorker_QueueMaxSize(t *testing.T) {
 		w.queueRetry(eventbus.Event{Kind: eventbus.EventUpload, Path: "file.txt"})
 	}
 
-	if w.QueueLength() != 3 {
-		t.Errorf("expected queue capped at 3, got %d", w.QueueLength())
+	if queueLen(w) != 3 {
+		t.Errorf("expected queue capped at 3, got %d", queueLen(w))
 	}
 }
 
@@ -161,8 +167,8 @@ func TestSyncWorker_DrainPending(t *testing.T) {
 	if n != 1 {
 		t.Errorf("expected 1 drained, got %d", n)
 	}
-	if w.QueueLength() != 0 {
-		t.Errorf("queue should be empty after drain, got %d", w.QueueLength())
+	if queueLen(w) != 0 {
+		t.Errorf("queue should be empty after drain, got %d", queueLen(w))
 	}
 
 	got := readTestFile(t, dstDir, "retry.txt")
@@ -280,8 +286,8 @@ func TestSyncWorker_SyncPath_FailedCopy_QueuesRetry(t *testing.T) {
 
 	w.syncPath(context.Background(), "file.txt")
 
-	if w.QueueLength() != 1 {
-		t.Errorf("expected retry queued, got queue length %d", w.QueueLength())
+	if queueLen(w) != 1 {
+		t.Errorf("expected retry queued, got queue length %d", queueLen(w))
 	}
 }
 

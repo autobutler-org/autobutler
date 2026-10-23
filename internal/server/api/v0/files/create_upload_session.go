@@ -43,16 +43,12 @@ func createUploadSession(c *gin.Context) *serverutil.Response {
 	if err := c.ShouldBindJSON(&request); err != nil {
 		return serverutil.BadRequest(err)
 	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	access, resp := loadAccess(c, deps)
+	if resp != nil {
+		return resp
 	}
-	check := access.Check(request.Serial, request.RootDir, accessutil.Write)
-	if !check.Readable {
-		return serverutil.NotFound(errNoAccess)
-	}
-	if !check.Allowed {
-		return serverutil.Forbidden(errReadOnly)
+	if resp := gate(access, request.Serial, request.RootDir, accessutil.Write); resp != nil {
+		return resp
 	}
 
 	result, err := store.CreateSession(uploadutil.CreateSessionParams{

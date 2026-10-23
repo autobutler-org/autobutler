@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/autobutler-org/quark/pkg/util/accessutil"
-	"github.com/autobutler-org/quark/pkg/util/ctxutil"
-	"github.com/autobutler-org/quark/pkg/util/deputil"
 	"github.com/autobutler-org/quark/pkg/util/fileutil"
 	"github.com/autobutler-org/quark/pkg/util/iosemutil"
 	"github.com/autobutler-org/quark/pkg/util/serverutil"
@@ -38,13 +36,9 @@ func downloadFile(c *gin.Context) *serverutil.Response {
 	serial := c.Query("serial")
 	wantsJPEG := c.Query("format") == "jpeg"
 
-	deps, ok := ctxutil.Get[deputil.Dependencies](c, "deps")
-	if !ok {
-		return serverutil.InternalServerError(nil)
-	}
-	access, err := accessutil.LoadRequest(c, deps.Database(), deps.StorageService())
-	if err != nil {
-		return serverutil.InternalServerError(err)
+	deps, access, resp := loadCaller(c)
+	if resp != nil {
+		return resp
 	}
 	if !access.Check(serial, filePath, accessutil.Read).Readable {
 		return serverutil.NotFound(errNoAccess)

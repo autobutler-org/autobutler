@@ -105,12 +105,6 @@ func ProbeDisk(dir string) DiskProbeResult {
 	return result
 }
 
-// ClassifyDiskSpeed returns the DiskSpeedClass for a given sequential read
-// throughput. Exported for testing.
-func ClassifyDiskSpeed(seqMBps float64) DiskSpeedClass {
-	return classifyDisk(seqMBps)
-}
-
 func classifyDisk(seqMBps float64) DiskSpeedClass {
 	switch {
 	case seqMBps >= fastThresholdMBs:
