@@ -11,21 +11,17 @@ import 'package:quark/utils/error_text.dart';
 ///
 /// The viewers that offer Download share this, so the action reads the same
 /// in each. [serial] is the device the file is on; null lets the Quark pick.
-/// [save] performs the save and returns where it landed, or null when the user
-/// canceled; it defaults to [FilesService.saveFile].
+/// The save goes through [saveViewedFile].
 Future<void> downloadViewedFile(
   BuildContext context, {
   required String path,
   required String? serial,
   required String name,
-  Future<String?> Function(String path, {String? serial, String? fileName})
-      save =
-      FilesService.saveFile,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
   String message;
   try {
-    final saved = await save(path, serial: serial, fileName: name);
+    final saved = await saveViewedFile(path, serial: serial, fileName: name);
     if (saved == null) return;
     message = 'Downloaded $name';
   } catch (e) {
@@ -33,6 +29,12 @@ Future<void> downloadViewedFile(
   }
   messenger.showSnackBar(SnackBar(content: Text(message)));
 }
+
+/// What [downloadViewedFile] saves with: returns where the file landed, or
+/// null when the user canceled. A test, which has no save dialog, swaps it.
+@visibleForTesting
+Future<String?> Function(String path, {String? serial, String? fileName})
+saveViewedFile = FilesService.saveFile;
 
 /// Hands the file at [path] to whichever app the system picks for it, and
 /// reports in a snack bar when that fails. Not available on web.

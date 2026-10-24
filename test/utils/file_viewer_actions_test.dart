@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quark/services/files_service.dart';
 import 'package:quark/utils/file_viewer_actions.dart';
 
 Future<void> _pumpAndDownload(
@@ -7,6 +8,8 @@ Future<void> _pumpAndDownload(
   Future<String?> Function(String path, {String? serial, String? fileName})
   save,
 ) async {
+  saveViewedFile = save;
+  addTearDown(() => saveViewedFile = FilesService.saveFile);
   await tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
@@ -17,7 +20,6 @@ Future<void> _pumpAndDownload(
               path: 'a/b.txt',
               serial: null,
               name: 'b.txt',
-              save: save,
             ),
             child: const Text('go'),
           ),

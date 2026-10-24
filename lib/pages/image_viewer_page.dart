@@ -15,6 +15,7 @@ import 'package:quark/services/favorites_service.dart';
 import 'package:quark/services/thumbnail_cache_manager.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/file_browser_dialog_utils.dart';
+import 'package:quark/utils/file_viewer_actions.dart';
 import 'package:quark/widgets/sharing/show_share_sheet.dart';
 import 'package:quark/utils/image_viewer_config.dart';
 import 'package:quark/widgets/image_viewer/current_photo.dart';
@@ -708,19 +709,12 @@ class _ImageViewerPageState extends State<ImageViewerPage>
   Future<void> _download() async {
     final relPath = _currentRelPath;
     if (relPath == null) return;
-    try {
-      await FilesService.saveFile(
-        relPath,
-        serial: _currentSerial,
-        fileName: _currentName,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(Errors.message(e, 'download the photo'))),
-        );
-      }
-    }
+    await downloadViewedFile(
+      context,
+      path: relPath,
+      serial: _currentSerial,
+      name: _currentName,
+    );
   }
 
   Future<void> _addToAlbum() async {

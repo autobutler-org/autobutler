@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/models/playback_position.dart';
 import 'package:quark/models/transcode_format.dart';
 import 'package:quark/pages/video_viewer_page.dart';
+import 'package:quark/services/files_service.dart';
+import 'package:quark/utils/file_viewer_actions.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:video_player/video_player.dart';
@@ -308,6 +310,34 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   }
+
+  // #3728: Download says it downloaded, as the other viewers do (#3160).
+  testWidgets('Download reports the saved video', (tester) async {
+    final saves = <(String, String?, String?)>[];
+    saveViewedFile = (path, {serial, fileName}) async {
+      saves.add((path, serial, fileName));
+      return '/home/me/$fileName';
+    };
+    addTearDown(() => saveViewedFile = FilesService.saveFile);
+    await pumpClip(
+      tester,
+      _Clip(
+        fileName: 'clip.avi',
+        outcome: const _Outcome.unopenable(),
+        playbackMessage: Errors.unsupportedVideoFormat('.AVI'),
+        expectsDownload: true,
+      ),
+    );
+
+    await tester.tap(find.text('Download'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(saves, [('Movies/clip.avi', 'USB1', 'clip.avi')]);
+    expect(find.text('Downloaded clip.avi'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('a decode error after play replaces the player', (tester) async {
     await pumpClip(

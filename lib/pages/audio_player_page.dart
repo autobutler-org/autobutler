@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:quark/utils/file_viewer_actions.dart';
 import 'package:quark/widgets/layout/chrome_app_bar.dart';
-import 'package:quark/services/files_service.dart';
 import 'package:quark/services/local_media_proxy.dart';
 import 'package:quark/utils/error_text.dart';
 import 'package:quark/utils/media_autoplay.dart';
@@ -120,23 +120,16 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
 
   Future<void> _download() async {
     setState(() => _downloading = true);
-    try {
-      // The media URL carries the file's path and serial as query
-      // parameters; its own path is the download endpoint, not the file.
-      final params = widget.url.queryParameters;
-      await FilesService.saveFile(
-        params['filePath'] ?? '',
-        serial: params['serial'],
-        fileName: widget.name,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Errors.message(e, 'download the file'))),
-      );
-    } finally {
-      if (mounted) setState(() => _downloading = false);
-    }
+    // The media URL carries the file's path and serial as query parameters;
+    // its own path is the download endpoint, not the file.
+    final params = widget.url.queryParameters;
+    await downloadViewedFile(
+      context,
+      path: params['filePath'] ?? '',
+      serial: params['serial'],
+      name: widget.name,
+    );
+    if (mounted) setState(() => _downloading = false);
   }
 
   @override
