@@ -66,8 +66,10 @@ void main() {
         ),
         GoRoute(
           path: '${AppRoutes.docs}/:path(.*)',
-          builder: (_, state) =>
-              DocumentEditorPage(filePath: state.pathParameters['path'] ?? ''),
+          builder: (_, state) => DocumentEditorPage(
+            filePath: state.pathParameters['path'] ?? '',
+            deviceSerial: state.uri.queryParameters['serial'] ?? '',
+          ),
         ),
         GoRoute(
           path: AppRoutes.sheets,
@@ -77,12 +79,15 @@ void main() {
           path: '${AppRoutes.sheets}/:path(.*)',
           builder: (_, state) => SpreadsheetEditorPage(
             filePath: state.pathParameters['path'] ?? '',
+            deviceSerial: state.uri.queryParameters['serial'] ?? '',
           ),
         ),
         GoRoute(
           path: '${AppRoutes.plaintextEditor}/:path(.*)',
-          builder: (_, state) =>
-              PlaintextEditorPage(filePath: state.pathParameters['path'] ?? ''),
+          builder: (_, state) => PlaintextEditorPage(
+            filePath: state.pathParameters['path'] ?? '',
+            deviceSerial: state.uri.queryParameters['serial'] ?? '',
+          ),
         ),
       ],
     );
@@ -114,6 +119,28 @@ void main() {
           '/files/reports/2024',
         );
         expect(find.text('folder:reports/2024'), findsOneWidget);
+      });
+    }
+  });
+
+  // #3726: a file on a USB drive closes to its folder on that drive, not the
+  // folder at the same path on the internal drive.
+  group('back from a deep-linked editor keeps the drive', () {
+    for (final entry in const {
+      'doc': '/docs/reports/q1.qdoc?serial=ABC123',
+      'sheet': '/sheets/reports/budget.qsheet?serial=ABC123',
+      'plaintext': '/edit/reports/notes.txt?serial=ABC123',
+    }.entries) {
+      testWidgets('${entry.key} editor', (tester) async {
+        final router = await pumpEditors(tester, initialLocation: entry.value);
+
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+
+        expect(
+          router.routeInformationProvider.value.uri.toString(),
+          '/files/reports?serial=ABC123',
+        );
       });
     }
   });

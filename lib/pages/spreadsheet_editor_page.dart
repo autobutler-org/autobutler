@@ -102,7 +102,10 @@ class _SpreadsheetEditorPageState extends State<SpreadsheetEditorPage> {
   /// folder that holds it rather than the home folder (#1749).
   void _leave() => context.go(
     AppRoutes.editorOrigin(context) ??
-        AppRoutes.containingFolder(widget.filePath),
+        AppRoutes.containingFolder(
+          widget.filePath,
+          serial: widget.deviceSerial,
+        ),
   );
 
   @override
