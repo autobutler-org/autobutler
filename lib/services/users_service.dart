@@ -182,19 +182,13 @@ class UsersService with AuthenticatedService {
     if (length > maxAvatarBytes) {
       throw const MessageException(Errors.avatarTooLarge);
     }
-    final request =
-        http.MultipartRequest(
-            'PUT',
-            apiBaseUri.resolve('/api/v0/users/me/avatar'),
-          )
-          ..headers.addAll(instance.authHeaders)
-          ..files.add(
-            http.MultipartFile('file', bytes, length, filename: filename),
-          );
+    final request = http.MultipartRequest(
+      'PUT',
+      apiBaseUri.resolve('/api/v0/users/me/avatar'),
+    )..files.add(http.MultipartFile('file', bytes, length, filename: filename));
     final response = await http.Response.fromStream(
-      await sharedHttpClient.send(request),
+      await instance.authenticatedSend(request),
     );
-    instance.checkUnauthorized(response);
     if (response.statusCode != 200) {
       throw ApiException(response.statusCode, 'set profile picture');
     }

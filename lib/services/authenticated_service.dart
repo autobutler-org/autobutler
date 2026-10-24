@@ -109,8 +109,9 @@ void resetSharedHttpClient() {
 /// Mixin providing a shared auth header helper for services that talk to the quark API.
 ///
 /// Include this mixin in any service class that makes HTTP calls to the quark.
-/// Use [authHeaders] to inject the session token into every request.
-/// Call [checkUnauthorized] after every response to handle session expiry.
+/// Send every request through its `authenticated*` methods or
+/// [AuthenticatedService.authenticatedSend]: they add the session token, go out
+/// on the shared client, and sign the user out on a 401.
 mixin AuthenticatedService {
   /// Returns an Authorization header map when there is a session token to
   /// send, empty otherwise: signed out, or a cookie session, which the browser
@@ -126,12 +127,8 @@ mixin AuthenticatedService {
   /// throws [UnauthorizedException]. The router's redirect guard will pick up
   /// the cleared token on the next navigation and send the user to the login page.
   ///
-  /// Call this after every authenticated API response:
-  /// ```dart
-  /// final response = await http.get(uri, headers: _authHeaders);
-  /// checkUnauthorized(response);
-  /// if (response.statusCode != 200) throw Exception('...');
-  /// ```
+  /// The verbs below and [authenticatedSend] call it for you; prefer them to
+  /// calling [httpClient] directly.
   void checkUnauthorized(http.Response response) {
     if (response.statusCode == 401) {
       AppSettings.instance.setSessionToken(null);
@@ -170,18 +167,9 @@ mixin AuthenticatedService {
     Uri uri, {
     Map<String, String>? headers,
   }) async {
-    final request = http.Request('GET', uri)
-      ..headers.addAll({...authHeaders, ...?headers});
-    final response = await httpClient.send(request);
+    final request = http.Request('GET', uri)..headers.addAll(headers ?? {});
+    final response = await authenticatedSend(request);
 
-    // An unread body pins the connection out of the pool for good, so the
-    // error paths have to discard it before they leave. `drain` throws it
-    // away as it arrives rather than accumulating it.
-    if (response.statusCode == 401) {
-      await response.stream.drain<void>();
-      AppSettings.instance.setSessionToken(null);
-      throw const UnauthorizedException();
-    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       await response.stream.drain<void>();
       throw ApiException(response.statusCode, 'Failed to download file');
@@ -196,6 +184,29 @@ mixin AuthenticatedService {
       await sink.close();
     }
     return DownloadedFile._(dir, file.path, response.headers);
+  }
+
+  /// Authenticated streamed send: adds [authHeaders] to [request], sends it on
+  /// [httpClient], and on a 401 discards the body, clears the session token and
+  /// throws [UnauthorizedException]. For multipart uploads and anything else
+  /// that needs a [http.BaseRequest]; never call `request.send()`, which goes
+  /// out on a throwaway client with no connect timeout.
+  ///
+  /// The caller owns the returned body and must read or drain it: an unread
+  /// body pins the connection out of the pool for good.
+  Future<http.StreamedResponse> authenticatedSend(
+    http.BaseRequest request,
+  ) async {
+    // The request's own headers win, as they do on the verbs above.
+    request.headers.addAll({...authHeaders, ...request.headers});
+    final response = await httpClient.send(request);
+    if (response.statusCode == 401) {
+      // `drain` throws the body away as it arrives rather than accumulating it.
+      await response.stream.drain<void>();
+      AppSettings.instance.setSessionToken(null);
+      throw const UnauthorizedException();
+    }
+    return response;
   }
 
   /// Authenticated POST — injects auth headers and checks for 401 automatically.

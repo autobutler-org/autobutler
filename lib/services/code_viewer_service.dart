@@ -27,14 +27,11 @@ class CodeViewerService {
     required int length,
     String? serial,
   }) async {
-    final files = FilesService.instance;
-    final request =
-        http.Request('GET', FilesService.downloadUrl(path, serial: serial))
-          ..headers.addAll({
-            ...files.authHeaders,
-            'Range': 'bytes=$start-${start + length - 1}',
-          });
-    final response = await files.httpClient.send(request);
+    final request = http.Request(
+      'GET',
+      FilesService.downloadUrl(path, serial: serial),
+    )..headers['Range'] = 'bytes=$start-${start + length - 1}';
+    final response = await FilesService.instance.authenticatedSend(request);
     final status = response.statusCode;
     if (status == 416) {
       await response.stream.drain<void>();
@@ -42,8 +39,7 @@ class CodeViewerService {
     }
     if (status < 200 || status >= 300) {
       // An unread body pins the connection out of the pool.
-      final body = await http.Response.fromStream(response);
-      files.checkUnauthorized(body);
+      await response.stream.drain<void>();
       throw ApiException(status, 'Failed to read the file');
     }
     final bytes = BytesBuilder(copy: false);

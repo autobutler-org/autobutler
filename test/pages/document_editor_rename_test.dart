@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +32,9 @@ void main() {
         .setMockMethodCallHandler(secureStorage, null);
   });
 
+  /// Makes the editor's save upload fail as a refused connection would.
+  var refuseUploads = false;
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await AppSettings.instance.load();
@@ -45,7 +47,12 @@ void main() {
         {'insert': 'Hello\n'},
       ],
     });
+    refuseUploads = false;
     sharedHttpClientFactory = () => MockClient((request) async {
+      if (refuseUploads &&
+          request.url.path.startsWith('/api/v0/files/upload')) {
+        throw http.ClientException('refused');
+      }
       // The editor downloads the doc and, to rename it, lists its folder.
       if (request.url.path.endsWith('/download')) {
         return http.Response(doc, 200);
@@ -161,11 +168,7 @@ void main() {
 
   testWidgets('a failed save does not rename', (tester) async {
     final router = await pumpRoutedEditor(tester);
-    // The save upload opens its own client, so the mock never sees it. Refuse
-    // that connection instead of hoping nothing is listening on the port.
-    final previous = HttpOverrides.current;
-    HttpOverrides.global = _RefuseHttp();
-    addTearDown(() => HttpOverrides.global = previous);
+    refuseUploads = true;
 
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -188,16 +191,4 @@ void main() {
     );
     expect(location(router), AppRoutes.docFile('reports/budget.qdoc'));
   });
-}
-
-/// Real sockets fail immediately. The editor's upload does not use the shared
-/// test client, so this is what makes a save fail without a live Quark.
-class _RefuseHttp extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..connectionFactory = (uri, proxyHost, proxyPort) {
-        throw const SocketException('refused');
-      };
-  }
 }

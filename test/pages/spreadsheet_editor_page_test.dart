@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart' show CellFormat;
@@ -185,11 +184,6 @@ void main() {
   testWidgets('the saved form carries the freeze, filters and formats', (
     tester,
   ) async {
-    // The autosave's upload opens its own client; refuse it so nothing
-    // depends on a live Quark.
-    final previous = HttpOverrides.current;
-    HttpOverrides.global = _RefuseHttp();
-    addTearDown(() => HttpOverrides.global = previous);
     await pumpEditor(tester, {'name': 'Sheet 1', 'data': rows});
 
     sheetController(tester)
@@ -224,15 +218,4 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
   });
-}
-
-/// Real sockets fail immediately, so the autosave never reaches a network.
-class _RefuseHttp extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..connectionFactory = (uri, proxyHost, proxyPort) {
-        throw const SocketException('refused');
-      };
-  }
 }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:data_table/data_sheet.dart';
 import 'package:data_table/data_table.dart' show DataCell;
@@ -37,6 +36,9 @@ void main() {
         .setMockMethodCallHandler(secureStorage, null);
   });
 
+  /// Makes the editor's save upload fail as a refused connection would.
+  var refuseUploads = false;
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await AppSettings.instance.load();
@@ -50,7 +52,12 @@ void main() {
         {'name': 'Budget', 'data': <String, Object>{}},
       ],
     });
+    refuseUploads = false;
     sharedHttpClientFactory = () => MockClient((request) async {
+      if (refuseUploads &&
+          request.url.path.startsWith('/api/v0/files/upload')) {
+        throw http.ClientException('refused');
+      }
       // The editor downloads the sheet and, to rename it, lists its folder.
       if (request.url.path.endsWith('/download')) {
         return http.Response(sheet, 200);
@@ -243,11 +250,7 @@ void main() {
 
   testWidgets('a failed save does not rename', (tester) async {
     final router = await pumpRoutedEditor(tester);
-    // The save upload opens its own client, so the mock never sees it. Refuse
-    // that connection instead of hoping nothing is listening on the port.
-    final previous = HttpOverrides.current;
-    HttpOverrides.global = _RefuseHttp();
-    addTearDown(() => HttpOverrides.global = previous);
+    refuseUploads = true;
 
     tester
         .widget<DataSheet>(find.byType(DataSheet))
@@ -267,16 +270,4 @@ void main() {
     );
     expect(location(router), AppRoutes.sheetFile('reports/budget.qsheet'));
   });
-}
-
-/// Real sockets fail immediately. The editor's upload does not use the shared
-/// test client, so this is what makes a save fail without a live Quark.
-class _RefuseHttp extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..connectionFactory = (uri, proxyHost, proxyPort) {
-        throw const SocketException('refused');
-      };
-  }
 }

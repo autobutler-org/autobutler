@@ -206,7 +206,6 @@ class StorageService with AuthenticatedService {
   static final StorageService _instance = StorageService._();
   StorageService._();
   static StorageService get instance => _instance;
-  static Map<String, String> get _authHeaders => instance.authHeaders;
 
   // ── Client-side device-list cache ─────────────────────────────────────────
   // A 10-second TTL prevents hammering the expensive /storage/devices/status
@@ -253,7 +252,7 @@ class StorageService with AuthenticatedService {
 
   static Future<List<StorageDevice>> _fetchDevices() async {
     final uri = apiBaseUri.resolve('/api/v0/storage/devices/status');
-    final response = await sharedHttpClient.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to list storage devices');
     }
@@ -269,7 +268,7 @@ class StorageService with AuthenticatedService {
   /// Mounts a USB device by serial. Requires the quark to be running as root.
   static Future<void> mountDevice(String serial) async {
     final uri = apiBaseUri.resolve('/api/v0/storage/devices/usb/$serial');
-    final response = await sharedHttpClient.post(uri, headers: _authHeaders);
+    final response = await instance.authenticatedPost(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
       throwApiError(response.statusCode, body?['error'], 'Mount failed');
@@ -286,7 +285,7 @@ class StorageService with AuthenticatedService {
   /// groundwork for safe eject.
   static Future<void> unmountDevice(String serial) async {
     final uri = apiBaseUri.resolve('/api/v0/storage/devices/usb/$serial');
-    final response = await sharedHttpClient.delete(uri, headers: _authHeaders);
+    final response = await instance.authenticatedDelete(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
       throwApiError(response.statusCode, body?['error'], 'Unmount failed');
@@ -301,9 +300,9 @@ class StorageService with AuthenticatedService {
     final uri = apiBaseUri
         .resolve('/api/v0/storage/devices/rename')
         .replace(queryParameters: {'devicePath': devicePath});
-    final response = await sharedHttpClient.patch(
+    final response = await instance.authenticatedPatch(
       uri,
-      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'name': name}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -325,9 +324,9 @@ class StorageService with AuthenticatedService {
       password: password,
       use: AuthSecretUse.reconfirm,
     );
-    final response = await sharedHttpClient.put(
+    final response = await instance.authenticatedPut(
       uri,
-      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'serial': serial,
         'role': role,
@@ -351,9 +350,9 @@ class StorageService with AuthenticatedService {
     bool acknowledgeHealth = false,
   }) async {
     final uri = apiBaseUri.resolve('/api/v0/storage/devices/snapshot-backup');
-    final response = await sharedHttpClient.post(
+    final response = await instance.authenticatedPost(
       uri,
-      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'targetDeviceSerial': targetDeviceSerial,
         if (acknowledgeHealth) 'acknowledgeHealth': true,
@@ -375,7 +374,7 @@ class StorageService with AuthenticatedService {
     final uri = apiBaseUri.resolve(
       '/api/v0/storage/devices/snapshot-backup/status/$jobId',
     );
-    final response = await sharedHttpClient.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to get backup status');
     }
@@ -390,9 +389,9 @@ class StorageService with AuthenticatedService {
     final uri = apiBaseUri.resolve(
       '/api/v0/storage/devices/snapshot-backup/verify',
     );
-    final response = await sharedHttpClient.post(
+    final response = await instance.authenticatedPost(
       uri,
-      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'deviceSerial': deviceSerial, 'full': full}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {

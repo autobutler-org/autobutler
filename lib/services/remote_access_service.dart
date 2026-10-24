@@ -86,11 +86,9 @@ class RemoteAccessService with AuthenticatedService {
   static final RemoteAccessService instance = RemoteAccessService._();
   RemoteAccessService._();
 
-  static Map<String, String> get _authHeaders => instance.authHeaders;
-
   static Future<RemoteAccessStatus> getStatus() async {
     final uri = apiBaseUri.resolve('/api/v0/settings/remote-access');
-    final response = await sharedHttpClient.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(
         response.statusCode,
@@ -104,7 +102,7 @@ class RemoteAccessService with AuthenticatedService {
   /// Asks the Quark, over the home network, for a key this phone can join with.
   static Future<PairedDevice> pairDevice() async {
     final uri = apiBaseUri.resolve('/api/v0/settings/remote-access/devices');
-    final response = await sharedHttpClient.post(uri, headers: _authHeaders);
+    final response = await instance.authenticatedPost(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       // The status is the whole signal: 409 and 503 are retried, and every
       // other code is shown through Errors. The body is a log, not copy.
@@ -116,9 +114,9 @@ class RemoteAccessService with AuthenticatedService {
 
   static Future<RemoteAccessStatus> enable() async {
     final uri = apiBaseUri.resolve('/api/v0/settings/remote-access');
-    final response = await sharedHttpClient.post(
+    final response = await instance.authenticatedPost(
       uri,
-      headers: {'Content-Type': 'application/json', ..._authHeaders},
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode(<String, dynamic>{}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -135,7 +133,7 @@ class RemoteAccessService with AuthenticatedService {
 
   static Future<RemoteAccessStatus> disable() async {
     final uri = apiBaseUri.resolve('/api/v0/settings/remote-access');
-    final response = await sharedHttpClient.delete(uri, headers: _authHeaders);
+    final response = await instance.authenticatedDelete(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
       throwApiError(

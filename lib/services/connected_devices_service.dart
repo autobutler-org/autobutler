@@ -48,11 +48,9 @@ class ConnectedDevicesService with AuthenticatedService {
   ConnectedDevicesService._();
   static ConnectedDevicesService get instance => _instance;
 
-  static Map<String, String> get _authHeaders => instance.authHeaders;
-
   static Future<List<ConnectedDevice>> listDevices() async {
     final uri = apiBaseUri.resolve('/api/v0/devices');
-    final response = await sharedHttpClient.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to fetch devices');
     }
@@ -76,7 +74,7 @@ class ConnectedDevicesService with AuthenticatedService {
 
   static Future<void> deleteDevice(int id) async {
     final uri = apiBaseUri.resolve('/api/v0/devices/$id');
-    final response = await sharedHttpClient.delete(uri, headers: _authHeaders);
+    final response = await instance.authenticatedDelete(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to delete device');
     }
