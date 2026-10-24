@@ -37,7 +37,10 @@ class FileGridPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final icon = Center(
-      child: QuarkFileIcon(name: item.name, isDir: item.isDir, size: 48),
+      child: QuarkFileIcon(
+        kind: fileIconKindForName(item.name, isDir: item.isDir),
+        size: 48,
+      ),
     );
     final thumbKey = fileThumbnailKey(item);
 
@@ -64,6 +67,7 @@ class FileGridPreview extends StatelessWidget {
                 key: thumbKey,
                 child: QuarkThumbnailUnavailable(
                   name: item.name,
+                  kind: fileIconKindForName(item.name),
                   issue: issue,
                   reason: Errors.thumbnailUnavailable(
                     issue,

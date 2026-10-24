@@ -72,23 +72,13 @@ final List<GalleryEntry> registry = [
       spacing: 24,
       runSpacing: 16,
       children: [
-        for (final entry in const [
-          ('Photos', true),
-          ('holiday.jpg', false),
-          ('clip.mp4', false),
-          ('song.flac', false),
-          ('report.pdf', false),
-          ('notes.qdoc', false),
-          ('budget.qsheet', false),
-          ('backup.zip', false),
-          ('unknown.xyz', false),
-        ])
+        for (final kind in QuarkFileKind.values)
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              QuarkFileIcon(name: entry.$1, isDir: entry.$2, size: 32),
+              QuarkFileIcon(kind: kind, size: 32),
               const SizedBox(height: 4),
-              Text(entry.$1, style: const TextStyle(fontSize: 11)),
+              Text(kind.name, style: const TextStyle(fontSize: 11)),
             ],
           ),
       ],
@@ -104,6 +94,7 @@ final List<GalleryEntry> registry = [
         for (final entry in const [
           (
             'hevc-aac.mov',
+            QuarkFileKind.video,
             ThumbnailIssue.unsupportedFormat,
             "This video's format can't be previewed on this device. The file "
                 'is fine and may play elsewhere.',
@@ -111,6 +102,7 @@ final List<GalleryEntry> registry = [
           ),
           (
             'truncated.mp4',
+            QuarkFileKind.video,
             ThumbnailIssue.unreadable,
             "Couldn't read this file as a video. It may be damaged or "
                 'incomplete, or not a video at all.',
@@ -118,6 +110,7 @@ final List<GalleryEntry> registry = [
           ),
           (
             'beach.jpg',
+            QuarkFileKind.image,
             ThumbnailIssue.missing,
             "There's no preview for this photo. It may have been moved or "
                 'deleted.',
@@ -125,6 +118,7 @@ final List<GalleryEntry> registry = [
           ),
           (
             'sunset.jpg',
+            QuarkFileKind.image,
             ThumbnailIssue.loadFailed,
             "Couldn't load this photo's preview right now. Try again later.",
             "Couldn't load preview",
@@ -136,9 +130,10 @@ final List<GalleryEntry> registry = [
             height: 40,
             child: QuarkThumbnailUnavailable(
               name: entry.$1,
-              issue: entry.$2,
-              reason: entry.$3,
-              label: entry.$4,
+              kind: entry.$2,
+              issue: entry.$3,
+              reason: entry.$4,
+              label: entry.$5,
             ),
           ),
           // A grid tile: the label shows.
@@ -147,9 +142,10 @@ final List<GalleryEntry> registry = [
             height: 160,
             child: QuarkThumbnailUnavailable(
               name: entry.$1,
-              issue: entry.$2,
-              reason: entry.$3,
-              label: entry.$4,
+              kind: entry.$2,
+              issue: entry.$3,
+              reason: entry.$4,
+              label: entry.$5,
               iconSize: 48,
             ),
           ),

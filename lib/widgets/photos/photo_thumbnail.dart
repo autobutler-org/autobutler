@@ -91,6 +91,7 @@ class PhotoThumbnail extends StatelessWidget {
               color: QuarkTokens.of(context).card,
               child: QuarkThumbnailUnavailable(
                 name: name,
+                kind: fileIconKindForName(name),
                 issue: issue,
                 reason: Errors.thumbnailUnavailable(
                   issue,

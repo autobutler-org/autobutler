@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:quark/utils/file_kind.dart';
 import 'package:quark/widgets/layout/chrome_app_bar.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/utils/file_viewer_actions.dart';
@@ -81,8 +82,10 @@ class _GenericFileViewerPageState extends State<GenericFileViewerPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               QuarkFileIcon(
-                name: widget.node.name,
-                isDir: widget.node.isDir,
+                kind: fileIconKindForName(
+                  widget.node.name,
+                  isDir: widget.node.isDir,
+                ),
                 size: 80,
                 color: theme.colorScheme.onSurfaceVariant,
               ),

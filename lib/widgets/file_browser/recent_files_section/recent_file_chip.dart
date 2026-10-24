@@ -1,4 +1,5 @@
 import 'package:quark/models/file_node.dart';
+import 'package:quark/utils/file_kind.dart';
 import 'package:quark_widgets/quark_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
@@ -51,8 +52,7 @@ class RecentFileChip extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       QuarkFileIcon(
-                        name: file.name,
-                        isDir: file.isDir,
+                        kind: fileIconKindForName(file.name, isDir: file.isDir),
                         size: 20,
                         color: colorScheme.onSurfaceVariant,
                       ),

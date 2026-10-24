@@ -39,7 +39,9 @@ class FileListLeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final icon = Center(
-      child: QuarkFileIcon(name: item.name, isDir: item.isDir),
+      child: QuarkFileIcon(
+        kind: fileIconKindForName(item.name, isDir: item.isDir),
+      ),
     );
     final thumbKey = fileThumbnailKey(item);
 
@@ -73,6 +75,7 @@ class FileListLeading extends StatelessWidget {
                 key: thumbKey,
                 child: QuarkThumbnailUnavailable(
                   name: item.name,
+                  kind: fileIconKindForName(item.name),
                   issue: issue,
                   reason: Errors.thumbnailUnavailable(
                     issue,
