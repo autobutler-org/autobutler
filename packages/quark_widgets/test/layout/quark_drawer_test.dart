@@ -696,9 +696,7 @@ void main() {
       );
     }
   }
-}
 
-void _ignore(int _) {
   // #2424: the Chat row says when a channel has unread messages.
   testBothViewports('marks the Chat row when chat has unread messages', (
     tester,
@@ -759,3 +757,5 @@ void _ignore(int _) {
     expect(find.byKey(const ValueKey('drawer_chat_unread')), findsNothing);
   });
 }
+
+void _ignore(int _) {}

@@ -313,10 +313,11 @@ void main() {
     tester,
     size,
   ) async {
-    final h = _Harness();
-    await pumpAt(tester, h.editor(canSave: false), size: size);
-    await tester.tap(find.byKey(const ValueKey('event_save')));
-    expect(h.saves, 0);
+    await pumpAt(tester, _Harness().editor(canSave: false), size: size);
+    final save = tester.widget<ButtonStyleButton>(
+      find.byKey(const ValueKey('event_save')),
+    );
+    expect(save.onPressed, isNull);
   });
 
   testBothViewports('a one-off event has no repeat end', (tester, size) async {

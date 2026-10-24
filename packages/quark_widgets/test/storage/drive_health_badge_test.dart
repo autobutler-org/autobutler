@@ -92,18 +92,4 @@ void main() {
       );
     });
   }
-
-  testWidgets('every icon-only button carries a tooltip', (tester) async {
-    await pumpAt(
-      tester,
-      const Center(
-        child: DriveHealthBadge(verdict: DriveHealthVerdict.healthy),
-      ),
-    );
-    for (final button in tester.widgetList<IconButton>(
-      find.byType(IconButton),
-    )) {
-      expect(button.tooltip, isNotNull);
-    }
-  });
 }

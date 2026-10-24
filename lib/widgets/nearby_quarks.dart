@@ -12,7 +12,15 @@ import 'package:quark_widgets/quark_widgets.dart';
 /// platform cannot browse — the web, macOS and Windows — so typing the address is
 /// the only way in there.
 class NearbyQuarks extends StatefulWidget {
-  const NearbyQuarks({super.key, required this.onSelect, this.browse});
+  const NearbyQuarks({super.key, required this.onSelect, this.browse})
+    : _useDefault = true;
+
+  /// Lists nothing, as on a platform that cannot browse, whatever this
+  /// platform's [quarkBrowser] is. Lets a test cover that case on Linux, which
+  /// browses (#3152).
+  const NearbyQuarks.withoutBrowser({super.key, required this.onSelect})
+    : browse = null,
+      _useDefault = false;
 
   /// Called with the Quark whose row was tapped.
   final ValueChanged<HostEntry> onSelect;
@@ -20,13 +28,16 @@ class NearbyQuarks extends StatefulWidget {
   /// The browser to use. Defaults to [quarkBrowser]; a test passes a fake.
   final QuarkBrowser? browse;
 
+  /// Whether a null [browse] falls back to [quarkBrowser].
+  final bool _useDefault;
+
   @override
   State<NearbyQuarks> createState() => _NearbyQuarksState();
 }
 
 class _NearbyQuarksState extends State<NearbyQuarks> {
   late final QuarkDiscoveryController? _controller = switch (widget.browse ??
-      quarkBrowser) {
+      (widget._useDefault ? quarkBrowser : null)) {
     final browse? => QuarkDiscoveryController(browse: browse),
     null => null,
   };
