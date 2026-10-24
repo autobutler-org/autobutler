@@ -273,4 +273,28 @@ void main() {
 
     expect(taps, 1);
   });
+
+  // With semantics on, the web engine routes typing only into the DOM element
+  // of a focused, enabled text-field semantics node (#3743).
+  testWidgets('exposes a focused text field to semantics while editing', (
+    WidgetTester tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await pumpFrame(tester, isReadOnly: false);
+    editorFocus.requestFocus();
+    // Focus lands in a microtask after the first frame; the second shows it.
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      tester.getSemantics(find.byType(QuillEditor)),
+      isSemantics(
+        isTextField: true,
+        isMultiline: true,
+        isFocused: true,
+        isEnabled: true,
+      ),
+    );
+    semantics.dispose();
+  });
 }

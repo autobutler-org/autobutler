@@ -203,50 +203,74 @@ class DocumentPageFrame extends StatelessWidget {
         child: GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.translucent,
-          child: QuillEditor.basic(
-            controller: controller,
-            focusNode: editorFocus,
-            scrollController: scrollController,
-            config: QuillEditorConfig(
-              autoFocus: false,
-              expands: false,
-              padding: EdgeInsets.zero,
-              placeholder: 'Start writing…',
-              // A caret only ever appears where typing works. Left to its
-              // default, `EditableText` paints one in read-only mode too —
-              // and because the field is not focused the blink timer never
-              // starts, so it sits there static, reading as "ready to type"
-              // when keystrokes go nowhere (#1853).
-              showCursor: !isReadOnly,
-              // Tab indents the current block, the way it does in every other
-              // document editor. Left off — flutter_quill's default — it only
-              // indents when the caret sits at the very start of an existing
-              // list item, and drops a literal tab character everywhere else
-              // (#1855).
-              enableAlwaysIndentOnTab: true,
-              // A tap on the text itself. False means "not handled here", so
-              // Quill still places the caret where the user clicked — the
-              // caller only learns the tap happened (#1853).
-              onTapUp: (details, getPosition) {
-                onTap();
-                return false;
-              },
-              customStyles: _quillStyles(pageCs),
-              customShortcuts: editorNavigationShortcuts(),
-              // Type the markdown, get the block — see
-              // [documentSpaceShortcuts] for the whole table (#1854).
-              // ignore: experimental_member_use
-              characterShortcutEvents: documentCharacterShortcuts,
-              // ignore: experimental_member_use
-              spaceShortcutEvents: documentSpaceShortcuts,
-              // Tab in a code block indents the code, not the block — see
-              // [codeBlockTabHandler]. Everything else goes to the caller,
-              // which keeps Quill's built-in search dialog from opening on top
-              // of the inline find bar — see [quillFindKeyInterceptor].
-              // ignore: experimental_member_use
-              onKeyPressed: (event, node) =>
-                  codeBlockTabHandler(controller, event) ??
-                  onKeyPressed(event, node),
+          // flutter_quill runs its own text input but exposes no text field to
+          // semantics. With semantics on, the web engine types only into the
+          // DOM element of a focused, enabled text-field node, so without
+          // this every keystroke went nowhere on web (#3743). The node is a
+          // leaf, or an inner focusable node takes the click and blurs the
+          // field; `value` keeps the text readable to native screen readers.
+          // A read-only page leaves its lines as separate nodes to read. The
+          // wrapper stays in the tree either way so toggling edit mode does
+          // not remount the editor. Drop it once flutter_quill publishes
+          // these itself (flutter-quill issue 2531).
+          child: ListenableBuilder(
+            listenable: Listenable.merge([editorFocus, controller]),
+            builder: (context, child) => Semantics(
+              container: !isReadOnly,
+              textField: !isReadOnly,
+              multiline: isReadOnly ? null : true,
+              enabled: isReadOnly ? null : true,
+              focused: isReadOnly ? null : editorFocus.hasFocus,
+              value: isReadOnly ? null : controller.document.toPlainText(),
+              onFocus: isReadOnly ? null : editorFocus.requestFocus,
+              excludeSemantics: !isReadOnly,
+              child: child,
+            ),
+            child: QuillEditor.basic(
+              controller: controller,
+              focusNode: editorFocus,
+              scrollController: scrollController,
+              config: QuillEditorConfig(
+                autoFocus: false,
+                expands: false,
+                padding: EdgeInsets.zero,
+                placeholder: 'Start writing…',
+                // A caret only ever appears where typing works. Left to its
+                // default, `EditableText` paints one in read-only mode too —
+                // and because the field is not focused the blink timer never
+                // starts, so it sits there static, reading as "ready to type"
+                // when keystrokes go nowhere (#1853).
+                showCursor: !isReadOnly,
+                // Tab indents the current block, the way it does in every other
+                // document editor. Left off — flutter_quill's default — it only
+                // indents when the caret sits at the very start of an existing
+                // list item, and drops a literal tab character everywhere else
+                // (#1855).
+                enableAlwaysIndentOnTab: true,
+                // A tap on the text itself. False means "not handled here", so
+                // Quill still places the caret where the user clicked — the
+                // caller only learns the tap happened (#1853).
+                onTapUp: (details, getPosition) {
+                  onTap();
+                  return false;
+                },
+                customStyles: _quillStyles(pageCs),
+                customShortcuts: editorNavigationShortcuts(),
+                // Type the markdown, get the block — see
+                // [documentSpaceShortcuts] for the whole table (#1854).
+                // ignore: experimental_member_use
+                characterShortcutEvents: documentCharacterShortcuts,
+                // ignore: experimental_member_use
+                spaceShortcutEvents: documentSpaceShortcuts,
+                // Tab in a code block indents the code, not the block — see
+                // [codeBlockTabHandler]. Everything else goes to the caller,
+                // which keeps Quill's built-in search dialog from opening on top
+                // of the inline find bar — see [quillFindKeyInterceptor].
+                // ignore: experimental_member_use
+                onKeyPressed: (event, node) =>
+                    codeBlockTabHandler(controller, event) ??
+                    onKeyPressed(event, node),
+              ),
             ),
           ),
         ),

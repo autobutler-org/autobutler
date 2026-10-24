@@ -108,8 +108,13 @@ class _SlideParagraphFieldState extends State<SlideParagraphField>
   }
 
   /// Tells the session when a click, not the session, focused this field.
+  ///
+  /// Also rebuilds: a bare [EditableText] does not rebuild when it gains
+  /// focus, so its render object, and the semantics node the web engine types
+  /// into, would keep saying unfocused (#3743).
   void _onFocusChanged() {
     if (_focusNode.hasFocus) widget.session.focusParagraph(widget.index);
+    setState(() {});
   }
 
   @override
@@ -239,35 +244,41 @@ class _SlideParagraphFieldState extends State<SlideParagraphField>
         fit: OverflowBoxFit.deferToChild,
         child: _gestures.buildGestureDetector(
           behavior: HitTestBehavior.translucent,
-          child: EditableText(
-            key: editableTextKey,
-            controller: _controller,
-            focusNode: _focusNode,
-            style: widget.style,
-            textAlign: widget.textAlign,
-            textScaler: TextScaler.noScaling,
-            maxLines: null,
-            keyboardType: TextInputType.multiline,
-            textInputAction: TextInputAction.newline,
-            cursorColor: widget.cursorColor,
-            cursorWidth: cursorWidth,
-            cursorOpacityAnimates: false,
-            backgroundCursorColor: CupertinoColors.inactiveGray,
-            selectionColor: widget.selectionColor,
-            selectionControls: SlideScaledSelectionControls(
-              _platformControls(platform),
-              widget.scale,
+          // `TextField` marks its field enabled; a bare EditableText does not,
+          // and with semantics on the web engine disables the DOM element it
+          // types into unless the node says enabled (#3743).
+          child: Semantics(
+            enabled: true,
+            child: EditableText(
+              key: editableTextKey,
+              controller: _controller,
+              focusNode: _focusNode,
+              style: widget.style,
+              textAlign: widget.textAlign,
+              textScaler: TextScaler.noScaling,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              cursorColor: widget.cursorColor,
+              cursorWidth: cursorWidth,
+              cursorOpacityAnimates: false,
+              backgroundCursorColor: CupertinoColors.inactiveGray,
+              selectionColor: widget.selectionColor,
+              selectionControls: SlideScaledSelectionControls(
+                _platformControls(platform),
+                widget.scale,
+              ),
+              showSelectionHandles: _showHandles,
+              onSelectionChanged: _onSelectionChanged,
+              rendererIgnoresPointer: true,
+              paintCursorAboveText:
+                  platform == TargetPlatform.iOS ||
+                  platform == TargetPlatform.macOS,
+              contextMenuBuilder: (context, state) =>
+                  AdaptiveTextSelectionToolbar.editableText(
+                    editableTextState: state,
+                  ),
             ),
-            showSelectionHandles: _showHandles,
-            onSelectionChanged: _onSelectionChanged,
-            rendererIgnoresPointer: true,
-            paintCursorAboveText:
-                platform == TargetPlatform.iOS ||
-                platform == TargetPlatform.macOS,
-            contextMenuBuilder: (context, state) =>
-                AdaptiveTextSelectionToolbar.editableText(
-                  editableTextState: state,
-                ),
           ),
         ),
       ),
