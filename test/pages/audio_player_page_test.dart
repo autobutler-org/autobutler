@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark/pages/audio_player_page.dart';
+import 'package:quark/services/files_service.dart';
+import 'package:quark/utils/file_viewer_actions.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 
 import '../support/fake_video_player_platform.dart';
@@ -49,6 +51,37 @@ void main() {
     );
 
     expect(platform.playCalls, 1);
+
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  // #3728: Download says it downloaded, as the other viewers do (#3160).
+  testWidgets('Download reports the saved file', (tester) async {
+    VideoPlayerPlatform.instance = FakeVideoPlayerPlatform();
+    final saves = <(String, String?, String?)>[];
+    saveViewedFile = (path, {serial, fileName}) async {
+      saves.add((path, serial, fileName));
+      return '/home/me/$fileName';
+    };
+    addTearDown(() => saveViewedFile = FilesService.saveFile);
+
+    await pumpPage(
+      tester,
+      AudioPlayerPage(
+        url: Uri.http('quark.test', '/api/v0/files/download', {
+          'filePath': 'Music/song.mp3',
+          'serial': 'USB1',
+        }),
+        name: 'song.mp3',
+        canAutoplay: () => false,
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('audio_player_download')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(saves, [('Music/song.mp3', 'USB1', 'song.mp3')]);
+    expect(find.text('Downloaded song.mp3'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
   });
