@@ -45,18 +45,8 @@ class FilesService with AuthenticatedService {
     http.Response response, {
     required String fallback,
   }) {
-    try {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map<String, dynamic>) {
-        final error = decoded['error'];
-        if (error is String && error.trim().isNotEmpty) {
-          return error;
-        }
-      }
-    } catch (_) {
-      // Fall back to the caller-provided message when the response is not JSON.
-    }
-    return fallback;
+    final error = serverErrorText(response.body);
+    return error is String && error.trim().isNotEmpty ? error : fallback;
   }
 
   /// Throws for a delete or move the Quark refused.

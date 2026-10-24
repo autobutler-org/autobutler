@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:quark/models/account_keys.dart';
 import 'package:quark/services/app_settings.dart';
 import 'package:quark/services/authenticated_service.dart';
@@ -724,4 +726,17 @@ Never throwApiError(int statusCode, Object? serverMessage, String context) {
     throw MessageException(serverMessage.trim());
   }
   throw ApiException(statusCode, context);
+}
+
+/// The Quark's `error` field from a refusal's [body], for [throwApiError], or
+/// null when the body is not a JSON object carrying one. A reverse proxy's HTML
+/// error page, an empty body or a bare JSON string is not an error to decode:
+/// the status alone is the answer (#3725).
+Object? serverErrorText(String body) {
+  try {
+    final decoded = jsonDecode(body);
+    return decoded is Map ? decoded['error'] : null;
+  } on FormatException {
+    return null;
+  }
 }
