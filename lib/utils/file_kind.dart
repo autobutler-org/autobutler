@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:quark_widgets/quark_widgets.dart';
+
 /// What a file is, as far as picking a viewer goes.
 ///
 /// This is the client's one extension table: every viewer-routing decision —
@@ -41,6 +44,32 @@ String fileKindLabel(FileKind kind) => switch (kind) {
   FileKind.archive => 'Archive',
   FileKind.generic => 'File',
 };
+
+/// The glyph `QuarkFileIcon` draws for a file of [kind]: the one place the
+/// app's kinds meet the package's glyphs, so a file's icon always agrees with
+/// the viewer it opens in (#3730).
+QuarkFileKind fileIconKind(FileKind kind) => switch (kind) {
+  FileKind.qdoc => QuarkFileKind.qdoc,
+  FileKind.qsheet => QuarkFileKind.qsheet,
+  FileKind.qslide => QuarkFileKind.qslide,
+  FileKind.image || FileKind.svg => QuarkFileKind.image,
+  FileKind.video => QuarkFileKind.video,
+  FileKind.audio => QuarkFileKind.audio,
+  FileKind.pdf => QuarkFileKind.pdf,
+  FileKind.docx => QuarkFileKind.document,
+  FileKind.xlsx || FileKind.csv => QuarkFileKind.spreadsheet,
+  FileKind.slideshow => QuarkFileKind.presentation,
+  FileKind.archive => QuarkFileKind.archive,
+  FileKind.text ||
+  FileKind.code ||
+  FileKind.epub ||
+  FileKind.generic => QuarkFileKind.generic,
+};
+
+/// The glyph for the entry called [name]: a folder when [isDir], otherwise
+/// its [fileIconKind].
+QuarkFileKind fileIconKindForName(String name, {bool isDir = false}) =>
+    isDir ? QuarkFileKind.folder : fileIconKind(fileKindForName(name));
 
 /// The lowercase extension of [name], dot included, or `''` when it has none.
 String fileExtension(String name) {
@@ -95,6 +124,10 @@ const serverConvertedImageExtensions = {
   '.orf',
   '.rw2',
 };
+
+/// Every extension [fileKindForName] knows, for tests that walk the table.
+@visibleForTesting
+Iterable<String> get knownFileExtensions => _kindByExtension.keys;
 
 const _kindByExtension = {
   '.qdoc': FileKind.qdoc,

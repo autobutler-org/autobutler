@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quark_icons/quark_icons.dart';
 
 import '../theme/quark_tokens.dart';
+import '../models/quark_file_kind.dart';
 import 'quark_file_icon.dart';
 
 /// Why a file has no thumbnail, when nothing could make one.
@@ -27,8 +28,8 @@ enum ThumbnailIssue {
 /// The placeholder for a file whose thumbnail cannot be made, which says so
 /// instead of looking like a file that has no thumbnail or one still loading.
 ///
-/// Draws the file's own glyph ([QuarkFileIcon], so a video still reads as a
-/// video) with a badge for the [issue]: a crossed-out eye for a format that
+/// Draws the glyph for the file's [kind] ([QuarkFileIcon], so a video still
+/// reads as a video) with a badge for the [issue]: a crossed-out eye for a format that
 /// cannot be previewed, a broken picture for a file that could not be read,
 /// a question mark for a thumbnail that is gone, and a crossed-out cloud for
 /// one the server would not send.
@@ -46,6 +47,7 @@ enum ThumbnailIssue {
 /// ```dart
 /// QuarkThumbnailUnavailable(
 ///   name: 'clip.mov',
+///   kind: QuarkFileKind.video,
 ///   issue: ThumbnailIssue.unsupportedFormat,
 ///   reason: "This video's format can't be previewed on this device.",
 ///   label: 'No preview',
@@ -55,6 +57,7 @@ class QuarkThumbnailUnavailable extends StatelessWidget {
   /// Creates the placeholder for the file called [name].
   const QuarkThumbnailUnavailable({
     required this.name,
+    required this.kind,
     required this.issue,
     required this.reason,
     this.label,
@@ -62,8 +65,11 @@ class QuarkThumbnailUnavailable extends StatelessWidget {
     super.key,
   });
 
-  /// The file's name, which picks its glyph and keys the badge.
+  /// The file's name, which keys the badge.
   final String name;
+
+  /// What the file is, which picks its glyph.
+  final QuarkFileKind kind;
 
   /// Why there is no thumbnail, which picks the badge.
   final ThumbnailIssue issue;
@@ -92,8 +98,7 @@ class QuarkThumbnailUnavailable extends StatelessWidget {
       child: Stack(
         children: [
           QuarkFileIcon(
-            name: name,
-            isDir: false,
+            kind: kind,
             size: iconSize,
             color: tokens.mutedForeground,
           ),

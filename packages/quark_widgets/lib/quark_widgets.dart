@@ -144,6 +144,7 @@ export 'src/models/photo_grid_section.dart';
 export 'src/models/photo_index_failure_item.dart';
 export 'src/models/photo_item.dart';
 export 'src/models/principal_item.dart';
+export 'src/models/quark_file_kind.dart';
 export 'src/models/quark_menu_entry.dart';
 export 'src/models/remote_access_setup_stage.dart';
 export 'src/models/remote_access_state.dart';

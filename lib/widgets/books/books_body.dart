@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quark/models/file_node.dart';
 import 'package:quark/services/storage_service.dart' show StorageDevice;
+import 'package:quark/utils/file_kind.dart';
 import 'package:quark/widgets/slides/slides_error_view.dart';
 import 'package:quark_icons/quark_icons.dart';
 import 'package:quark_widgets/quark_widgets.dart';
@@ -65,7 +66,10 @@ class BooksBody extends StatelessWidget {
         final folder = slash < 0 ? '' : book.apiPath.substring(0, slash);
         return ListTile(
           key: ValueKey('book_tile_${book.apiPath}'),
-          leading: QuarkFileIcon(name: book.name, isDir: false, size: 24),
+          leading: QuarkFileIcon(
+            kind: fileIconKindForName(book.name),
+            size: 24,
+          ),
           title: Text(book.name, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(
             [

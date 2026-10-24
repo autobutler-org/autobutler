@@ -22,6 +22,7 @@ void main() {
       slot(
         const QuarkThumbnailUnavailable(
           name: 'hevc-aac.mov',
+          kind: QuarkFileKind.video,
           issue: ThumbnailIssue.unsupportedFormat,
           reason: reason,
         ),
@@ -49,6 +50,7 @@ void main() {
       slot(
         const QuarkThumbnailUnavailable(
           name: 'truncated.mp4',
+          kind: QuarkFileKind.video,
           issue: ThumbnailIssue.unreadable,
           reason: "Couldn't read this file as a video.",
         ),
@@ -75,6 +77,7 @@ void main() {
         slot(
           QuarkThumbnailUnavailable(
             name: 'beach.jpg',
+            kind: QuarkFileKind.image,
             issue: issue,
             reason: 'Why ${issue.name}',
           ),
@@ -104,6 +107,7 @@ void main() {
   ) async {
     const placeholder = QuarkThumbnailUnavailable(
       name: 'clip.ts',
+      kind: QuarkFileKind.video,
       issue: ThumbnailIssue.unsupportedFormat,
       reason: reason,
       label: 'No preview',
@@ -122,6 +126,7 @@ void main() {
       slot(
         const QuarkThumbnailUnavailable(
           name: 'clip.mov',
+          kind: QuarkFileKind.video,
           issue: ThumbnailIssue.unsupportedFormat,
           reason: reason,
         ),
@@ -148,6 +153,7 @@ void main() {
           onLongPressStart: (_) => menus++,
           child: const QuarkThumbnailUnavailable(
             name: 'clip.mov',
+            kind: QuarkFileKind.video,
             issue: ThumbnailIssue.unsupportedFormat,
             reason: reason,
           ),

@@ -6,27 +6,26 @@ import 'package:quark_widgets/quark_widgets.dart';
 import '../support/pump.dart';
 
 void main() {
-  testBothViewports('renders the glyph for the name it is given', (
+  testBothViewports('renders the glyph for the kind it is given', (
     tester,
     size,
   ) async {
     await pumpAt(
       tester,
-      const QuarkFileIcon(name: 'holiday.jpg', isDir: false),
+      const QuarkFileIcon(kind: QuarkFileKind.image),
       size: size,
     );
 
     expect(find.byIcon(QuarkIcons.image_outlined), findsOneWidget);
   });
 
-  testBothViewports('renders a folder glyph for a directory', (
+  testBothViewports('renders a folder glyph for a folder', (
     tester,
     size,
   ) async {
-    // The directory flag wins even when the name looks like a file.
     await pumpAt(
       tester,
-      const QuarkFileIcon(name: 'archive.zip', isDir: true),
+      const QuarkFileIcon(kind: QuarkFileKind.folder),
       size: size,
     );
 
@@ -37,8 +36,7 @@ void main() {
     await pumpAt(
       tester,
       const QuarkFileIcon(
-        name: 'notes.txt',
-        isDir: false,
+        kind: QuarkFileKind.generic,
         size: 48,
         color: Color(0xFF00FF00),
       ),
@@ -50,26 +48,49 @@ void main() {
     expect(icon.color, const Color(0xFF00FF00));
   });
 
-  test('maps each family of extensions to its glyph', () {
-    IconData iconFor(String name) => QuarkFileIcon.iconFor(name, isDir: false);
-
-    expect(iconFor('a.HEIC'), QuarkIcons.image_outlined);
-    expect(iconFor('a.mkv'), QuarkIcons.video_file_outlined);
-    // Every video the app plays reads as a video, an MPEG transport stream
-    // included (#3559).
-    for (final ext in ['ts', 'ogv', '3gp', '3g2', 'mpeg', 'mpg']) {
-      expect(iconFor('a.$ext'), QuarkIcons.video_file_outlined, reason: ext);
-    }
-    expect(iconFor('a.flac'), QuarkIcons.audio_file_outlined);
-    expect(iconFor('a.pdf'), QuarkIcons.picture_as_pdf_outlined);
-    expect(iconFor('a.zst'), QuarkIcons.archive_outlined);
-    expect(iconFor('a.qdoc'), QuarkIcons.edit_document);
-    expect(iconFor('a.qsheet'), QuarkIcons.table_chart);
-    expect(iconFor('a.qslide'), QuarkIcons.slideshow);
-    expect(iconFor('a.docx'), QuarkIcons.description_outlined);
-    expect(iconFor('a.csv'), QuarkIcons.table_chart_outlined);
-    expect(iconFor('a.pptx'), QuarkIcons.slideshow_outlined);
-    expect(iconFor('a.unknown'), QuarkIcons.insert_drive_file_outlined);
-    expect(iconFor('no-extension'), QuarkIcons.insert_drive_file_outlined);
+  test('maps each kind to its glyph', () {
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.folder),
+      QuarkIcons.folder_outlined,
+    );
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.image),
+      QuarkIcons.image_outlined,
+    );
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.video),
+      QuarkIcons.video_file_outlined,
+    );
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.audio),
+      QuarkIcons.audio_file_outlined,
+    );
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.pdf),
+      QuarkIcons.picture_as_pdf_outlined,
+    );
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.archive),
+      QuarkIcons.archive_outlined,
+    );
+    expect(QuarkFileIcon.iconFor(QuarkFileKind.qdoc), QuarkIcons.edit_document);
+    expect(QuarkFileIcon.iconFor(QuarkFileKind.qsheet), QuarkIcons.table_chart);
+    expect(QuarkFileIcon.iconFor(QuarkFileKind.qslide), QuarkIcons.slideshow);
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.document),
+      QuarkIcons.description_outlined,
+    );
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.spreadsheet),
+      QuarkIcons.table_chart_outlined,
+    );
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.presentation),
+      QuarkIcons.slideshow_outlined,
+    );
+    expect(
+      QuarkFileIcon.iconFor(QuarkFileKind.generic),
+      QuarkIcons.insert_drive_file_outlined,
+    );
   });
 }
