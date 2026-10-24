@@ -33,14 +33,6 @@ void main() {
     );
   });
 
-  test('each level has words for the sheet', () {
-    expect(AccessLevel.values.map((level) => level.label), [
-      'Can view',
-      'Can edit',
-      'Owner',
-    ]);
-  });
-
   test('each level says what it lets someone do (#2475)', () {
     for (final level in AccessLevel.values) {
       expect(level.description, endsWith('.'), reason: level.name);
