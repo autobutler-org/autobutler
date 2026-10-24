@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quark_slides/quark_slides.dart';
@@ -143,6 +144,22 @@ void main() {
   });
 
   group('typing', () {
+    // With semantics on, the web engine types only into the DOM field of a
+    // focused, enabled text-field node (#3743).
+    testBothViewports('the edited field is a focused text field to semantics', (
+      tester,
+      size,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await pump(tester, size);
+      await editTitle(tester);
+      expect(
+        find.semantics.byFlag(SemanticsFlag.isTextField).evaluate().single,
+        isSemantics(isTextField: true, isFocused: true, isEnabled: true),
+      );
+      semantics.dispose();
+    });
+
     testBothViewports('a whole session commits as one undo step', (
       tester,
       size,
