@@ -208,17 +208,11 @@ class SlidesService {
     String path, {
     String? serial,
   }) async {
-    final files = FilesService.instance;
-    final request =
-        http.Request(
-            'GET',
-            FilesService.constructMediaUrl(path, serial: serial),
-          )
-          ..headers.addAll({
-            ...files.authHeaders,
-            'Range': 'bytes=0-${imageHeadLimit - 1}',
-          });
-    final response = await files.httpClient.send(request);
+    final request = http.Request(
+      'GET',
+      FilesService.constructMediaUrl(path, serial: serial),
+    )..headers['Range'] = 'bytes=0-${imageHeadLimit - 1}';
+    final response = await FilesService.instance.authenticatedSend(request);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       await response.stream.drain<void>();
       throw ApiException(response.statusCode, 'Failed to read the picture');

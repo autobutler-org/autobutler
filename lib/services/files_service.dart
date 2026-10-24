@@ -40,7 +40,6 @@ class FilesService with AuthenticatedService {
   static final FilesService _instance = FilesService._();
   FilesService._();
   static FilesService get instance => _instance;
-  static Map<String, String> get _authHeaders => instance.authHeaders;
 
   static String _responseMessage(
     http.Response response, {
@@ -569,9 +568,9 @@ class FilesService with AuthenticatedService {
 
     final request = http.MultipartRequest('POST', endpointUri);
     request.fields['folderName'] = folderName;
-    request.headers.addAll(_authHeaders);
 
-    final response = await instance.httpClient.send(request);
+    final response = await instance.authenticatedSend(request);
+    await response.stream.drain<void>();
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to create folder');
     }
@@ -609,10 +608,10 @@ class FilesService with AuthenticatedService {
 
     final request = http.MultipartRequest('POST', uri);
     request.files.addAll(formDataFiles);
-    request.headers.addAll(_authHeaders);
 
-    final response = await request.send();
+    final response = await instance.authenticatedSend(request);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      await response.stream.drain<void>();
       throw ApiException(response.statusCode, 'Failed to upload files');
     }
 
@@ -650,9 +649,8 @@ class FilesService with AuthenticatedService {
           thumbnail,
           filename: normalized.split('/').last,
         ),
-      )
-      ..headers.addAll(_authHeaders);
-    final response = await request.send();
+      );
+    final response = await instance.authenticatedSend(request);
     await response.stream.drain<void>();
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to upload the thumbnail');

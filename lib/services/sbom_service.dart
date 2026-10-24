@@ -89,12 +89,10 @@ class SbomService with AuthenticatedService {
   SbomService._();
   static SbomService get instance => _instance;
 
-  static Map<String, String> get _authHeaders => instance.authHeaders;
-
   /// Fetch Go SBOM from the backend.
   static Future<GoSbom> getGoSbom() async {
     final uri = apiBaseUri.resolve('/api/v0/sbom');
-    final response = await sharedHttpClient.get(uri, headers: _authHeaders);
+    final response = await instance.authenticatedGet(uri);
     if (response.statusCode != 200) {
       throw ApiException(response.statusCode, 'Failed to load Go SBOM');
     }
@@ -142,7 +140,7 @@ class SbomService with AuthenticatedService {
       ];
       for (final relativePath in webCandidates) {
         try {
-          final response = await sharedHttpClient.get(
+          final response = await instance.authenticatedGet(
             Uri.base.resolve(relativePath),
           );
           if (response.statusCode == 200) {
