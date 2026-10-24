@@ -11,7 +11,7 @@ extension type _ResolvedOptions._(JSObject _) implements JSObject {
 }
 
 /// Web: the browser's own zone, from `Intl.DateTimeFormat`.
-String get localTimeZoneNamePlatform {
+Future<String> localTimeZoneNamePlatform() async {
   try {
     return _DateTimeFormat().resolvedOptions().timeZone ?? '';
   } catch (_) {

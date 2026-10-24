@@ -76,6 +76,13 @@ void main() {
   }
 
   setUp(() async {
+    // A save asks the platform for its zone (#3732). Unanswered, that call
+    // never completes inside a widget test, and the save never sends.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('org.autobutler.quark/time_zone'),
+          (_) async => 'America/Los_Angeles',
+        );
     requests.clear();
     updateStatus = 200;
     plumberRepeat = 'none';

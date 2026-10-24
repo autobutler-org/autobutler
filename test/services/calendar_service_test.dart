@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -157,6 +159,36 @@ void main() {
     expect(body['repeat'], 'weekly');
     expect(body['reminderMinutes'], 30);
     expect(body['colorIndex'], 2);
+  });
+
+  // #3732: a phone's event carries the zone the phone reports.
+  test('sends the zone a phone reports', () async {
+    const channel = MethodChannel('org.autobutler.quark/time_zone');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    messenger.setMockMethodCallHandler(
+      channel,
+      (_) async => 'America/Los_Angeles',
+    );
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      messenger.setMockMethodCallHandler(channel, null);
+    });
+    answer(201, vet);
+    final start = DateTime(2026, 9, 29, 18);
+
+    await CalendarService.saveEvent(
+      CalendarEventDraft(
+        title: 'Practice',
+        start: start,
+        end: start.add(const Duration(hours: 1)),
+        repeat: CalendarRepeat.weekly,
+      ),
+    );
+
+    final body = jsonDecode(requests.single.body) as Map<String, dynamic>;
+    expect(body['timeZone'], 'America/Los_Angeles');
   });
 
   test('updates with PUT, sending all-day dates as midnight UTC', () async {

@@ -209,3 +209,46 @@ func sameTimes(got []time.Time, want []string) bool {
 	}
 	return true
 }
+
+// #3732: a phone saved its events with no zone, so the Quark stepped them in
+// UTC. A weekly 6 PM Tuesday in Los Angeles falls on Wednesday in UTC, and
+// "this and following" ended the old series on the Tuesday it was moved from
+// instead of the Monday before. The app now sends the phone's zone; an event
+// stored without one keeps the UTC fallback.
+func TestMoveFollowingSplitsOnTheEventsOwnDay(t *testing.T) {
+	for _, tc := range []struct {
+		zone string
+		want string
+	}{
+		{zone: "America/Los_Angeles", want: "2026-09-14T00:00:00Z"}, // Monday
+		{zone: "", want: "2026-09-15T00:00:00Z"},                    // Tuesday, the UTC day before
+	} {
+		zone := tc.zone
+		t.Run("zone="+zone, func(t *testing.T) {
+			database := dbtest.NewDB(t)
+			owner := makeUser(t, database.Queries)
+			created, err := calendarutil.CreateEvent(context.Background(), calendarutil.CreateEventParams{
+				Queries: database.Queries,
+				Input: calendarutil.EventInput{
+					Title: "Practice",
+					// Tuesday, September 1, 6 PM PDT.
+					Start: at("2026-09-02T01:00:00Z"), End: at("2026-09-02T02:00:00Z"),
+					TimeZone: zone, Repeat: calendarutil.RepeatWeekly,
+				},
+				CreatedBy: owner,
+			})
+			if err != nil {
+				t.Fatalf("CreateEvent: %v", err)
+			}
+
+			// The third occurrence, Tuesday, September 15, moved an hour later.
+			moved := moveSeries(t, database, created.Event.ID, calendarutil.MoveFollowing,
+				"2026-09-16T01:00:00Z", "2026-09-16T02:00:00Z", "2026-09-16T03:00:00Z")
+
+			want := at(tc.want)
+			if got := moved.Series.RepeatUntil; got == nil || !got.Equal(want) {
+				t.Errorf("original ends %v, want %s", got, want)
+			}
+		})
+	}
+}

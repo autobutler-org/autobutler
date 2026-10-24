@@ -49,7 +49,7 @@ class CalendarService with AuthenticatedService {
     final body = json.encode(
       CalendarEvent.requestBody(
         draft,
-        timeZone: localTimeZoneName,
+        timeZone: await localTimeZoneName(),
         excludedStarts: excludedStarts,
       ),
     );
