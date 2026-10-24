@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,12 +29,12 @@ void main() {
       tester.widget<TextField>(field).controller!.text;
 
   testWidgets('without a browser, nothing is listed', (tester) async {
-    // Off iOS, Android and Linux the default browser is null, as it is on the
-    // web. Linux browses (#3152), so there the test VM has a browser.
-    await pump(tester, NearbyQuarks(onSelect: (_) {}));
+    // The web, macOS and Windows have no browser. Linux browses (#3152), so
+    // the test asks for none rather than relying on the host's default.
+    await pump(tester, NearbyQuarks.withoutBrowser(onSelect: (_) {}));
 
     expect(find.byType(DiscoveredQuarkList), findsNothing);
-  }, skip: Platform.isLinux);
+  });
 
   testWidgets('Add Quark fills the name and address from a found Quark', (
     tester,
