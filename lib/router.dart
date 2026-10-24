@@ -299,11 +299,12 @@ class AppRoutes {
       : '$photos?$photosAlbumParam='
             '${Uri.encodeComponent(link).replaceAll('%2F', '/')}';
 
-  /// Build a deep-link URL for a given files path.
+  /// Build a deep-link URL for a given files path, with the drive it is on as
+  /// a `serial` query param when non-empty (#3727).
   /// e.g. filesPath('photos/2024') → '/files/photos/2024'
-  static String filesPath(String path) {
+  static String filesPath(String path, {String serial = ''}) {
     final clean = encodeFilePath(path);
-    return clean.isEmpty ? files : '$files/$clean';
+    return _withSerial(clean.isEmpty ? files : '$files/$clean', serial);
   }
 
   /// Build the URL of a folder in the trash: `/trash/<trashName>/<path>`,
@@ -656,7 +657,10 @@ final router = GoRouter(
             // the real path — decoding again threw for names containing '%'
             // and silently mangled a literal '%20' (#1604).
             final filePath = state.pathParameters['path'] ?? '';
-            return FileBrowserPage(initialPath: filePath);
+            return FileBrowserPage(
+              initialPath: filePath,
+              deviceSerial: state.uri.queryParameters['serial'] ?? '',
+            );
           },
         ),
       ],

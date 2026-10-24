@@ -74,7 +74,12 @@ class FileBrowserPage extends StatefulWidget {
   /// When non-null and non-empty, the browser opens at this path instead of root.
   final String? initialPath;
 
-  const FileBrowserPage({super.key, this.initialPath});
+  /// The drive [initialPath] is on, from the URL's `serial`; empty when the
+  /// URL names none. A path on a USB drive is stat'ed there and the listing
+  /// narrows to that drive (#3727).
+  final String deviceSerial;
+
+  const FileBrowserPage({super.key, this.initialPath, this.deviceSerial = ''});
 
   @override
   State<FileBrowserPage> createState() => _FileBrowserPageState();
@@ -236,7 +241,15 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     final roots = _sharedRoots;
     if (roots.isEmpty) return;
     final picked = await showSharedRootsSheet(context, roots);
-    if (picked != null && mounted) _setPath(picked);
+    if (picked == null || !mounted) return;
+    // Its drive rides in the URL, so the stat and the listing ask that drive
+    // rather than the internal one (#3727).
+    context.go(
+      AppRoutes.filesPath(
+        normalizePath(picked.relPath),
+        serial: picked.deviceSerial,
+      ),
+    );
   }
 
   /// Feeds the Shared with me shortcut. A failure leaves the shortcut out
@@ -480,7 +493,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     final oldPath = normalizePath(oldWidget.initialPath ?? '');
     final newPath = normalizePath(widget.initialPath ?? '');
-    if (oldPath == newPath) {
+    if (oldPath == newPath && oldWidget.deviceSerial == widget.deviceSerial) {
       return;
     }
 
@@ -490,6 +503,7 @@ class _FileBrowserPageState extends State<FileBrowserPage>
 
     setState(() {
       _applyIncomingRoutePath(widget.initialPath);
+      _activeDevicePaths = _urlDrive(_allDevices) ?? _activeDevicePaths;
       _reloadFiles();
     });
 
@@ -580,12 +594,22 @@ class _FileBrowserPageState extends State<FileBrowserPage>
         final newPaths = devices.map((d) => d.devicePath).toSet();
         if (!newPaths.containsAll(_activeDevicePaths) ||
             _activeDevicePaths.isEmpty) {
-          _activeDevicePaths = newPaths;
+          _activeDevicePaths = _urlDrive(devices) ?? newPaths;
         }
       });
     } catch (e) {
       debugPrint('[file_browser_page.dart] Failed to load devices: $e');
     }
+  }
+
+  /// The device selection for the drive the URL names, or null when it names
+  /// none or none of [devices] is that drive.
+  Set<String>? _urlDrive(List<StorageDevice> devices) {
+    if (widget.deviceSerial.isEmpty) return null;
+    final drive = devices
+        .where((d) => d.serial == widget.deviceSerial)
+        .firstOrNull;
+    return drive == null ? null : {drive.devicePath};
   }
 
   /// The `serial` filter for the selected device chips; null for all.
@@ -1961,7 +1985,10 @@ class _FileBrowserPageState extends State<FileBrowserPage>
     late final bool isDir;
     late final String fileName;
     try {
-      final stat = await FilesService.statFile(filePath);
+      final stat = await FilesService.statFile(
+        filePath,
+        serial: widget.deviceSerial,
+      );
       isDir = stat.isDir;
       fileName = stat.name.isEmpty ? filePath.split('/').last : stat.name;
     } on FilesRequestException catch (error) {
@@ -2002,7 +2029,12 @@ class _FileBrowserPageState extends State<FileBrowserPage>
       return;
     }
 
-    await _openResolvedFile(filePath, fileKindForName(fileName), fileName);
+    await _openResolvedFile(
+      filePath,
+      fileKindForName(fileName),
+      fileName,
+      serial: serialOrNull(widget.deviceSerial),
+    );
   }
 
   /// Opens the viewer for a file of [kind], classified from its name — after a
